@@ -99,7 +99,7 @@ public:
 	hxfile(uint8_t mode_, intptr_t file_);
 
 	/// Disallow usage where the filename comes first, like with `fopen`.
-	/// This is done because `hxfile::hxfile()` uses variadic arguments. 
+	/// This is done because `hxfile::hxfile()` uses variadic arguments.
 	hxfile(const char* file_, uint8_t mode_=0) = delete;
 
 	// Move constructor. No copy constructor is provided.

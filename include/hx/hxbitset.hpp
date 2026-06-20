@@ -130,15 +130,15 @@ public:
 	hxattr_nodiscard hxconstexpr bool test(size_t pos_) const;
 
 private:
-	static_assert(bit_count_ > 0u, "hxbitset requires bit_count_ > 0.");
+	static_assert(bit_count_ > 0, "hxbitset requires bit_count > 0.");
 	static hxinline_constexpr size_t s_bits_per_word_ = sizeof(size_t) * 8u;
-	static hxinline_constexpr size_t s_words_ = (bit_count_ + s_bits_per_word_ - 1u) / s_bits_per_word_;
-	static hxinline_constexpr size_t s_trailing_bits_ = bit_count_ % s_bits_per_word_;
+	static hxinline_constexpr size_t s_log2_bits_per_word_ = (s_bits_per_word_ > 32u) ? 6u : 5u;
+	static hxinline_constexpr size_t s_bit_mask_ = s_bits_per_word_ - 1u;
+	static hxinline_constexpr size_t s_words_ = (bit_count_ + s_bit_mask_) >> s_log2_bits_per_word_;
+	static hxinline_constexpr size_t s_trailing_bits_ = bit_count_ & s_bit_mask_;
 	static hxinline_constexpr size_t s_trailing_mask_ = s_trailing_bits_ != 0u
 		? (static_cast<size_t>(1u) << s_trailing_bits_) - 1u
 		: ~static_cast<size_t>(0u);
-
-	hxconstexpr void assert_no_trailing_bits_(void) const;
 
 	size_t m_data_[s_words_];
 };

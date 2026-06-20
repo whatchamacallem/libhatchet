@@ -162,7 +162,7 @@ size_t hxfile::read(void* bytes, size_t buffer_size, size_t byte_count) {
 		return 0u;
 	}
 
-	const size_t bytes_read = ::fread(bytes, 1, byte_count, reinterpret_cast<FILE*>(m_file_pimpl_)); // NOLINT
+	const size_t bytes_read = ::fread(bytes, 1, byte_count, reinterpret_cast<FILE*>(m_file_pimpl_)); // NOLINT(clang-analyzer-core.NonNullParamChecker)
 
 	hxassertmsg((byte_count == bytes_read) || ((m_open_mode_ & hxfile::skip_asserts) != 0u),
 		"fread expected %zu != actual %zu: %s", byte_count, bytes_read, ::strerror(errno));
@@ -191,7 +191,7 @@ size_t hxfile::write(const void* bytes, size_t byte_count) {
 	return bytes_written;
 }
 
-bool hxfile::flush(void) { // NOLINT
+bool hxfile::flush(void) { // NOLINT(readability-make-member-function-const)
 	hxassertmsg((m_open_mode_ & hxfile::out) != 0u, "invalid_file");
 	if(m_file_pimpl_ == 0) {
 		return true;
@@ -206,7 +206,7 @@ bool hxfile::flush(void) { // NOLINT
 bool hxfile::getline(char* buffer, int buffer_size) {
 	hxassertmsg(((m_open_mode_ & hxfile::in) != 0u) && (m_file_pimpl_ != 0), "invalid_file");
 
-	char* result = ::fgets(buffer, buffer_size, reinterpret_cast<FILE*>(m_file_pimpl_)); // NOLINT
+	char* result = ::fgets(buffer, buffer_size, reinterpret_cast<FILE*>(m_file_pimpl_)); // NOLINT(clang-analyzer-core.NonNullParamChecker)
 
 	hxassertmsg(!::ferror(reinterpret_cast<FILE*>(m_file_pimpl_)), "fgets %s", ::strerror(errno));
 
@@ -219,7 +219,7 @@ bool hxfile::getline(char* buffer, int buffer_size) {
 }
 
 // See vsnprintf to reimplement this without FILE* support.
-bool hxfile::print(const char* format, ...) {  // NOLINT
+bool hxfile::print(const char* format, ...) {
 	hxassertmsg((m_open_mode_ & hxfile::out) != 0u, "invalid_file");
 
 	if(m_file_pimpl_ == 0) {
@@ -245,7 +245,7 @@ int hxfile::scan(const char* format, ...) {
 	hxassertmsg(((m_open_mode_ & hxfile::in) != 0u) && (m_file_pimpl_ != 0), "invalid_file");
 	va_list args;
 	va_start(args, format);
-	const int items_scanned = ::vfscanf(reinterpret_cast<FILE*>(m_file_pimpl_), format, args); // NOLINT
+	const int items_scanned = ::vfscanf(reinterpret_cast<FILE*>(m_file_pimpl_), format, args); // NOLINT(clang-analyzer-core.NonNullParamChecker)
 	va_end(args);
 
 	hxassert_always(items_scanned != EOF || ((m_open_mode_ & hxfile::skip_asserts) != 0u), "vfscanf %s", ::strerror(errno));

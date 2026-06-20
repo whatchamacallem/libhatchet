@@ -79,7 +79,7 @@ inline hxconstexpr auto hxconstexpr_list<node_t_, deleter_t_>::iterator::operato
 
 template<typename node_t_, typename deleter_t_>
 inline hxconstexpr hxconstexpr_list<node_t_, deleter_t_>::hxconstexpr_list(void) {
-	m_size_ = 0u;
+	m_size_ = 0;
 	m_sentinel_.m_list_prev_ = &m_sentinel_;
 	m_sentinel_.m_list_next_ = &m_sentinel_;
 }
@@ -109,8 +109,8 @@ inline hxconstexpr auto hxconstexpr_list<node_t_, deleter_t_>::end(void) const -
 template<typename node_t_, typename deleter_t_>
 template<typename deleter_override_t_>
 inline hxconstexpr void hxconstexpr_list<node_t_, deleter_t_>::clear(
-	const deleter_override_t_& deleter_) {
-	if(m_size_ != 0u) {
+		const deleter_override_t_& deleter_) noexcept {
+	if(m_size_ != 0) {
 		if(deleter_) {
 			hxconst_list_node* n_ = m_sentinel_.m_list_next_;
 			while(n_ != &m_sentinel_) {
@@ -230,13 +230,13 @@ template<typename node_t_, typename deleter_t_>
 inline hxconstexpr void hxconstexpr_list<node_t_, deleter_t_>::release_all(void) {
 	m_sentinel_.m_list_prev_ = &m_sentinel_;
 	m_sentinel_.m_list_next_ = &m_sentinel_;
-	m_size_ = 0u;
+	m_size_ = 0;
 }
 
 template<typename node_t_, typename deleter_t_>
 template<typename predicate_t_>
-inline hxconstexpr size_t hxconstexpr_list<node_t_, deleter_t_>::remove_if(predicate_t_ predicate_) {
-	size_t count_ = 0u;
+inline hxconstexpr hxsize_t hxconstexpr_list<node_t_, deleter_t_>::remove_if(predicate_t_ predicate_) {
+	hxsize_t count_ = 0;
 	hxconst_list_node* n_ = m_sentinel_.m_list_next_;
 	while(n_ != &m_sentinel_) {
 		hxconst_list_node* next_ = n_->m_list_next_;

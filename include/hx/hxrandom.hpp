@@ -70,7 +70,7 @@ public:
 	/// `uint32_t` generated using `u32`.
 	/// - `bytes` : Non-null pointer to a buffer large enough for `count` bytes.
 	/// - `count` : Number of bytes to read.
-	void read(void* bytes_, size_t count_) hxattr_nonnull(2) {
+	void read(void* bytes_, hxsize_t count_) hxattr_nonnull(2) {
 		read(static_cast<uint8_t*>(bytes_), count_);
 	}
 
@@ -79,7 +79,7 @@ public:
 	/// `uint32_t` generated using `u32`.
 	/// - `chars` : Non-null pointer to a buffer large enough for `count` characters.
 	/// - `count` : Number of bytes to read.
-	hxconstexpr void read(uint8_t* chars_, size_t count_) hxattr_nonnull(2) {
+	hxconstexpr void read(uint8_t* chars_, hxsize_t count_) hxattr_nonnull(2) {
 		while(count_>=4) {
 			const uint32_t x_ = this->u32();
 			*chars_++ = static_cast<uint8_t>(x_);
@@ -88,12 +88,12 @@ public:
 			*chars_++ = static_cast<uint8_t>(x_ >> 24);
 			count_ -= 4;
 		}
-		if(count_ != 0u) {
+		if(count_ > 0) {
 			uint32_t x_ = this->u32();
 			do {
 				*chars_++ = static_cast<uint8_t>(x_);
 				x_ >>= 8;
-			} while(--count_ != 0u)
+			} while(--count_ > 0)
 				/* */;
 		}
 	}

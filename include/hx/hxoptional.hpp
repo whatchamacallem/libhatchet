@@ -16,9 +16,6 @@
 
 HX_NS_BEGIN_
 
-// ----------------------------------------------------------------------------
-// hxis_hxoptional_
-
 /// \cond HIDDEN
 template<typename T_> class hxoptional;
 
@@ -30,21 +27,15 @@ template<typename U_> struct hxis_hxoptional_<hxoptional<U_>> : hxtrue_t { };
 }
 /// \endcond
 
-// ----------------------------------------------------------------------------
-// hxnullopt_t / hxnullopt
-
 /// `hxnullopt_t` - A tag type used to construct a disengaged `hxoptional`.
 struct hxnullopt_t {
 	/// Explicit constructor prevents implicit construction from `{}`.
-	explicit hxnullopt_t(int) { }
+	explicit constexpr hxnullopt_t(int) { }
 };
 
 /// `hxnullopt` - A sentinel value of type `hxnullopt_t` representing a
 /// disengaged `hxoptional`. Implements `std::nullopt`.
-#define hxnullopt hxnullopt_t(0)
-
-// ----------------------------------------------------------------------------
-// hxoptional
+hxinline_constexpr hxnullopt_t hxnullopt{0};
 
 /// `hxoptional<T>` - Holds either a value of type `T` or nothing. Implements
 /// `std::optional`. The value is stored in aligned internal storage without
@@ -64,7 +55,7 @@ public:
 
 	/// Copy constructor. Copies the engaged state and value from `other`.
 	/// - `other` : The `hxoptional` to copy from.
-	hxoptional(const hxoptional& other_);
+	hxoptional(const hxoptional& other_) noexcept;
 
 	/// Move constructor. Moves the engaged state and value from `other`.
 	/// `other` is left disengaged.
@@ -75,21 +66,21 @@ public:
 	/// `other_` to `T_`. `U_` must be convertible to `T_`.
 	/// - `other_` : The `hxoptional` to copy from.
 	template<typename U_>
-	hxoptional(const hxoptional<U_>& other_);
+	hxoptional(const hxoptional<U_>& other_) noexcept;
 
 	/// Constructs by moving the engaged state and converting the value of
 	/// `other_` to `T_`. `other_` is left disengaged. `U_` must be
 	/// convertible to `T_`.
 	/// - `other_` : The `hxoptional` to move from.
 	template<typename U_>
-	hxoptional(hxoptional<U_>&& other_);
+	hxoptional(hxoptional<U_>&& other_) noexcept;
 
 	/// Constructs an engaged `hxoptional` by forwarding `value` into storage.
 	/// - `value` : The value to construct from. Must be convertible to `T`.
 	template<typename U_=T_, hxenable_if_t<
 		!hxis_same<hxremove_cvref_t<U_>, hxoptional>::value &&
 		!hxdetail_::hxis_hxoptional_<hxremove_cvref_t<U_>>::value, bool> = true>
-	hxoptional(U_&& value_);
+	hxoptional(U_&& value_) noexcept;
 
 	/// Destroys the contained value if engaged.
 	~hxoptional(void) { reset(); }
@@ -113,7 +104,7 @@ public:
 
 	/// Copy assignment. Destroys any current value, then copies from `other`.
 	/// - `other` : The `hxoptional` to copy from.
-	hxoptional& operator=(const hxoptional& other_);
+	hxoptional& operator=(const hxoptional& other_) noexcept;
 
 	/// Move assignment. Destroys any current value, then moves from `other`.
 	/// `other` is left disengaged.
@@ -127,7 +118,7 @@ public:
 	/// Assigns `value` by forwarding, engaging the optional.
 	/// - `value` : The value to assign from. Must be convertible to `T`.
 	template<typename U_=T_, hxenable_if_t<!hxis_same<hxremove_cvref_t<U_>, hxoptional>::value, bool> = true>
-	hxoptional& operator=(U_&& value_);
+	hxoptional& operator=(U_&& value_) noexcept;
 
 	/// Returns `true` if both optionals are disengaged or both are engaged with
 	/// equal values.
@@ -161,14 +152,14 @@ public:
 	/// previous value.
 	/// - `args` : Arguments forwarded to the constructor of `T`.
 	template<typename... args_t_>
-	T_& emplace(args_t_&&... args_);
+	T_& emplace(args_t_&&... args_) noexcept;
 
 	/// Returns `true` if the optional contains a value.
 	hxattr_nodiscard bool has_value(void) const { return m_engaged_; }
 
 	/// Destroys the contained value if engaged and leaves the optional
 	/// disengaged.
-	void reset(void);
+	void reset(void) noexcept;
 
 	/// Exchanges the contents with `other`. Both engaged states and values are
 	/// swapped.
@@ -190,9 +181,6 @@ private:
 	alignas(T_) char m_storage_[sizeof(T_)];
 	bool m_engaged_;
 };
-
-// ----------------------------------------------------------------------------
-// hxmake_optional
 
 /// `hxmake_optional` - Returns an engaged `hxoptional<hxremove_cvref_t<T>>`
 /// constructed by forwarding `value`.

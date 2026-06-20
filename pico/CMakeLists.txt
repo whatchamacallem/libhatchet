@@ -27,12 +27,14 @@ pico_sdk_init()
 
 add_subdirectory($ENV{LIBHATCHET_PATH} libhatchet)
 
+# The pico sdk doesn't support disabling the C++ headers.
 target_compile_definitions(hatchet PUBLIC
+    HX_SKIP_LIBCXX_CHECK=1
+    HX_PROVIDE_NEW_DELETE=1
     HX_HARDENING_MODE=HX_HARDENING_MODE_VERBOSE
     HX_USE_FILE_IO=0
     HX_USE_THREADS=0
     HX_USE_LIBCXX=0
-    HX_PROVIDE_NEW_DELETE=1
     HX_USE_PROFILER=0
     HX_USE_CONSOLE=0
     HX_MEMORY_BUDGET_TEMPORARY_STACK=200000

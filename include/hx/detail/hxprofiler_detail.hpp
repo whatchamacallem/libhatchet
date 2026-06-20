@@ -65,7 +65,7 @@ public:
 #endif
 
 	// For testing.
-	size_t records_size_(void) { return m_records.size(); }
+	hxsize_t records_size_(void) { return m_records.size(); }
 	void records_clear_(void) { m_records.clear(); }
 
 private:

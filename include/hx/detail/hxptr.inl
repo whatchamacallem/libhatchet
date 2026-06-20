@@ -16,7 +16,7 @@ hxconstexpr hxptr<T_, deleter_t_>::hxptr(hxptr&& other_) noexcept : m_ptr_(other
 }
 
 template<typename T_, typename deleter_t_>
-hxconstexpr hxptr<T_, deleter_t_>::~hxptr(void) {
+hxconstexpr hxptr<T_, deleter_t_>::~hxptr(void) noexcept {
 	if(m_ptr_ != hxnull) {
 		deleter_t_()(m_ptr_);
 	}
@@ -43,12 +43,6 @@ template<typename T_, typename deleter_t_>
 hxconstexpr T_* hxptr<T_, deleter_t_>::operator->(void) const {
 	hxassertmsg(m_ptr_ != hxnull, "null_ptr");
 	return m_ptr_;
-}
-
-template<typename T_, typename deleter_t_>
-hxconstexpr T_& hxptr<T_, deleter_t_>::operator[](size_t n_) const {
-	hxassertmsg(m_ptr_ != hxnull, "null_ptr");
-	return m_ptr_[n_];
 }
 
 template<typename T_, typename deleter_t_>
@@ -80,13 +74,13 @@ hxconstexpr bool hxptr<T_, deleter_t_>::operator!=(hxnullptr_t) const {
 
 template<typename T_, typename deleter_t_>
 hxconstexpr T_* hxptr<T_, deleter_t_>::release(void) {
-	T_* ptr_ = m_ptr_;
+	T_* const ptr_ = m_ptr_;
 	m_ptr_ = hxnull;
 	return ptr_;
 }
 
 template<typename T_, typename deleter_t_>
-hxconstexpr void hxptr<T_, deleter_t_>::reset(T_* ptr_) {
+hxconstexpr void hxptr<T_, deleter_t_>::reset(T_* ptr_) noexcept {
 	hxassertmsg(ptr_ != m_ptr_ || m_ptr_ == hxnull, "self_reset");
 	if(m_ptr_ != hxnull) {
 		deleter_t_()(m_ptr_);
@@ -95,7 +89,7 @@ hxconstexpr void hxptr<T_, deleter_t_>::reset(T_* ptr_) {
 }
 
 template<typename T_, typename deleter_t_>
-hxconstexpr void hxptr<T_, deleter_t_>::swap(hxptr& other_) noexcept {
+hxconstexpr void hxptr<T_, deleter_t_>::swap(hxptr& other_) {
 	T_* tmp_ = m_ptr_;
 	m_ptr_ = other_.m_ptr_;
 	other_.m_ptr_ = tmp_;

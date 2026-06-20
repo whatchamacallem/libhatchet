@@ -30,7 +30,7 @@ run_example() {
 	rm -rf ./build
 	meson setup build --buildtype=debug -Dc_args="$C_FLAGS" -Dcpp_args="$CPP_FLAGS" \
 		-Dcpp_link_args="$LINK_FLAGS" -Dbuild_example=true "$@"
-		
+
 	ninja -v -C build
 
 	cp "example/example.cfg" ./build/example

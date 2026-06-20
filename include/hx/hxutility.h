@@ -46,7 +46,8 @@ HX_NS_BEGIN_
 // C and C++ Utilities
 
 /// Returns the size of a C array. Rejects pointer arguments at compile time.
-template<typename T_, size_t N_> hxattr_nodiscard constexpr size_t hxsize(T_ (&)[N_]) { return N_; }
+template<typename T_, hxsize_t N_> hxattr_nodiscard constexpr
+hxsize_t hxsize(T_ (&)[N_]) { return N_; }
 
 // ----------------------------------------------------------------------------
 // C++ SFINAE (Substitution Failure Is Not An Error) based enable_if checks.
@@ -61,9 +62,6 @@ template<typename type_> struct hxenable_if_<true, type_> { using type = type_; 
 template<bool condition_, typename type_=void>
 using hxenable_if_t = typename hxenable_if_<condition_, type_>::type;
 
-// ----------------------------------------------------------------------------
-// hxnullptr/hxnullptr_t
-
 /// `hxnullptr_t` - A class that will only convert to a null `T` pointer. Useful
 /// when an integer constant arg would be ambiguous or otherwise break template
 /// code. `hxnullptr` is a `hxnullptr_t`. Use plain `hxnull` for comparisons.
@@ -71,7 +69,7 @@ class hxnullptr_t {
 public:
 	/// Null `T` pointer.
 	template<typename T_> constexpr operator T_*() const { return 0; }
-	/// Null `T` member function pointer.
+	/// Null `T` method pointer.
 	template<typename T_, typename M_> constexpr operator M_ T_::*() const { return 0; }
 private:
 	// No address-of operator.
@@ -83,9 +81,6 @@ private:
 /// break template code. `hxnullptr` is a `hxnullptr_t`. Use plain `hxnull` for
 /// `==` and `!=` comparisons.
 hxinline_constexpr hxnullptr_t hxnullptr{};
-
-// ----------------------------------------------------------------------------
-// C++ Type Modifiers
 
 /// Internal. Implements `std::remove_cv`.
 /// \cond HIDDEN
@@ -125,9 +120,6 @@ template<typename T_> using hxremove_cvref_t = hxremove_cv_t<hxremove_reference_
 /// Implements `std::declval`. Returns a `T&&` reference for use in unevaluated
 /// contexts such as `decltype`. Must not be called or defined.
 template<typename T_> T_&& hxdeclval(void) noexcept;
-
-// ----------------------------------------------------------------------------
-// C++ Type Traits
 
 /// Implements `std::true_type`.
 struct hxtrue_t { constexpr static bool value = true; };
@@ -213,9 +205,6 @@ template<> struct hxis_void_<void> : public hxtrue_t { };
 
 /// Implements `std::is_void`.
 template<typename T_> struct hxis_void : public hxis_void_<hxremove_cv_t<T_>> { };
-
-// ----------------------------------------------------------------------------
-// C++ Utilities
 
 /// \cond HIDDEN
 template<typename T_> struct hxrestrict_t_ { using type = T_; };
@@ -335,9 +324,9 @@ template<typename T_>
 void hxswap_memcpy(T_& x_, T_& y_) {
 	hxassertmsg(&x_ != &y_, "hxswap_memcpy No swapping with self.");
 	char t_[sizeof x_];
-	::memcpy(t_, &y_, sizeof x_);
-	::memcpy(static_cast<void*>(&y_), &x_, sizeof x_);
-	::memcpy(static_cast<void*>(&x_), t_, sizeof x_);
+	::memcpy(t_, &y_, sizeof x_); // NOLINT(bugprone-undefined-memory-manipulation)
+	::memcpy(static_cast<void*>(&y_), &x_, sizeof x_); // NOLINT(bugprone-undefined-memory-manipulation)
+	::memcpy(static_cast<void*>(&x_), t_, sizeof x_); // NOLINT(bugprone-undefined-memory-manipulation)
 }
 
 HX_NS_END_

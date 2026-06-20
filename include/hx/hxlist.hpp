@@ -6,6 +6,7 @@
 /// \file hxlist.hpp An embedded doubly linked list with intrusive node linkage.
 /// This is the same as `hxconstexpr_list` except that it does not work with
 /// `constexpr` as it uses pointer arithmetic to save one pointer per-node.
+/// It should be exception safe even if `deleter_t`'s constructor throws.
 
 #include "libhatchet.h"
 
@@ -205,13 +206,13 @@ public:
 	/// false nodes are unlinked but not freed.
 	/// - `deleter` : Override deleter callable. Called only if it evaluates to true.
 	template<typename deleter_override_t_>
-	void clear(const deleter_override_t_& deleter_);
+	void clear(const deleter_override_t_& deleter_) noexcept;
 
 	/// Removes all nodes using the list's default `deleter_t`.
 	void clear(void) { this->clear(deleter_t_()); }
 
 	/// Returns `true` if the list contains no nodes.
-	hxattr_nodiscard bool empty(void) const { return m_size_ == 0u; }
+	hxattr_nodiscard bool empty(void) const { return m_size_ == 0; }
 
 	/// Returns an iterator to the sentinel, representing one past the last node.
 	/// This is also the iterator to one before the first node.
@@ -308,14 +309,14 @@ public:
 	/// default deleter on each removed node.
 	/// - `predicate` : A callable taking a `node_t` reference, returning bool.
 	template<typename predicate_t_>
-	size_t remove_if(predicate_t_ predicate_);
+	hxsize_t remove_if(predicate_t_ predicate_);
 
 	/// Reverses the order of nodes in the list in-place. WARNING: Iterators are
 	/// invalidated.
 	void reverse(void);
 
 	/// Returns the number of nodes currently in the list.
-	hxattr_nodiscard size_t size(void) const { return m_size_; }
+	hxattr_nodiscard hxsize_t size(void) const { return m_size_; }
 
 	/// Transfers all nodes from `other` and inserts them before `pos`, taking
 	/// ownership. `other` is left empty after the call.
@@ -332,7 +333,7 @@ private:
 	void insert_(hxlist_node* prev_, hxlist_node* next_, hxlist_node* ptr_);
 	void extract_(hxlist_node* prev_, hxlist_node* ptr_);
 
-	size_t m_size_;
+	hxsize_t m_size_;
 	hxlist_node m_sentinel_;
 	// When empty m_sentinel_.m_list_link_ == 0 and m_tail_ == &m_sentinel_.
 	hxlist_node* m_tail_;

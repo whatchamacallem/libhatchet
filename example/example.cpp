@@ -88,7 +88,7 @@ hxconsole_command_named(example_out, out);
 // parallel by example_render via hxtask_queue.
 class example_row_task : public hx::hxtask {
 public:
-	void set(size_t row, double center_x, double center_y, double zoom, size_t max_iter, char* row_buffer) {
+	void set(hxsize_t row, double center_x, double center_y, double zoom, hxsize_t max_iter, char* row_buffer) {
 		m_row		 = row;
 		m_center_x   = center_x;
 		m_center_y   = center_y;
@@ -108,11 +108,11 @@ public:
 		const double imaginary_origin = m_center_y + (static_cast<double>(m_row) - 19.5) * row_scale;
 		char* dst = m_row_buffer;
 
-		for(size_t col = 0; col < 80; ++col) {
+		for(hxsize_t col = 0; col < 80; ++col) {
 			const double real_origin = m_center_x + (static_cast<double>(col) - 39.5) * col_scale;
 			double real = 0.0;
 			double imaginary = 0.0;
-			size_t iter = 0;
+			hxsize_t iter = 0;
 			while(iter < m_max_iter) {
 				const double real_squared = real * real;
 				const double imaginary_squared = imaginary * imaginary;
@@ -148,26 +148,26 @@ public:
 	const char* get_label(void) const override { return "row"; }
 
 private:
-	size_t m_row;
+	hxsize_t m_row;
 	double m_center_x;
 	double m_center_y;
 	double m_zoom;
-	size_t m_max_iter;
-	char*  m_row_buffer;
+	hxsize_t m_max_iter;
+	char* m_row_buffer;
 };
 
 // Enqueues all 40 row tasks, waits for completion, then prints the frame.
 // max_iter is scaled with zoom so detail increases as the view narrows. Writes
 // a Chrome tracing profile to profile.json after each render.
-bool example_render(hx::hxtask_queue& queue, hx::hxarray<example_row_task, 40u>& tasks,
-		hx::hxarray<hx::hxarray<char, 2048u>, 40u>& row_storage) {
-	size_t max_iter = static_cast<size_t>(50.0 * ::sqrt(::sqrt(1.0 / s_example_zoom))) + 20;
+bool example_render(hx::hxtask_queue& queue, hx::hxarray<example_row_task, 40>& tasks,
+		hx::hxarray<hx::hxarray<char, 2048>, 40>& row_storage) {
+	hxsize_t max_iter = static_cast<hxsize_t>(50.0 * ::sqrt(::sqrt(1.0 / s_example_zoom))) + 20;
 	if(max_iter < 64)   { max_iter = 64; }
 	if(max_iter > 4096) { max_iter = 4096; }
 
 	hxprofiler_start();
 
-	for(size_t row = 0u; row < 40u; ++row) {
+	for(hxsize_t row = 0; row < 40; ++row) {
 		tasks[row].set(row, s_example_center_x, s_example_center_y, s_example_zoom,
 			max_iter, row_storage[row].data());
 		queue.enqueue(&tasks[row]);
@@ -177,7 +177,7 @@ bool example_render(hx::hxtask_queue& queue, hx::hxarray<example_row_task, 40u>&
 	hxprofiler_stop();
 	hxprofiler_write_to_chrome_tracing("profile.json");
 
-	for(size_t row = 0; row < 40u; ++row) {
+	for(hxsize_t row = 0; row < 40; ++row) {
 		hx::hxout.print("%s", row_storage[row].data());
 	}
 
@@ -216,11 +216,11 @@ int example_main(void) {
 		hx::hxout << "error: example.cfg not found or failed to execute\n";
 		exit_code = EXIT_FAILURE;
 	} else {
-		hx::hxarray<hx::hxarray<char, 2048u>, 40u>* row_storage =
-			hx::hxnew<hx::hxarray<hx::hxarray<char, 2048u>, 40u>>();
+		hx::hxarray<hx::hxarray<char, 2048>, 40>* row_storage =
+			hx::hxnew<hx::hxarray<hx::hxarray<char, 2048>, 40>>();
 
-		hx::hxtask_queue queue(40u, 8u);
-		hx::hxarray<example_row_task, 40u> tasks;
+		hx::hxtask_queue queue(40, 8);
+		hx::hxarray<example_row_task, 40> tasks;
 
 		example_render(queue, tasks, *row_storage);
 		example_usage();

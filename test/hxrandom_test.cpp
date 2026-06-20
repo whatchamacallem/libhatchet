@@ -9,9 +9,7 @@
 HX_NS_USE
 
 TEST(hxrandom_test, generation) {
-	hxrandom rng(1u);
-
-	// "Automatically casts to an unsigned integer or floating point value."
+	hxrandom rng(1);
 	uint8_t uint8 = 0u;
 	uint16_t uint16 = 0u;
 	uint32_t uint32 = 0u;
@@ -20,20 +18,11 @@ TEST(hxrandom_test, generation) {
 	uint16 = rng.u16();
 	uint32 = rng();
 	uint64 = rng.u64();
-
-	// None of these should be zero on the second sample.
 	EXPECT_NE((static_cast<uint64_t>(uint8) * static_cast<uint64_t>(uint16) *
 		static_cast<uint64_t>(uint32) * static_cast<uint64_t>(uint64)), 0u);
-
 	for(int s=100; s-- != 0;) {
-		// "Automatically casts to an unsigned integer or floating point value."
-		// Grab floats in [0..1).
 		const float f = rng.f01();
 		const double d = rng.d01();
-
-		// WARNING: While 0.0 is legal, it is being treated as an error
-		// because it is likely to be so. The odds of hitting zero in the first
-		// 200 numbers is effectively zero.
 		EXPECT_TRUE(f > 0.0f && f < 1.0f);
 		EXPECT_TRUE(d > 0.0 && d < 1.0);
 	}
@@ -41,24 +30,17 @@ TEST(hxrandom_test, generation) {
 
 TEST(hxrandom_test, read_populates_buffer) {
 	hxrandom rng(0x654321u);
-
 	uint8_t buffer[] = {
 		0xefu, 0xefu, 0xefu, 0xefu,
 		0xefu, 0xefu, 0xefu, 0xefu,
 		0xefu
 	};
-	const size_t size = hxsize(buffer);
-	const size_t read_count = size - 2; // 7. Intentionally odd.
-
-	// "Reads a specified number of random bytes into the provided buffer."
-	// Little-endian stream should match manual u32 sequence.
+	const hxsize_t size = hxsize(buffer);
+	const hxsize_t read_count = size - 2;
 	rng.read(buffer, read_count);
-
 	hxrandom verifier(0x654321u);
-	size_t remaining = read_count;
+	hxsize_t remaining = read_count;
 	const uint8_t* expected = buffer;
-
-	// This just documents an expected interface and sequence.
 	while(remaining >= 4) {
 		const uint32_t x = verifier.u32();
 		EXPECT_EQ(*expected++, static_cast<uint8_t>(x));
@@ -75,18 +57,84 @@ TEST(hxrandom_test, read_populates_buffer) {
 		} while(--remaining != 0u)
 			/**/;
 	}
-
-	// Check for a tail overwrite.
-	for(size_t i = read_count; i < size; ++i) {
+	for(hxsize_t i = read_count; i < size; ++i) {
 		EXPECT_EQ(buffer[i], 0xefu);
 	}
+}
+
+TEST(hxrandom_test, read_exactly_four_bytes) {
+	uint8_t buf[5] = { 0xefu, 0xefu, 0xefu, 0xefu, 0xefu };
+	hxrandom rng(0xabcdu);
+	rng.read(buf, 4);
+	hxrandom verifier(0xabcdu);
+	const uint32_t word = verifier.u32();
+	EXPECT_EQ(buf[0], static_cast<uint8_t>(word));
+	EXPECT_EQ(buf[1], static_cast<uint8_t>(word >> 8));
+	EXPECT_EQ(buf[2], static_cast<uint8_t>(word >> 16));
+	EXPECT_EQ(buf[3], static_cast<uint8_t>(word >> 24));
+	EXPECT_EQ(buf[4], 0xefu);
+}
+
+TEST(hxrandom_test, read_exactly_one_byte) {
+	uint8_t buf[2] = { 0xefu, 0xefu };
+	hxrandom rng(0x1111u);
+	rng.read(buf, 1);
+	hxrandom verifier(0x1111u);
+	const uint32_t word = verifier.u32();
+	EXPECT_EQ(buf[0], static_cast<uint8_t>(word));
+	EXPECT_EQ(buf[1], 0xefu);
+}
+
+TEST(hxrandom_test, read_exactly_eight_bytes) {
+	uint8_t buf[9];
+	for(hxsize_t i = 0; i < 9; ++i) { buf[i] = 0xefu; }
+	hxrandom rng(0xdeadu);
+	rng.read(buf, 8);
+	hxrandom verifier(0xdeadu);
+	const uint32_t w0 = verifier.u32();
+	const uint32_t w1 = verifier.u32();
+	EXPECT_EQ(buf[0], static_cast<uint8_t>(w0));
+	EXPECT_EQ(buf[1], static_cast<uint8_t>(w0 >> 8));
+	EXPECT_EQ(buf[2], static_cast<uint8_t>(w0 >> 16));
+	EXPECT_EQ(buf[3], static_cast<uint8_t>(w0 >> 24));
+	EXPECT_EQ(buf[4], static_cast<uint8_t>(w1));
+	EXPECT_EQ(buf[5], static_cast<uint8_t>(w1 >> 8));
+	EXPECT_EQ(buf[6], static_cast<uint8_t>(w1 >> 16));
+	EXPECT_EQ(buf[7], static_cast<uint8_t>(w1 >> 24));
+	EXPECT_EQ(buf[8], 0xefu);
+}
+
+TEST(hxrandom_test, f01_bounds) {
+	hxrandom rng(99999u);
+	float max_val = 0.0f;
+	float min_val = 1.0f;
+	for(int i = 10000; i-- != 0;) {
+		const float f = rng.f01();
+		if(f > max_val) { max_val = f; }
+		if(f < min_val) { min_val = f; }
+	}
+	EXPECT_LT(max_val, 1.0f);
+	EXPECT_GE(min_val, 0.0f);
+	EXPECT_GT(max_val, 0.5f);
+}
+
+TEST(hxrandom_test, d01_bounds) {
+	hxrandom rng(77777u);
+	double max_val = 0.0;
+	double min_val = 1.0;
+	for(int i = 10000; i-- != 0;) {
+		const double d = rng.d01();
+		if(d > max_val) { max_val = d; }
+		if(d < min_val) { min_val = d; }
+	}
+	EXPECT_LT(max_val, 1.0);
+	EXPECT_GE(min_val, 0.0);
+	EXPECT_GT(max_val, 0.5);
 }
 
 TEST(hxrandom_test, range) {
 	hxrandom rng(30000);
 	for(int s=100; s-- != 0;) {
-		// "Returns a random number in the range [base..base+range)." Validate
-		// overloads across integral and floating types.
 		EXPECT_TRUE(rng.range('a', static_cast<char>(10)) >= 'a' &&
 			rng.range('a', static_cast<char>(10)) < static_cast<char>('a' + 10));
 		EXPECT_TRUE(rng.range(1000,100) >= 1000 && rng.range(1000,100) < 1100);
@@ -97,8 +145,6 @@ TEST(hxrandom_test, range) {
 		EXPECT_TRUE(rng.range(1000ull,100ull) >= 1000ull && rng.range(1000ull,100ull) < 1100ull);
 		EXPECT_TRUE(rng.range(1000.0f,100.0f) >= 1000.0f && rng.range(1000.0f,100.0f) < 1100.0f);
 		EXPECT_TRUE(rng.range(1000.0,100.0) >= 1000.0 && rng.range(1000.0,100.0) < 1100.0);
-
-		// Check that the RNG isn't just spitting out zeros.
 		EXPECT_TRUE(rng() | rng());
 	}
 }
@@ -106,16 +152,14 @@ TEST(hxrandom_test, range) {
 TEST(hxrandom_test, histogram) {
 	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
 	hxrandom rng(40000);
-	constexpr int buckets = 1 << 10; // 1k buckets.
+	constexpr int buckets = 1 << 10;
 	constexpr int iters = 1000;
-	constexpr int max = 1100; // 10% above the average maximum.
+	constexpr int max = 1100;
 	hxarray<int, buckets> hist(0);
-
 	for(int i=(buckets*iters); i-- != 0;) {
-		// Doesn't require an unsigned type for %. No floating point math is used.
-		++hist[static_cast<size_t>(rng() % (buckets - 1))];
+		++hist[static_cast<hxsize_t>(rng() % (buckets - 1))];
 	}
-	for(size_t i=buckets; i-- != 0u;) {
+	for(hxsize_t i=buckets; i-- != 0u;) {
 		EXPECT_LE(hist[i], max);
 	}
 }
@@ -123,25 +167,20 @@ TEST(hxrandom_test, histogram) {
 TEST(hxrandom_test, histogram_f) {
 	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
 	hxrandom rng(40000);
-	constexpr int buckets = 1000; // 1k buckets.
+	constexpr int buckets = 1000;
 	constexpr int iters = 1000;
-	constexpr int max = 1150; // 15% above the average maximum.
+	constexpr int max = 1150;
 	hxarray<int, buckets> hist(0);
-
 	for(int i=(buckets*iters); i-- != 0;) {
-		// Generate 64-bit doubles.
-		++hist[static_cast<size_t>(rng.range(0.0, static_cast<double>(buckets)))];
+		++hist[static_cast<hxsize_t>(rng.range(0.0, static_cast<double>(buckets)))];
 	}
-	for(size_t i=buckets; i-- != 0u;) {
+	for(hxsize_t i=buckets; i-- != 0u;) {
 		EXPECT_LE(hist[i], max);
 	}
 }
-
 #if HX_CPLUSPLUS >= 202302L
-
 namespace {
 
-// Returns true when u64 produces output across a sequence.
 consteval bool hxtest_hxrandom_consteval_range(void) {
 	hxrandom rng(42u);
 	for(int i_ = 0; i_ < 16; ++i_) {
@@ -152,10 +191,7 @@ consteval bool hxtest_hxrandom_consteval_range(void) {
 	}
 	return true;
 }
-
 static_assert(hxtest_hxrandom_consteval_range(),
 	"hxrandom consteval: u64 must produce non-zero output across 16 steps");
-
-} // namespace {
-
+} // namespace
 #endif // HX_CPLUSPLUS >= 202302L

@@ -8,9 +8,9 @@ import traceback
 
 # hxhash_table uses this layout:
 #
-#	template<node_t_, hxhash_t table_size_bits_, bool multi_t_, typename deleter_t_>
+#	template<node_t_, typename deleter_t_, bool multi_t_, hxhash_t table_size_bits_>
 #	class hxhash_table {
-#		size_t m_size_;
+#		hxsize_t m_size_;
 #		hxhash_table_internal_allocator_<node_t_, table_size_bits_> m_table_;
 #	};
 #
@@ -45,7 +45,7 @@ class HxHashTablePrinter:
 			# Resolve bucket array pointer. hxhash_table_internal_allocator_
 			# inherits from hxallocator. For static capacity: m_data_ is an
 			# array. For dynamic: m_data_ is a pointer.
-			bits_arg = self.val.type.template_argument(1)
+			bits_arg = self.val.type.template_argument(3)
 			if bits_arg != 0:
 				bucket_addr = int(table['m_data_'].address)
 				bucket_count = 1 << int(bits_arg)

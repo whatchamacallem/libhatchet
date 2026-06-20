@@ -2,15 +2,16 @@
 # SPDX-License-Identifier: MIT
 # This file is licensed under the terms of the LICENSE.md file.
 #
-# The source code contains NOLINT markers in places where low-level C-style
-# memory manipulation is being performed. Annex K of the C11 standard was never
-# widely implemented and this library has very low-level work to do. The choice
-# to use NOLINT was made as it is clearer what is happening.
-#
-# Audit the NOLINT markers if low-level memory manipulation is a concern.
+# Regarding insecureAPI.DeprecatedOrUnsafeBufferHandling, Annex K of the C11
+# standard was never widely implemented. This is not a portable expectation.
 #
 # Using cppcoreguidelines-virtual-class-destructor is not possible because
-# virtual destructors cause link errors when ::delete is not implemented.
+# virtual destructors cause link errors when ::delete is not implemented. Please
+# remember to mark your base class destructors as virtual when needed as this is
+# not done for you in the provided virtual classes.
+#
+# Also audit the NOLINT markers linting is a concern for your project.
+#
 
 Checks: >
   -*,
@@ -62,14 +63,12 @@ Checks: >
   -bugprone-implicit-widening-of-multiplication-result,
   -bugprone-multi-level-implicit-pointer-conversion,
   -bugprone-sizeof-expression,
-  -bugprone-undefined-memory-manipulation,
-  -clang-analyzer-security.ArrayBound,
   -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
   -performance-enum-size,
   -performance-no-int-to-ptr,
   -portability-avoid-pragma-once
 
-# This was just wrong in v21.1.8.
+# misc-const-correctness.AnalyzePointers had too many false positives in v21.1.8.
 CheckOptions:
   misc-const-correctness.AnalyzePointers: 'false'
 FormatStyle: none

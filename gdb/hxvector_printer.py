@@ -8,7 +8,7 @@ import traceback
 
 # hxvector uses this allocation strategy:
 #
-#	template<typename T_, size_t fixed_capacity_>
+#	template<typename T_, hxsize_t fixed_capacity_>
 #	class hxallocator {
 #		// ...
 #		T_ m_data_[fixed_capacity_];
@@ -19,7 +19,7 @@ import traceback
 #		int m_capacity_;
 #		T_* m_data_;
 #	};
-#	template<typename T_, size_t capacity_=0>
+#	template<typename T_, hxsize_t capacity_=0>
 #	class hxvector : public hxallocator<T_, capacity_> {
 #		// ...
 #		T_* m_end_;

@@ -147,6 +147,7 @@
         "procps",
         "pthread",
         "pthreads",
+        "ptrdiff",
         "pushd",
         "pybind",
         "pycache",
@@ -231,6 +232,7 @@
         "Xclang"
     ],
     "C_Cpp.codeAnalysis.clangTidy.args": ["--config-file=${workspaceFolder}/.clang-tidy"],
+    "files.trimTrailingWhitespace": true,
     "markdownlint.config": {
         "MD033": {
             // Doxygen renders images with the alt text after them.

@@ -65,6 +65,13 @@ if file $(git ls-files) | grep CRLF; then
 	exit 1
 fi
 
+# Check for trailing whitespace.
+if grep -rnP '[ \t]+$' --include='*.h' --include='*.hpp' --include='*.inl' --include='*.c' \
+		--include='*.cpp' --include='*.md' --include='*.sh' . >&2; then
+	echo "error: Trailing whitespace found."
+	exit 1
+fi
+
 # Check text files end with exactly one newline.
 find . -type f \( -name "*.hpp" -o -name "*.cpp" -o -name "*.h" -o -name "*.c" -o -name "*.inl" \
 				-o -name "*.sh" -o -name "*.py" \) | while read -r FILE; do

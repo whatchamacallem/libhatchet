@@ -57,7 +57,7 @@ void hxprofiler_internal_::log_(void) {
 	m_is_started_ = false;
 
 	hxlog_handler(hxlog_level_console, "[ ");
-	for(size_t i = 0; i < m_records.size(); ++i) {
+	for(hxsize_t i = 0; i < m_records.size(); ++i) {
 		const hxprofiler_record_& rec = m_records[i];
 
 		if(i != 0) { hxlog_handler(hxlog_level_console, ",\n"); }
@@ -86,7 +86,7 @@ void hxprofiler_internal_::write_to_chrome_tracing_(const char* filename) {
 	if(!m_records.empty()) {
 		const hxcycles_t epoch = m_records[0].m_begin_;
 		bool first = true;
-		for(size_t i = 0; i < m_records.size(); ++i) {
+		for(hxsize_t i = 0; i < m_records.size(); ++i) {
 			const hxprofiler_record_& rec = m_records[i];
 
 			// Register wrapping can cause bad samples. Meanwhile Chrome has been

@@ -23,41 +23,35 @@ if [ ! -f build/build.ninja ]; then
 	rm -rf build
 	cmake -S . -B build -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 else
-	echo "found build/build.ninja..."
+	echo "Found build/build.ninja..."
 fi
 
 ninja -C build
 
-echo "run ./hxtest with GDB..."
+echo "Run build/hxtest with GDB..."
 cd build
-
-set +o errexit
 
 # Run the GDB smoke tests at the same time.
 gdb -batch -x ../test/gdb_printer_test.gdb ./hxtest > testcmake.sh.txt 2>&1
-CODE=$?
 
-set -o errexit
-
-if [ "$CODE" -ne 0 ]; then
-	# Dump everything a second time with all spew enabled.
-	cat testcmake.sh.txt
-	echo "Stopping due to build/hxtest returning $CODE."
-	exit "$CODE"
+# GDB exits 0 even after SIGTRAP so check for the summary line explicitly.
+if ! grep -qE '\[  PASSED  \]' testcmake.sh.txt; then
+	echo "GDB exited before test suite completed."
+	tail -5 testcmake.sh.txt
+	exit 1
 fi
 
-# Filter out critical status messages only. This should stop the test if no
-# output matches. The goal is to prevent AI from panicking over spew.
 grep -E '\[  PASSED  \]|\[  FAILED  \]|FAILED TESTS' testcmake.sh.txt
 
-
+echo "Listing GDB output:"
 cat gdb_printer_output.txt
 
 cd ..
 
 # Depends on -DCMAKE_EXPORT_COMPILE_COMMANDS=ON above. These two have to happen
 # together.
-echo 'run-clang-tidy... The "x warnings generated" messages are from system headers.'
-run-clang-tidy -quiet -j 0 -p build src/*.cpp test/*.cpp
+echo "Run clang-tidy..."
+run-clang-tidy -quiet -j 0 -p build src/*.cpp test/*.cpp 2>&1 \
+	| grep -vE '^[0-9]+ warnings generated\.$|^$'
 
 echo "🪓🪓🪓"

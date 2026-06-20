@@ -27,8 +27,8 @@ HX_NS_BEGIN_
 /// - `end` : Iterator to one past the last element in the range to search.
 /// - `predicate` : A callable returning true for elements to count.
 template<typename iterator_t_, typename predicate_t_> hxattr_hot hxattr_nodiscard hxconstexpr
-size_t hxcount_if(iterator_t_ begin_, iterator_t_ end_, const predicate_t_& predicate_) {
-	size_t count_ = size_t{0};
+hxsize_t hxcount_if(iterator_t_ begin_, iterator_t_ end_, const predicate_t_& predicate_) {
+	hxsize_t count_ = hxsize_t{0};
 	for(iterator_t_ it_ = begin_; it_ != end_; ++it_) {
 		if(predicate_(*it_)) {
 			++count_;
@@ -43,7 +43,7 @@ size_t hxcount_if(iterator_t_ begin_, iterator_t_ end_, const predicate_t_& pred
 /// - `obj` : The object whose value is replaced.
 /// - `new_value` : The value to assign to `obj`.
 template<typename T_, typename U_> hxattr_nodiscard hxconstexpr
-T_ hxexchange(T_& obj_, U_&& new_value_) {
+T_ hxexchange(T_& obj_, U_&& new_value_) noexcept {
 	T_ old_(hxmove(obj_));
 	obj_ = hxforward<U_>(new_value_);
 	return old_;
@@ -81,7 +81,7 @@ iterator_t_ hxfind_if(iterator_t_ begin_, iterator_t_ end_, const predicate_t_& 
 /// Returns an output iterator positioned one past the last element written.
 template<typename iterator_t_, typename output_iterator_t_, typename less_t_> hxattr_hot hxconstexpr
 output_iterator_t_ hxmerge(iterator_t_ begin0_, iterator_t_ end0_, iterator_t_ begin1_, iterator_t_ end1_,
-		output_iterator_t_&& output_, const less_t_& less_) {
+		output_iterator_t_&& output_, const less_t_& less_) noexcept {
 	hxassertmsg(begin0_ <= end0_ && begin1_ <= end1_, "invalid_iterator");
 	hxrestrict_t<iterator_t_> src0_(begin0_);
 	hxrestrict_t<iterator_t_> src1_(begin1_);
@@ -121,7 +121,7 @@ output_iterator_t_ hxmerge(iterator_t_ begin0_, iterator_t_ end0_, iterator_t_ b
 /// Returns an output iterator positioned one past the last element written.
 template<typename iterator_t_, typename output_iterator_t_> hxattr_hot hxconstexpr
 output_iterator_t_ hxmerge(iterator_t_ begin0_, iterator_t_ end0_, iterator_t_ begin1_,
-		iterator_t_ end1_, output_iterator_t_&& output_) {
+		iterator_t_ end1_, output_iterator_t_&& output_) noexcept {
 	return hxmerge<iterator_t_, output_iterator_t_>(begin0_, end0_, begin1_, end1_,
 		hxforward<output_iterator_t_>(output_), hxkey_less_t<decltype(*begin0_)>{});
 }
@@ -185,7 +185,7 @@ hxminmax_result<iterator_t_> hxminmax(iterator_t_ begin_, iterator_t_ end_) {
 /// Returns a pointer to one past the last element written.
 template<typename iterator_t_, typename output_iterator_t_, typename less_t_> hxattr_hot hxconstexpr
 output_iterator_t_ hxset_difference(iterator_t_ begin0_, iterator_t_ end0_, iterator_t_ begin1_,
-		iterator_t_ end1_, output_iterator_t_&& output_, const less_t_& less_) {
+		iterator_t_ end1_, output_iterator_t_&& output_, const less_t_& less_) noexcept {
 	hxassertmsg(begin0_ <= end0_ && begin1_ <= end1_, "invalid_iterator");
 	hxrestrict_t<iterator_t_> src0_(begin0_);
 	hxrestrict_t<iterator_t_> src1_(begin1_);
@@ -225,7 +225,7 @@ output_iterator_t_ hxset_difference(iterator_t_ begin0_, iterator_t_ end0_, iter
 /// Returns an output iterator positioned one past the last element written.
 template<typename iterator_t_, typename output_iterator_t_> hxattr_hot hxconstexpr
 output_iterator_t_ hxset_difference(iterator_t_ begin0_, iterator_t_ end0_, iterator_t_ begin1_,
-		iterator_t_ end1_, output_iterator_t_&& output_) {
+		iterator_t_ end1_, output_iterator_t_&& output_) noexcept {
 	return hxset_difference<iterator_t_, output_iterator_t_>(begin0_, end0_, begin1_, end1_,
 		hxforward<output_iterator_t_>(output_), hxkey_less_t<decltype(*begin0_)>{});
 }
@@ -248,7 +248,7 @@ output_iterator_t_ hxset_difference(iterator_t_ begin0_, iterator_t_ end0_, iter
 /// Returns a pointer to one past the last element written.
 template<typename iterator_t_, typename output_iterator_t_, typename less_t_> hxattr_hot hxconstexpr
 output_iterator_t_ hxset_intersection(iterator_t_ begin0_, iterator_t_ end0_, iterator_t_ begin1_,
-		iterator_t_ end1_, output_iterator_t_&& output_, const less_t_& less_) {
+		iterator_t_ end1_, output_iterator_t_&& output_, const less_t_& less_) noexcept {
 	hxassertmsg(begin0_ <= end0_ && begin1_ <= end1_, "invalid_iterator");
 	hxrestrict_t<iterator_t_> src0_(begin0_);
 	hxrestrict_t<iterator_t_> src1_(begin1_);
@@ -283,7 +283,7 @@ output_iterator_t_ hxset_intersection(iterator_t_ begin0_, iterator_t_ end0_, it
 /// Returns an output iterator positioned one past the last element written.
 template<typename iterator_t_, typename output_iterator_t_> hxattr_hot hxconstexpr
 output_iterator_t_ hxset_intersection(iterator_t_ begin0_, iterator_t_ end0_, iterator_t_ begin1_,
-		iterator_t_ end1_, output_iterator_t_&& output_) {
+		iterator_t_ end1_, output_iterator_t_&& output_) noexcept {
 	return hxset_intersection<iterator_t_, output_iterator_t_>(begin0_, end0_, begin1_, end1_,
 		hxforward<output_iterator_t_>(output_), hxkey_less_t<decltype(*begin0_)>{});
 }
@@ -306,7 +306,7 @@ output_iterator_t_ hxset_intersection(iterator_t_ begin0_, iterator_t_ end0_, it
 /// Returns a pointer to one past the last element written.
 template<typename iterator_t_, typename output_iterator_t_, typename less_t_> hxattr_hot hxconstexpr
 output_iterator_t_ hxset_union(iterator_t_ begin0_, iterator_t_ end0_, iterator_t_ begin1_,
-		iterator_t_ end1_, output_iterator_t_&& output_, const less_t_& less_) {
+		iterator_t_ end1_, output_iterator_t_&& output_, const less_t_& less_) noexcept {
 	hxassertmsg(begin0_ <= end0_ && begin1_ <= end1_, "invalid_iterator");
 	hxrestrict_t<iterator_t_> src0_(begin0_);
 	hxrestrict_t<iterator_t_> src1_(begin1_);
@@ -352,7 +352,7 @@ output_iterator_t_ hxset_union(iterator_t_ begin0_, iterator_t_ end0_, iterator_
 /// Returns an output iterator positioned one past the last element written.
 template<typename iterator_t_, typename output_iterator_t_> hxattr_hot hxconstexpr
 output_iterator_t_ hxset_union(iterator_t_ begin0_, iterator_t_ end0_, iterator_t_ begin1_,
-		iterator_t_ end1_, output_iterator_t_&& output_) {
+		iterator_t_ end1_, output_iterator_t_&& output_) noexcept {
 	return hxset_union<iterator_t_, output_iterator_t_>(begin0_, end0_, begin1_, end1_,
 		hxforward<output_iterator_t_>(output_), hxkey_less_t<decltype(*begin0_)>{});
 }
@@ -366,7 +366,7 @@ output_iterator_t_ hxset_union(iterator_t_ begin0_, iterator_t_ end0_, iterator_
 /// - `end` : Iterator to one past the last element in the range.
 /// - `equal` : A callable returning true when two elements are considered equal.
 template<typename iterator_t_, typename equal_t_> hxattr_hot hxattr_nodiscard hxconstexpr
-iterator_t_ hxunique(iterator_t_ begin_, iterator_t_ end_, const equal_t_& equal_) {
+iterator_t_ hxunique(iterator_t_ begin_, iterator_t_ end_, const equal_t_& equal_) noexcept {
 	if(begin_ == end_) { return end_; }
 	iterator_t_ dst_ = begin_;
 	for(iterator_t_ src_ = begin_ + ptrdiff_t{1}; src_ != end_; ++src_) {
@@ -383,7 +383,7 @@ iterator_t_ hxunique(iterator_t_ begin_, iterator_t_ end_, const equal_t_& equal
 /// - `begin` : Iterator to the beginning of the range.
 /// - `end` : Iterator to one past the last element in the range.
 template<typename iterator_t_> hxattr_hot hxattr_nodiscard hxconstexpr
-iterator_t_ hxunique(iterator_t_ begin_, iterator_t_ end_) {
+iterator_t_ hxunique(iterator_t_ begin_, iterator_t_ end_) noexcept {
 	return hxunique<iterator_t_>(begin_, end_, hxkey_equal_t<decltype(*begin_)>{});
 }
 

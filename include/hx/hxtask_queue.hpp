@@ -45,7 +45,7 @@ public:
 	/// Creates a new task queue. `task_queue_size` reserves storage for enqueued
 	/// tasks. `thread_pool_size` determines the size of the worker thread pool.
 	/// A `thread_pool_size` of `0` does not use threads.
-	explicit hxtask_queue(size_t task_queue_size_, size_t thread_pool_size_);
+	explicit hxtask_queue(hxsize_t task_queue_size_, hxsize_t thread_pool_size_);
 
 	/// Calls `wait_for_all` before destruction.
 	~hxtask_queue(void);
@@ -70,13 +70,13 @@ public:
 	/// task if found. Thread-safe. Returns false if the task is already
 	/// executing or was not queued.
 	/// - `task` : Non-null pointer to the task to cancel.
-	bool cancel(hxtask* task_) hxattr_nonnull(2);
+	bool cancel(hxtask* task_) noexcept hxattr_nonnull(2);
 
 	/// Removes all queued tasks without executing them. Does not call
 	/// `on_cancel` on each. Does not affect tasks that are already executing.
 	/// Subtasks enqueued by executing tasks after a call to `clear` will remain
 	/// in the queue.
-	void clear(void);
+	void clear(void) noexcept;
 
 	/// Returns true when no tasks are queued. Thread-safe.
 	hxattr_nodiscard bool empty(void) const;
@@ -95,7 +95,7 @@ public:
 	/// priorities.
 	/// - `fn` : Predicate accepting a `record_t&`.
 	template<typename callable_t_>
-	size_t erase_if(callable_t_&& fn_);
+	hxsize_t erase_if(callable_t_&& fn_) noexcept;
 
 	/// Locks the queue and calls `fn` on each task record.
 	/// - `fn` : callable accepting a `const record_t&`.
@@ -107,17 +107,17 @@ public:
 	/// passed to `for_each` may be modified and the tasks will be
 	/// re-prioritized according to their new priorities.
 	template<typename callable_t_>
-	void for_each(callable_t_&& fn_);
+	void for_each(callable_t_&& fn_) noexcept;
 
 	/// Returns true if the queue capacity has been reached.
 	hxattr_nodiscard bool full(void) const;
 
 	/// Returns the maximum number of tasks that can be queued. This value is
 	/// fixed at construction and does not require locking.
-	hxattr_nodiscard size_t max_size(void) const;
+	hxattr_nodiscard hxsize_t max_size(void) const;
 
 	/// Returns the number of queued tasks. Thread-safe.
-	hxattr_nodiscard size_t size(void) const;
+	hxattr_nodiscard hxsize_t size(void) const;
 
 	/// Execute remaining tasks. The thread calling `wait_for_all` executes
 	/// tasks as well. Intended to be called by the thread that owns the queue
@@ -138,7 +138,7 @@ private:
 
 	friend class hxtask_wait_for_tasks_;
 	friend class hxtask_wait_for_completion_;
-	template<size_t> friend class hxtask_dag_node;
+	template<hxsize_t> friend class hxtask_dag_node;
 
 	enum thread_mode_t_ : uint8_t {
 		thread_mode_pool_,
@@ -154,7 +154,7 @@ private:
 	static void thread_task_loop_(hxtask_queue* q_, thread_mode_t_ mode_);
 
 	run_level_t_ m_queue_run_level_;
-	size_t m_thread_pool_size_;
+	hxsize_t m_thread_pool_size_;
 	hxthread* m_threads_;
 	mutable hxmutex m_mutex_;
 	hxcondition_variable m_cond_var_new_tasks_;

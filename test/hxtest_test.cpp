@@ -3,7 +3,6 @@
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
 #include <hx/hxtest.hpp>
-
 #include "hxctest.h"
 
 HX_NS_USE
@@ -29,8 +28,7 @@ void hxtest_relational(T a, T b) {
 	EXPECT_LT(a, b);
 	EXPECT_NE(a, b);
 }
-
-} // namespace {
+} // namespace
 
 TEST(hxtest_test, relational) {
 	hxtest_relational<int>(-1, 0);
@@ -47,61 +45,65 @@ TEST(hxtest_test, relational) {
 	hxtest_relational<uint32_t>(static_cast<uint32_t>(100), static_cast<uint32_t>(101));
 	hxtest_relational<float>(-0.00002f, -0.00001f);
 	hxtest_relational<double>(0.0, 1.0);
-
-	// "Requires that two C strings are equal, without checking null pointers."
+	hxtest_relational<unsigned int>(0u, 1u);
+	hxtest_relational<uint8_t>(static_cast<uint8_t>(0), static_cast<uint8_t>(1));
 	ASSERT_STREQ("a", "a");
 	ASSERT_STRNE("a", "b");
 }
 
-// These avoid knowing anything about the implementation.
+TEST(hxtest_test, eq_and_ne_at_adjacency) {
+	EXPECT_EQ(0, 0);
+	EXPECT_NE(0, 1);
+	EXPECT_NE(1, 0);
+	EXPECT_EQ(0u, 0u);
+	EXPECT_NE(0u, 1u);
+	EXPECT_NE(-1, 0);
+	EXPECT_NE(0, -1);
+	EXPECT_LT(0, 1);
+	EXPECT_GT(1, 0);
+	EXPECT_LE(0, 0);
+	EXPECT_LE(0, 1);
+	EXPECT_GE(1, 1);
+	EXPECT_GE(1, 0);
+}
+
 TEST(hxtest_test, float_eq) {
-	// "Checks floats for equality within a scaled tolerance." Cover a handful
-	// of representative cases.
 	const float third = 1.0f / 3.0f;
 	ASSERT_FLOAT_EQ(third + third + third, 1.0f);
-
 	const float a = 0.1f;
 	const float b = 0.2f;
 	const float c = 0.3f;
 	ASSERT_FLOAT_EQ(a + b, c);
 	ASSERT_FLOAT_EQ(c - b, a);
 	ASSERT_FLOAT_EQ((a + b) - a, b);
-
 	const float tenth = 1.0f / 10.0f;
 	ASSERT_FLOAT_EQ(tenth * 10.0f, 1.0f);
 	ASSERT_FLOAT_EQ(a * a, 0.01f);
 }
 
 TEST(hxtest_test, double_eq) {
-	// "Checks doubles for equality within a scaled tolerance." Mirror float
-	// coverage using double path.
 	const double third = 1.0 / 3.0;
 	ASSERT_DOUBLE_EQ(third + third + third, 1.0);
-
 	const double a = 0.1;
 	const double b = 0.2;
 	const double c = 0.3;
 	ASSERT_DOUBLE_EQ(a + b, c);
 	ASSERT_DOUBLE_EQ(c - b, a);
 	ASSERT_DOUBLE_EQ((a + b) - a, b);
-
 	const double tenth = 1.0 / 10.0;
 	ASSERT_DOUBLE_EQ(tenth * 10.0, 1.0);
 	ASSERT_DOUBLE_EQ(a * a, 0.01);
 }
 
-// Run all the C tests.
 TEST(hxtest_test, all_tests) {
 	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
 	EXPECT_TRUE(hxctest_all());
 }
 
-// Another "nothing asserted" test case.
 TEST(hxtest_test, succeed) {
 	SUCCEED();
 }
 
-// These two tests exercise the test framework by failing.
 #if HX_TEST_ERROR_HANDLING
 TEST(hxtest_error_handling, fail) {
 	hxlog_warning("EXPECTING_TEST_FAILURE\n");

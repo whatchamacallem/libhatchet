@@ -8,16 +8,16 @@ import traceback
 
 # hxdeque uses this layout:
 #
-#	template<typename T_, size_t capacity_>
+#	template<typename T_, hxsize_t capacity_>
 #	class hxdeque : public hxallocator<T_, capacity_> {
 #		// ...
-#		size_t m_mask_;   // capacity - 1
-#		size_t m_head_;   // index of front element
-#		size_t m_tail_;   // index one past back element
-#		size_t m_count_;  // number of elements
+#		hxsize_t m_mask_;   // capacity - 1
+#		hxsize_t m_head_;   // index of front element
+#		hxsize_t m_tail_;   // index one past back element
+#		hxsize_t m_count_;  // number of elements
 #	};
 #
-# hxallocator<T_, capacity_> stores elements as char[capacity_ * sizeof(T_)],
+# hxallocator<T_, capacity_> stores elements as char[capacity_ * hxsizeof(T_)],
 # so m_data_.address is always the base of the element array.
 #
 # Elements are stored at indices (m_head_ + i) & m_mask_ for i in [0, m_count_).

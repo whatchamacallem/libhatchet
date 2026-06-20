@@ -181,7 +181,7 @@ inline void InitGoogleTest(void) { }
 #define ADD_FAILURE() HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_(false, __FILE__, __LINE__, "ADD_FAILURE()", false)
 /// `void ADD_FAILURE_AT(const char*, size_t)` - Adds a non-fatal failure at the
 /// specified location.
-#define ADD_FAILURE_AT(file_, line_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_(false, (file_), (size_t)(line_), "ADD_FAILURE_AT()", false)
+#define ADD_FAILURE_AT(file_, line_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_(false, (file_), static_cast<size_t>(line_), "ADD_FAILURE_AT()", false)
 
 /// `void EXPECT_TRUE(bool)` - Requires that the condition is true.
 #define EXPECT_TRUE(x_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_((x_), __FILE__, __LINE__, #x_, false)

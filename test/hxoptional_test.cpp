@@ -9,10 +9,8 @@ HX_NS_USE
 
 namespace {
 
-// Tracks construction and destruction for lifetime tests.
 int hxs_test_ctor_count = 0;
 int hxs_test_dtor_count = 0;
-
 struct hxtest_optional_counted_t {
 	explicit hxtest_optional_counted_t(int v) : value(v) { ++hxs_test_ctor_count; }
 	hxtest_optional_counted_t(const hxtest_optional_counted_t& o)
@@ -29,28 +27,23 @@ struct hxtest_optional_counted_t {
 	bool operator==(const hxtest_optional_counted_t& o) const {
 		return value == o.value;
 	}
-#if HX_CPLUSPLUS < 202002L // C++20 defaults != from ==.
+#if HX_CPLUSPLUS < 202002L
 	bool operator!=(const hxtest_optional_counted_t& o) const {
 		return value != o.value;
 	}
 #endif
 	int value;
 };
-
-// Returns an engaged or disengaged optional based on flag, as a function would.
 hxoptional<int> hxtest_make_int(bool engaged, int v = 0) {
 	if (engaged) { return v; }
 	return hxnullopt;
 }
-
 hxoptional<hxtest_optional_counted_t> hxtest_make_counted(bool engaged, int v = 0) {
 	if (engaged) { return hxtest_optional_counted_t(v); }
 	return hxnullopt;
 }
-
 } // namespace
 
-// Default construction is disengaged.
 TEST(hxoptional_test, default_construction_is_disengaged) {
 	const hxoptional<int> o;
 	EXPECT_FALSE((bool)o);
@@ -59,7 +52,6 @@ TEST(hxoptional_test, default_construction_is_disengaged) {
 	EXPECT_FALSE(o != hxnullopt);
 }
 
-// Construction from a value engages the optional with that value.
 TEST(hxoptional_test, value_construction_is_engaged) {
 	const hxoptional<int> o = hxtest_make_int(true, 42);
 	EXPECT_TRUE((bool)o);
@@ -67,41 +59,35 @@ TEST(hxoptional_test, value_construction_is_engaged) {
 	EXPECT_EQ(*o, 42);
 }
 
-// Copy construction from a disengaged optional is disengaged.
 TEST(hxoptional_test, copy_construction_from_disengaged) {
 	const hxoptional<int> a = hxtest_make_int(false);
 	EXPECT_FALSE((bool)hxoptional<int>(a));
 }
 
-// Copy construction from an engaged optional copies the value.
 TEST(hxoptional_test, copy_construction_from_engaged) {
 	const hxoptional<int> a = hxtest_make_int(true, 99);
 	EXPECT_TRUE((bool)hxoptional<int>(a));
 	EXPECT_EQ(*hxoptional<int>(a), 99);
 }
 
-// Move construction from an engaged optional transfers value and disengages source.
 TEST(hxoptional_test, move_construction_from_engaged) {
 	hxoptional<int> a = hxtest_make_int(true, 5);
 	const hxoptional<int> b(hxmove(a));
 	EXPECT_TRUE((bool)b);
 	EXPECT_EQ(*b, 5);
-	EXPECT_FALSE((bool)a); // NOLINT
+	EXPECT_FALSE((bool)a);
 }
 
-// Destructor destroys the contained object exactly once.
 TEST(hxoptional_test, destructor_destroys_value) {
 	hxs_test_ctor_count = 0;
 	hxs_test_dtor_count = 0;
 	{
 		const hxoptional<hxtest_optional_counted_t> o = hxtest_make_counted(true, 1);
 	}
-	// hxtest_optional_counted_t(v) may be moved into optional storage.
 	EXPECT_TRUE(hxs_test_ctor_count == 1 || hxs_test_ctor_count == 2);
 	EXPECT_EQ(hxs_test_dtor_count, hxs_test_ctor_count);
 }
 
-// Destructor on a disengaged optional does not destroy anything.
 TEST(hxoptional_test, destructor_disengaged_no_destroy) {
 	hxs_test_dtor_count = 0;
 	{
@@ -110,22 +96,19 @@ TEST(hxoptional_test, destructor_disengaged_no_destroy) {
 	EXPECT_EQ(hxs_test_dtor_count, 0);
 }
 
-// operator* returns a mutable reference to the contained value.
 TEST(hxoptional_test, deref_operator_returns_reference) {
 	hxoptional<int> o = hxtest_make_int(true, 10);
 	*o = 20;
 	EXPECT_EQ(*o, 20);
 }
 
-// operator-> gives mutable access to members.
-TEST(hxoptional_test, arrow_operator_accesses_members) {
+TEST(hxoptional_test, arrow_operator_accesses_methods) {
 	hxoptional<hxtest_optional_counted_t> o = hxtest_make_counted(true, 4);
 	EXPECT_EQ(o->value, 4);
 	o->value = 8;
 	EXPECT_EQ(o->value, 8);
 }
 
-// Copy assignment from engaged to disengaged engages with copied value.
 TEST(hxoptional_test, copy_assign_engaged_to_disengaged) {
 	const hxoptional<int> a = hxtest_make_int(true, 55);
 	hxoptional<int> b = hxtest_make_int(false);
@@ -134,7 +117,6 @@ TEST(hxoptional_test, copy_assign_engaged_to_disengaged) {
 	EXPECT_EQ(*b, 55);
 }
 
-// Copy assignment from disengaged to engaged disengages.
 TEST(hxoptional_test, copy_assign_disengaged_to_engaged) {
 	const hxoptional<int> a = hxtest_make_int(false);
 	hxoptional<int> b = hxtest_make_int(true, 77);
@@ -142,7 +124,6 @@ TEST(hxoptional_test, copy_assign_disengaged_to_engaged) {
 	EXPECT_FALSE((bool)b);
 }
 
-// Copy assignment from engaged to engaged updates the value.
 TEST(hxoptional_test, copy_assign_engaged_to_engaged) {
 	const hxoptional<int> a = hxtest_make_int(true, 11);
 	hxoptional<int> b = hxtest_make_int(true, 22);
@@ -151,17 +132,15 @@ TEST(hxoptional_test, copy_assign_engaged_to_engaged) {
 	EXPECT_EQ(*b, 11);
 }
 
-// Move assignment from engaged to disengaged transfers and disengages source.
 TEST(hxoptional_test, move_assign_engaged_to_disengaged) {
 	hxoptional<int> a = hxtest_make_int(true, 9);
 	hxoptional<int> b = hxtest_make_int(false);
 	b = hxmove(a);
 	EXPECT_TRUE((bool)b);
 	EXPECT_EQ(*b, 9);
-	EXPECT_FALSE((bool)a); // NOLINT
+	EXPECT_FALSE((bool)a);
 }
 
-// Move assignment from disengaged to engaged disengages.
 TEST(hxoptional_test, move_assign_disengaged_to_engaged) {
 	hxoptional<int> a = hxtest_make_int(false);
 	hxoptional<int> b = hxtest_make_int(true, 44);
@@ -169,24 +148,21 @@ TEST(hxoptional_test, move_assign_disengaged_to_engaged) {
 	EXPECT_FALSE((bool)b);
 }
 
-// Move assignment from engaged to engaged moves the value and disengages source.
 TEST(hxoptional_test, move_assign_engaged_to_engaged) {
 	hxoptional<int> a = hxtest_make_int(true, 13);
 	hxoptional<int> b = hxtest_make_int(true, 26);
 	b = hxmove(a);
 	EXPECT_TRUE((bool)b);
 	EXPECT_EQ(*b, 13);
-	EXPECT_FALSE((bool)a); // NOLINT
+	EXPECT_FALSE((bool)a);
 }
 
-// Assignment of hxnullopt disengages an engaged optional.
 TEST(hxoptional_test, assign_nullopt_disengages) {
 	hxoptional<int> o = hxtest_make_int(true, 5);
 	o = hxnullopt;
 	EXPECT_FALSE((bool)o);
 }
 
-// Assignment of a value to a disengaged optional engages it.
 TEST(hxoptional_test, value_copy_assign_to_disengaged) {
 	hxoptional<int> o = hxtest_make_int(false);
 	const int v = 17;
@@ -195,7 +171,6 @@ TEST(hxoptional_test, value_copy_assign_to_disengaged) {
 	EXPECT_EQ(*o, 17);
 }
 
-// Assignment of a value to an engaged optional updates the value.
 TEST(hxoptional_test, value_copy_assign_to_engaged) {
 	hxoptional<int> o = hxtest_make_int(true, 1);
 	const int v = 2;
@@ -203,7 +178,6 @@ TEST(hxoptional_test, value_copy_assign_to_engaged) {
 	EXPECT_EQ(*o, 2);
 }
 
-// Move assignment of a value to a disengaged optional engages it.
 TEST(hxoptional_test, value_move_assign_to_disengaged) {
 	hxoptional<int> o = hxtest_make_int(false);
 	int v = 19;
@@ -212,7 +186,6 @@ TEST(hxoptional_test, value_move_assign_to_disengaged) {
 	EXPECT_EQ(*o, 19);
 }
 
-// Move assignment of a value to an engaged optional updates the value.
 TEST(hxoptional_test, value_move_assign_to_engaged) {
 	hxoptional<int> o = hxtest_make_int(true, 3);
 	int v = 4;
@@ -220,8 +193,6 @@ TEST(hxoptional_test, value_move_assign_to_engaged) {
 	EXPECT_EQ(*o, 4);
 }
 
-// operator== between two optionals: both disengaged, one engaged one not, both
-// engaged equal, both engaged unequal.
 TEST(hxoptional_test, eq_optional) {
 	const hxoptional<int> empty = hxtest_make_int(false);
 	const hxoptional<int> one = hxtest_make_int(true, 1);
@@ -237,7 +208,6 @@ TEST(hxoptional_test, eq_optional) {
 	EXPECT_TRUE(one != two);
 }
 
-// operator== with hxnullopt and with a value.
 TEST(hxoptional_test, eq_nullopt_and_value) {
 	const hxoptional<int> empty = hxtest_make_int(false);
 	const hxoptional<int> seven = hxtest_make_int(true, 7);
@@ -253,7 +223,6 @@ TEST(hxoptional_test, eq_nullopt_and_value) {
 	EXPECT_TRUE(empty != 0);
 }
 
-// reset on an engaged optional destroys the value and disengages.
 TEST(hxoptional_test, reset_engaged_disengages) {
 	hxoptional<hxtest_optional_counted_t> o = hxtest_make_counted(true, 1);
 	hxs_test_dtor_count = 0;
@@ -262,7 +231,6 @@ TEST(hxoptional_test, reset_engaged_disengages) {
 	EXPECT_EQ(hxs_test_dtor_count, 1);
 }
 
-// reset on a disengaged optional is a no-op.
 TEST(hxoptional_test, reset_disengaged_noop) {
 	hxs_test_dtor_count = 0;
 	hxoptional<hxtest_optional_counted_t> o = hxtest_make_counted(false);
@@ -271,7 +239,6 @@ TEST(hxoptional_test, reset_disengaged_noop) {
 	EXPECT_EQ(hxs_test_dtor_count, 0);
 }
 
-// swap: both engaged exchanges values; engaged with disengaged transfers value.
 TEST(hxoptional_test, swap) {
 	hxoptional<int> a = hxtest_make_int(true, 1);
 	hxoptional<int> b = hxtest_make_int(true, 2);
@@ -284,7 +251,6 @@ TEST(hxoptional_test, swap) {
 	EXPECT_EQ(*c, 2);
 }
 
-// value() returns a mutable reference; const overload returns const reference.
 TEST(hxoptional_test, value_returns_reference) {
 	hxoptional<int> o = hxtest_make_int(true, 42);
 	EXPECT_EQ(o.value(), 42);
@@ -294,7 +260,6 @@ TEST(hxoptional_test, value_returns_reference) {
 	EXPECT_EQ(co.value(), 10);
 }
 
-// value_or returns contained value when engaged, default when disengaged.
 TEST(hxoptional_test, value_or) {
 	const hxoptional<int> engaged = hxtest_make_int(true, 3);
 	const hxoptional<int> empty = hxtest_make_int(false);
@@ -302,14 +267,12 @@ TEST(hxoptional_test, value_or) {
 	EXPECT_EQ(empty.value_or(7), 7);
 }
 
-// Converting copy construction from a disengaged optional is disengaged.
 TEST(hxoptional_test, converting_copy_construction_from_disengaged) {
 	const hxoptional<int> a = hxtest_make_int(false);
 	const hxoptional<long> b(a);
 	EXPECT_FALSE((bool)b);
 }
 
-// Converting copy construction from an engaged optional converts the value.
 TEST(hxoptional_test, converting_copy_construction_from_engaged) {
 	const hxoptional<int> a = hxtest_make_int(true, 42);
 	const hxoptional<long> b(a);
@@ -317,15 +280,12 @@ TEST(hxoptional_test, converting_copy_construction_from_engaged) {
 	EXPECT_EQ(*b, 42);
 }
 
-// Converting move construction from a disengaged optional is disengaged.
 TEST(hxoptional_test, converting_move_construction_from_disengaged) {
 	hxoptional<int> a = hxtest_make_int(false);
 	const hxoptional<long> b(hxmove(a));
 	EXPECT_FALSE((bool)b);
 }
 
-// Converting move construction from an engaged optional converts the value and
-// disengages the source.
 TEST(hxoptional_test, converting_move_construction_from_engaged) {
 	hxoptional<int> a = hxtest_make_int(true, 7);
 	const hxoptional<long> b(hxmove(a));
@@ -334,8 +294,6 @@ TEST(hxoptional_test, converting_move_construction_from_engaged) {
 	EXPECT_FALSE((bool)a);
 }
 
-// emplace on disengaged engages; on engaged destroys old and constructs new;
-// returns a reference to the constructed value.
 TEST(hxoptional_test, emplace) {
 	hxoptional<hxtest_optional_counted_t> o = hxtest_make_counted(false);
 	o.emplace(42);
@@ -350,4 +308,71 @@ TEST(hxoptional_test, emplace) {
 	EXPECT_EQ(ref, 55);
 	ref = 66;
 	EXPECT_EQ(*n, 66);
+}
+
+TEST(hxoptional_test, eq_boundary_equal_values) {
+	const hxoptional<int> a = hxtest_make_int(true, 0);
+	const hxoptional<int> b = hxtest_make_int(true, 0);
+	const hxoptional<int> c = hxtest_make_int(true, 1);
+	EXPECT_TRUE(a == b);
+	EXPECT_FALSE(a != b);
+	EXPECT_FALSE(a == c);
+	EXPECT_TRUE(a != c);
+}
+
+TEST(hxoptional_test, eq_boundary_both_disengaged) {
+	const hxoptional<int> a = hxtest_make_int(false);
+	const hxoptional<int> b = hxtest_make_int(false);
+	EXPECT_TRUE(a == b);
+	EXPECT_FALSE(a != b);
+}
+
+TEST(hxoptional_test, eq_value_boundary_disengaged_not_zero) {
+	const hxoptional<int> empty = hxtest_make_int(false);
+	EXPECT_FALSE(empty == 0);
+	EXPECT_TRUE(empty != 0);
+	const hxoptional<int> zero = hxtest_make_int(true, 0);
+	EXPECT_TRUE(zero == 0);
+	EXPECT_FALSE(zero != 0);
+}
+
+TEST(hxoptional_test, reset_destroys_exactly_once) {
+	hxoptional<hxtest_optional_counted_t> o = hxtest_make_counted(true, 7);
+	hxs_test_dtor_count = 0;
+	o.reset();
+	EXPECT_EQ(hxs_test_dtor_count, 1);
+	o.reset();
+	EXPECT_EQ(hxs_test_dtor_count, 1);
+}
+
+TEST(hxoptional_test, swap_both_disengaged_noop) {
+	hxs_test_dtor_count = 0;
+	hxoptional<hxtest_optional_counted_t> a = hxtest_make_counted(false);
+	hxoptional<hxtest_optional_counted_t> b = hxtest_make_counted(false);
+	a.swap(b);
+	EXPECT_FALSE((bool)a);
+	EXPECT_FALSE((bool)b);
+	EXPECT_EQ(hxs_test_dtor_count, 0);
+}
+
+TEST(hxoptional_test, swap_engaged_with_disengaged_boundary) {
+	hxoptional<int> a = hxtest_make_int(true, 42);
+	hxoptional<int> b = hxtest_make_int(false);
+	b.swap(a);
+	EXPECT_FALSE((bool)a);
+	EXPECT_TRUE((bool)b);
+	EXPECT_EQ(*b, 42);
+}
+
+TEST(hxoptional_test, value_or_engaged_zero) {
+	const hxoptional<int> zero = hxtest_make_int(true, 0);
+	EXPECT_EQ(zero.value_or(99), 0);
+}
+
+TEST(hxoptional_test, destructor_exactly_one_call) {
+	hxs_test_ctor_count = 0;
+	hxs_test_dtor_count = 0;
+	{ hxoptional<hxtest_optional_counted_t> o(hxtest_optional_counted_t(1)); }
+	EXPECT_EQ(hxs_test_dtor_count, hxs_test_ctor_count);
+	EXPECT_GE(hxs_test_dtor_count, 1);
 }

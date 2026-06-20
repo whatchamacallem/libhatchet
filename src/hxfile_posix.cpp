@@ -104,7 +104,7 @@ bool hxfile::openv_(uint8_t mode, const char* filename, va_list args) {
 	const int len = ::vsnprintf(line_buf, HX_MAX_LINE, filename, args);
 	hxassertmsg(len >= 0 && len < HX_MAX_LINE, "vsnprintf"); (void)len;
 
-	const int fd = ::open(line_buf, flags, 0666u); // NOLINT
+	const int fd = ::open(line_buf, flags, 0666u);
 	hxassert_always((fd >= 0) || ((mode & hxfile::skip_asserts) != 0u),
 		"open %s: %s", line_buf, ::strerror(errno));
 
@@ -218,7 +218,7 @@ size_t hxfile::write(const void* bytes, size_t byte_count) {
 	return total;
 }
 
-bool hxfile::flush(void) { // NOLINT
+bool hxfile::flush(void) {
 	hxassertmsg((m_open_mode_ & hxfile::out) != 0u, "invalid_file");
 	// POSIX bypasses userspace buffering so there is nothing to flush.
 	return true;
@@ -271,7 +271,7 @@ bool hxfile::getline(char* buffer, int buffer_size) {
 }
 
 // See vsnprintf for the rationale for truncating output at HX_MAX_LINE.
-bool hxfile::print(const char* format, ...) { // NOLINT
+bool hxfile::print(const char* format, ...) {
 	hxassertmsg((m_open_mode_ & hxfile::out) != 0u, "invalid_file");
 
 	if(m_file_pimpl_ < 0) {

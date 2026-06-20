@@ -7,7 +7,7 @@
 /// selected using an ID. These are the large system-wide allocators, not the
 /// per-container `hxallocator` which allocates from here. A complex streaming
 /// design would require this code to be modified to add more instances of the
-/// temporary allocators than the single one provided here. 
+/// temporary allocators than the single one provided here.
 ///
 /// General purpose memory allocators are inefficient and unsafe to use. The
 /// problem is that long running code requires a lot of extra space to make sure
@@ -33,9 +33,9 @@
 ///
 /// | Hex    | Pattern Description              |
 /// | ------ | -------------------------------- |
-/// | `0xab` | Static `hxallocator` instance.   | 
+/// | `0xab` | Static `hxallocator` instance.   |
 /// | `0xcd` | Allocated.                       |
-/// | `0xdd` | Deallocated.                     |   
+/// | `0xdd` | Deallocated.                     |
 ///
 /// Global new and delete are provided when `HX_USE_LIBCXX==0`. This is a
 /// requirement for running as a stand alone C++ runtime. Otherwise they are not
@@ -66,7 +66,7 @@ typedef unsigned int hxalignment_t;
 /// pointers. This alignment should work for most types.
 inline constexpr hxalignment_t hxalignment = static_cast<hxalignment_t>(alignof(size_t));
 #elif HX_CPLUSPLUS
-#define hxalignment (hxalignment_t)alignof(size_t)
+#define hxalignment static_cast<hxalignment_t>(alignof(size_t))
 #else
 #define hxalignment (hxalignment_t)_Alignof(size_t)
 #endif
@@ -221,7 +221,7 @@ private:
 /// - `allocator` : The memory manager ID to use for allocation. Defaults to `hxsystem_allocator_current`.
 /// - `align` : Alignment to use when allocating new pointers. Defaults to `hxalignment`.
 template <typename T_, hxsystem_allocator_t allocator_=hxsystem_allocator_current, hxalignment_t align_=hxalignment, typename... Args_>
-T_* hxnew(Args_&&... args_) {
+T_* hxnew(Args_&&... args_) noexcept {
 	// Implements hxforward.
 	return ::new(hxmalloc_ext(sizeof(T_), allocator_, align_)) T_(static_cast<Args_&&>(args_)...);
 }
@@ -230,7 +230,7 @@ T_* hxnew(Args_&&... args_) {
 /// memory manager.
 /// - `t` : Pointer to the object to delete.
 template <typename T_>
-void hxdelete(T_* t_) {
+void hxdelete(T_* t_) noexcept {
 	if(t_) {
 		t_->~T_();
 		hxfree(t_);

@@ -13,6 +13,16 @@ TAG=$(grep 'define LIBHATCHET_TAG' include/hx/libhatchet.h | cut -d'"' -f2)
 BRANCH=$(git branch --show-current)
 TARGET="main"
 
+if [[ "$TAG" != v* ]]; then
+    echo "error: Invalid tag. TAG=\"$TAG\" does not start with a v."
+    exit 1
+fi
+
+if git tag --list | grep -qxF "$TAG"; then
+    echo "error: Tag $TAG already exists. Update libhatchet.h."
+    exit 1
+fi
+
 echo -e "\e[38;5;208mThis will release $TAG from $BRANCH onto $TARGET.\e[0m"
 read -ep "Do you want to proceed? [y/n] " -n 1 answer
 if [ "$answer" != "y" ] && [ "$answer" != "Y" ]; then
@@ -23,8 +33,10 @@ fi
 
 set -o xtrace
 
-git add .
-git commit -m "$BRANCH $TAG"
+if ! git diff --quiet || ! git diff --cached --quiet; then
+    git add .
+    git commit -m "$BRANCH $TAG"
+fi
 git checkout "$TARGET"
 git merge --squash "$BRANCH"
 git commit -m "$TAG"

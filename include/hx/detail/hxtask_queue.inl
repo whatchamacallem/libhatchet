@@ -22,12 +22,12 @@ bool hxtask_queue::any_of(callable_t_&& fn_) const {
 	return m_tasks_.any_of(hxforward<callable_t_>(fn_));
 }
 
-inline bool hxtask_queue::cancel(hxtask* task_) {
-	size_t erased_ = 0;
+inline bool hxtask_queue::cancel(hxtask* task_) noexcept {
+	hxsize_t erased_ = 0;
 	{
 		hxtask_queue_lock_;
 		erased_ = m_tasks_.erase_if_unordered([task_](const record_t& r_) { return r_.task == task_; });
-		if(erased_ != 0u) {
+		if(erased_ != 0) {
 			hxdetail_::hxmake_heap_(m_tasks_.begin(), m_tasks_.end(), hxkey_less_t<record_t>{});
 #if HX_USE_THREADS
 			if(m_tasks_.empty()) {
@@ -36,14 +36,14 @@ inline bool hxtask_queue::cancel(hxtask* task_) {
 #endif
 		}
 	}
-	if(erased_ != 0u) {
+	if(erased_ != 0) {
 		task_->on_cancel(this);
 		return true;
 	}
 	return false;
 }
 
-inline void hxtask_queue::clear(void) {
+inline void hxtask_queue::clear(void) noexcept {
 	hxtask_queue_lock_;
 	m_tasks_.clear();
 #if HX_USE_THREADS
@@ -57,14 +57,14 @@ inline bool hxtask_queue::empty(void) const {
 }
 
 template<typename callable_t_>
-size_t hxtask_queue::erase_if(callable_t_&& fn_) {
+hxsize_t hxtask_queue::erase_if(callable_t_&& fn_) noexcept {
 	hxtask_queue_lock_;
-	const size_t erased_ = m_tasks_.erase_if_unordered(hxforward<callable_t_>(fn_));
+	const hxsize_t erased_ = m_tasks_.erase_if_unordered(hxforward<callable_t_>(fn_));
 	// Restore the heap property all at once. Allows erase_if to modify priority
 	// at the same time even when nothing is erased.
 	hxdetail_::hxmake_heap_(m_tasks_.begin(), m_tasks_.end(), hxkey_less_t<record_t>{});
 #if HX_USE_THREADS
-	if(erased_ != 0u && m_tasks_.empty()) {
+	if(erased_ != 0 && m_tasks_.empty()) {
 		m_cond_var_completion_.notify_all();
 	}
 #endif
@@ -78,7 +78,7 @@ void hxtask_queue::for_each(callable_t_&& fn_) const {
 }
 
 template<typename callable_t_>
-void hxtask_queue::for_each(callable_t_&& fn_) {
+void hxtask_queue::for_each(callable_t_&& fn_) noexcept {
 	hxtask_queue_lock_;
 	m_tasks_.for_each(hxforward<callable_t_>(fn_));
 
@@ -90,12 +90,12 @@ inline bool hxtask_queue::full(void) const {
 	return m_tasks_.full();
 }
 
-inline size_t hxtask_queue::max_size(void) const {
+inline hxsize_t hxtask_queue::max_size(void) const {
 	// Capacity is fixed at construction, no lock needed.
 	return m_tasks_.max_size();
 }
 
-inline size_t hxtask_queue::size(void) const {
+inline hxsize_t hxtask_queue::size(void) const {
 	hxtask_queue_lock_;
 	return m_tasks_.size();
 }

@@ -10,16 +10,16 @@
 #ifndef HX_DOXYGEN_PARSER
 
 // hxhash_table internals. See hxhash_table.hpp instead. This is an
-// hxhash_table-specific subclass of hxallocator. C++98 requires it to be
-// declared outside `hxhash_table`. The table has a size of 2^table_size_bits_.
+// hxhash_table-specific subclass of hxallocator. The table has a size of
+// 2^table_size_bits_.
 
 namespace hxdetail_ {
 
 template<typename node_t_, hxhash_t table_size_bits_>
-class hxhash_table_internal_allocator_ : public hxallocator<node_t_*, 1u << table_size_bits_> {
+class hxhash_table_internal_allocator_ : public hxallocator<node_t_*, 1 << table_size_bits_> {
 public:
 	hxhash_table_internal_allocator_(void) {
-		::memset(this->data(), 0x00, sizeof(node_t_*) * this->capacity());
+		::memset(this->data(), 0x00, sizeof(node_t_*) * static_cast<size_t>(this->capacity()));
 	}
 	hxhash_t get_table_size_bits(void) const { return table_size_bits_; }
 	void set_table_size_bits(hxhash_t bits) {
@@ -31,21 +31,21 @@ template<typename node_t_>
 class hxhash_table_internal_allocator_<node_t_, hxallocator_dynamic_capacity>
 	: public hxallocator<node_t_*, hxallocator_dynamic_capacity> {
 public:
-	hxhash_table_internal_allocator_() : m_table_size_bits_(0u) { }
+	hxhash_table_internal_allocator_() : m_table_size_bits_(0) { }
 
 	hxhash_t get_table_size_bits(void) const {
-		hxassertmsg(m_table_size_bits_ != 0u, "container_unallocated");
+		hxassertmsg(m_table_size_bits_ != 0, "container_unallocated");
 		return m_table_size_bits_;
 	}
 
 	void set_table_size_bits(hxhash_t bits_) {
-		hxassertmsg(m_table_size_bits_ == 0u || bits_ == m_table_size_bits_, "reallocation_disallowed");
-		if(m_table_size_bits_ == 0u) {
+		hxassertmsg(m_table_size_bits_ == 0 || bits_ == m_table_size_bits_, "reallocation_disallowed");
+		if(m_table_size_bits_ == 0) {
 			// bits_ < hxhash_bits: shifting a hxhash_t by its own width is UB.
-			hxassertmsg(bits_ > 0u && bits_ < hxhash_bits, "bad_hash_bits %d", static_cast<int>(bits_));
+			hxassertmsg(bits_ > 0 && bits_ < hxhash_bits, "bad_hash_bits %d", static_cast<int>(bits_));
 			m_table_size_bits_ = bits_;
-			this->reserve_storage_(static_cast<size_t>(1u) << bits_);
-			::memset(this->data(), 0x00, sizeof(node_t_*) * this->capacity());
+			this->reserve_storage(static_cast<hxsize_t>(1) << bits_);
+			::memset(this->data(), 0x00, sizeof(node_t_*) * static_cast<size_t>(this->capacity()));
 		}
 	}
 
@@ -54,5 +54,4 @@ private:
 };
 
 } // hxdetail_
-
 #endif // HX_DOXYGEN_PARSER

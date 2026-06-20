@@ -42,7 +42,7 @@ public:
 	hxconstexpr hxptr(hxptr&& other_) noexcept;
 
 	/// Destroys the owned object using `deleter_t` if non-null.
-	hxconstexpr ~hxptr(void);
+	hxconstexpr ~hxptr(void) noexcept;
 
 	/// Move assignment. Destroys the currently owned object, then transfers
 	/// ownership from `other`. `other` is left null. Self-assignment is not
@@ -56,10 +56,6 @@ public:
 	/// Returns the owned pointer. The pointer must not be null.
 	hxattr_nodiscard hxconstexpr T_* operator->(void) const;
 
-	/// Returns a reference to the element at index `n` relative to the owned
-	/// pointer. The pointer must not be null.
-	/// - `n` : The index of the element to return.
-	hxattr_nodiscard hxconstexpr T_& operator[](size_t n_) const;
 
 	/// Returns `true` if the owned pointer is non-null.
 	hxattr_nodiscard hxconstexpr operator bool(void) const;
@@ -92,11 +88,11 @@ public:
 	/// Destroys the currently owned object using `deleter_t` if non-null, then
 	/// takes ownership of `ptr`.
 	/// - `ptr` : The new pointer to own. May be null.
-	hxconstexpr void reset(T_* ptr_=hxnull);
+	hxconstexpr void reset(T_* ptr_=hxnull) noexcept;
 
 	/// Exchanges ownership with `other`. Neither pointer is deleted.
 	/// - `other` : The `hxptr` to swap with.
-	hxconstexpr void swap(hxptr& other_) noexcept;
+	hxconstexpr void swap(hxptr& other_);
 
 private:
 	hxptr(const hxptr&) = delete;

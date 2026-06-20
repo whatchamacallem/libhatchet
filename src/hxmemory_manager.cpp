@@ -373,8 +373,8 @@ public:
 		hxsystem_allocator_t previous_id);
 
 	hxattr_hot hxmemory_allocator_base& get_allocator(hxsystem_allocator_t id) {
-		hxassertmsg(id >= 0 && id < hxsystem_allocator_current, "invalid_parameter %d", (int)id);
-		return *m_memory_allocators[id];
+		hxassertmsg(id >= 0 && id < hxsystem_allocator_current, "invalid_parameter %d", static_cast<int>(id));
+		return *m_memory_allocators[id]; // NOLINT(clang-analyzer-security.ArrayBound)
 	}
 
 	hxattr_hot void* allocate(size_t size, hxsystem_allocator_t id, hxalignment_t alignment);

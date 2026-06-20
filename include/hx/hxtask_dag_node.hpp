@@ -21,7 +21,7 @@ HX_NS_BEGIN_
 /// `on_completion`, `on_failure`, or `on_cancel` must call the corresponding
 /// `hxtask_dag_node` base method to preserve task propagation.
 /// - `max_successors` : Maximum direct successors per node. Default is 4.
-template<size_t max_successors_=4u>
+template<hxsize_t max_successors_=4>
 class hxtask_dag_node : public hxtask {
 public:
 	hxtask_dag_node(void);
@@ -34,8 +34,8 @@ public:
 	void add_successor(hxtask_dag_node* successor_, int priority_ = 0) hxattr_nonnull(2);
 
 	/// Clears predecessors and successors. WARNING: Do not use while the DAG
-	/// is being executed. 
-	void reset(void) { m_predecessor_count_ = 0u; m_successor_count_ = 0u; }
+	/// is being executed.
+	void reset(void) noexcept { m_predecessor_count_ = 0; m_successor_count_ = 0; }
 
 	/// Propagates successful completion to successors. Subclass overrides must
 	/// call `hxtask_dag_node::on_completion(q_)`.
@@ -58,8 +58,8 @@ private:
 
 	void dag_node_completed_(hxtask_queue* q_, bool is_cancelled_);
 
-	size_t  m_predecessor_count_;
-	size_t  m_successor_count_;
+	hxsize_t  m_predecessor_count_;
+	hxsize_t  m_successor_count_;
 	edge_t_ m_successors_[max_successors_];
 };
 

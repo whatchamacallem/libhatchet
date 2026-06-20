@@ -20,7 +20,8 @@ unnecessary to step through in the debugger.
 <img src="libhatchet.jpg" alt="banner" width="200" height="200" align="right" hspace="20">
 
 Compile times are shockingly fast when using `ninja`+`ccache` without needing
-precompiled headers. A C++20 module is also available in the src directory.
+precompiled headers. A C++20 module is also available in the src directory and
+is recommended although modules load a little slower with GCC.
 
 The implementation maintains compatibility with every sensible warning flag and
 with sanitizers for both GCC and Clang. Of course, asserts are also widely used.
@@ -75,25 +76,24 @@ system allocators.
   An execution graph is also available as a layer on top.
 
 - **Containers**: Provides a set of containers designed for environments where
-  reallocation is not used. `hxarray` and `hxvector` provide a statically or
-  dynamically allocated arrays. This class was written with an exhaustive
-  feature set because arrays are cache-coherent and memory efficient. E.g. it
-  implements a priority queue as well. `hxhash_table` provides unordered sets
-  and maps without requiring nodes to be subclasses or using copies and
-  allocations. `hxlist` similarly operates without requiring copies or
-  allocations. `hxdeque` provides a highly optimized deque compared to the
-  standard. `hxbitset` is available for bit manipulation. That said, this
-  codebase is intended for low-level work where complex container libraries
-  cause code bloat, memory fragmentation, and poor cache coherence. If those are
-  not your concerns, consider using additional libraries. No Red-Black Tree has
-  been provided.
+  reallocation is not allowed. This codebase is intended for low-level work
+  where the standard container libraries cause code bloat, memory fragmentation,
+  and poor cache coherence. If those are not your concerns, consider using
+  additional libraries. No tree data structures will be provided. For efficiency
+  reasons exceptions are not supported and therefore `noexcept` is widely
+  applied to defend against data loss due to their unexpected use.
 
-  | | capacity > 0 | `hxallocator_dynamic_capacity` |
+  There are two array classes that both support two allocation modes:
+
+  | | compile time capacity > 0 | `hxallocator_dynamic_capacity` |
   | --- | --- | --- |
   | `hxarray` | Compile-time fixed size, inline storage | Variable initial size, non-resizable, non-reallocating heap storage [1] |
   | `hxvector` | Resizable, fixed capacity, inline storage | Resizable, variable initial capacity, non-reallocating heap storage |
 
   [1] Not provided by the standard.
+
+  See the headers at [include/hx/](include/hx/) for the remaining containers.
+  They generally use the same names as the standard.
 
 - **Pretty Printers** Implements GDB-compatible pretty printers, enabling
   debuggers and most code editors to display container contents in a

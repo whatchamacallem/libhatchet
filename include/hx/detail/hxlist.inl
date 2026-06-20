@@ -89,7 +89,7 @@ inline auto hxlist<node_t_, deleter_t_>::iterator::operator--(int) -> iterator {
 
 template<typename node_t_, typename deleter_t_>
 inline hxlist<node_t_, deleter_t_>::hxlist(void) {
-	m_size_ = 0u;
+	m_size_ = 0;
 	m_sentinel_.m_list_link_ = 0; // sentinel: prev=self ^ next=self = 0
 	m_tail_ = &m_sentinel_;
 }
@@ -133,21 +133,21 @@ inline auto hxlist<node_t_, deleter_t_>::end(void) const -> const_iterator {
 template<typename node_t_, typename deleter_t_>
 template<typename deleter_override_t_>
 inline void hxlist<node_t_, deleter_t_>::clear(
-	const deleter_override_t_& deleter_) {
-	if(m_size_ != 0u) {
+	const deleter_override_t_& deleter_) noexcept {
+	if(m_size_ != 0) {
+		hxlist_node* prev_ = &m_sentinel_;
+		hxlist_node* current_ = reinterpret_cast<hxlist_node*>(
+			reinterpret_cast<intptr_t>(m_tail_) ^ m_sentinel_.m_list_link_);
+		this->release_all();
 		if(deleter_) {
-			hxlist_node* prev_ = &m_sentinel_;
-			hxlist_node* current_ = reinterpret_cast<hxlist_node*>(
-				reinterpret_cast<intptr_t>(m_tail_) ^ m_sentinel_.m_list_link_);
 			while(current_ != &m_sentinel_) {
-				hxlist_node* next_ = reinterpret_cast<hxlist_node*>(
+				hxlist_node* const next_ = reinterpret_cast<hxlist_node*>(
 					reinterpret_cast<intptr_t>(prev_) ^ current_->m_list_link_);
 				deleter_(static_cast<node_t_*>(current_));
 				prev_ = current_;
 				current_ = next_;
 			}
 		}
-		this->release_all();
 	}
 }
 
@@ -164,9 +164,9 @@ inline void hxlist<node_t_, deleter_t_>::erase(
 
 template<typename node_t_, typename deleter_t_>
 inline hxptr<node_t_, deleter_t_> hxlist<node_t_, deleter_t_>::extract(const_iterator pos_) {
-	node_t_* ptr_ = static_cast<node_t_*>(pos_.m_current_node_);
+	hxptr<node_t_, deleter_t_> ptr_(static_cast<node_t_*>(pos_.m_current_node_));
 	this->extract_(pos_.m_prev_, pos_.m_current_node_);
-	return hxptr<node_t_, deleter_t_>(ptr_);
+	return ptr_;
 }
 
 template<typename node_t_, typename deleter_t_>
@@ -220,20 +220,22 @@ inline auto hxlist<node_t_, deleter_t_>::insert(
 template<typename node_t_, typename deleter_t_>
 inline hxptr<node_t_, deleter_t_> hxlist<node_t_, deleter_t_>::pop_back(void) {
 	hxassert_hard(!this->empty(), "empty_list");
-	hxlist_node* ptr_ = m_tail_;
+	hxlist_node* node_ = m_tail_;
+	hxptr<node_t_, deleter_t_> ptr_(static_cast<node_t_*>(node_));
 	hxlist_node* prev_ = reinterpret_cast<hxlist_node*>(
-		reinterpret_cast<intptr_t>(&m_sentinel_) ^ ptr_->m_list_link_);
-	this->extract_(prev_, ptr_);
-	return hxptr<node_t_, deleter_t_>(static_cast<node_t_*>(ptr_));
+		reinterpret_cast<intptr_t>(&m_sentinel_) ^ node_->m_list_link_);
+	this->extract_(prev_, node_);
+	return ptr_;
 }
 
 template<typename node_t_, typename deleter_t_>
 inline hxptr<node_t_, deleter_t_> hxlist<node_t_, deleter_t_>::pop_front(void) {
 	hxassert_hard(!this->empty(), "empty_list");
-	hxlist_node* ptr_ = reinterpret_cast<hxlist_node*>(
+	hxlist_node* node_ = reinterpret_cast<hxlist_node*>(
 		reinterpret_cast<intptr_t>(m_tail_) ^ m_sentinel_.m_list_link_);
-	this->extract_(&m_sentinel_, ptr_);
-	return hxptr<node_t_, deleter_t_>(static_cast<node_t_*>(ptr_));
+	hxptr<node_t_, deleter_t_> ptr_(static_cast<node_t_*>(node_));
+	this->extract_(&m_sentinel_, node_);
+	return ptr_;
 }
 
 template<typename node_t_, typename deleter_t_>
@@ -271,13 +273,13 @@ template<typename node_t_, typename deleter_t_>
 inline void hxlist<node_t_, deleter_t_>::release_all(void) {
 	m_sentinel_.m_list_link_ = 0;
 	m_tail_ = &m_sentinel_;
-	m_size_ = 0u;
+	m_size_ = 0;
 }
 
 template<typename node_t_, typename deleter_t_>
 template<typename predicate_t_>
-inline size_t hxlist<node_t_, deleter_t_>::remove_if(predicate_t_ predicate_) {
-	size_t count_ = 0u;
+inline hxsize_t hxlist<node_t_, deleter_t_>::remove_if(predicate_t_ predicate_) {
+	hxsize_t count_ = 0;
 	hxlist_node* prev_ = &m_sentinel_;
 	hxlist_node* current_ = reinterpret_cast<hxlist_node*>(
 		reinterpret_cast<intptr_t>(m_tail_) ^ m_sentinel_.m_list_link_);

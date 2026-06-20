@@ -12,7 +12,6 @@
 
 namespace hxdetail_ {
 
-// ----------------------------------------------------------------------------
 // Argument parsing. Explicit specializations parse each supported type.
 // On overflow next_ is reset to str_ to signal a parse failure.
 
@@ -45,10 +44,6 @@ template<> inline bool hxconsole_parse_arg_<bool>(const char* str_, char** next_
 	return hxconsole_strtol_(str_, next_, 0l, 1l) != 0l;
 }
 
-// Signed integers: parse as long with a range check into the target width.
-// Specializing the fundamental types instead of the fixed-width aliases covers
-// types like size_t that alias a different fundamental type on each of ILP32,
-// LP64 and LLP64.
 template<> inline signed char hxconsole_parse_arg_<signed char>(const char* str_, char** next_) {
 	return static_cast<signed char>(hxconsole_strtol_(str_, next_, SCHAR_MIN, SCHAR_MAX));
 }
@@ -65,7 +60,6 @@ template<> inline long long hxconsole_parse_arg_<long long>(const char* str_, ch
 	return hxconsole_strtoll_(str_, next_);
 }
 
-// Unsigned integers: parse as unsigned long with a range check. Negative inputs are rejected.
 template<> inline unsigned char hxconsole_parse_arg_<unsigned char>(const char* str_, char** next_) {
 	return static_cast<unsigned char>(hxconsole_strtoul_(str_, next_, UCHAR_MAX));
 }
@@ -84,7 +78,6 @@ template<> inline unsigned long long hxconsole_parse_arg_<unsigned long long>(co
 
 template<> const char* hxconsole_parse_arg_<const char*>(const char* str_, char** next_);
 
-// ----------------------------------------------------------------------------
 // Argument labels for usage strings.
 
 template<typename arg_t_> constexpr const char* hxconsole_arg_label_() = delete;
@@ -107,7 +100,6 @@ template<> constexpr const char* hxconsole_arg_label_<const char*>() { return "c
 // Prints id (or "usage:") followed by a null terminated array of labels.
 void hxconsole_usage_(const char* id_, const char* const* labels_);
 
-// ----------------------------------------------------------------------------
 // C++20 concept for parseable types.
 
 template<typename t_>
@@ -115,7 +107,6 @@ concept hxconsole_parseable_ = requires(const char* s_, char** n_) {
 	requires hxis_same<decltype(hxconsole_parse_arg_<t_>(s_, n_)), t_>::value;
 };
 
-// ----------------------------------------------------------------------------
 // Checks for printing characters.
 
 inline bool hxconsole_is_end_of_line_(const char* str_) {
@@ -123,7 +114,6 @@ inline bool hxconsole_is_end_of_line_(const char* str_) {
 	return *str_ == '\0' || *str_ == '#'; // Skip comments
 }
 
-// ----------------------------------------------------------------------------
 // hxconsole_command_ base class.
 
 class hxconsole_command_ {
@@ -132,7 +122,6 @@ public:
 	virtual void usage_(const char* id_=hxnull) = 0; // Expects command name.
 };
 
-// ----------------------------------------------------------------------------
 // Single variadic command template. Replaces hxconsole_command0_ through
 // hxconsole_command4_.
 
@@ -149,7 +138,7 @@ public:
 			usage_();
 			return false;
 		} else {
-			char* next_ = const_cast<char*>(str_);
+			char* const next_ = const_cast<char*>(str_);
 			const bool ok_ = call_<args_t_...>(m_fn_, str_, next_);
 			if(!ok_) { usage_(); }
 			return ok_;
@@ -186,7 +175,6 @@ private:
 	bool(*m_fn_)(args_t_...);
 };
 
-// ----------------------------------------------------------------------------
 // Variable template.
 
 template<typename var_t_>
@@ -218,7 +206,6 @@ private:
 	volatile var_t_* m_var_;
 };
 
-// ----------------------------------------------------------------------------
 // Single factory function. The compiler deduces args_t_... from the function
 // pointer.
 
@@ -238,7 +225,6 @@ inline void hxconsole_variable_factory_(var_t_** var_) = delete;
 template<typename var_t_>
 inline void hxconsole_variable_factory_(const var_t_** var_) = delete;
 
-// ----------------------------------------------------------------------------
 // Hash table infrastructure.
 
 // Wrap the string literal type because it is not used normally.
@@ -306,21 +292,21 @@ public:
 	template<typename command_t_>
 	hxconsole_constructor_(command_t_ fn_, const char* id_)
 			: m_node_(hxconsole_hash_table_key_(id_)) {
-		static_assert(sizeof(command_t_) <= sizeof(m_storage_), "command_storage_overflow");
+		static_assert(hxsizeof<command_t_>() <= storage_size_, "command_storage_overflow");
 		::new(m_storage_ + 0) command_t_(hxmove(fn_));
 		m_node_.set_command_(reinterpret_cast<command_t_*>(m_storage_ + 0));
 		hxconsole_register_(&m_node_);
 	}
 
 private:
-	// Provide static storage instead of using allocator before main.
-	// Two pointers: vtable ptr + one fn or data ptr (sizeof(void*) each).
-	// Sufficient for hxconsole_command_impl_ and hxconsole_variable_ on
-	// ILP32, LLP64, and LP64. Enforced by static_assert in the constructor.
+	// Provide static storage instead of using allocator before main. Two
+	// pointers: vtable ptr + one fn or data ptr (sizeof(void*) each).
+	// Sufficient for hxconsole_command_impl_ and hxconsole_variable_ on ILP32,
+	// LLP64, and LP64. Enforced by static_assert in the constructor.
+	static constexpr hxsize_t storage_size_ = hxsizeof<void*>() * 2;
 	hxconsole_hash_table_node_ m_node_;
-	char m_storage_[sizeof(void*) + sizeof(void*)];
+	char m_storage_[storage_size_];
 };
 
 } // hxdetail_
-
 #endif // HX_DOXYGEN_PARSER

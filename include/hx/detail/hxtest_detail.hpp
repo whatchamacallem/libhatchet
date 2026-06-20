@@ -61,20 +61,20 @@ public:
 							 const char* message_, bool is_assert_) hxattr_nonnull(3,5);
 
 	// Run tests. test_suite_filter_ must match exactly.
-	size_t run_all_tests_(const char* test_suite_filter_=hxnull);
+	int run_all_tests_(const char* test_suite_filter_=hxnull);
 
 private:
 	hxtest_(const hxtest_&) = delete;
 	void operator=(const hxtest_&) = delete;
 
 	hxtest_case_interface_* m_test_cases_[HX_TEST_MAX_CASES];
-	size_t m_num_test_cases_;
+	int m_num_test_cases_;
 	hxtest_case_interface_* m_current_test_;
 	test_state_t_ m_test_state_;
-	size_t m_pass_count_;
-	size_t m_fail_count_;
-	size_t m_total_assert_count_;
-	size_t m_assert_count_;
+	int m_pass_count_;
+	int m_fail_count_;
+	int m_total_assert_count_;
+	int m_assert_count_;
 };
 
 } // hxdetail_

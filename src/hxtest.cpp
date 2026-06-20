@@ -92,7 +92,7 @@ hxtest_& hxtest_::dispatcher_(void) {
 
 void hxtest_::add_test_(hxtest_case_interface_* fn) {
 	// Use -DHX_TEST_MAX_CASES to provide enough room for all tests.
-	hxassert_always(m_num_test_cases_ < HX_TEST_MAX_CASES, "HX_TEST_MAX_CASES overflow");
+	hxassert_always(m_num_test_cases_ < (int)HX_TEST_MAX_CASES, "HX_TEST_MAX_CASES overflow");
 	m_test_cases_[m_num_test_cases_++] = fn;
 }
 
@@ -109,14 +109,14 @@ void hxtest_::condition_check_(bool condition, const char* file, size_t line, co
 			hxlog_handler(hxlog_level_assert, "test_fail %s.%s", m_current_test_->suite_(), m_current_test_->case_());
 			hxlog_handler(hxlog_level_assert, "test_fail_at %s(%zu): %s", file, line, message);
 			hxlog_handler(hxlog_level_assert, "test_assert_fail ❌");
-			hxlog_console("[==========] aborted after %zu passed, %zu failed, %zu assertions.\n",
-				m_pass_count_, m_fail_count_ + 1u, m_total_assert_count_);
+			hxlog_console("[==========] aborted after %d passed, %d failed, %d assertions.\n",
+				m_pass_count_, m_fail_count_ + 1, m_total_assert_count_);
 			hxbreakpoint();
 			hxexit(EXIT_FAILURE);
 		}
 
 		if(m_assert_count_ > max_fail_messages_) {
-			if(m_assert_count_ == max_fail_messages_ + 1u) {
+			if(m_assert_count_ == max_fail_messages_ + 1) {
 				hxlog_console("remaining asserts will fail silently...\n");
 			}
 			return;
@@ -134,7 +134,7 @@ void hxtest_::condition_check_(bool condition, const char* file, size_t line, co
 	}
 }
 
-size_t hxtest_::run_all_tests_(const char* test_suite_filter) {
+int hxtest_::run_all_tests_(const char* test_suite_filter) {
 	hxinit(); // RUN_ALL_TESTS could be called first.
 
 	if(test_suite_filter != hxnull && test_suite_filter[0] == 0) {
@@ -142,8 +142,8 @@ size_t hxtest_::run_all_tests_(const char* test_suite_filter) {
 	}
 	hxlog_console("[==========] Running tests: %s\n", (test_suite_filter ? test_suite_filter : "All"));
 
-	m_pass_count_ = m_fail_count_ = 0u;
-	m_total_assert_count_ = 0u;
+	m_pass_count_ = m_fail_count_ = 0;
+	m_total_assert_count_ = 0;
 
 	// Breaking hxinsertion_sort breaks everything.
 	hxinsertion_sort(m_test_cases_, m_test_cases_ + m_num_test_cases_, hxtest_case_sort);
@@ -161,7 +161,7 @@ size_t hxtest_::run_all_tests_(const char* test_suite_filter) {
 			hxlog_console("[ RUN      ] %s.%s\n", (*it)->suite_(), (*it)->case_());
 			m_current_test_ = *it;
 			m_test_state_ = test_state_nothing_asserted_;
-			m_assert_count_ = 0u;
+			m_assert_count_ = 0;
 
 #ifdef __cpp_exceptions
 			try
@@ -197,21 +197,21 @@ size_t hxtest_::run_all_tests_(const char* test_suite_filter) {
 	}
 	m_current_test_ = hxnull;
 
-	hxlog_console("[==========] skipped %zu tests. failed %zu assertions.\n",
+	hxlog_console("[==========] skipped %d tests. failed %d assertions.\n",
 		m_num_test_cases_ - m_pass_count_ - m_fail_count_, m_total_assert_count_);
 
 	hxwarn_msg(m_pass_count_ + m_fail_count_, "nothing_tested");
 
-	if(m_pass_count_ != 0u && m_fail_count_ == 0u) {
+	if(m_pass_count_ != 0 && m_fail_count_ == 0) {
 		// This is Google Test style. If only it were green.
-		hxlog_handler(hxlog_level_console, "[  PASSED  ] %zu test%s.\n", m_pass_count_,
-			((m_pass_count_ != 1u) ? "s" : ""));
+		hxlog_handler(hxlog_level_console, "[  PASSED  ] %d test%s.\n", m_pass_count_,
+			((m_pass_count_ != 1) ? "s" : ""));
 	}
 	else {
-		hxlog_handler(hxlog_level_console, "%zu FAILED TEST%s ❌\n", m_fail_count_,
-			m_fail_count_ == 1u ? "" : "S");
+		hxlog_handler(hxlog_level_console, "%d FAILED TEST%s ❌\n", m_fail_count_,
+			m_fail_count_ == 1 ? "" : "S");
 		// Count nothing tested as one failure.
-		m_fail_count_ = hxmax(m_fail_count_, (size_t)1u);
+		m_fail_count_ = hxmax(m_fail_count_, 1);
 	}
 	return m_fail_count_;
 }

@@ -31,7 +31,8 @@ the `std` namespace. The ranges library should not be implemented and do not go
 looking for a `std::span` equivalent. Symbols starting with `hx` that have the
 same name as symbols in the standard library are generally functionally
 equivalent. E.g. use `hxforward` instead of `std::forward`. Standard
-functionality is often available. Prefer `size_t` for sizes and array indexing.
+functionality is often available. Prefer `hxsize_t` which is an alias for
+`ptrdiff_t` for sizes and array indexing as it is advantageous to the optimizer.
 
 Do not use C++ exceptions, RTTI or assume asserts are enabled. Check when adding
 includes whether they are redundant and write them as `<stdio.h>` not
@@ -45,7 +46,7 @@ not allowed. The rules are only checked by `testcmake.sh` and are not checked by
 `1000u` to `(size_t)1000`.
 
 Do not write simple one line helper functions. Except prefer delegating
-constructors to repeating member initializers. Do not write code that requires
+constructors over repeating field initializers. Do not write code that requires
 unnecessary traversal of data structures in the debugger watch window.
 
 Do not use defensive programming or guard against mistakes. Never implement
@@ -67,7 +68,7 @@ Make any function or operator implementation that will not fit on one line in
 100 chars an out of line implementation that goes after the class body.
 Alphabetize all the functions, keeping operators first. Place the opening brace
 of a function body on the same line as the function signature. When creating a
-new class do not use global operators and use member functions instead.
+new class do not use global operators and use class methods instead.
 
 When using the C library use C-style headers and not the C++ wrappers around
 them. E.g. use `<math.h>` not `<cmath>`. The goal is to be able to compile
@@ -77,8 +78,9 @@ against libc alone without using the C++ standard library at all.
 
 All symbols are `snake_case`. Except shell variables, feature test macros and
 certain preprocessor symbols are `SCREAMING_SNAKE_CASE`. Do not use abbreviated
-names except for iterators. Use `struct` only in C code and template
-metaprogramming.
+names except for iterators. Always use `class` instead of `struct` except in C
+code and template metaprogramming. Never use the word "member" and instead use
+"fields" and "methods."
 
 Classes, structs and functions begin with `hx` and not `hx_`. Template
 parameters are `snake_case` and end with `_t_`. `using` statements may publish
@@ -89,51 +91,59 @@ with an underscore. Private fields begin with `m_`. Global variables start with
 calls to the C standard library with `::` to indicate they are in the global
 namespace. Use `src_` and `dst_` for source and destination iterators.
 
-Prefix calls to member functions with `this->`.
+Prefix all calls to methods in header files with `this->`.
 
 ## Optimization
 
 Prefer C-style implementation details that are cache coherent. Minimize branches
 and memory indirection. Avoid division. Prefer iterating with pointers marked
 `hxrestrict` instead of using array indices. Warn when working with tight loops
-that will not be unrolled and suggest `hxattr_hot`. Use `size_t` to avoid
-unnecessary 64-bit operations on 32-bit builds. Count CPU instructions required
-for ARM M-profile and RISC-V bare metal processors and choose the cheapest
-implementation. Pack classes and structures for minimum space use.
+that will not be unrolled and suggest `hxattr_hot`. Use `hxsize_t` and `size_t`
+to avoid unnecessary 64-bit operations on 32-bit builds. Count CPU instructions
+required for ARM M-profile and RISC-V bare metal processors and choose the
+cheapest implementation. Pack classes and structures for minimum space use.
+
+Always use `hxmove` instead of split placement-new/operator= patterns in shift
+loops, since exceptions are disabled. Do not write extra code to defend against
+small integer overflows in `size_t`, `ptrdiff_t` or `hxsize_t` calculations.
 
 ## Testing
 
-Use `debugbuild.sh` to test changes by default and not cmake. 🪓🪓🪓 output
-indicates success. When asked to run tests execute `build/hxtest` with `build`
-as the current directory. Consider all `.sh` files in the project except
+Use `debugbuild.sh --run` to test changes by default and not cmake. 🪓🪓🪓
+output indicates success. When asked to run tests execute `build/hxtest` with
+`build` as the current directory. Consider all `.sh` files in the project except
 `debian_packages.sh` safe to run at any time. On Windows, fall back to the VS
 Code CMake win32 debug task.
 
-Compiling tests with a C++11 compiler against C99 libraries is required. Support
-for `ILP32`, `LP64` and `LLP64` are required to pass tests. All
+Tests that compile with a C++11 compiler against C99 libraries are required.
+Support for `ILP32`, `LP64` and `LLP64` is required to pass tests. All
 `HX_HARDENING_MODE` levels are required to pass tests. Do not use compiler
-builtins as this code is intended to compile on any C++ compiler.
-
-Do not write test suites until requested as the design may not be finalized.
-Every branch needs to be tested both ways with off by one tests and also do
-white box testing that ensures the documentation is being followed. All test
+builtins as this code is intended to compile on any C++ compiler. All test
 symbols that show up in the linker map must contain `hx` and `test`.
 
-Do not generate tests that are entirely redundant with other tests or do not
-meaningfully test real code. E.g. Do not compare the return value of a function
-called on an object with the return value of the same function called on a
-reference to the same object.
+Do not write test suites until requested as the design may not be finalized. Do
+not write redundant tests. Omit comments in test code unless the code is very
+hard to follow. Ignore spell checker errors. Use American English.
 
-Ignore spell checker errors.
+All tests go in the `test` directory and are GoogleTest-style tests, written to
+kill off-by-one mutants. Enumerate the mutants an off-by-one introduces:
+relational replacements (`<` vs `<=`, `>` vs `>=`, `==` vs `!=`), loop bound
+shifts (`n` to `n-1` or `n+1`), index/pointer shifts (`i+1` to `i-1`, `&a[k]` to
+`&a[k-1]` or `&a[k+1]`), and reversed increment direction. For each mutant,
+choose the exact boundary input where it diverges from the original and write a
+test using the appropriate assertion (`EXPECT_*`, `ASSERT_*`) that fails on the
+mutant and passes on the original. Skip equivalent mutants and do not write
+identical tests for them. However, testing for as many mutants as possible is
+important. Test names are the only test documentation, add no other comments.
+
+Prefer `EXPECT_*` macros to `ASSERT_*` macros unless the failure looks like it
+will cause memory corruption or other failures in subsequent tests.
 
 Never fix a failing test except when instructed to do so or those failures are a
 direct consequence of changes you are making. Do not fix a failing test in a
 manner that defeats the intent of the test except by removing it entirely.
 Prompt the user with a list of failing tests when they are unrelated to your
 work or the intent preserving fix is unclear.
-
-Prefer `EXPECT_*` macros to `ASSERT_*` macros unless the failure looks like it
-will cause memory corruption or other failures in subsequent tests.
 
 ## Debugging
 
@@ -180,9 +190,10 @@ Do not reorder major sections of code unless asked. This codebase does not put
 translation unit local declarations and definitions close to where they are used
 but instead places them near the top of the file to be immediately visible to
 reviewers. E.g. at most one anonymous namespace at the top of a translation unit
-should normally be needed.
+should normally be needed to hold all  local definitions.
 
-All text files must end with a single `\n`.
+Do not add section dividers e.g. `// ------`. All text files must end with a
+single `\n`.
 
 ## Project Structure
 
@@ -200,6 +211,11 @@ Use file globs to discover files in the `src` directory instead of listing them
 in build files. Symbols in the `src` directory only end with `_` when required.
 Function parameter names in `src` files do not end with `_` even when they do so
 in headers.
+
+The `hx` namespace is optional and should not be hardcoded in the GDB scripts.
+`HX_NS_BEGIN_` and `HX_NS_END_` are used to wrap the code.
+
+Update `src/hxmodule.cppm` when new files are added to `include`.
 
 ## File Index
 

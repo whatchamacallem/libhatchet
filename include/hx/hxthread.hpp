@@ -47,7 +47,7 @@ public:
 		const int code_ = ::pthread_key_create(&m_key_, 0);
 		hxassert_always(code_ == 0, "pthread_key_create %s", ::strerror(code_)); (void)code_;
 #else
-		m_value_ = (T_)0; // NOLINT
+		m_value_ = (T_)0;
 #endif
 	}
 
@@ -63,9 +63,9 @@ public:
 	/// Returns the thread-local value.
 	operator T_(void) {
 #if (HX_USE_THREADS) == 11
-		return (T_)(intptr_t)::tss_get(m_key_); // NOLINT
+		return (T_)(intptr_t)::tss_get(m_key_); // NOLINT(google-readability-casting)
 #elif HX_USE_THREADS
-		return (T_)(intptr_t)::pthread_getspecific(m_key_); // NOLINT
+		return (T_)(intptr_t)::pthread_getspecific(m_key_); // NOLINT(google-readability-casting)
 #else
 		return m_value_;
 #endif
@@ -74,10 +74,10 @@ public:
 	/// Sets the thread-local value. This is a form of "mutable when const."
 	void operator=(T_ local_) {
 #if (HX_USE_THREADS) == 11
-		const int code_ = ::tss_set(m_key_, (void*)(intptr_t)local_); // NOLINT
+		const int code_ = ::tss_set(m_key_, (void*)(intptr_t)local_); // NOLINT(google-readability-casting)
 		hxassert_always(code_ == thrd_success, "tss_set %d", code_); (void)code_;
 #elif HX_USE_THREADS
-		const int code_ = ::pthread_setspecific(m_key_, (void*)(intptr_t)local_); // NOLINT
+		const int code_ = ::pthread_setspecific(m_key_, (void*)(intptr_t)local_); // NOLINT(google-readability-casting)
 		hxassert_always(code_ == 0, "pthread_setspecific %s", ::strerror(code_)); (void)code_;
 #else
 		m_value_ = local_;
@@ -403,7 +403,7 @@ public:
 		static_assert(sizeof(void*) == sizeof(parameter_t_*), "Incompatible pointer sizes.");
 
 		void* reinterpreted_parameter_ = hxnull;
-		::memcpy(&reinterpreted_parameter_, &parameter_, sizeof(void*)); // NOLINT
+		::memcpy(&reinterpreted_parameter_, &parameter_, sizeof(void*)); // NOLINT(bugprone-bitwise-pointer-cast)
 #if (HX_USE_THREADS) == 11
 		const int code_ = ::thrd_create(&m_thread_,
 			reinterpret_cast<entry_point_function_t_>(entry_point_), reinterpreted_parameter_);

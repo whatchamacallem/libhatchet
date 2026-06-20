@@ -10,135 +10,135 @@
 #ifndef HX_DOXYGEN_PARSER
 HX_BEGIN_INL_
 
-template<hxarray_concept_ T_, size_t capacity_>
+template<hxarray_concept_ T_, hxsize_t capacity_>
 hxvector<T_, capacity_>::hxvector(void) : m_end_(this->data()) { }
 
-template<hxarray_concept_ T_, size_t capacity_>
-hxvector<T_, capacity_>::hxvector(size_t size_) : hxvector() {
+template<hxarray_concept_ T_, hxsize_t capacity_>
+hxvector<T_, capacity_>::hxvector(hxsize_t size_) noexcept : hxvector() {
 	this->resize(size_);
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
-hxvector<T_, capacity_>::hxvector(size_t size_, const T_& x_) : hxvector() {
+template<hxarray_concept_ T_, hxsize_t capacity_>
+hxvector<T_, capacity_>::hxvector(hxsize_t size_, const T_& x_) noexcept : hxvector() {
 	this->resize(size_, x_);
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
-hxvector<T_, capacity_>::hxvector(const hxvector& x_) : hxvector() {
+template<hxarray_concept_ T_, hxsize_t capacity_>
+hxvector<T_, capacity_>::hxvector(const hxvector& x_) noexcept : hxvector() {
 	this->assign<const T_*>(x_.data(), x_.m_end_);
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
-template<size_t capacity_x_>
-hxvector<T_, capacity_>::hxvector(const hxvector<T_, capacity_x_>& x_) : hxvector() {
+template<hxarray_concept_ T_, hxsize_t capacity_>
+template<hxsize_t capacity_x_>
+hxvector<T_, capacity_>::hxvector(const hxvector<T_, capacity_x_>& x_) noexcept : hxvector() {
 	this->assign<const T_*>(x_.data(), x_.end());
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
+template<hxarray_concept_ T_, hxsize_t capacity_>
 hxvector<T_, capacity_>::hxvector(hxvector&& x_) noexcept {
 	static_assert(capacity_ == hxallocator_dynamic_capacity,
-		"Capacity hxallocator_dynamic_capacity required for temporaries.");
-	::memcpy((void*)this, &x_, sizeof x_); // NOLINT
-	::memset((void*)&x_, 0x00, sizeof x_); // NOLINT
+		"hxallocator_dynamic_capacity required for temporaries.");
+	::memcpy(static_cast<void*>(this), &x_, sizeof x_); // NOLINT(bugprone-undefined-memory-manipulation)
+	::memset(static_cast<void*>(&x_), 0x00, sizeof x_);
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
-template<typename other_value_t_, size_t array_length_>
-hxvector<T_, capacity_>::hxvector(const other_value_t_(&array_)[array_length_]) : hxvector() {
+template<hxarray_concept_ T_, hxsize_t capacity_>
+template<typename other_value_t_, hxsize_t array_length_>
+hxvector<T_, capacity_>::hxvector(const other_value_t_(&array_)[array_length_]) noexcept : hxvector() {
 	this->assign(array_ + 0, array_ + array_length_);
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
+template<hxarray_concept_ T_, hxsize_t capacity_>
 template<typename other_value_t_>
-hxvector<T_, capacity_>::hxvector(std::initializer_list<other_value_t_> x_) : hxvector() {
+hxvector<T_, capacity_>::hxvector(std::initializer_list<other_value_t_> x_) noexcept : hxvector() {
 	this->assign(x_.begin(), x_.end());
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
-hxvector<T_, capacity_>::~hxvector(void) {
+template<hxarray_concept_ T_, hxsize_t capacity_>
+hxvector<T_, capacity_>::~hxvector(void) noexcept {
 	this->destruct_(this->data(), m_end_);
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
-void hxvector<T_, capacity_>::operator=(const hxvector& x_) {
+template<hxarray_concept_ T_, hxsize_t capacity_>
+void hxvector<T_, capacity_>::operator=(const hxvector& x_) noexcept {
 	hxassertmsg(static_cast<const void*>(this) != static_cast<const void*>(&x_),
 		"invalid_reference");
 	this->assign<const T_*>(x_.data(), x_.m_end_);
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
-template<size_t capacity_x_>
-void hxvector<T_, capacity_>::operator=(const hxvector<T_, capacity_x_>& x_) {
+template<hxarray_concept_ T_, hxsize_t capacity_>
+template<hxsize_t capacity_x_>
+void hxvector<T_, capacity_>::operator=(const hxvector<T_, capacity_x_>& x_) noexcept {
 	hxassertmsg(static_cast<const void*>(this) != static_cast<const void*>(&x_),
 		"invalid_reference");
 	this->assign<const T_*>(x_.data(), x_.end());
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
+template<hxarray_concept_ T_, hxsize_t capacity_>
 void hxvector<T_, capacity_>::operator=(hxvector&& x_) noexcept {
 	hxassertmsg(static_cast<const void*>(this) != static_cast<const void*>(&x_),
 		"invalid_reference");
 	this->swap(x_);
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
-template<typename other_value_t_, size_t array_length_>
-void hxvector<T_, capacity_>::operator=(const other_value_t_(&array_)[array_length_]) {
+template<hxarray_concept_ T_, hxsize_t capacity_>
+template<typename other_value_t_, hxsize_t array_length_>
+void hxvector<T_, capacity_>::operator=(const other_value_t_(&array_)[array_length_]) noexcept {
 	this->assign(array_ + 0, array_ + array_length_);
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
-const T_& hxvector<T_, capacity_>::operator[](size_t index_) const {
-	hxassert_hard(index_ < this->size(), "invalid_index %zu", index_);
+template<hxarray_concept_ T_, hxsize_t capacity_>
+const T_& hxvector<T_, capacity_>::operator[](hxsize_t index_) const {
+	hxassert_hard(static_cast<size_t>(index_) < static_cast<size_t>(this->size()), "invalid_index %zu", index_);
 	return this->data()[index_];
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
-T_& hxvector<T_, capacity_>::operator[](size_t index_) {
-	hxassert_hard(index_ < this->size(), "invalid_index %zu", index_);
+template<hxarray_concept_ T_, hxsize_t capacity_>
+T_& hxvector<T_, capacity_>::operator[](hxsize_t index_) {
+	hxassert_hard(static_cast<size_t>(index_) < static_cast<size_t>(this->size()), "invalid_index %zu", index_);
 	return this->data()[index_];
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
-void hxvector<T_, capacity_>::operator+=(const T_& x_) {
+template<hxarray_concept_ T_, hxsize_t capacity_>
+void hxvector<T_, capacity_>::operator+=(const T_& x_) noexcept {
 	::new(this->push_back_unconstructed_()) T_(x_);
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
-void hxvector<T_, capacity_>::operator+=(T_&& x_) {
+template<hxarray_concept_ T_, hxsize_t capacity_>
+void hxvector<T_, capacity_>::operator+=(T_&& x_) noexcept {
 	::new(this->push_back_unconstructed_()) T_(hxmove(x_));
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
-template<size_t capacity_x_>
-void hxvector<T_, capacity_>::operator+=(const hxvector<T_, capacity_x_>& x_) {
+template<hxarray_concept_ T_, hxsize_t capacity_>
+template<hxsize_t capacity_x_>
+void hxvector<T_, capacity_>::operator+=(const hxvector<T_, capacity_x_>& x_) noexcept {
 	hxassertmsg(static_cast<const void*>(this) != static_cast<const void*>(&x_),
 		"invalid_reference");
-	for(const T_* hxrestrict it_ = x_.data(), *end_ = x_.end(); it_ != end_; ++it_) {
+	for(const T_* it_ = x_.data(), *const end_ = x_.end(); it_ != end_; ++it_) {
 		::new(this->push_back_unconstructed_()) T_(*it_);
 	}
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
-template<size_t capacity_x_>
-void hxvector<T_, capacity_>::operator+=(hxvector<T_, capacity_x_>&& x_) {
+template<hxarray_concept_ T_, hxsize_t capacity_>
+template<hxsize_t capacity_x_>
+void hxvector<T_, capacity_>::operator+=(hxvector<T_, capacity_x_>&& x_) noexcept {
 	hxassertmsg(static_cast<const void*>(this) != static_cast<const void*>(&x_),
 		"invalid_reference");
 	// Non-const mutable operation.
-	for(T_* hxrestrict it_ = x_.data(), *end_ = x_.end(); it_ != end_; ++it_) {
+	for(T_* it_ = x_.data(), *const end_ = x_.end(); it_ != end_; ++it_) {
 		::new(this->push_back_unconstructed_()) T_(hxmove(*it_));
 	}
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
+template<hxarray_concept_ T_, hxsize_t capacity_>
 hxarray_back_inserter_<hxvector<T_, capacity_>> hxvector<T_, capacity_>::operator*(void) {
 	return hxarray_back_inserter_<hxvector<T_, capacity_>>(*this);
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
+template<hxarray_concept_ T_, hxsize_t capacity_>
 template<typename callable_t_>
 bool hxvector<T_, capacity_>::all_of(callable_t_&& fn_) const {
-	for(const T_* it_ = this->data(), *end_ = m_end_; it_ != end_; ++it_) {
+	for(const T_* it_ = this->data(), *const end_ = m_end_; it_ != end_; ++it_) {
 		if(!hxforward<callable_t_>(fn_)(*it_)) {
 			return false;
 		}
@@ -146,10 +146,10 @@ bool hxvector<T_, capacity_>::all_of(callable_t_&& fn_) const {
 	return true;
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
+template<hxarray_concept_ T_, hxsize_t capacity_>
 template<typename callable_t_>
 bool hxvector<T_, capacity_>::all_of(callable_t_&& fn_) {
-	for(T_* it_ = this->data(), *end_ = m_end_; it_ != end_; ++it_) {
+	for(T_* it_ = this->data(), *const end_ = m_end_; it_ != end_; ++it_) {
 		if(!hxforward<callable_t_>(fn_)(*it_)) {
 			return false;
 		}
@@ -157,10 +157,10 @@ bool hxvector<T_, capacity_>::all_of(callable_t_&& fn_) {
 	return true;
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
+template<hxarray_concept_ T_, hxsize_t capacity_>
 template<typename callable_t_>
 bool hxvector<T_, capacity_>::any_of(callable_t_&& fn_) const {
-	for(const T_* it_ = this->data(), *end_ = m_end_; it_ != end_; ++it_) {
+	for(const T_* it_ = this->data(), *const end_ = m_end_; it_ != end_; ++it_) {
 		if(hxforward<callable_t_>(fn_)(*it_)) {
 			return true;
 		}
@@ -168,10 +168,10 @@ bool hxvector<T_, capacity_>::any_of(callable_t_&& fn_) const {
 	return false;
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
+template<hxarray_concept_ T_, hxsize_t capacity_>
 template<typename callable_t_>
 bool hxvector<T_, capacity_>::any_of(callable_t_&& fn_) {
-	for(T_* it_ = this->data(), *end_ = m_end_; it_ != end_; ++it_) {
+	for(T_* it_ = this->data(), *const end_ = m_end_; it_ != end_; ++it_) {
 		if(hxforward<callable_t_>(fn_)(*it_)) {
 			return true;
 		}
@@ -179,12 +179,12 @@ bool hxvector<T_, capacity_>::any_of(callable_t_&& fn_) {
 	return false;
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
+template<hxarray_concept_ T_, hxsize_t capacity_>
 template<typename iter_t_>
-void hxvector<T_, capacity_>::assign(iter_t_ begin_, iter_t_ end_) {
+void hxvector<T_, capacity_>::assign(iter_t_ begin_, iter_t_ end_) noexcept {
 	hxassert_hard((end_ - begin_) >= 0, "invalid_iterator");
-	this->reserve(static_cast<size_t>(end_ - begin_));
-	T_* hxrestrict it0_ = this->data();
+	this->reserve(static_cast<hxsize_t>(end_ - begin_));
+	T_* it0_ = this->data();
 	this->destruct_(it0_, m_end_);
 	iter_t_ it1_(begin_); // begin_ may be a reference.
 	while(it1_ != end_) {
@@ -194,16 +194,16 @@ void hxvector<T_, capacity_>::assign(iter_t_ begin_, iter_t_ end_) {
 }
 
 #if HX_CPLUSPLUS >= 202002L
-template<hxarray_concept_ T_, size_t capacity_>
+template<hxarray_concept_ T_, hxsize_t capacity_>
 template<typename range_t_>
-void hxvector<T_, capacity_>::assign_range(range_t_& range_) {
+void hxvector<T_, capacity_>::assign_range(range_t_& range_) noexcept {
 	this->assign(range_.begin(), range_.end());
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
+template<hxarray_concept_ T_, hxsize_t capacity_>
 template<typename range_t_>
 requires(!hxis_lvalue_reference<range_t_>::value)
-void hxvector<T_, capacity_>::assign_range(range_t_&& range_) {
+void hxvector<T_, capacity_>::assign_range(range_t_&& range_) noexcept {
 	this->clear();
 	// Sorry, std::begin and std::end may not exist.
 	for(auto it_ = range_.begin(), end_ = range_.end(); it_ != end_; ++it_) {
@@ -212,48 +212,48 @@ void hxvector<T_, capacity_>::assign_range(range_t_&& range_) {
 }
 #endif
 
-template<hxarray_concept_ T_, size_t capacity_>
+template<hxarray_concept_ T_, hxsize_t capacity_>
 const T_& hxvector<T_, capacity_>::back(void) const {
 	hxassert_hard(!this->empty(), "invalid_reference");
 	return m_end_[-1];
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
+template<hxarray_concept_ T_, hxsize_t capacity_>
 T_& hxvector<T_, capacity_>::back(void) {
 	hxassert_hard(!this->empty(), "invalid_reference");
 	return m_end_[-1];
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
+template<hxarray_concept_ T_, hxsize_t capacity_>
 const T_* hxvector<T_, capacity_>::binary_search(const T_& value_) const {
 	return hxbinary_search<const T_*>(this->data(), m_end_, value_, hxkey_less_t<const T_&>{});
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
+template<hxarray_concept_ T_, hxsize_t capacity_>
 T_* hxvector<T_, capacity_>::binary_search(const T_& value_) {
 	return hxbinary_search<T_*>(this->data(), m_end_, value_, hxkey_less_t<const T_&>{});
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
-void hxvector<T_, capacity_>::clear(void) {
+template<hxarray_concept_ T_, hxsize_t capacity_>
+void hxvector<T_, capacity_>::clear(void) noexcept {
 	this->destruct_(this->data(), m_end_);
 	m_end_ = this->data();
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
+template<hxarray_concept_ T_, hxsize_t capacity_>
 template<typename... args_t_>
-T_& hxvector<T_, capacity_>::emplace_back(args_t_&&... args_) {
+T_& hxvector<T_, capacity_>::emplace_back(args_t_&&... args_) noexcept {
 	hxassert_hard(!this->full(), "stack_overflow");
 	return *::new(m_end_++) T_(hxforward<args_t_>(args_)...);
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
-template<size_t capacity_x_>
+template<hxarray_concept_ T_, hxsize_t capacity_>
+template<hxsize_t capacity_x_>
 bool hxvector<T_, capacity_>::equal(const hxvector<T_, capacity_x_>& x_) const {
 	if(this->size() != x_.size()) {
 		return false;
 	}
-	for(const T_* it0_ = this->data(), *it1_ = x_.data(), *end_ = m_end_;
+	for(const T_*hxrestrict it0_ = this->data(), *hxrestrict it1_ = x_.data(), *const end_ = m_end_;
 			it0_ != end_; ++it0_, ++it1_) {
 		if(!hxkey_equal(*it0_, *it1_)) {
 			return false;
@@ -262,8 +262,8 @@ bool hxvector<T_, capacity_>::equal(const hxvector<T_, capacity_x_>& x_) const {
 	return true;
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
-void hxvector<T_, capacity_>::erase(T_* pos_) {
+template<hxarray_concept_ T_, hxsize_t capacity_>
+void hxvector<T_, capacity_>::erase(T_* pos_) noexcept {
 	hxassert_hard(pos_ >= this->data() && pos_ < m_end_, "invalid_iterator");
 	while((pos_ + 1) != m_end_) {
 		*pos_ = hxmove(*(pos_ + 1));
@@ -272,17 +272,17 @@ void hxvector<T_, capacity_>::erase(T_* pos_) {
 	(--m_end_)->T_::~T_();
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
-void hxvector<T_, capacity_>::erase(size_t index_) {
-	hxassert_hard(index_ < this->size(), "invalid_index %zu", index_);
+template<hxarray_concept_ T_, hxsize_t capacity_>
+void hxvector<T_, capacity_>::erase(hxsize_t index_) noexcept {
+	hxassert_hard(static_cast<size_t>(index_) < static_cast<size_t>(this->size()), "invalid_index %zu", index_);
 	this->erase(this->data() + index_);
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
+template<hxarray_concept_ T_, hxsize_t capacity_>
 template<typename callable_t_>
-size_t hxvector<T_, capacity_>::erase_if_unordered(callable_t_&& fn_) {
-	size_t removed_ = 0u;
-	T_* const begin_ = this->data();
+hxsize_t hxvector<T_, capacity_>::erase_if_unordered(callable_t_&& fn_) noexcept {
+	hxsize_t removed_ = 0;
+	const T_* const begin_ = this->data();
 	T_* hxrestrict end_ = m_end_;
 	for(T_* hxrestrict it_ = end_; it_-- != begin_;) {
 		if(hxforward<callable_t_>(fn_)(*it_)) {
@@ -297,12 +297,12 @@ size_t hxvector<T_, capacity_>::erase_if_unordered(callable_t_&& fn_) {
 	return removed_;
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
+template<hxarray_concept_ T_, hxsize_t capacity_>
 template<typename callable_t_>
-size_t hxvector<T_, capacity_>::erase_if_heap(callable_t_&& fn_) {
+hxsize_t hxvector<T_, capacity_>::erase_if_heap(callable_t_&& fn_) noexcept {
 	T_* hxrestrict src_ = this->data();
 	T_* hxrestrict dst_ = src_;
-	for(T_* end_ = m_end_; src_ != end_; ++src_) {
+	for(const T_*const end_ = m_end_; src_ != end_; ++src_) {
 		if(!hxforward<callable_t_>(fn_)(*src_)) {
 			// Survivor: move into the next free slot, or leave in place.
 			if(src_ != dst_) {
@@ -314,16 +314,16 @@ size_t hxvector<T_, capacity_>::erase_if_heap(callable_t_&& fn_) {
 			src_->T_::~T_(); // Removed: destroy without freeing storage.
 		}
 	}
-	const size_t removed_ = static_cast<size_t>(m_end_ - dst_);
+	const hxsize_t removed_ = m_end_ - dst_;
 	m_end_ = dst_;
-	if(removed_ != 0u) {
+	if(removed_ != 0) {
 		hxdetail_::hxmake_heap_<T_*>(this->data(), m_end_, hxkey_less_t<T_>{});
 	}
 	return removed_;
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
-void hxvector<T_, capacity_>::erase_unordered(const T_* pos_) {
+template<hxarray_concept_ T_, hxsize_t capacity_>
+void hxvector<T_, capacity_>::erase_unordered(const T_* pos_) noexcept {
 	hxassert_hard(pos_ >= this->data() && pos_ < m_end_, "invalid_iterator");
 	if(pos_ != --m_end_) {
 		// Having a non-const this pointer provides valid write access.
@@ -332,15 +332,15 @@ void hxvector<T_, capacity_>::erase_unordered(const T_* pos_) {
 	m_end_->T_::~T_();
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
-void hxvector<T_, capacity_>::erase_unordered(size_t index_) {
-	hxassert_hard(index_ < this->size(), "invalid_index %zu", index_);
+template<hxarray_concept_ T_, hxsize_t capacity_>
+void hxvector<T_, capacity_>::erase_unordered(hxsize_t index_) noexcept {
+	hxassert_hard(static_cast<size_t>(index_) < static_cast<size_t>(this->size()), "invalid_index %zu", index_);
 	this->erase_unordered(this->data() + index_);
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
+template<hxarray_concept_ T_, hxsize_t capacity_>
 const T_* hxvector<T_, capacity_>::find(const T_& value_) const {
-	for(const T_* it_ = this->data(), *end_ = m_end_; it_ != end_; ++it_) {
+	for(const T_* it_ = this->data(), *const end_ = m_end_; it_ != end_; ++it_) {
 		if(hxkey_equal(*it_, value_)) {
 			return it_;
 		}
@@ -348,9 +348,9 @@ const T_* hxvector<T_, capacity_>::find(const T_& value_) const {
 	return m_end_;
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
+template<hxarray_concept_ T_, hxsize_t capacity_>
 T_* hxvector<T_, capacity_>::find(const T_& value_) {
-	for(T_* it_ = this->data(), *end_ = m_end_; it_ != end_; ++it_) {
+	for(T_* it_ = this->data(), *const end_ = m_end_; it_ != end_; ++it_) {
 		if(hxkey_equal(*it_, value_)) {
 			return it_;
 		}
@@ -358,10 +358,10 @@ T_* hxvector<T_, capacity_>::find(const T_& value_) {
 	return m_end_;
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
+template<hxarray_concept_ T_, hxsize_t capacity_>
 template<typename callable_t_>
 const T_* hxvector<T_, capacity_>::find_if(callable_t_&& fn_) const {
-	for(const T_* it_ = this->data(), *end_ = m_end_; it_ != end_; ++it_) {
+	for(const T_* it_ = this->data(), *const end_ = m_end_; it_ != end_; ++it_) {
 		if(hxforward<callable_t_>(fn_)(*it_)) {
 			return it_;
 		}
@@ -369,10 +369,10 @@ const T_* hxvector<T_, capacity_>::find_if(callable_t_&& fn_) const {
 	return m_end_;
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
+template<hxarray_concept_ T_, hxsize_t capacity_>
 template<typename callable_t_>
 T_* hxvector<T_, capacity_>::find_if(callable_t_&& fn_) {
-	for(T_* it_ = this->data(), *end_ = m_end_; it_ != end_; ++it_) {
+	for(T_* it_ = this->data(), *const end_ = m_end_; it_ != end_; ++it_) {
 		if(hxforward<callable_t_>(fn_)(*it_)) {
 			return it_;
 		}
@@ -380,57 +380,57 @@ T_* hxvector<T_, capacity_>::find_if(callable_t_&& fn_) {
 	return m_end_;
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
+template<hxarray_concept_ T_, hxsize_t capacity_>
 template<typename callable_t_>
 void hxvector<T_, capacity_>::for_each(callable_t_&& fn_) const {
-	for(const T_* it_ = this->data(), *end_ = m_end_; it_ != end_; ++it_) {
+	for(const T_* it_ = this->data(), *const end_ = m_end_; it_ != end_; ++it_) {
 		hxforward<callable_t_>(fn_)(*it_);
 	}
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
+template<hxarray_concept_ T_, hxsize_t capacity_>
 template<typename callable_t_>
 void hxvector<T_, capacity_>::for_each(callable_t_&& fn_) {
-	for(T_* it_ = this->data(), *end_ = m_end_; it_ != end_; ++it_) {
+	for(T_* it_ = this->data(), *const end_ = m_end_; it_ != end_; ++it_) {
 		hxforward<callable_t_>(fn_)(*it_);
 	}
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
+template<hxarray_concept_ T_, hxsize_t capacity_>
 const T_& hxvector<T_, capacity_>::front(void) const {
 	hxassert_hard(!this->empty(), "invalid_reference");
 	return *this->data();
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
+template<hxarray_concept_ T_, hxsize_t capacity_>
 T_& hxvector<T_, capacity_>::front(void) {
 	hxassert_hard(!this->empty(), "invalid_reference");
 	return *this->data();
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
+template<hxarray_concept_ T_, hxsize_t capacity_>
 template<typename callable_t_>
-void hxvector<T_, capacity_>::generate_n(size_t size_, callable_t_&& fn_) {
+void hxvector<T_, capacity_>::generate_n(hxsize_t size_, callable_t_&& fn_) noexcept {
 	while(size_--) {
 		::new(this->push_back_unconstructed_()) T_(hxforward<callable_t_>(fn_)());
 	}
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
-const T_* hxvector<T_, capacity_>::get(size_t index_) const {
+template<hxarray_concept_ T_, hxsize_t capacity_>
+const T_* hxvector<T_, capacity_>::get(hxsize_t index_) const {
 	// Casting a signed index is well defined. Comparing pointers would be undefined.
 	return index_ < this->size() ? this->data() + index_ : hxnull;
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
-T_* hxvector<T_, capacity_>::get(size_t index_) {
+template<hxarray_concept_ T_, hxsize_t capacity_>
+T_* hxvector<T_, capacity_>::get(hxsize_t index_) {
 	// Casting a signed index is well defined. Comparing pointers would be undefined.
 	return index_ < this->size() ? this->data() + index_ : hxnull;
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
+template<hxarray_concept_ T_, hxsize_t capacity_>
 template<typename ref_t_>
-void hxvector<T_, capacity_>::insert(const T_* pos_, ref_t_&& x_) {
+void hxvector<T_, capacity_>::insert(const T_* pos_, ref_t_&& x_) noexcept {
 	hxassert_hard(pos_ >= this->data() && pos_ <= m_end_, "invalid_insert");
 	if(pos_ == m_end_) {
 		// Single constructor call for last element.
@@ -448,23 +448,23 @@ void hxvector<T_, capacity_>::insert(const T_* pos_, ref_t_&& x_) {
 	}
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
+template<hxarray_concept_ T_, hxsize_t capacity_>
 template<typename ref_t_>
-void hxvector<T_, capacity_>::insert(size_t index_, ref_t_&& x_) {
-	hxassert_hard(index_ <= this->size(), "invalid_index %zu", index_);
+void hxvector<T_, capacity_>::insert(hxsize_t index_, ref_t_&& x_) noexcept {
+	hxassert_hard(static_cast<size_t>(index_) <= static_cast<size_t>(this->size()), "invalid_index %zu", index_);
 	this->insert(this->data() + index_, hxforward<ref_t_>(x_));
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
-void hxvector<T_, capacity_>::insertion_sort(void) {
+template<hxarray_concept_ T_, hxsize_t capacity_>
+void hxvector<T_, capacity_>::insertion_sort(void) noexcept {
 	hxinsertion_sort<T_*>(this->data(), m_end_, hxkey_less_t<T_>{});
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
-template<size_t capacity_x_>
+template<hxarray_concept_ T_, hxsize_t capacity_>
+template<hxsize_t capacity_x_>
 bool hxvector<T_, capacity_>::less(const hxvector<T_, capacity_x_>& x_) const {
-	const size_t size_ = hxmin(this->size(), x_.size());
-	for(const T_* it0_ = this->data(), *it1_ = x_.data(), *end_ = it0_ + size_;
+	const hxsize_t size_ = hxmin(this->size(), x_.size());
+	for(const T_* it0_ = this->data(), *it1_ = x_.data(), *const end_ = it0_ + size_;
 			it0_ != end_; ++it0_, ++it1_) {
 		// Use `a == b` instead of `a < b && b < a` for performance.
 		if(!hxkey_equal(*it0_, *it1_)) {
@@ -475,35 +475,35 @@ bool hxvector<T_, capacity_>::less(const hxvector<T_, capacity_x_>& x_) const {
 	return this->size() < x_.size();
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
-void hxvector<T_, capacity_>::make_heap(void) {
+template<hxarray_concept_ T_, hxsize_t capacity_>
+void hxvector<T_, capacity_>::make_heap(void) noexcept {
 	hxdetail_::hxmake_heap_<T_*>(this->data(), m_end_, hxkey_less_t<T_>{});
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
-template<size_t capacity_x_>
+template<hxarray_concept_ T_, hxsize_t capacity_>
+template<hxsize_t capacity_x_>
 void hxvector<T_, capacity_>::memcpy(const hxvector<T_, capacity_x_>& x_) {
 	hxassert_hard(static_cast<const void*>(this) != static_cast<const void*>(&x_),
 		"invalid_reference");
 	this->resize(x_.size());
-	::memcpy(static_cast<void*>(this->data()), x_.data(), x_.size_bytes());
+	::memcpy(static_cast<void*>(this->data()), x_.data(), static_cast<size_t>(x_.size_bytes()));
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
+template<hxarray_concept_ T_, hxsize_t capacity_>
 void hxvector<T_, capacity_>::memset(int byte_) {
-	::memset(static_cast<void*>(this->data()), byte_, this->size_bytes());
+	::memset(static_cast<void*>(this->data()), byte_, static_cast<size_t>(this->size_bytes()));
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
-void hxvector<T_, capacity_>::pop_back(void) {
+template<hxarray_concept_ T_, hxsize_t capacity_>
+void hxvector<T_, capacity_>::pop_back(void) noexcept {
 	hxassert_hard(!this->empty(), "stack_underflow");
 	(--m_end_)->T_::~T_();
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
-void hxvector<T_, capacity_>::pop_heap(void) {
+template<hxarray_concept_ T_, hxsize_t capacity_>
+void hxvector<T_, capacity_>::pop_heap(void) noexcept {
 	hxassert_hard(!this->empty(), "stack_underflow");
-	T_* hxrestrict begin_ = this->data();
+	T_*const begin_ = this->data();
 	--m_end_;
 	if(begin_ == m_end_) {
 		begin_->T_::~T_();
@@ -514,22 +514,22 @@ void hxvector<T_, capacity_>::pop_heap(void) {
 	hxdetail_::hxheapsort_heapify_(this->data(), begin_, m_end_, hxkey_less_t<T_>{});
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
+template<hxarray_concept_ T_, hxsize_t capacity_>
 template<typename... args_t_>
-T_& hxvector<T_, capacity_>::push_back(args_t_&&... args_) {
+T_& hxvector<T_, capacity_>::push_back(args_t_&&... args_) noexcept {
 	hxassert_hard(!this->full(), "stack_overflow");
 	return *::new(m_end_++) T_(hxforward<args_t_>(args_)...);
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
+template<hxarray_concept_ T_, hxsize_t capacity_>
 template<typename ref_t_>
-T_& hxvector<T_, capacity_>::push_heap(ref_t_&& arg_) {
-	T_* const begin_ = this->data();
+T_& hxvector<T_, capacity_>::push_heap(ref_t_&& arg_) noexcept {
+	T_*const begin_ = this->data();
 	T_* node_ = static_cast<T_*>(this->push_back_unconstructed_());
-	size_t index_ = static_cast<size_t>(node_ - begin_);
-	while(index_ != 0u) {
-		index_ = (index_ - 1u) >> 1;
-		T_* const parent_ = begin_ + index_;
+	hxsize_t index_ = node_ - begin_;
+	while(index_ != 0) {
+		index_ = (index_ - 1) >> 1;
+		T_*const parent_ = begin_ + index_;
 		// arg_ has to be comparable to T_.
 		if(!hxkey_less(*parent_, arg_)) {
 			break;
@@ -544,20 +544,20 @@ T_& hxvector<T_, capacity_>::push_heap(ref_t_&& arg_) {
 	return *node_;
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
-void hxvector<T_, capacity_>::reserve(size_t size_,
-		hxsystem_allocator_t allocator_,
+template<hxarray_concept_ T_, hxsize_t capacity_>
+void hxvector<T_, capacity_>::reserve(hxsize_t size_, hxsystem_allocator_t allocator_,
 		hxalignment_t alignment_) {
-	this->reserve_storage_(size_, allocator_, alignment_);
+	this->reserve_storage(size_, allocator_, alignment_);
 	if(m_end_ == hxnull) {
 		m_end_ = this->data();
 	}
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
-void hxvector<T_, capacity_>::resize(size_t size_) {
+template<hxarray_concept_ T_, hxsize_t capacity_>
+void hxvector<T_, capacity_>::resize(hxsize_t size_) noexcept {
 	this->reserve(size_);
-	T_* end_ = this->data() + size_;
+	T_*const data_ = this->data();
+	T_* end_ = data_ + size_;
 	if(size_ >= this->size()) {
 		while(m_end_ != end_) {
 			// This version uses a default constructor. Note "T_()" is not being
@@ -571,10 +571,11 @@ void hxvector<T_, capacity_>::resize(size_t size_) {
 	m_end_ = end_;
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
-void hxvector<T_, capacity_>::resize(size_t size_, const T_& x_) {
+template<hxarray_concept_ T_, hxsize_t capacity_>
+void hxvector<T_, capacity_>::resize(hxsize_t size_, const T_& x_) noexcept {
 	this->reserve(size_);
-	T_* end_ = this->data() + size_;
+	T_*const data_ = this->data();
+	T_* end_ = data_ + size_;
 	if(size_ >= this->size()) {
 		while(m_end_ != end_) {
 			// This version uses a copy constructor.
@@ -587,13 +588,13 @@ void hxvector<T_, capacity_>::resize(size_t size_, const T_& x_) {
 	m_end_ = end_;
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
-void hxvector<T_, capacity_>::sort(void) {
+template<hxarray_concept_ T_, hxsize_t capacity_>
+void hxvector<T_, capacity_>::sort(void) noexcept {
 	hxsort<T_*>(this->data(), m_end_, hxkey_less_t<T_>{});
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
-void hxvector<T_, capacity_>::swap(hxvector& x_) noexcept {
+template<hxarray_concept_ T_, hxsize_t capacity_>
+void hxvector<T_, capacity_>::swap(hxvector& x_) {
 	static_assert(capacity_ == hxallocator_dynamic_capacity,
 		"Dynamic capacity required for hxvector::swap");
 
@@ -601,19 +602,18 @@ void hxvector<T_, capacity_>::swap(hxvector& x_) noexcept {
 	hxswap_memcpy(*this, x_);
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
+template<hxarray_concept_ T_, hxsize_t capacity_>
 void* hxvector<T_, capacity_>::push_back_unconstructed_(void) {
 	hxassert_hard(!this->full(), "stack_overflow");
 	return static_cast<void*>(m_end_++);
 }
 
-template<hxarray_concept_ T_, size_t capacity_>
-void hxvector<T_, capacity_>::destruct_(T_* it_, T_* end_) {
+template<hxarray_concept_ T_, hxsize_t capacity_>
+void hxvector<T_, capacity_>::destruct_(T_* it_, T_* end_) noexcept {
 	while(it_ != end_) {
 		it_++->T_::~T_();
 	}
 }
-
 
 HX_END_INL_
 #endif // HX_DOXYGEN_PARSER

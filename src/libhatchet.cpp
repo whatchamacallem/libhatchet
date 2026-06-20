@@ -84,9 +84,9 @@ hxattr_weak void __cxa_pure_virtual(void) {
 // symbol in the sanitizer support library. This provides clickable error
 // messages in VS Code and is otherwise unused.
 
-void __sanitizer_report_error_summary(const char *error_summary); // NOLINT
+void __sanitizer_report_error_summary(const char *error_summary); // NOLINT(bugprone-reserved-identifier)
 
-hxattr_weak void __sanitizer_report_error_summary(const char *error_summary) {
+hxattr_weak void __sanitizer_report_error_summary(const char *error_summary) { // NOLINT(bugprone-reserved-identifier)
 	// A clickable message has already been printed to standard output.
 	hxbreakpoint(); (void)error_summary;
 }
@@ -144,7 +144,7 @@ hxattr_weak hxattr_noexcept void hxlog_handler_v(hxlog_level_t level, const char
 		f << "ASSERT_FAIL ";
 		line_buf[len++] = '\n';
 	}
-	f.write(line_buf, (size_t)len);
+	f.write(line_buf, static_cast<size_t>(len));
 #else
 	// Fall back to stdout when there is no filesystem.
 	if(level == hxlog_level_warning) {
@@ -155,7 +155,7 @@ hxattr_weak hxattr_noexcept void hxlog_handler_v(hxlog_level_t level, const char
 		::fputs("ASSERT_FAIL ", stdout);
 		line_buf[len++] = '\n';
 	}
-	::fwrite(line_buf, 1u, (size_t)len, stdout);
+	::fwrite(line_buf, 1u, static_cast<size_t>(len), stdout);
 #endif
 }
 

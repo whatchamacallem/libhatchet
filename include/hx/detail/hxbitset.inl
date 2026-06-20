@@ -38,8 +38,8 @@ inline hxconstexpr void hxbitset<bit_count_>::operator=(const hxbitset& x_) {
 template<size_t bit_count_>
 inline hxconstexpr bool hxbitset<bit_count_>::operator[](size_t pos_) const {
 	hxassert_hard(pos_ < bit_count_, "invalid_index %zu", pos_);
-	return (m_data_[pos_ / s_bits_per_word_]
-		& (static_cast<size_t>(1u) << (pos_ % s_bits_per_word_))) != 0u;
+	return (m_data_[pos_ >> s_log2_bits_per_word_]
+		& (static_cast<size_t>(1u) << (pos_ & s_bit_mask_))) != 0u;
 }
 
 template<size_t bit_count_>
@@ -61,7 +61,7 @@ inline hxconstexpr hxbitset<bit_count_>& hxbitset<bit_count_>::operator|=(const 
 	const size_t* hxrestrict src_ = x_.m_data_;
 	const size_t* const end_ = dst_ + s_words_;
 	while(dst_ != end_) { *dst_++ |= *src_++; }
-	this->assert_no_trailing_bits_();
+	hxassertmsg((m_data_[s_words_-1u] & ~s_trailing_mask_) == 0u, "trailing_bits_set");
 	return *this;
 }
 
@@ -73,15 +73,15 @@ inline hxconstexpr hxbitset<bit_count_>& hxbitset<bit_count_>::operator^=(const 
 	const size_t* hxrestrict src_ = x_.m_data_;
 	const size_t* const end_ = dst_ + s_words_;
 	while(dst_ != end_) { *dst_++ ^= *src_++; }
-	this->assert_no_trailing_bits_();
+	hxassertmsg((m_data_[s_words_-1u] & ~s_trailing_mask_) == 0u, "trailing_bits_set");
 	return *this;
 }
 
 template<size_t bit_count_>
 inline hxconstexpr hxbitset<bit_count_>& hxbitset<bit_count_>::operator<<=(size_t count_) {
 	if(count_ == 0u) { return *this; }
-	const size_t word_shift_ = count_ / s_bits_per_word_;
-	const size_t bit_shift_ = count_ % s_bits_per_word_;
+	const size_t word_shift_ = count_ >> s_log2_bits_per_word_;
+	const size_t bit_shift_ = count_ & s_bit_mask_;
 	if(bit_shift_ == 0u) {
 		for(size_t i_ = s_words_; i_-- != 0u; ) {
 			m_data_[i_] = (i_ >= word_shift_) ? m_data_[i_ - word_shift_] : 0u;
@@ -95,16 +95,16 @@ inline hxconstexpr hxbitset<bit_count_>& hxbitset<bit_count_>::operator<<=(size_
 			m_data_[i_] = lo_ | hi_;
 		}
 	}
-	m_data_[s_words_ - 1u] &= s_trailing_mask_;
-	this->assert_no_trailing_bits_();
+	m_data_[s_words_-1u] &= s_trailing_mask_;
+	hxassertmsg((m_data_[s_words_-1u] & ~s_trailing_mask_) == 0u, "trailing_bits_set");
 	return *this;
 }
 
 template<size_t bit_count_>
 inline hxconstexpr hxbitset<bit_count_>& hxbitset<bit_count_>::operator>>=(size_t count_) {
 	if(count_ == 0u) { return *this; }
-	const size_t word_shift_ = count_ / s_bits_per_word_;
-	const size_t bit_shift_ = count_ % s_bits_per_word_;
+	const size_t word_shift_ = count_ >> s_log2_bits_per_word_;
+	const size_t bit_shift_ = count_ & s_bit_mask_;
 	if(bit_shift_ == 0u) {
 		for(size_t i_ = 0u; i_ < s_words_; ++i_) {
 			m_data_[i_] = ((i_ + word_shift_) < s_words_) ? m_data_[i_ + word_shift_] : 0u;
@@ -118,7 +118,7 @@ inline hxconstexpr hxbitset<bit_count_>& hxbitset<bit_count_>::operator>>=(size_
 			m_data_[i_] = lo_ | hi_;
 		}
 	}
-	this->assert_no_trailing_bits_();
+	hxassertmsg((m_data_[s_words_-1u] & ~s_trailing_mask_) == 0u, "trailing_bits_set");
 	return *this;
 }
 
@@ -135,18 +135,18 @@ inline hxconstexpr bool hxbitset<bit_count_>::operator==(const hxbitset& x_) con
 
 template<size_t bit_count_>
 inline hxconstexpr bool hxbitset<bit_count_>::all(void) const {
-	this->assert_no_trailing_bits_();
+	hxassertmsg((m_data_[s_words_-1u] & ~s_trailing_mask_) == 0u, "trailing_bits_set");
 	const size_t* hxrestrict dst_ = m_data_;
-	const size_t* const end_ = dst_ + (s_words_ - 1u);
+	const size_t* const end_ = dst_ + (s_words_-1u);
 	while(dst_ != end_) {
 		if(*dst_++ != ~static_cast<size_t>(0u)) { return false; }
 	}
-	return m_data_[s_words_ - 1u] == s_trailing_mask_;
+	return m_data_[s_words_-1u] == s_trailing_mask_;
 }
 
 template<size_t bit_count_>
 inline hxconstexpr bool hxbitset<bit_count_>::any(void) const {
-	this->assert_no_trailing_bits_();
+	hxassertmsg((m_data_[s_words_-1u] & ~s_trailing_mask_) == 0u, "trailing_bits_set");
 	const size_t* hxrestrict dst_ = m_data_;
 	const size_t* const end_ = dst_ + s_words_;
 	while(dst_ != end_) {
@@ -160,14 +160,14 @@ inline hxconstexpr hxbitset<bit_count_>& hxbitset<bit_count_>::flip(void) {
 	size_t* hxrestrict dst_ = m_data_;
 	const size_t* const end_ = dst_ + s_words_;
 	while(dst_ != end_) { *dst_++ ^= ~static_cast<size_t>(0u); }
-	m_data_[s_words_ - 1u] &= s_trailing_mask_;
+	m_data_[s_words_-1u] &= s_trailing_mask_;
 	return *this;
 }
 
 template<size_t bit_count_>
 inline hxconstexpr hxbitset<bit_count_>& hxbitset<bit_count_>::flip(size_t pos_) {
 	hxassert_hard(pos_ < bit_count_, "invalid_index %zu", pos_);
-	m_data_[pos_ / s_bits_per_word_] ^= (static_cast<size_t>(1u) << (pos_ % s_bits_per_word_));
+	m_data_[pos_ >> s_log2_bits_per_word_] ^= (static_cast<size_t>(1u) << (pos_ & s_bit_mask_));
 	return *this;
 }
 
@@ -178,7 +178,7 @@ inline void hxbitset<bit_count_>::load(const void* src_, size_t len_) {
 	if(len_ < this->bytes()) {
 		::memset(reinterpret_cast<char*>(m_data_) + len_, 0, this->bytes() - len_);
 	}
-	m_data_[s_words_ - 1u] &= s_trailing_mask_;
+	m_data_[s_words_-1u] &= s_trailing_mask_;
 }
 
 template<size_t bit_count_>
@@ -192,7 +192,7 @@ inline hxconstexpr hxbitset<bit_count_>& hxbitset<bit_count_>::reset(void) {
 template<size_t bit_count_>
 inline hxconstexpr hxbitset<bit_count_>& hxbitset<bit_count_>::reset(size_t pos_) {
 	hxassert_hard(pos_ < bit_count_, "invalid_index %zu", pos_);
-	m_data_[pos_ / s_bits_per_word_] &= ~(static_cast<size_t>(1u) << (pos_ % s_bits_per_word_));
+	m_data_[pos_ >> s_log2_bits_per_word_] &= ~(static_cast<size_t>(1u) << (pos_ & s_bit_mask_));
 	return *this;
 }
 
@@ -201,18 +201,18 @@ inline hxconstexpr hxbitset<bit_count_>& hxbitset<bit_count_>::set(void) {
 	size_t* hxrestrict dst_ = m_data_;
 	const size_t* const end_ = dst_ + s_words_;
 	while(dst_ != end_) { *dst_++ = ~static_cast<size_t>(0u); }
-	m_data_[s_words_ - 1u] &= s_trailing_mask_;
+	m_data_[s_words_-1u] &= s_trailing_mask_;
 	return *this;
 }
 
 template<size_t bit_count_>
 inline hxconstexpr hxbitset<bit_count_>& hxbitset<bit_count_>::set(size_t pos_, bool value_) {
 	hxassert_hard(pos_ < bit_count_, "invalid_index %zu", pos_);
-	const size_t mask_ = static_cast<size_t>(1u) << (pos_ % s_bits_per_word_);
+	const size_t mask_ = static_cast<size_t>(1u) << (pos_ & s_bit_mask_);
 	if(value_) {
-		m_data_[pos_ / s_bits_per_word_] |= mask_;
+		m_data_[pos_ >> s_log2_bits_per_word_] |= mask_;
 	} else {
-		m_data_[pos_ / s_bits_per_word_] &= ~mask_;
+		m_data_[pos_ >> s_log2_bits_per_word_] &= ~mask_;
 	}
 	return *this;
 }
@@ -220,13 +220,8 @@ inline hxconstexpr hxbitset<bit_count_>& hxbitset<bit_count_>::set(size_t pos_, 
 template<size_t bit_count_>
 inline hxconstexpr bool hxbitset<bit_count_>::test(size_t pos_) const {
 	hxassert_hard(pos_ < bit_count_, "invalid_index %zu", pos_);
-	return (m_data_[pos_ / s_bits_per_word_]
-		& (static_cast<size_t>(1u) << (pos_ % s_bits_per_word_))) != 0u;
-}
-
-template<size_t bit_count_>
-inline hxconstexpr void hxbitset<bit_count_>::assert_no_trailing_bits_(void) const {
-	hxassertmsg((m_data_[s_words_ - 1u] & ~s_trailing_mask_) == 0u, "trailing_bits_set");
+	return (m_data_[pos_ >> s_log2_bits_per_word_]
+		& (static_cast<size_t>(1u) << (pos_ & s_bit_mask_))) != 0u;
 }
 
 HX_END_INL_

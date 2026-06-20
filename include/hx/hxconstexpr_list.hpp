@@ -127,7 +127,7 @@ public:
 
 	protected:
 		/// \cond HIDDEN
-		template<typename, typename> friend class hxconstexpr_list;		
+		template<typename, typename> friend class hxconstexpr_list;
 		hxconstexpr const_iterator(hxconst_list_node* current_, const hxconst_list_node* sentinel_)
 			: m_current_node_(current_)
 #if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
@@ -207,7 +207,7 @@ public:
 	/// false nodes are unlinked but not freed.
 	/// - `deleter` : Override deleter callable. Called only if it evaluates to true.
 	template<typename deleter_override_t_>
-	hxconstexpr void clear(const deleter_override_t_& deleter_);
+	hxconstexpr void clear(const deleter_override_t_& deleter_) noexcept;
 
 	/// Removes all nodes using the list's default `deleter_t`.
 	hxconstexpr void clear(void) { this->clear(deleter_t_()); }
@@ -310,13 +310,13 @@ public:
 	/// default deleter on each removed node.
 	/// - `predicate` : A callable taking a `node_t` reference, returning bool.
 	template<typename predicate_t_>
-	hxconstexpr size_t remove_if(predicate_t_ predicate_);
+	hxconstexpr hxsize_t remove_if(predicate_t_ predicate_);
 
 	/// Reverses the order of nodes in the list in-place.
 	hxconstexpr void reverse(void);
 
 	/// Returns the number of nodes currently in the list.
-	hxattr_nodiscard hxconstexpr size_t size(void) const { return m_size_; }
+	hxattr_nodiscard hxconstexpr hxsize_t size(void) const { return m_size_; }
 
 	/// Transfers all nodes from `other` and inserts them before `pos`, taking
 	/// ownership. `other` is left empty after the call.
@@ -333,7 +333,7 @@ private:
 	hxconstexpr void insert_(hxconst_list_node* prev_, hxconst_list_node* next_, hxconst_list_node* ptr_);
 	hxconstexpr void extract_(hxconst_list_node* ptr_);
 
-	size_t m_size_;
+	hxsize_t m_size_;
 	hxconst_list_node m_sentinel_;
 };
 

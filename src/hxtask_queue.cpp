@@ -35,7 +35,7 @@ public:
 #endif
 
 // Should abort if exceptions are enabled and the thread pool cannot be created.
-hxtask_queue::hxtask_queue(size_t task_queue_size, size_t thread_pool_size)
+hxtask_queue::hxtask_queue(hxsize_t task_queue_size, hxsize_t thread_pool_size)
 #if HX_USE_THREADS
 	: m_queue_run_level_(run_level_running_)
 	, m_thread_pool_size_(thread_pool_size)
@@ -48,8 +48,8 @@ hxtask_queue::hxtask_queue(size_t task_queue_size, size_t thread_pool_size)
 	(void)thread_pool_size;
 #if HX_USE_THREADS
 	if(m_thread_pool_size_ > 0) {
-		m_threads_ = reinterpret_cast<hxthread*>(hxmalloc(m_thread_pool_size_ * sizeof(hxthread)));
-		for(size_t i = m_thread_pool_size_; i-- != 0u;) {
+		m_threads_ = reinterpret_cast<hxthread*>(hxmalloc(static_cast<size_t>(m_thread_pool_size_) * sizeof(hxthread)));
+		for(hxsize_t i = m_thread_pool_size_; i-- != 0;) {
 			::new(m_threads_ + i) hxthread(thread_task_loop_entry_, this);
 		}
 	}
@@ -62,7 +62,7 @@ hxtask_queue::~hxtask_queue(void) {
 		thread_task_loop_(this, thread_mode_stopping_);
 		hxassertmsg(m_queue_run_level_ == run_level_stopped_, "threading_error");
 
-		for(size_t i = m_thread_pool_size_; i-- != 0u;) {
+		for(hxsize_t i = m_thread_pool_size_; i-- != 0;) {
 			m_threads_[i].join();
 			m_threads_[i].~hxthread();
 		}
@@ -111,7 +111,7 @@ void hxtask_queue::wait_for_all(void) {
 			m_tasks_.pop_heap();
 
 			// This is the last time this object is touched. It may delete or
-			// re-enqueue itself. Label is a static string. 
+			// re-enqueue itself. Label is a static string.
 			hxprofile_scope(task->get_label());
 			task->process(this);
 		}

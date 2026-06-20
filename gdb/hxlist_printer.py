@@ -14,7 +14,7 @@ import traceback
 #
 #	template<typename node_t_, typename deleter_t_>
 #	class hxlist {
-#		size_t       m_size_;
+#		hxsize_t     m_size_;
 #		hxlist_node  m_sentinel_;  // m_sentinel_.m_list_link_ == tail XOR front
 #		hxlist_node* m_tail_;      // points to last node, or &m_sentinel_ when empty
 #	};

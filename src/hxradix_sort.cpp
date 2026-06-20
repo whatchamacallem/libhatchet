@@ -7,7 +7,7 @@
 
 HX_NS_BEGIN_
 
-// An unsigned integer used for the histogram. uint32_t or size_t would be a
+// An unsigned integer used for the histogram. uint32_t or hxsize_t would be a
 // reasonable choice here.
 using hxhistogram_t = uint32_t;
 
@@ -26,10 +26,10 @@ hxattr_hot void hxradix_sort_void(hxradix_sort_key_void* begin, hxradix_sort_key
 
 	// Two working buffers.
 	hxradix_sort_key_void* hxrestrict buf0 = begin;
-	hxradix_sort_key_void* buf0End = buf0 + size;
+	const hxradix_sort_key_void* const buf0End = buf0 + size;
 	hxradix_sort_key_void* hxrestrict buf1 =
 		reinterpret_cast<hxradix_sort_key_void*>(hxmalloc(size * sizeof(hxradix_sort_key_void)));
-	hxradix_sort_key_void* buf1End = buf1 + size;
+	const hxradix_sort_key_void* const buf1End = buf1 + size;
 
 	hxhistogram_t* histograms =
 		reinterpret_cast<hxhistogram_t*>(hxmalloc(256u * 4u * sizeof(hxhistogram_t)));
@@ -51,7 +51,7 @@ hxattr_hot void hxradix_sort_void(hxradix_sort_key_void* begin, hxradix_sort_key
 
 	// Convert histograms to start indices
 	hxhistogram_t sum0 = 0u, sum1 = 0u, sum2 = 0u, sum3 = 0u;
-	for(size_t i = 0u; i < 256u; ++i) { // size_t avoids 32-bit zero-extension on 64-bit per iteration
+	for(hxsize_t i = 0; i < 256; ++i) {
 		const hxhistogram_t t0 = hist0[i] + sum0; hist0[i] = sum0; sum0 = t0;
 		const hxhistogram_t t1 = hist1[i] + sum1; hist1[i] = sum1; sum1 = t1;
 		const hxhistogram_t t2 = hist2[i] + sum2; hist2[i] = sum2; sum2 = t2;
@@ -93,15 +93,15 @@ hxattr_hot void hxradix_sort_void11(hxradix_sort_key_void* begin, hxradix_sort_k
 
 	// Three working buffers for extremely large data sets.
 	hxradix_sort_key_void* hxrestrict buf0 = begin;
-	hxradix_sort_key_void* buf0End = buf0 + size;
+	const hxradix_sort_key_void* const buf0End = buf0 + size;
 	hxradix_sort_key_void* hxrestrict buf1 =
-		reinterpret_cast<hxradix_sort_key_void*>(hxmalloc(size * sizeof(hxradix_sort_key_void) * 2u));
-	hxradix_sort_key_void* buf1End = buf1 + size;
-	hxradix_sort_key_void* buf2 = buf1End;
-	hxradix_sort_key_void* buf2End = buf2 + size;
+		reinterpret_cast<hxradix_sort_key_void*>(hxmalloc(static_cast<size_t>(size) * sizeof(hxradix_sort_key_void) * 2u));
+	const hxradix_sort_key_void* const buf1End = buf1 + size;
+	hxradix_sort_key_void* const buf2 = buf1 + size;
+	const hxradix_sort_key_void* const buf2End = buf2 + size;
 
 	hxhistogram_t* histograms =
-		reinterpret_cast<hxhistogram_t*>(hxmalloc(5120u * sizeof(hxhistogram_t)));
+		reinterpret_cast<hxhistogram_t*>(hxmalloc(5120 * sizeof(hxhistogram_t)));
 	::memset(histograms, 0x00, 5120u * sizeof(hxhistogram_t));
 
 	hxhistogram_t* hxrestrict hist0 = histograms +	0u; // 2048 values
@@ -117,12 +117,12 @@ hxattr_hot void hxradix_sort_void11(hxradix_sort_key_void* begin, hxradix_sort_k
 
 	// Convert histograms to start indices
 	hxhistogram_t sum0 = 0u, sum1 = 0u, sum2 = 0u;
-	for(size_t i = 0u; i < 1024u; ++i) { // size_t avoids 32-bit zero-extension on 64-bit per iteration
+	for(hxsize_t i = 0; i < 1024; ++i) {
 		const hxhistogram_t t0 = hist0[i] + sum0; hist0[i] = sum0; sum0 = t0;
 		const hxhistogram_t t1 = hist1[i] + sum1; hist1[i] = sum1; sum1 = t1;
 		const hxhistogram_t t2 = hist2[i] + sum2; hist2[i] = sum2; sum2 = t2;
 	}
-	for(size_t i = 1024u; i < 2048u; ++i) {
+	for(hxsize_t i = 1024; i < 2048; ++i) {
 		const hxhistogram_t t0 = hist0[i] + sum0; hist0[i] = sum0; sum0 = t0;
 		const hxhistogram_t t1 = hist1[i] + sum1; hist1[i] = sum1; sum1 = t1;
 	}
@@ -132,7 +132,7 @@ hxattr_hot void hxradix_sort_void11(hxradix_sort_key_void* begin, hxradix_sort_k
 	for(const hxradix_sort_key_void* hxrestrict it = buf0; it != buf0End; ++it) {
 		buf1[hist0[it->get_modified_key() & 0x7ffu]++] = *it;
 	}
-	hxradix_sort_key_void* buf20 = pass2 ? buf2 : static_cast<hxradix_sort_key_void*>(buf0);
+	hxradix_sort_key_void* buf20 = pass2 ? buf2 : buf0;
 	for(const hxradix_sort_key_void* hxrestrict it = buf1; it != buf1End; ++it) {
 		buf20[hist1[(it->get_modified_key() >> 11) & 0x7ffu]++] = *it;
 	}

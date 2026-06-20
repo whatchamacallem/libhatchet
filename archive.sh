@@ -30,7 +30,9 @@ if [ "$(command ls)" = "archive.sh" ]; then
 	exit 0
 fi
 
-if [ -d "$HOME/Backups" ]; then
+if [ -n "$1" ]; then
+	DESTINATION="$1"
+elif [ -d "$HOME/Backups" ]; then
 	DESTINATION="$HOME/Backups"
 else
 	DESTINATION="$HOME"

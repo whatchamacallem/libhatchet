@@ -163,7 +163,7 @@
 
 #if !defined HX_USE_LIBCXX
 #define HX_USE_LIBCXX 1
-#elif !(HX_USE_LIBCXX) && defined __has_include && __has_include(<new>)
+#elif !(HX_USE_LIBCXX) && !defined HX_SKIP_LIBCXX_CHECK && defined __has_include && __has_include(<new>)
 #error Use -nostdinc++ to use the C headers instead of the C++ ones.
 #endif
 
@@ -206,7 +206,7 @@
 #define hxattr_noreturn __attribute__((noreturn))
 #define hxattr_printf(pos_, start_) __attribute__((format(printf, pos_, start_)))
 #define hxattr_scanf(pos_, start_) __attribute__((format(scanf, pos_, start_)))
-#define hxattr_weak __attribute__((weak)) 
+#define hxattr_weak __attribute__((weak))
 
 #endif // target specific settings
 
@@ -226,8 +226,11 @@
 /// variables so they can be exported from modules. Falls back to not using
 /// inline below C++17.
 #define hxinline_constexpr inline constexpr
+/// `hxif_constexpr` - `if constexpr` on C++17 and later, plain `if` otherwise.
+#define hxif_constexpr if constexpr
 #else
 #define hxinline_constexpr constexpr
+#define hxif_constexpr if
 #endif
 
 /// Setting `-DHX_USE_MODULE=1` when using modules (e.g. `import hx;`) will

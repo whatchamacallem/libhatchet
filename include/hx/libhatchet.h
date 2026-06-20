@@ -32,10 +32,10 @@
 
 /// `int LIBHATCHET_VER` - One digit major, and two digit minor and patch
 /// versions.
-#define LIBHATCHET_VER 14101
+#define LIBHATCHET_VER 14203
 
 /// `LIBHATCHET_TAG` - Major, minor and patch version tag name.
-#define LIBHATCHET_TAG "v1.41.1"
+#define LIBHATCHET_TAG "v1.42.3"
 
 #if !defined HX_HARDENING_MODE
 /// `HX_HARDENING_MODE` - Library hardening level. See the README.md for levels.
@@ -59,13 +59,6 @@
 #error HX_HARDENING_MODE must be [0..3]. See <hx/hxsettings.h>.
 #endif
 
-#include "hxsettings.h"
-#if !(HX_USE_MODULE)
-#include "hxmemory_manager.h"
-#endif
-
-// libhatchet C and C++ API. Above headers are C and C++ too.
-
 /// `hxnull` - The null pointer value for a given pointer type represented by
 /// the numeric constant `0`. The C/C++ language standards explicitly define the
 /// meaning of `0` in pointer context as a null pointer of the expected type.
@@ -73,6 +66,11 @@
 /// fills that gap by having an unambiguous type. See `hxnullptr`/`hxnullptr_t`
 /// if you need a `std::nullptr` replacement.
 #define hxnull 0
+
+#include "hxsettings.h"
+#if !(HX_USE_MODULE)
+#include "hxmemory_manager.h"
+#endif
 
 /// `hxinit` - Initializes the platform if needed. Does a quick version check to
 /// determine if the platform is already correctly initialized first. See
@@ -183,6 +181,15 @@
 
 #if !(HX_USE_MODULE)
 #if HX_CPLUSPLUS
+
+/// hxsize_t - A signed `hxsize_t`, same as `ssize_t` or `ptrdiff_t`. Use on a
+/// 32-bit system with more than 2 GiB RAM is undefined.
+typedef ptrdiff_t hxsize_t;
+
+/// `hxsizeof` - Returns the size of a type or expression as `hxsize_t`.
+template<typename T_> constexpr hxsize_t hxsizeof(void) { return static_cast<hxsize_t>(sizeof(T_)); }
+template<typename T_> constexpr hxsize_t hxsizeof(T_&) { return static_cast<hxsize_t>(sizeof(T_)); }
+
 extern "C" {
 #endif
 

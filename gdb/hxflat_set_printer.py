@@ -6,7 +6,7 @@ import gdb # type: ignore
 import gdb.printing # type: ignore
 import traceback
 
-# hxarray uses this allocation strategy:
+# hxflat_set uses this allocation strategy:
 #
 #	template<typename T_, hxsize_t fixed_capacity_>
 #	class hxallocator {
@@ -19,16 +19,16 @@ import traceback
 #		int m_capacity_;
 #		T_* m_data_;
 #	};
-#	template<typename T_, hxsize_t capacity_=0>
-#	class hxarray : public hxallocator<T_, capacity_> {
+#	template<typename key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
+#	class hxflat_set : public hxallocator<key_t_, capacity_> {
 #		// ...
-#		// No m_end_. Size == capacity_ always.
+#		key_t_* m_end_;
 #	}
 #
 
-class HxArrayPrinter:
+class HxFlatSetPrinter:
 	"""
-	Pretty printer for hxarray<T, capacity>. Size always equals capacity.
+	Pretty printer for hxflat_set<key_t, compare_t, multi_t, capacity>.
 	Supports both static (capacity > 0) and dynamic (capacity == 0) storage.
 	"""
 
@@ -38,33 +38,35 @@ class HxArrayPrinter:
 	def to_string(self):
 		try:
 			data = self.val['m_data_']
+			end = self.val['m_end_']
 
-			if data.is_optimized_out:
+			if data.is_optimized_out or end.is_optimized_out:
 				return '<optimized out>'
 
 			elem_type = self.val.type.template_argument(0)
-			targ1 = self.val.type.template_argument(1)
+			cap_arg = self.val.type.template_argument(3)
 
-			if targ1 == 0:
-				# Dynamic capacity: m_data_ is a pointer, m_capacity_ holds the size.
+			if cap_arg == 0:
 				capacity = int(self.val['m_capacity_'])
 				if capacity == 0:
 					return '<unallocated>'
 				raw_data = int(data)
 			else:
-				# Static capacity: m_data_ is an inline array.
-				capacity = int(targ1)
-				if capacity <= 0:
-					return '<invalid capacity>'
+				capacity = int(cap_arg)
 				raw_data = int(data.address)
 
+			raw_end = int(end)
+			size = int((raw_end - raw_data) / elem_type.sizeof)
+			if size < 0:
+				return '<negative size>'
+
 			self._elem_type = elem_type
-			self._size = capacity
+			self._size = size
 			self._data = raw_data
 
-			basename = f'{self._elem_type}'.split(':')[-1]
-			return '[{}] {}'.format(capacity, basename)
-		except Exception:
+			basename = f'{elem_type}'.split(':')[-1]
+			return '[{}/{}] {}'.format(size, capacity, basename)
+		except Exception as e:
 			error = f'{traceback.format_exc()}'
 			return error.split('\n', 1)[1]
 
@@ -83,8 +85,8 @@ class HxArrayPrinter:
 		return 'array'
 
 def build_pretty_printer():
-	pp = gdb.printing.RegexpCollectionPrettyPrinter('hxarray_printer')
-	pp.add_printer('hxarray', r'^hxarray<', HxArrayPrinter)
+	pp = gdb.printing.RegexpCollectionPrettyPrinter('hxflat_set_printer')
+	pp.add_printer('hxflat_set', r'hxflat_set<', HxFlatSetPrinter)
 	return pp
 
 gdb.printing.register_pretty_printer(gdb.current_objfile(), build_pretty_printer(), replace=True)

@@ -22,14 +22,14 @@ HX_NS_BEGIN_
 /// zero. This designed to do one thing very well and that is all.
 /// - `T` : The element type stored in the deque.
 /// - `capacity` : Maximum element count or `hxallocator_dynamic_capacity` for dynamic storage.
-template<typename T_, size_t capacity_=hxallocator_dynamic_capacity>
+template<typename T_, hxsize_t capacity_=hxallocator_dynamic_capacity>
 class hxdeque : public hxallocator<T_, capacity_> {
 public:
 	/// Constructs an empty hxdeque. When using static storage the capacity is
 	/// fixed at compile time. Asserts that the capacity is a power of two
 	/// and greater than zero.
 	/// - `dynamic_capacity` : Element capacity for dynamic storage.
-	explicit hxdeque(size_t dynamic_capacity_=0u);
+	explicit hxdeque(hxsize_t dynamic_capacity_=0);
 
 	/// Destroys all elements in the deque.
 	~hxdeque(void);
@@ -37,22 +37,22 @@ public:
 	/// Returns a reference to the element at logical index `index`. Asserts if
 	/// `index` is out of range or the deque is unallocated.
 	/// - `index` : Zero-based index from the front.
-	hxattr_nodiscard T_& operator[](size_t index_);
+	hxattr_nodiscard T_& operator[](hxsize_t index_);
 
 	/// Returns a const reference to the element at logical index `index`.
 	/// Asserts if `index` is out of range or the deque is unallocated.
 	/// - `index` : Zero-based index from the front.
-	hxattr_nodiscard const T_& operator[](size_t index_) const;
+	hxattr_nodiscard const T_& operator[](hxsize_t index_) const;
 
 	/// Returns a reference to the element at logical index `index`. Asserts if
 	/// `index` is out of range or the deque is unallocated.
 	/// - `index` : Zero-based index from the front.
-	hxattr_nodiscard T_& at(size_t index_);
+	hxattr_nodiscard T_& at(hxsize_t index_);
 
 	/// Returns a const reference to the element at logical index `index`.
 	/// Asserts if `index` is out of range or the deque is unallocated.
 	/// - `index` : Zero-based index from the front.
-	hxattr_nodiscard const T_& at(size_t index_) const;
+	hxattr_nodiscard const T_& at(hxsize_t index_) const;
 
 	/// Returns a reference to the back element.
 	hxattr_nodiscard T_& back(void);
@@ -61,21 +61,21 @@ public:
 	hxattr_nodiscard const T_& back(void) const;
 
 	/// Destroys all elements and resets the deque to empty without deallocating.
-	void clear(void);
+	void clear(void) noexcept;
 
 	/// Constructs an element in place at the back using forwarded arguments.
 	/// Asserts if the deque is full or unallocated. Exactly the same as
 	/// `push_back`.
 	/// - `args` : Arguments forwarded to `T`'s constructor.
 	template<typename... args_t_>
-	void emplace_back(args_t_&&... args_);
+	void emplace_back(args_t_&&... args_) noexcept;
 
 	/// Constructs an element in place at the front using forwarded arguments.
 	/// Asserts if the deque is full or unallocated. Exactly the same as
 	/// `push_front`.
 	/// - `args` : Arguments forwarded to `T`'s constructor.
 	template<typename... args_t_>
-	void emplace_front(args_t_&&... args_);
+	void emplace_front(args_t_&&... args_) noexcept;
 
 	/// Returns `true` if the deque contains no elements.
 	hxattr_nodiscard bool empty(void) const;
@@ -90,31 +90,31 @@ public:
 	hxattr_nodiscard bool full(void) const;
 
 	/// Removes and destroys the back element. Asserts if empty or unallocated.
-	void pop_back(void);
+	void pop_back(void) noexcept;
 
 	/// Removes and destroys the front element. Asserts if empty or unallocated.
-	void pop_front(void);
+	void pop_front(void) noexcept;
 
 	/// Appends an element at the back using forwarded arguments. Asserts if
 	/// the deque is full or unallocated. Exactly the same as `emplace_back`.
 	/// - `args` : Arguments forwarded to `T`'s constructor.
 	template<typename... args_t_>
-	void push_back(args_t_&&... args_);
+	void push_back(args_t_&&... args_) noexcept;
 
 	/// Prepends an element at the front using forwarded arguments. Asserts if
 	/// the deque is full or unallocated. Exactly the same as `emplace_front`.
 	/// - `args` : Arguments forwarded to `T`'s constructor.
 	template<typename... args_t_>
-	void push_front(args_t_&&... args_);
+	void push_front(args_t_&&... args_) noexcept;
 
 	/// Allocates storage for a dynamic deque. May only be called once and only
 	/// when the deque has no storage. Asserts that the capacity is a power of
 	/// two and greater than zero.
 	/// - `dynamic_capacity` : Element capacity to allocate.
-	void reserve(size_t dynamic_capacity_);
+	void reserve(hxsize_t dynamic_capacity_);
 
 	/// Returns the number of elements currently in the deque.
-	hxattr_nodiscard size_t size(void) const;
+	hxattr_nodiscard hxsize_t size(void) const;
 
 private:
 	// Hide access to the raw data. This is raw underlying data and would not be
@@ -124,10 +124,10 @@ private:
 	hxdeque(const hxdeque&) = delete;
 	void operator=(const hxdeque&) = delete;
 
-	size_t m_mask_;
-	size_t m_head_;
-	size_t m_tail_;
-	size_t m_count_;
+	hxsize_t m_mask_;
+	hxsize_t m_head_;
+	hxsize_t m_tail_;
+	hxsize_t m_count_;
 };
 
 #include "detail/hxdeque.inl"

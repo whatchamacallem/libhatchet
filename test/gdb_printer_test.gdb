@@ -11,6 +11,8 @@ source ../gdb/hxarray_printer.py
 source ../gdb/hxbitset_printer.py
 source ../gdb/hxconst_list_printer.py
 source ../gdb/hxdeque_printer.py
+source ../gdb/hxflat_map_printer.py
+source ../gdb/hxflat_set_printer.py
 source ../gdb/hxhash_table_printer.py
 source ../gdb/hxlist_printer.py
 source ../gdb/hxvector_printer.py
@@ -21,47 +23,22 @@ set logging overwrite on
 set logging redirect on
 set logging enabled on
 
-# ----- hxarray static -----
-break hxtest_gdb_break_hxarray_static
-commands
-  up
-  echo \n=== hxarray static ===\n
-  print a
-  echo \n======\n
-  continue
-end
-
-# ----- hxarray dynamic -----
 break hxtest_gdb_break_hxarray_dynamic
 commands
   up
   echo \n=== hxarray dynamic ===\n
   print a
-  echo \n======\n
   continue
 end
 
-# ----- hxvector static -----
-break hxtest_gdb_break_hxvector_static
+break hxtest_gdb_break_hxarray_static
 commands
   up
-  echo \n=== hxvector static ===\n
-  print heap
-  echo \n======\n
+  echo \n=== hxarray static ===\n
+  print a
   continue
 end
 
-# ----- hxvector dynamic -----
-break hxtest_gdb_break_hxvector_dynamic
-commands
-  up
-  echo \n=== hxvector dynamic ===\n
-  print objs
-  echo \n======\n
-  continue
-end
-
-# ----- hxbitset -----
 break hxtest_gdb_break_hxbitset
 commands
   up
@@ -69,51 +46,97 @@ commands
   print src
   echo === hxbitset ===\n
   print dst
-  echo \n======\n
   continue
 end
 
-# ----- hxconstexpr_list -----
 break hxtest_gdb_break_hxconst_list
 commands
   up
   echo \n=== hxconstexpr_list ===\n
   print list
-  echo \n======\n
   continue
 end
 
-# ----- hxdeque -----
-break hxtest_gdb_break_hxdeque
+break hxtest_gdb_break_hxdeque_dynamic
 commands
   up
-  echo \n=== hxdeque ===\n
+  echo \n=== hxdeque dynamic ===\n
   print d
-  echo \n======\n
   continue
 end
 
-# ----- hxhash_table -----
+break hxtest_gdb_break_hxdeque_static
+commands
+  up
+  echo \n=== hxdeque static ===\n
+  print d
+  continue
+end
+
+break hxtest_gdb_break_hxflat_map_dynamic
+commands
+  up
+  echo \n=== hxflat_map dynamic ===\n
+  print m
+  continue
+end
+
+break hxtest_gdb_break_hxflat_map_static
+commands
+  up
+  echo \n=== hxflat_map static ===\n
+  print m
+  continue
+end
+
+break hxtest_gdb_break_hxflat_set_dynamic
+commands
+  up
+  echo \n=== hxflat_set dynamic ===\n
+  print s
+  continue
+end
+
+break hxtest_gdb_break_hxflat_set_static
+commands
+  up
+  echo \n=== hxflat_set static ===\n
+  print s
+  continue
+end
+
 break hxtest_gdb_break_hxhash_table
 commands
   up
   echo \n=== hxhash_table ===\n
   print table
-  echo \n======\n
   continue
 end
 
-# ----- hxlist -----
 break hxtest_gdb_break_hxlist
 commands
   up
   echo \n=== hxlist ===\n
   print list
-  echo \n======\n
+  continue
+end
+
+break hxtest_gdb_break_hxvector_dynamic
+commands
+  up
+  echo \n=== hxvector dynamic ===\n
+  print objs
+  continue
+end
+
+break hxtest_gdb_break_hxvector_static
+commands
+  up
+  echo \n=== hxvector static ===\n
+  print heap
   continue
 end
 
 run help runtests
 
-# This is required to return the error code from the process.
 quit

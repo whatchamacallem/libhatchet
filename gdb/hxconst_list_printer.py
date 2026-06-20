@@ -15,7 +15,7 @@ import traceback
 #
 #	template<typename node_t_, typename deleter_t_>
 #	class hxconstexpr_list {
-#		size_t            m_size_;
+#		hxsize_t          m_size_;
 #		hxconst_list_node m_sentinel_;  // sentinel: m_sentinel_.m_list_next_ is front,
 #	};                                  //           m_sentinel_.m_list_prev_ is back.
 #
