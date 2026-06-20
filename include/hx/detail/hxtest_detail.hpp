@@ -7,6 +7,8 @@
 #error Internal. Do not include this file directly.
 #endif
 
+#ifndef HX_DOXYGEN_PARSER
+HX_NS_BEGIN_
 namespace hxdetail_ {
 
 // Internal. 4 ULPs float comparison.
@@ -78,3 +80,5 @@ private:
 };
 
 } // hxdetail_
+HX_NS_END_
+#endif // HX_DOXYGEN_PARSER

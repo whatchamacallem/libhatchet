@@ -7,6 +7,7 @@
 #error Internal. Do not include this file directly.
 #endif
 
+#ifndef HX_DOXYGEN_PARSER
 HX_BEGIN_INL_
 
 template<size_t max_successors_>
@@ -67,3 +68,4 @@ void hxtask_dag_node<max_successors_>::dag_node_completed_(hxtask_queue* q_, boo
 }
 
 HX_END_INL_
+#endif // HX_DOXYGEN_PARSER

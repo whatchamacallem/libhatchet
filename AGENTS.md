@@ -11,7 +11,7 @@ aligns with requests. Existing code, documentation and tests may have been
 recently written in an entirely exploratory mode, and therefore preserving it
 may actually hinder elegant design and implementation.
 
-when asked to update documentation or tests assume existing bug free code is
+When asked to update documentation or tests assume existing bug free code is
 correct when it conflicts with documentation or tests. If bugs or compile errors
 are found outside of tests when asked to update tests then fix the code being
 tested first before proceeding to update the tests. All forward progress must be
@@ -23,7 +23,8 @@ Always number separate items in any analysis so they are easy referenced.
 
 ## Style Guide
 
-The best code is no code. Use K&R style. Use tabs instead of spaces.
+Add code like you are adding weight to an airplane. Use K&R style. Use tabs of
+size 4 instead of spaces.
 
 This is a bespoke C17/C++20 alternative to the C++ standard library. Never use
 the `std` namespace. The ranges library should not be implemented and do not go
@@ -118,7 +119,7 @@ white box testing that ensures the documentation is being followed. All test
 symbols that show up in the linker map must contain `hx` and `test`.
 
 Do not generate tests that are entirely redundant with other tests or do not
-meaningfully test real code.  e.g. Do not compare the return value of a function
+meaningfully test real code. E.g. Do not compare the return value of a function
 called on an object with the return value of the same function called on a
 reference to the same object.
 
@@ -178,20 +179,24 @@ but instead places them near the top of the file to be immediately visible to
 reviewers. E.g. at most one anonymous namespace at the top of a translation unit
 should normally be needed.
 
-All text files must end with `\n` or `\r\n`.
+All text files must end with a single `\n`.
 
 ## Project Structure
 
-Symbols that are included belong in the `include/hx` directory. Symbols that are
-internal generally belong in the `include/hx/detail` directory and end with an
-additional `_` if not already present.
+Public classes and symbols that are textually included or part of the module
+interface are in `include/hx/*.{h,hpp}`. Inline implementation headers are in
+`include/hx/detail/*.inl`. Internal symbols are in `include/hx/detail/*.hpp` and
+normally end with an `_`. Files ending with `.h` contain both `C` and `C++`.
 
 All tests go in the `test` directory. Symbols in the `test` and `example`
 directory never end with an `_` and this rule overrides the rules above in order
 to show that internal symbols are not used when testing the APIs. This applies
 to all symbols including local variables and function parameters.
 
-Use file globs to discover files in the src directory instead of listing them.
+Use file globs to discover files in the `src` directory instead of listing them
+in build files. Symbols in the `src` directory only end with `_` when required.
+Function parameter names in `src` files do not end with `_` even when they do so
+in headers.
 
 ## File Index
 

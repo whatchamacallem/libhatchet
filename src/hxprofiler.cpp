@@ -18,8 +18,10 @@ namespace {
 hxconsole_command_named(*+[](void) -> bool { hxprofiler_start(); return true; }, profilestart);
 hxconsole_command_named(*+[](void) -> bool { hxprofiler_stop(); return true; }, profilestop);
 hxconsole_command_named(*+[](void) -> bool { hxprofiler_log(); return true; }, profilelog);
+#if HX_USE_FILE_IO
 hxconsole_command_named(*+[](const char* filename) -> bool {
 	hxprofiler_write_to_chrome_tracing(filename); return true; }, profilewrite);
+#endif
 
 } // namespace {
 
@@ -34,18 +36,24 @@ hxprofiler_internal_ hxg_profiler_;
 // hxprofiler_internal_
 
 void hxprofiler_internal_::start_(void) {
+#if HX_USE_THREADS
 	const hxunique_lock profiler_lock(hxg_profiler_.m_mutex_);
+#endif
 	m_records.clear();
 	m_is_started_ = true;
 }
 
 void hxprofiler_internal_::stop_(void) {
+#if HX_USE_THREADS
 	const hxunique_lock profiler_lock(hxg_profiler_.m_mutex_);
+#endif
 	m_is_started_ = false;
 }
 
 void hxprofiler_internal_::log_(void) {
+#if HX_USE_THREADS
 	const hxunique_lock profiler_lock(hxg_profiler_.m_mutex_);
+#endif
 	m_is_started_ = false;
 
 	hxlog_handler(hxlog_level_console, "[ ");
@@ -67,7 +75,9 @@ void hxprofiler_internal_::log_(void) {
 // ### WARNING: Only https://ui.perfetto.dev/ is working at the moment.
 // ###
 void hxprofiler_internal_::write_to_chrome_tracing_(const char* filename) {
+#if HX_USE_THREADS
 	const hxunique_lock profiler_lock(hxg_profiler_.m_mutex_);
+#endif
 	m_is_started_ = false;
 
 	hxfile f(hxfile::out, "%s", filename);

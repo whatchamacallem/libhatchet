@@ -7,6 +7,7 @@
 #error Internal. Do not include this file directly.
 #endif
 
+#ifndef HX_DOXYGEN_PARSER
 HX_BEGIN_INL_
 
 template<typename T_, size_t capacity_>
@@ -152,3 +153,4 @@ template<typename T_, size_t capacity_>
 size_t hxdeque<T_, capacity_>::size(void) const { return m_count_; }
 
 HX_END_INL_
+#endif // HX_DOXYGEN_PARSER

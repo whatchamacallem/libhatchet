@@ -87,8 +87,6 @@
 
 #if !(HX_USE_MODULE)
 
-HX_NS_BEGIN_
-
 #include "detail/hxtest_detail.hpp"
 
 /// `testing` - A partial Google Test reimplementation. Use `-DHX_TEST_MAX_CASES`
@@ -247,7 +245,5 @@ inline void InitGoogleTest(void) { }
 #define ASSERT_STREQ(a_, b_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_(hxtest_str_eq_((a_), (b_)), __FILE__, __LINE__, #a_ " == " #b_, true)
 /// `void ASSERT_STRNE(const char* a, const char* b)` - Requires that two C strings differ, without checking null pointers.
 #define ASSERT_STRNE(a_, b_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_(!hxtest_str_eq_((a_), (b_)), __FILE__, __LINE__, #a_ " != " #b_, true)
-
-HX_NS_END_
 
 #endif // !HX_USE_GOOGLE_TEST

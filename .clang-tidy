@@ -63,9 +63,15 @@ Checks: >
   -bugprone-multi-level-implicit-pointer-conversion,
   -bugprone-sizeof-expression,
   -bugprone-undefined-memory-manipulation,
+  -clang-analyzer-security.ArrayBound,
   -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
   -performance-enum-size,
-  -performance-no-int-to-ptr
+  -performance-no-int-to-ptr,
+  -portability-avoid-pragma-once
+
+# This was just wrong in v21.1.8.
+CheckOptions:
+  misc-const-correctness.AnalyzePointers: 'false'
 FormatStyle: none
 HeaderFilterRegex: '(^|.*/)(include|src|test)/'
 WarningsAsErrors: '*'

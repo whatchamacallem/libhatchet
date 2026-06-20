@@ -1,7 +1,16 @@
-# SPDX-FileCopyrightText: © 2026 Adrian Johnston.
+# SPDX-FileCopyrightText: © 2017-2026 Adrian Johnston.
 # SPDX-License-Identifier: MIT
+# This file is licensed under the terms of the LICENSE.md file.
 
 cmake_minimum_required(VERSION 3.21)
+
+if(NOT DEFINED ENV{PICO_SDK_PATH})
+    message(FATAL_ERROR "PICO_SDK_PATH environment variable is not set")
+endif()
+
+if(NOT DEFINED ENV{LIBHATCHET_PATH})
+    message(FATAL_ERROR "LIBHATCHET_PATH environment variable is not set")
+endif()
 
 include($ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake)
 
@@ -15,6 +24,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 pico_sdk_init()
 
 # ── libhatchet ─────────────────────────────────────────────────────────────────
+
 add_subdirectory($ENV{LIBHATCHET_PATH} libhatchet)
 
 target_compile_definitions(hatchet PUBLIC
@@ -37,9 +47,10 @@ target_compile_options(hatchet PRIVATE
 )
 
 # ── test executable ────────────────────────────────────────────────────────────
-file(GLOB TEST_SOURCES "../libhatchet/test/*.c" "../libhatchet/test/*.cpp")
-# hxtest_main.cpp provides the desktop main(); we supply our own in libhatchet_pico.cpp.
-list(REMOVE_ITEM TEST_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/../libhatchet/test/hxtest_main.cpp")
+
+get_filename_component(LIBHATCHET_ABS "$ENV{LIBHATCHET_PATH}" ABSOLUTE)
+file(GLOB TEST_SOURCES "${LIBHATCHET_ABS}/test/*.c" "${LIBHATCHET_ABS}/test/*.cpp")
+list(REMOVE_ITEM TEST_SOURCES "${LIBHATCHET_ABS}/test/hxtest_main.cpp")
 
 add_executable(libhatchet_test_pico
     libhatchet_pico.cpp

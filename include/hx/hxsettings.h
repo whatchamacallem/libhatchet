@@ -4,7 +4,8 @@
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
 /// \file hxsettings.h Compiler detection and target specific C++11/C++14
-/// polyfill. Use `#if (HX_...)` instead of `#ifdef(HX_...)` for all `HX_`* macros.
+/// polyfill. Use `#if (HX_...)` instead of `#ifdef(HX_...)` for all `HX_`*
+/// macros. `HX_USE_NAMESPACE` can be used to wrap the library in a namespace.
 
 #if !LIBHATCHET_VER
 #error #include <hx/libhatchet.h> instead.
@@ -41,14 +42,6 @@
 /// C++ standard library is not detected automatically because that depends on
 /// header include order.
 #define HX_USE_LIBCXX 1
-
-/// \def HX_NAMESPACE
-/// \brief If defined the library will be wrapped in the provided namespace. The
-/// C interfaces and macros are not modified.
-
-/// `HX_NAMESPACE` - Wraps the entire library in a namespace when
-/// `HX_NAMESPACE` is defined as a valid namespace identifier.
-#define HX_NAMESPACE
 
 /// `hxbreakpoint` - Can be conditionally evaluated with the `&&` and `||`
 /// operators. Uses intrinsics when available. (E.g., clang's.) Raises `SIGTRAP`
@@ -128,21 +121,28 @@
 
 #define hxbreakpoint() (__debugbreak(),true)
 #define hxrestrict __restrict
-
-// These are attributes for gcc/clang. The standard C++ attributes are
-// recommended when optimizing for Windows.
 #define hxattr_allocator(...)
 #define hxattr_assume(condition_) __assume(condition_)
 #define hxattr_cold
 #define hxattr_hot
+#if HX_CPLUSPLUS
+#define hxattr_nodiscard [[nodiscard]]
+#else
 #define hxattr_nodiscard
+#endif
 #define hxattr_noexcept
 #define hxattr_nonnull(...)
 #define hxattr_noinline __declspec(noinline)
+#if HX_CPLUSPLUS
+#define hxattr_noreturn [[noreturn]]
+#else
 #define hxattr_noreturn
+#endif
 #define hxattr_printf(...)
-#define hxattr_weak
 #define hxattr_scanf(...)
+// #define hxattr_weak __declspec(selectany) is not used as MSVC treats all
+// library objects as weak.
+#define hxattr_weak
 
 // ----------------------------------------------------------------------------
 // Target settings for clang and gcc. Further compilers will require
@@ -161,11 +161,10 @@
 #endif
 #endif
 
-// Set HX_USE_LIBCXX to 0 to signal the C++ standard library is not in use. The
-// C++ standard library is not detected automatically because that depends on
-// header include order.
 #if !defined HX_USE_LIBCXX
 #define HX_USE_LIBCXX 1
+#elif !(HX_USE_LIBCXX) && defined __has_include && __has_include(<new>)
+#error Use -nostdinc++ to use the C headers instead of the C++ ones.
 #endif
 
 // Provide new/delete when the std libray is absent unless overriden.
@@ -198,6 +197,7 @@
 #define hxattr_assume(...) (void)0
 #endif
 
+// __attribute__ is used because it works in an extern "C" block.
 #define hxattr_cold __attribute__((cold))
 #define hxattr_hot __attribute__((hot)) __attribute__((flatten))
 #define hxattr_nodiscard __attribute__((warn_unused_result))
@@ -206,8 +206,8 @@
 #define hxattr_noinline __attribute__((noinline))
 #define hxattr_noreturn __attribute__((noreturn))
 #define hxattr_printf(pos_, start_) __attribute__((format(printf, pos_, start_)))
-#define hxattr_weak __attribute__((weak)) 
 #define hxattr_scanf(pos_, start_) __attribute__((format(scanf, pos_, start_)))
+#define hxattr_weak __attribute__((weak)) 
 
 #endif // target specific settings
 
@@ -227,7 +227,7 @@
 /// console.
 #if !defined HX_USE_CONSOLE
 #define HX_USE_CONSOLE HX_CPLUSPLUS >= 202002L
-#elif (HX_USE_CONSOLE) && HX_CPLUSPLUS < 202002L
+#elif (HX_USE_CONSOLE) && HX_CPLUSPLUS && HX_CPLUSPLUS < 202002L
 #error The console requires C++20 or later.
 #endif
 
@@ -262,8 +262,8 @@
 #endif
 
 #if !defined HX_PROFILER_MAX_RECORDS
-/// `HX_PROFILER_MAX_RECORDS` - Set to `4096` if not defined. The profiler doesn't
-/// reallocate. This is the maximum.
+/// `HX_PROFILER_MAX_RECORDS` - Set to `4096` if not defined. The profiler
+/// doesn't reallocate. This is the maximum.
 #define HX_PROFILER_MAX_RECORDS 4096
 #endif
 
@@ -299,16 +299,36 @@
 #endif
 
 #if !defined HX_RADIX_SORT_MIN_SIZE
-/// `HX_RADIX_SORT_MIN_SIZE` - Radix sort uses `hxinsertion_sort` below this size.
-/// Set to `32` if not defined.
+/// `HX_RADIX_SORT_MIN_SIZE` - Radix sort uses `hxinsertion_sort` below this
+/// size. Set to `32` if not defined.
 #define HX_RADIX_SORT_MIN_SIZE 32u
 #endif
 
+/// Converts its arg into a string.
+#define HX_QUOTE(x_) #x_
+
 /// \cond HIDDEN
-// `HX_TEST_ERROR_HANDLING` - Tests that the failure of tests is handled correctly.
-// Set to `0` if not defined. Set by `testerrorhandling.sh` and `coverage.sh`.
+// `HX_TEST_ERROR_HANDLING` - Tests that the failure of tests is handled
+// correctly. Set to `0` if not defined. Set by `testerrorhandling.sh` and
+// `coverage.sh`.
 #if !defined HX_TEST_ERROR_HANDLING
 #define HX_TEST_ERROR_HANDLING 0
+#endif
+
+#if HX_CPLUSPLUS
+// HX_USE_* feature test flags must not be empty as that is evaluated as 0.
+#define HX_CHECK_USE_(x_) static_assert(HX_QUOTE(x_)[0] != 0, #x_ " must not be empty.");
+HX_CHECK_USE_(HX_PROVIDE_NEW_DELETE);
+HX_CHECK_USE_(HX_TEST_ERROR_HANDLING);
+HX_CHECK_USE_(HX_USE_CONSOLE);
+HX_CHECK_USE_(HX_USE_FILE_IO);
+HX_CHECK_USE_(HX_USE_GOOGLE_TEST);
+HX_CHECK_USE_(HX_USE_LIBCXX);
+HX_CHECK_USE_(HX_USE_LOGGING);
+HX_CHECK_USE_(HX_USE_MEMORY_MANAGER);
+HX_CHECK_USE_(HX_USE_MODULE);
+HX_CHECK_USE_(HX_USE_PROFILER);
+HX_CHECK_USE_(HX_USE_THREADS);
 #endif
 
 // HX_APPEND_COUNTER - Used to generate unique identifiers. This is weird
@@ -325,13 +345,14 @@
 #define HX_END_INL_
 #endif
 
-// HX_NAMESPACE - Wraps the entire library in a namespace when HX_NAMESPACE is
+// HX_USE_NAMESPACE - Wraps the entire library in a namespace when HX_USE_NAMESPACE is
 // defined as a valid namespace identifier.
-#if defined HX_NAMESPACE
-#define HX_NS_BEGIN_  namespace HX_NAMESPACE {
+#if HX_CPLUSPLUS && defined HX_USE_NAMESPACE
+HX_CHECK_USE_(HX_USE_NAMESPACE);
+#define HX_NS_BEGIN_  namespace HX_USE_NAMESPACE {
 #define HX_NS_END_    }
-#define HX_NS_PREFIX_ HX_NAMESPACE::
-#define HX_NS_USE     using namespace HX_NAMESPACE;
+#define HX_NS_PREFIX_ HX_USE_NAMESPACE::
+#define HX_NS_USE     using namespace HX_USE_NAMESPACE;
 #else
 #define HX_NS_BEGIN_
 #define HX_NS_END_

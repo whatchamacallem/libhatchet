@@ -147,7 +147,8 @@ hxattr_weak hxattr_noexcept void hxlog_handler_v(hxlog_level_t level, const char
 	int len = ::vsnprintf(line_buf, HX_MAX_LINE, format, args);
 
 	// Do not try to print the format string because it may be invalid.
-	hxassert_hard(len >= 0 && len < (int)HX_MAX_LINE, "vsnprintf");
+	hxassert_hard(len >= 0 && len < (int)HX_MAX_LINE, "hxlog_handler_v");
+	len = hxmin(len, HX_MAX_LINE - 1);
 
 #if HX_USE_FILE_IO
 	hxfile& f = level == hxlog_level_log ? hxout : hxerr;

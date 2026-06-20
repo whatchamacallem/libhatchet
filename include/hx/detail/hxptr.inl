@@ -7,6 +7,7 @@
 #error Internal. Do not include this file directly.
 #endif
 
+#ifndef HX_DOXYGEN_PARSER
 HX_BEGIN_INL_
 
 template<typename T_, typename deleter_t_>
@@ -101,3 +102,4 @@ hxconstexpr void hxptr<T_, deleter_t_>::swap(hxptr& other_) noexcept {
 }
 
 HX_END_INL_
+#endif // HX_DOXYGEN_PARSER

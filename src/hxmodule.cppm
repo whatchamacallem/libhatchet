@@ -49,9 +49,9 @@ module;
 #define HX_PROVIDE_NEW_DELETE 0
 
 // Out of line declarations (.inl files) have to be outside the export block.
-#ifdef HX_NAMESPACE
-#define HX_BEGIN_INL_ } } namespace HX_NAMESPACE {
-#define HX_END_INL_ } export { namespace HX_NAMESPACE {
+#ifdef HX_USE_NAMESPACE
+#define HX_BEGIN_INL_ } } namespace HX_USE_NAMESPACE {
+#define HX_END_INL_ } export { namespace HX_USE_NAMESPACE {
 #else
 #define HX_BEGIN_INL_ }
 #define HX_END_INL_ export {

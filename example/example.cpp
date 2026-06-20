@@ -24,6 +24,8 @@ import hx;
 // These provide macros when HX_USE_MODULE=1.
 #include <hx/hxconsole.hpp>
 #include <hx/hxprofiler.hpp>
+// Unused. Included to make sure it compiles with HX_USE_MODULE=1.
+#include <hx/hxtest.hpp>
 
 namespace {
 

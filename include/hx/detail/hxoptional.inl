@@ -7,6 +7,7 @@
 #error Internal. Do not include this file directly.
 #endif
 
+#ifndef HX_DOXYGEN_PARSER
 HX_BEGIN_INL_
 
 template<typename T_>
@@ -179,3 +180,4 @@ T_ hxoptional<T_>::value_or(const T_& default_value_) const {
 }
 
 HX_END_INL_
+#endif // HX_DOXYGEN_PARSER

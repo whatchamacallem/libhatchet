@@ -7,6 +7,8 @@
 #error Internal. Do not include this file directly.
 #endif
 
+#ifndef HX_DOXYGEN_PARSER
+
 template<typename iterator_t_, typename less_t_> hxattr_hot hxconstexpr
 void hxinsertion_sort(iterator_t_ begin_, iterator_t_ end_, const less_t_& less_);
 
@@ -185,3 +187,5 @@ void hxintro_sort_(iterator_t_ begin_, iterator_t_ end_, const less_t_& less_, i
 }
 
 } // namespace hxdetail_ {
+
+#endif // HX_DOXYGEN_PARSER

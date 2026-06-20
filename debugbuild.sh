@@ -10,15 +10,13 @@
 # Do not use a .pch with ccache. It won't work as expected.
 
 # Should detect threading and the standard library.
-BUILD="-DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG -DHX_USE_PROFILER=1 \
-	-DHX_NAMESPACE=hx -O0"
 
 # -Wdate-time is for ccache. -Wno-unused-variable is only for debugging.
 ERRORS="-Wall -Wextra -pedantic-errors -Werror -Wfatal-errors -Wcast-qual \
 	-Wdisabled-optimization -Wshadow -Wundef -Wconversion -Wdate-time     \
 	-Wmissing-declarations -Wno-c2y-extensions -Wno-unused-variable"
 
-FLAGS="-m32 -ggdb3 -fdiagnostics-absolute-paths -fdiagnostics-color=always"
+FLAGS=" -O0 -m32 -ggdb3 -fdiagnostics-absolute-paths -fdiagnostics-color=always"
 
 export POSIXLY_CORRECT=1
 
@@ -32,45 +30,91 @@ trap '{ set +o xtrace; } 2> /dev/null
     exit 1
 ' 1 2 3 6 15
 
+set -eu
+
+OPT_GRIND=0
+OPT_RUN=0
+for ARG in "$@"; do
+	case "$ARG" in
+		--grind) OPT_GRIND=1 ;;
+		--run)   OPT_RUN=1 ;;
+		*)
+			echo "Usage: $0 [--grind] [--run]"
+			echo "  --grind  Build all configuration combinations."
+			echo "  --run    Run hxtest after building."
+			exit 1
+			;;
+	esac
+done
+
 # Clear the output window when used interactively.
-if [ "${1:-}" != "--run" ] && [ -z "$CLAUDE_CODE" ]; then
+if [ "$OPT_RUN" = "0" ] && [ -z "${CLAUDE_CODE:-}" ]; then
 	export TERM=xterm-256color
 	clear
 fi
 
-set -eu
+COUNT=1
+build_hxtest() {
+	# Build artifacts are not retained.
+	rm -rf build; mkdir build
 
-# Build artifacts are not retained.
-rm -rf ./build; mkdir ./build && cd ./build
+	echo "[$COUNT] $BUILD"
+	COUNT=$((COUNT + 1))
 
-PIDS=""
-for FILE in ../test/*.c; do
-	ccache clang $BUILD $ERRORS $FLAGS -I../include -std=c17 -c $FILE & PIDS="$PIDS $!"
-done
+	PIDS=""
+	for FILE in test/*.c; do
+		ccache clang $BUILD $ERRORS $FLAGS -Iinclude -std=c17 -c $FILE \
+			-o build/$(basename "$FILE" .c).o & PIDS="$PIDS $!"
+	done
 
-for FILE in ../src/*.cpp ../test/*.cpp; do
-	ccache clang++ $BUILD $ERRORS $FLAGS -I../include -std=c++23 -fno-exceptions -fno-rtti \
-		-c $FILE & PIDS="$PIDS $!"
-done
+	for FILE in src/*.cpp test/*.cpp; do
+		ccache clang++ $BUILD $ERRORS $FLAGS -Iinclude -std=c++23 -fno-exceptions -fno-rtti \
+			-c $FILE -o build/$(basename "$FILE" .cpp).o & PIDS="$PIDS $!"
+	done
 
-for PID in $PIDS; do
-	if ! wait "$PID"; then
-		exit 1
-	fi
-done
+	for PID in $PIDS; do
+		if ! wait "$PID"; then
+			exit 1
+		fi
+	done
+}
 
-ccache clang++ $BUILD $FLAGS *.o -lpthread -lstdc++ -lm -o hxtest
+if [ "$OPT_GRIND" = "1" ]; then
+	for NAMESPACE in "" "-DHX_USE_NAMESPACE=hx"; do
+	for CONSOLE   in 0 1;    do
+	for FILE_IO   in 0 1 2;  do
+	for LIBCXX    in 0 1;    do
+	for LOGGING   in 0 1 2;  do
+	for MEMORY    in 0 1;    do
+	for PROFILER  in 0 1;    do
+	for THREADS   in 0 1 11; do
+		BUILD="$NAMESPACE -DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG"
+		[ -n "$CONSOLE"   ] && BUILD="$BUILD -DHX_USE_CONSOLE=$CONSOLE"
+		[ -n "$FILE_IO"   ] && BUILD="$BUILD -DHX_USE_FILE_IO=$FILE_IO"
+		[ -n "$LIBCXX"    ] && BUILD="$BUILD -DHX_USE_LIBCXX=$LIBCXX"
+		[ "$LIBCXX" = "0" ] && BUILD="$BUILD -nostdinc++"
+		[ -n "$LOGGING"   ] && BUILD="$BUILD -DHX_USE_LOGGING=$LOGGING"
+		[ -n "$MEMORY"    ] && BUILD="$BUILD -DHX_USE_MEMORY_MANAGER=$MEMORY"
+		[ -n "$PROFILER"  ] && BUILD="$BUILD -DHX_USE_PROFILER=$PROFILER"
+		[ -n "$THREADS"   ] && BUILD="$BUILD -DHX_USE_THREADS=$THREADS"
+		build_hxtest
+	done; done; done; done; done; done; done; done
+else
+	BUILD="-DHX_USE_NAMESPACE=hx -DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG -DHX_USE_PROFILER=1"
+	build_hxtest
+fi
 
-set +u
+# Only link the last set of object files.
+ccache clang++ $BUILD $FLAGS build/*.o -lpthread -lstdc++ -lm -o build/hxtest
 
-if [ -z "$CLAUDE_CODE" ]; then
+if [ -z "${CLAUDE_CODE:-}" ]; then
 	# save tokens
 	ccache --show-stats
 fi
 
-# This just checks if the build is correct. Run build/hxtest to debug.
-if [ "${1:-}" = "--run" ]; then
-	 ./hxtest
+if [ "$OPT_RUN" = "1" ]; then
+	cd build
+	./hxtest
 fi
 
 echo 🪓🪓🪓

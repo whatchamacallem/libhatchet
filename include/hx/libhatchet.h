@@ -33,10 +33,10 @@
 
 /// `int LIBHATCHET_VER` - One digit major, and two digit minor and patch
 /// versions.
-#define LIBHATCHET_VER 13808
+#define LIBHATCHET_VER 13905
 
 /// `LIBHATCHET_TAG` - Major, minor and patch version tag name.
-#define LIBHATCHET_TAG "v1.38.8"
+#define LIBHATCHET_TAG "v1.39.5"
 
 #if !defined HX_HARDENING_MODE
 /// `HX_HARDENING_MODE` - Library hardening level. See the README.md for levels.
@@ -212,14 +212,16 @@
 extern "C" {
 #endif
 
-#if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG // These are debug facilities.
+#if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
 /// Assert handler. Do not call directly, signature changes and then is removed.
 /// WARNING: Compile errors from consteval code calling this function are
 /// intentional and are how you know a compile time assert has been hit.
 bool hxassert_handler(const char* file_, size_t line_) hxattr_noexcept hxattr_nonnull(1) hxattr_cold;
 #else // HX_HARDENING_MODE != HX_HARDENING_MODE_DEBUG
-/// WARNING: Compile errors from consteval code calling this function are
-/// intentional and are how you know a compile time assert has been hit.
+// Errors from consteval code calling this function are how you know a compile
+// time assert has been hit. hxattr_cold tells the compiler this call is
+// unlikely.
+// WARNING: THIS IS USED AS A COMPILE TIME ASSERT.
 void hxassert_handler(void) hxattr_noexcept hxattr_cold;
 #endif
 

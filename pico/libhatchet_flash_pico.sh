@@ -1,17 +1,22 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: © 2017-2026 Adrian Johnston.
+# SPDX-License-Identifier: MIT
+# This file is licensed under the terms of the LICENSE.md file.
+#
 # Build the libhatchet test suite for Pico 2, flash it, then stream serial output.
 # Run with: ./flash_libhatchet.sh [--port /dev/ttyACM0] [--board pico2]
 set -euo pipefail
 
-PICO_ROOT="$(cd "$(dirname "$0")" && pwd)"
-PICO_SDK_PATH="$PICO_ROOT/pico-sdk"
-BUILD_DIR="$PICO_ROOT/build-hatchet"
+# These need to be configured to your install directories:
+
+PICO_ROOT="../../pico"
+export PICO_SDK_PATH="$PICO_ROOT/pico-sdk"
+export LIBHATCHET_PATH=".."
+BUILD_DIR="$LIBHATCHET_PATH/build"
+
 BOARD="${BOARD:-pico2}"
 BAUD="${BAUD:-115200}"
 PORT="${PORT:-}"
-
-export PICO_SDK_PATH
-export LIBHATCHET_PATH="../libhatchet"
 
 # ── argument parsing ───────────────────────────────────────────────────────────
 while [[ $# -gt 0 ]]; do
@@ -37,8 +42,11 @@ require arm-none-eabi-gcc
 require picotool
 
 # ── 1. build ───────────────────────────────────────────────────────────────────
+info "Cleaning build directory ..."
+rm -rf "$BUILD_DIR"
+
 info "Configuring CMake for board '$BOARD' ..."
-cmake -S "$PICO_ROOT" -B "$BUILD_DIR" \
+cmake -S . -B "$BUILD_DIR" \
     -DCMAKE_BUILD_TYPE=Release \
     -DPICO_BOARD="$BOARD" \
     -DPICO_SDK_PATH="$PICO_SDK_PATH" \

@@ -19,6 +19,7 @@ trap '{ set +o xtrace; } 2> /dev/null
 set -eu
 
 HX_DIR=`pwd`
+HX_GCOV=gcov-$(gcc -dumpversion | cut -d. -f1)
 
 # Build artifacts are not retained.
 rm -rf ./build; mkdir ./build && cd ./build
@@ -38,7 +39,7 @@ if [ $? -ne 0 ]; then
   echo "error: hxtest exit: $?"
 fi
 
-gcovr --exclude-lines-by-pattern '.*hxassert.*' --html-details coverage.html --root .. .
+gcovr --gcov-executable "$HX_GCOV" --exclude-lines-by-pattern '.*hxassert.*' --html-details coverage.html --root .. .
 
 { set +o xtrace; } 2> /dev/null
 

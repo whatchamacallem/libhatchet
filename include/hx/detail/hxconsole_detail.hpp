@@ -8,6 +8,8 @@
 #error Internal. Do not include this file directly.
 #endif
 
+#ifndef HX_DOXYGEN_PARSER
+
 namespace hxdetail_ {
 
 // ----------------------------------------------------------------------------
@@ -332,3 +334,5 @@ private:
 };
 
 } // hxdetail_
+
+#endif // HX_DOXYGEN_PARSER

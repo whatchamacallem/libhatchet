@@ -7,6 +7,7 @@
 #error Internal. Do not include this file directly.
 #endif
 
+#ifndef HX_DOXYGEN_PARSER
 HX_BEGIN_INL_
 
 // A sentinel node eliminates checking for null when empty. And XOR linking
@@ -360,3 +361,4 @@ inline void hxlist<node_t_, deleter_t_>::extract_(
 }
 
 HX_END_INL_
+#endif // HX_DOXYGEN_PARSER

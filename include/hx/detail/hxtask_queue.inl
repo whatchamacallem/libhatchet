@@ -7,6 +7,7 @@
 #error Internal. Do not include this file directly.
 #endif
 
+#ifndef HX_DOXYGEN_PARSER
 HX_BEGIN_INL_
 
 template<typename callable_t_>
@@ -89,3 +90,4 @@ inline size_t hxtask_queue::size(void) const {
 }
 
 HX_END_INL_
+#endif // HX_DOXYGEN_PARSER

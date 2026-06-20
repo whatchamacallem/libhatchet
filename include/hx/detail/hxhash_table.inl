@@ -7,6 +7,7 @@
 #error Internal. Do not include this file directly.
 #endif
 
+#ifndef HX_DOXYGEN_PARSER
 HX_BEGIN_INL_
 
 template<hxhash_table_concept_ node_t_, hxhash_t table_size_bits_, bool multi_t_, typename deleter_t_>
@@ -349,3 +350,4 @@ inline const node_t_*const* hxhash_table<node_t_, table_size_bits_, multi_t_, de
 }
 
 HX_END_INL_
+#endif // HX_DOXYGEN_PARSER

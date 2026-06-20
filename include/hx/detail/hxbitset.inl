@@ -7,6 +7,7 @@
 #error Internal. Do not include this file directly.
 #endif
 
+#ifndef HX_DOXYGEN_PARSER
 HX_BEGIN_INL_
 
 template<size_t bit_count_>
@@ -226,3 +227,4 @@ inline hxconstexpr void hxbitset<bit_count_>::assert_no_trailing_bits_(void) con
 }
 
 HX_END_INL_
+#endif // HX_DOXYGEN_PARSER

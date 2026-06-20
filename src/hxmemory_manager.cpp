@@ -42,15 +42,6 @@ hxattr_hot void operator delete[](void* ptr, size_t) noexcept {
 }
 #endif
 
-HX_NS_BEGIN_
-
-// Friend function that restricts direct access to these variables to this file.
-inline void hxsystem_allocator_scope_init_(hxsystem_allocator_scope* scope,
-		size_t allocation_count, size_t bytes_allocated) {
-	scope->m_initial_allocation_count_ = allocation_count;
-	scope->m_initial_bytes_allocated_ = bytes_allocated;
-}
-
 // hxmalloc_checked_ always checks malloc and halts on failure. It enforces the
 // overall policy against allocation failure handling routines and the static
 // analysis contract described by hxattr_allocator.
@@ -68,6 +59,15 @@ hxattr_allocator(free) hxattr_hot hxattr_noexcept static void* hxmalloc_checked_
 
 // HX_USE_MEMORY_MANAGER. See hxsettings.h.
 #if HX_USE_MEMORY_MANAGER
+
+HX_NS_BEGIN_
+
+// Friend function that restricts direct access to these variables to this file.
+inline void hxsystem_allocator_scope_init_(hxsystem_allocator_scope* scope,
+		size_t allocation_count, size_t bytes_allocated) {
+	scope->m_initial_allocation_count_ = allocation_count;
+	scope->m_initial_bytes_allocated_ = bytes_allocated;
+}
 
 // All pathways are thread-safe by default. In theory locking could be removed
 // if threads avoided sharing allocators, but I do not want to scare anyone.
@@ -424,7 +424,10 @@ void hxmemory_manager::end_allocation_scope(
 
 // WARNING: It is undefined behavior to compare pointers to different
 // allocations. This is consistent with the C++ standard. Allocations of size 0
-// may or may not return the same pointer as previous allocations.
+// may or may not return the same pointer as a previous allocation. Compiler
+// optimizations may still assume allocated pointers do not alias in that case
+// because they do not refer to any memory. Comparing pointers to size 0
+// allocations is a bad idea.
 void* hxmemory_manager::allocate(size_t size, hxsystem_allocator_t id, hxalignment_t alignment) {
 	if(id == hxsystem_allocator_current) {
 		// This currently involves a call to pthreads.
@@ -579,7 +582,7 @@ HX_NS_END_
 
 extern "C"
 hxattr_noexcept void* hxmalloc(size_t size) {
-	return HX_NS_PREFIX_ hxmalloc_checked_(size);
+	return hxmalloc_checked_(size);
 }
 
 // No support for special alignments when disabled. This is enough for WASM.
@@ -588,7 +591,7 @@ hxattr_noexcept void* hxmalloc_ext(size_t size, hxsystem_allocator_t id, hxalign
 	(void)id; (void)alignment;
 	hxassertmsg(alignment <= hxalignment, "alignment_error Memory manager disabled: %zu",
 		static_cast<size_t>(alignment));
-	return HX_NS_PREFIX_ hxmalloc_checked_(size);
+	return hxmalloc_checked_(size);
 }
 
 extern "C"

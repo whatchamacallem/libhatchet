@@ -157,10 +157,17 @@ standard library shipped with your compiler.
 ## Tested Environments
 
 Almost every reasonable GCC and Clang warning flag should be safe to enable.
-Clang-tidy is also in use. The tested environment is glibc and musl on Ubuntu
-24.04 LTS. See `ubuntu_packages.sh` for a list of required packages for all the
-scripts. The latest MSVC 2022 should be working with most warnings enabled as
-well. Although the MSVC static analyzer is not being tested.
+Clang-Tidy is also in use. The tested environment is glibc and musl on Ubuntu
+26.04 LTS using g++-16 and clang-22. See `ubuntu_packages.sh` for a list of
+required packages for all the scripts. The latest MSVC 2022 should be working
+with most warnings enabled as well. Although the MSVC static analyzer is not
+being tested.
+
+The `pico` directory contains a port to the Raspberry Pi Pico 2. Note how there
+is almost nothing to do when porting as libc provides almost all of the device
+abstraction required. Some devices may require you to explicitly call the C++
+global constructors before calling `main()` yourself. Check the sample code that
+came with your board.
 
 The scripted builds exercise the following toolchains, language modes, and
 `HX_HARDENING_MODE` combinations:

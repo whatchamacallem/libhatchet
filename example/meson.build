@@ -20,7 +20,7 @@ if get_option('build_module')
 
 	executable('hxexample',
 		sources : [libhatchet_module, _example_obj],
-		link_args : hxwarning_args,
+		link_args : hxwarning_args + get_option('cpp_link_args'),
 	)
 else
 	executable('hxexample',

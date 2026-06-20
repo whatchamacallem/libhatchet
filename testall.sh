@@ -29,14 +29,17 @@ echo "
   .||. .||.  '|...'  .||. ||. '|..'|'  '|.'  '|...' .||. ||.  '|...'  '|.'
 "
 
+# Delete files matching .gitignore and reset ccache.
+./clean.sh
+
 # The test directory should not use names ending with an underscore. Those names
 # are reserved for internal symbols. Two underscores are allowed. Coverage
 # testing should be possible without using internal symbols. Symbols ending with
 # an underscore are not intended to be used externally and may change without
 # notice.
 if grep -nE '(^|[^[:alnum:]_])[[:alpha:]_][[:alnum:]_]*[[:alnum:]]_([^[:alnum:]_]|$)' test/*.cpp >&2; then
-  echo "error: Alphanumeric sequences ending with '_' are not allowed in test/*.cpp."
-  exit 1
+	echo "error: Alphanumeric sequences ending with '_' are not allowed in test/*.cpp."
+	exit 1
 fi
 
 # Require class and struct names in the test directory to contain "hx" and
@@ -44,40 +47,37 @@ fi
 # test suite or the library. Use a comment like "// hxtest" to disable this
 # check.
 if grep -nP '\b(class|struct)\b' test/*.cpp | grep -Pv '^[^:]*:[^:]*:.*(?=.*hx)(?=.*test)' >&2; then
-  echo "error: Class/struct definitions in test/*.cpp must contain both 'hx' and 'test'."
-  exit 1
+	echo "error: Class/struct definitions in test/*.cpp must contain both 'hx' and 'test'."
+	exit 1
 fi
 
 # Some keywords are implemented when the standard library is not available.
 # These are not.
 KEYWORDS='(^|[^[:alnum:]_])(typeid|nullptr|co_await|co_yield|co_return|throw)([^[:alnum:]_]|$)'
-if grep -nEHIR  --include='*.cpp' --include='*.hpp' "$KEYWORDS" include src test >&2; then
-  echo "error: C++ keywords must not depend on the C++ standard library."
-  exit 1
+if grep -nEHIR --include='*.cpp' --include='*.hpp' "$KEYWORDS" include src test >&2; then
+	echo "error: C++ keywords must not depend on the C++ standard library."
+	exit 1
 fi
 
 # Check for stray CRLF.
 if file $(git ls-files) | grep CRLF; then
-  printf 'error: CRLF line ending found. Fix with: sed -i %ss/\\r//%s <file>\n' "'" "'"
-  exit 1
+	printf 'error: CRLF line ending found. Fix with: sed -i %ss/\\r//%s <file>\n' "'" "'"
+	exit 1
 fi
 
 # Check text files end with exactly one newline.
 find . -type f \( -name "*.hpp" -o -name "*.cpp" -o -name "*.h" -o -name "*.c" -o -name "*.inl" \
-                  -o -name "*.sh" -o -name "*.py" \) | while read -r FILE; do
-  if [[ $(tail -c 2 "$FILE" | tr -dc '\n' | wc -c) -ne 1 ]]; then
-    echo "error: Text files must end with exactly one newline: $FILE"
-    exit 1
-  fi
+				-o -name "*.sh" -o -name "*.py" \) | while read -r FILE; do
+	if [[ $(tail -c 2 "$FILE" | tr -dc '\n' | wc -c) -ne 1 ]]; then
+		echo "error: Text files must end with exactly one newline: $FILE"
+		exit 1
+	fi
 done
 
 PS4='\e[38;5;208m[${SECONDS}s] ${BASH_SOURCE}:${LINENO}: \e[0m'
 set -o xtrace
 
-# Delete files matching .gitignore and reset ccache.
-./clean.sh
-
-./debugbuild.sh --run
+./debugbuild.sh --grind --run
 ./testcmake.sh
 ./testcoverage.sh --headless
 ./testerrorhandling.sh

@@ -7,6 +7,7 @@
 #error Internal. Do not include this file directly.
 #endif
 
+#ifndef HX_DOXYGEN_PARSER
 HX_BEGIN_INL_
 
 template<hxarray_concept_ T_, size_t capacity_>
@@ -605,3 +606,4 @@ void hxarray<T_, capacity_>::destruct_(T_* begin_, T_* end_) {
 }
 
 HX_END_INL_
+#endif // HX_DOXYGEN_PARSER

@@ -454,6 +454,6 @@ private:
 	bool m_joined_;
 };
 
-HX_NS_END_
-
 #endif // HX_USE_THREADS
+
+HX_NS_END_

@@ -1,5 +1,6 @@
-// SPDX-FileCopyrightText: © 2026 Adrian Johnston.
+// SPDX-FileCopyrightText: © 2017-2026 Adrian Johnston.
 // SPDX-License-Identifier: MIT
+// This file is licensed under the MIT license found in the LICENSE.md file.
 
 // Pico 2 entry point for the libhatchet test suite.
 
@@ -14,7 +15,7 @@
 
 HX_NS_USE
 
-static bool run_all_tests(void) {
+static int run_all_tests(void) {
     hxinit();
     hxlog_console("libhatchet 🪓🪓🪓 " LIBHATCHET_TAG "\n");
 

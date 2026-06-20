@@ -7,6 +7,7 @@
 #error Internal. Do not include this file directly.
 #endif
 
+#ifndef HX_DOXYGEN_PARSER
 HX_BEGIN_INL_
 
 // const_iterator
@@ -301,3 +302,4 @@ inline hxconstexpr void hxconst_list<node_t_, deleter_t_>::extract_(hxconst_list
 }
 
 HX_END_INL_
+#endif // HX_DOXYGEN_PARSER

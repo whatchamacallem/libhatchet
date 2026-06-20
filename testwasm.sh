@@ -19,7 +19,6 @@ trap '{ set +o xtrace; } 2> /dev/null
 ' 1 2 3 6 15
 
 set -eu
-set -o monitor # job control
 
 export POSIXLY_CORRECT=1
 
@@ -51,14 +50,17 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         super().end_headers()
 http.server.HTTPServer(('', 9876), Handler).serve_forever()
 " &
+	SERVER_PID=$!
+	set +e
 
 	# Launch Chrome if it is installed.
 	if which google-chrome; then
 		google-chrome http://0.0.0.0:9876/ >/dev/null 2>&1;
 	fi
 
-	# Bring the web server to the foreground so it can be killed.
-	fg %$(jobs | grep 'http.server' | sed -E 's/^\[([0-9]+)\].*/\1/')
+	# Wait for the web server. Kill its process group when interrupted (Ctrl-C).
+	echo "Press ctrl-c to kill the web server."
+	wait "$SERVER_PID"
 fi
 
 # Say goodbye and make sure the script returns 0.

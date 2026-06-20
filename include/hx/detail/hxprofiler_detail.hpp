@@ -9,6 +9,8 @@
 #error Internal. Do not include this file directly.
 #endif
 
+#ifndef HX_DOXYGEN_PARSER
+
 #if !(HX_USE_PROFILER)
 #define HX_PROFILE_ONLY_(x_) ((void)0)
 #if !(HX_USE_MODULE)
@@ -131,3 +133,5 @@ private:
 HX_NS_END_
 #endif // !(HX_USE_MODULE)
 #endif // HX_USE_PROFILER
+
+#endif // HX_DOXYGEN_PARSER

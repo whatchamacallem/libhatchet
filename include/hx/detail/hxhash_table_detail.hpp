@@ -7,6 +7,8 @@
 #error Internal. Do not include this file directly.
 #endif
 
+#ifndef HX_DOXYGEN_PARSER
+
 // hxhash_table internals. See hxhash_table.hpp instead. This is an
 // hxhash_table-specific subclass of hxallocator. C++98 requires it to be
 // declared outside `hxhash_table`. The table has a size of 2^table_size_bits_.
@@ -52,3 +54,5 @@ private:
 };
 
 } // hxdetail_
+
+#endif // HX_DOXYGEN_PARSER
