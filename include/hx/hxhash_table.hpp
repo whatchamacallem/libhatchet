@@ -18,6 +18,8 @@
 #include "hxutility.h"
 #include "hxallocator.hpp"
 
+HX_NS_BEGIN_
+
 #include "detail/hxhash_table_detail.hpp"
 
 #if HX_CPLUSPLUS >= 202002L
@@ -425,3 +427,5 @@ private:
 };
 
 #include "detail/hxhash_table.inl"
+
+HX_NS_END_

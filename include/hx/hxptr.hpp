@@ -14,6 +14,8 @@
 
 #include "hxutility.h"
 
+HX_NS_BEGIN_
+
 /// `hxptr<T, deleter_t>` - A unique owning pointer. Owns a single dynamically
 /// allocated object of type `T` and invokes `deleter_t` on destruction or
 /// `reset`. Only one `hxptr` may own a given object at a time. Move
@@ -126,3 +128,5 @@ hxattr_nodiscard hxptr<T_> hxmake_ptr(args_t_&&... args_) {
 }
 
 #include "detail/hxptr.inl"
+
+HX_NS_END_

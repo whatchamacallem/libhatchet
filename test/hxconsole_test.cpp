@@ -6,6 +6,8 @@
 #include <hx/hxfile.hpp>
 #include <hx/hxtest.hpp>
 
+HX_NS_USE
+
 #if HX_CPLUSPLUS >= 202002L
 
 // TEST_F fixtures would not work as the console registers static variables.

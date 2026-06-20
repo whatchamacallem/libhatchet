@@ -15,6 +15,8 @@
 #include "hxallocator.hpp"
 #include "hxutility.h"
 
+HX_NS_BEGIN_
+
 /// hxdeque - A fixed-capacity deque backed by a power-of-two ring buffer. All
 /// operations are `O(1)`. The capacity must be a power of two and greater than
 /// zero. This designed to do one thing very well and that is all.
@@ -129,3 +131,5 @@ private:
 };
 
 #include "detail/hxdeque.inl"
+
+HX_NS_END_

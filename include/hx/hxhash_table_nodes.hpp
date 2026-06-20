@@ -15,6 +15,8 @@
 
 #include "hxhash_table.hpp"
 
+HX_NS_BEGIN_
+
 /// `hxhash_table_node_integer` - `node_t` for use with `hxhash_table` for integer
 /// types. See the documentation of `hxhash_table` for the required interface.
 /// Copy and move construction produce an unlinked node with the same key and
@@ -114,3 +116,5 @@ private:
 	hxhash_table_node_string(const hxhash_table_node_string&) = delete;
 	void operator=(const hxhash_table_node_string&) = delete;
 };
+
+HX_NS_END_

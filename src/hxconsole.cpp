@@ -8,63 +8,63 @@
 #include "../include/hx/hxsort.hpp"
 #include "../include/hx/hxarray.hpp"
 
+HX_NS_BEGIN_
 #if HX_CPLUSPLUS >= 202002L
+namespace hxdetail_ {
 
 // These C library wrappers reduce code bloat and enforce additional
 // constraints. The next_ pointer is reset when parse errors or negative numbers
 // are encountered.
 
-namespace hxdetail_ {
-
-long hxconsole_strtol_(const char* str_, char** next_) {
+long hxconsole_strtol_(const char* str, char** next) {
 	errno = 0;
-	const long v_ = ::strtol(str_, next_, 0);
-	if(errno == ERANGE) { *next_ = const_cast<char*>(str_); }
-	return v_;
+	const long v = ::strtol(str, next, 0);
+	if(errno == ERANGE) { *next = const_cast<char*>(str); }
+	return v;
 }
 
-long long hxconsole_strtoll_(const char* str_, char** next_) {
+long long hxconsole_strtoll_(const char* str, char** next) {
 	errno = 0;
-	const long long v_ = ::strtoll(str_, next_, 0);
-	if(errno == ERANGE) { *next_ = const_cast<char*>(str_); }
-	return v_;
+	const long long v = ::strtoll(str, next, 0);
+	if(errno == ERANGE) { *next = const_cast<char*>(str); }
+	return v;
 }
 
-unsigned long hxconsole_strtoul_(const char* str_, char** next_) {
+unsigned long hxconsole_strtoul_(const char* str, char** next) {
 	// The standard treats negative numbers as large positive values.
-	const char* p_ = str_;
-	while(hxisspace(*p_)) { ++p_; }
-	if(*p_ == '-') { hxassert(*next_ == const_cast<char*>(str_)); return 0; }
+	const char* p = str;
+	while(hxisspace(*p)) { ++p; }
+	if(*p == '-') { hxassert(*next == const_cast<char*>(str)); return 0; }
 
 	errno = 0;
-	const unsigned long v_ = ::strtoul(str_, next_, 0);
-	if(errno == ERANGE) { *next_ = const_cast<char*>(str_); }
-	return v_;
+	const unsigned long v = ::strtoul(str, next, 0);
+	if(errno == ERANGE) { *next = const_cast<char*>(str); }
+	return v;
 }
 
-unsigned long long hxconsole_strtoull_(const char* str_, char** next_) {
+unsigned long long hxconsole_strtoull_(const char* str, char** next) {
 	// The standard treats negative numbers as large positive values.
-	const char* p_ = str_;
-	while(hxisspace(*p_)) { ++p_; }
-	if(*p_ == '-') { hxassert(*next_ == const_cast<char*>(str_)); return 0; }
+	const char* p = str;
+	while(hxisspace(*p)) { ++p; }
+	if(*p == '-') { hxassert(*next == const_cast<char*>(str)); return 0; }
 
 	errno = 0;
-	const unsigned long long v_ = ::strtoull(str_, next_, 0);
-	if(errno == ERANGE) { *next_ = const_cast<char*>(str_); }
-	return v_;
+	const unsigned long long v = ::strtoull(str, next, 0);
+	if(errno == ERANGE) { *next = const_cast<char*>(str); }
+	return v;
 }
 
 } // hxdetail_
 
 // ----------------------------------------------------------------------------
-// hxconsole_command_table_
+// hxconsole_command_table
 //
 // Compares command lines to static strings. Hashing stops at the first
 // non-printing character on the command line.
 
 namespace {
 
-class hxconsole_less_ {
+class hxconsole_less {
 public:
 	bool operator()(const hxdetail_::hxconsole_hash_table_node_* a,
 			const hxdetail_::hxconsole_hash_table_node_* b) const {
@@ -72,14 +72,13 @@ public:
 	}
 };
 
-class hxconsole_command_table_
+class hxconsole_command_table
 	: public hxhash_table<hxdetail_::hxconsole_hash_table_node_, 2, false, hxdo_not_delete> {
 };
 
-// Wrapped to enforce a construction-order dependency. Modification of the table
-// is not thread safe, and it is normally constructed before main.
-hxconsole_command_table_& hxconsole_commands_(void) {
-	static hxconsole_command_table_ table_;
+// Local static to enforce construction-order.
+hxconsole_command_table& hxconsole_commands_(void) {
+	static hxconsole_command_table table_;
 	return table_;
 }
 
@@ -161,17 +160,13 @@ bool hxconsole_exec_filename(const char* filename) {
 	return false;
 }
 
-// ----------------------------------------------------------------------------
-// Built-in console commands
-
 // Lists variables and commands in order.
 bool hxconsole_help(void) {
-#if (HX_HARDENING_MODE) > HX_HARDENING_MODE_STANDARD
 	hxinit();
 	const hxsystem_allocator_scope temporary_stack(hxsystem_allocator_temporary_stack);
 	hxarray<const hxdetail_::hxconsole_hash_table_node_*> cmds;
 	cmds.reserve(hxconsole_commands_().size());
-	for(hxconsole_command_table_::const_iterator it = hxconsole_commands_().cbegin();
+	for(hxconsole_command_table::const_iterator it = hxconsole_commands_().cbegin();
 			it != hxconsole_commands_().cend(); ++it) {
 		if(::strncmp(it->hash_key().str_, "hxconsole_test", 13) == 0 ||
 				::strncmp(it->hash_key().str_, "hxs_console_test", 15) == 0) {
@@ -180,41 +175,46 @@ bool hxconsole_help(void) {
 		cmds.push_back(&*it);
 	}
 
-	hxinsertion_sort<const hxdetail_::hxconsole_hash_table_node_**, hxconsole_less_>(cmds.begin(), cmds.end(), hxconsole_less_());
+	hxinsertion_sort<const hxdetail_::hxconsole_hash_table_node_**, hxconsole_less>(cmds.begin(), cmds.end(), hxconsole_less());
 
 	for(hxarray<const hxdetail_::hxconsole_hash_table_node_*>::iterator it = cmds.begin();
 			it != cmds.end(); ++it) {
 		(*it)->command_()->usage_((*it)->hash_key().str_);
 	}
-#endif
 	return true;
 }
 
-#if (HX_HARDENING_MODE) > HX_HARDENING_MODE_STANDARD && !defined __wasm__
+// ----------------------------------------------------------------------------
+// Built-in console commands. These are not hooked up as console commands
+// automatically for WASM because they didn't seem that useful. WASM will
+// require custom plumbing anyway.
 
-static bool hxconsole_peek(uint64_t address_, uint32_t bytes_) {
-	hxhex_dump(reinterpret_cast<const void*>(static_cast<uintptr_t>(address_)), bytes_, false);
+#if !defined __wasm__
+namespace {
+
+bool hxconsole_peek(uint64_t address, uint32_t bytes) {
+	hxhex_dump(reinterpret_cast<const void*>(static_cast<uintptr_t>(address)), bytes, false);
 	return true;
 }
 
 // Writes bytes from a hex value in little-endian format (LSB first). The value
 // repeats every 8 bytes (64 bits) in memory. The hex input is also 64-bit.
-static bool hxconsole_poke(uint64_t address_, uint32_t bytes_, uint64_t hex_) {
-	volatile uint8_t* address = reinterpret_cast<volatile uint8_t*>(static_cast<uintptr_t>(address_));
-	while(bytes_-- != 0u) {
-		*address++ = static_cast<uint8_t>(hex_);
-		hex_ = (hex_ >> 8) | (hex_ << 56);
+bool hxconsole_poke(uint64_t address, uint32_t bytes, uint64_t hex) {
+	volatile uint8_t* addr = reinterpret_cast<volatile uint8_t*>(static_cast<uintptr_t>(address));
+	while(bytes-- != 0u) {
+		*addr++ = static_cast<uint8_t>(hex);
+		hex = (hex >> 8) | (hex << 56);
 	}
 	return true;
 }
 
-static bool hxconsole_hex_dump(uint64_t address_, uint32_t bytes_) {
-	hxhex_dump(reinterpret_cast<const void*>(static_cast<uintptr_t>(address_)), bytes_, true);
+bool hxconsole_hex_dump(uint64_t address, uint32_t bytes) {
+	hxhex_dump(reinterpret_cast<const void*>(static_cast<uintptr_t>(address)), bytes, true);
 	return true;
 }
 
-static bool hxconsole_float_dump(uint64_t address_, uint32_t bytes_) {
-	hxfloat_dump(reinterpret_cast<const float*>(static_cast<uintptr_t>(address_)), bytes_);
+bool hxconsole_float_dump(uint64_t address, uint32_t bytes) {
+	hxfloat_dump(reinterpret_cast<const float*>(static_cast<uintptr_t>(address)), bytes);
 	return true;
 }
 
@@ -232,9 +232,11 @@ hxconsole_command_named(hxconsole_hex_dump, hexdump);
 
 // Write floats to console.
 hxconsole_command_named(hxconsole_float_dump, floatdump);
-#endif
 
 // Executes commands and settings in a file. Usage: "exec <filename>".
 hxconsole_command_named(hxconsole_exec_filename, exec);
 
+} // namespace {
+#endif // !defined __wasm__
 #endif // HX_CPLUSPLUS >= 202002L
+HX_NS_END_

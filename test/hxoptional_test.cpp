@@ -5,6 +5,8 @@
 #include <hx/hxoptional.hpp>
 #include <hx/hxtest.hpp>
 
+HX_NS_USE
+
 namespace {
 
 // Tracks construction and destruction for lifetime tests.

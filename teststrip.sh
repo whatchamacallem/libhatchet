@@ -23,7 +23,7 @@ BUILD="-DHX_USE_LIBCXX=0 -DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG -DHX_USE_TH
 
 ERRORS="-Wall -Wextra -pedantic-errors -Werror -Wfatal-errors -Wcast-qual \
 	-Wdisabled-optimization -Wshadow -Wundef -Wconversion -Wdate-time     \
-	-Wmissing-declarations -Wno-assume"
+	-Wmissing-declarations -Wno-c2y-extensions"
 
 # 32-bit MUSL is not tested as it is unsupported on Ubuntu.
 FLAGS="-Os -static -g -ffunction-sections -fdata-sections -ffast-math"

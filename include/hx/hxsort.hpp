@@ -14,6 +14,9 @@
 #endif
 
 #include "hxkey.hpp"
+
+HX_NS_BEGIN_
+
 #include "detail/hxsort_detail.hpp"
 
 /// `hxbinary_search` - Performs a binary search in the range `[first, last)`.
@@ -153,3 +156,5 @@ void hxsort(iterator_t_ begin_, iterator_t_ end_) {
 	hxdetail_::hxintro_sort_<iterator_t_>(begin_, end_, hxkey_less_t<decltype(*begin_)>{},
 		2 * hxlog2i(static_cast<uint32_t>(end_ - begin_)));
 }
+
+HX_NS_END_

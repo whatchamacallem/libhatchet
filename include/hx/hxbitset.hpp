@@ -13,6 +13,8 @@
 #error Header does not provide macros only.
 #endif
 
+HX_NS_BEGIN_
+
 /// hxbitset - A fixed-size bitset stored as an array of `size_t` words with no
 /// heap allocation.
 /// - `bit_count` : The number of bits in the `hxbitset`. Must be greater than zero. Also known as the popcount.
@@ -142,3 +144,5 @@ private:
 };
 
 #include "detail/hxbitset.inl"
+
+HX_NS_END_

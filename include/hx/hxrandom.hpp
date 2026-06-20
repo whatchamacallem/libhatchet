@@ -13,13 +13,12 @@
 #error Header does not provide macros only.
 #endif
 
+HX_NS_BEGIN_
+
 /// `hxrandom` - 64-bit MMIX LCG. Knuth, D. 2002. (Modified to perturb the return
 /// value so that all bits are of equal quality.) Uses a floating point multiply
 /// instead of integer modulo when generating numbers in a range. Requires at
-/// least 64-bit integer emulation as well. Automatically casts to any unsigned
-/// integer or floating point value. Operator overloads allow bitwise operations
-/// with random numbers that are signed as well. Usable as a callable or via the
-/// provided cast operator for your type. Has a period of `2^64` and passes
+/// least 64-bit integer emulation as well. Has a period of `2^64` and passes
 /// routine numerical tests with only eight bytes of state while using simple
 /// arithmetic. Intended for test data or games, not mathematical applications.
 class hxrandom {
@@ -29,7 +28,7 @@ public:
 	hxconstexpr hxrandom(uint64_t stream_ = 1u) : m_state_(stream_) { }
 
 	/// Returns [0..2^32).
-	hxattr_nodiscard hxconstexpr uint32_t operator()(void) { return this->generate_32(); }
+	hxattr_nodiscard hxconstexpr uint32_t operator()(void) { return this->u32(); }
 
 	/// Returns a random number in the range [base..base+range).
 	/// `range(0.0f,10.0f)` returns `0.0f` to `9.999f` and not `10.0f`. Uses a
@@ -42,7 +41,7 @@ public:
 		// floating point multiply is faster and more stable than integer modulo.
 		hxassertmsg(static_cast<float>(size_) < float{0x01000000u},
 			"insufficient_precision %f", static_cast<float>(size_)); // 0x1p24f
-		return base_ + static_cast<T_>(static_cast<float>(size_) * this->generate_f01());
+		return base_ + static_cast<T_>(static_cast<float>(size_) * this->f01());
 	}
 
 	/// double version.
@@ -51,22 +50,22 @@ public:
 		// floating point multiply is faster and more stable than integer modulo.
 		hxassertmsg(size_ < double{0x40000000000000ll},
 			"insufficient_precision %f", size_); // 0x1p54f
-		return base_ + size_ * this->generate_d01();
+		return base_ + size_ * this->d01();
 	}
 
 	/// int64_t version. Negative size is undefined.
 	hxattr_nodiscard hxconstexpr int64_t range(int64_t base_, int64_t size_) {
-		return base_ + static_cast<int64_t>(this->generate_64() % static_cast<uint64_t>(size_));
+		return base_ + static_cast<int64_t>(this->u64() % static_cast<uint64_t>(size_));
 	}
 
 	/// uint64_t version.
 	hxattr_nodiscard hxconstexpr uint64_t range(uint64_t base_, uint64_t size_) {
-		return base_ + this->generate_64() % size_;
+		return base_ + this->u64() % size_;
 	}
 
 	/// Reads a specified number of random bytes into the provided buffer. The
 	/// sequence generated matches a little-endian stream of
-	/// `uint32_t` generated using `generate_32`.
+	/// `uint32_t` generated using `u32`.
 	/// - `bytes` : Non-null pointer to a buffer large enough for `count` bytes.
 	/// - `count` : Number of bytes to read.
 	void read(void* bytes_, size_t count_) hxattr_nonnull(2) {
@@ -75,12 +74,12 @@ public:
 
 	/// Reads a specified number of random bytes into the provided buffer. The
 	/// sequence generated matches a little-endian stream of
-	/// `uint32_t` generated using `generate_32`.
+	/// `uint32_t` generated using `u32`.
 	/// - `chars` : Non-null pointer to a buffer large enough for `count` characters.
 	/// - `count` : Number of bytes to read.
 	hxconstexpr void read(uint8_t* chars_, size_t count_) hxattr_nonnull(2) {
 		while(count_>=4) {
-			const uint32_t x_ = this->generate_32();
+			const uint32_t x_ = this->u32();
 			*chars_++ = static_cast<uint8_t>(x_);
 			*chars_++ = static_cast<uint8_t>(x_ >> 8);
 			*chars_++ = static_cast<uint8_t>(x_ >> 16);
@@ -88,7 +87,7 @@ public:
 			count_ -= 4;
 		}
 		if(count_ != 0u) {
-			uint32_t x_ = this->generate_32();
+			uint32_t x_ = this->u32();
 			do {
 				*chars_++ = static_cast<uint8_t>(x_);
 				x_ >>= 8;
@@ -98,13 +97,13 @@ public:
 	}
 
 	/// Returns [0..2^8).
-	hxattr_nodiscard hxconstexpr uint8_t generate_8(void) { return static_cast<uint8_t>(this->generate_32()); }
+	hxattr_nodiscard hxconstexpr uint8_t u8(void) { return static_cast<uint8_t>(this->u32()); }
 
 	/// Returns [0..2^16).
-	hxattr_nodiscard hxconstexpr uint16_t generate_16(void) { return static_cast<uint16_t>(this->generate_32()); }
+	hxattr_nodiscard hxconstexpr uint16_t u16(void) { return static_cast<uint16_t>(this->u32()); }
 
 	/// Returns [0..2^32).
-	hxattr_nodiscard hxconstexpr uint32_t generate_32(void) {
+	hxattr_nodiscard hxconstexpr uint32_t u32(void) {
 		m_state_ = uint64_t{0x5851f42d4c957f2dull} * m_state_ + uint64_t{0x14057b7ef767814full};
 
 		// MODIFICATION: Use the 4 msb bits as a random 0..15 bit variable shift
@@ -117,68 +116,26 @@ public:
 	}
 
 	/// Returns [0..2^64).
-	hxattr_nodiscard hxconstexpr uint64_t generate_64(void) {
-		const uint64_t result_ = static_cast<uint64_t>(this->generate_32())
-			| (static_cast<uint64_t>(this->generate_32()) << 32);
+	hxattr_nodiscard hxconstexpr uint64_t u64(void) {
+		const uint64_t result_ = static_cast<uint64_t>(this->u32())
+			| (static_cast<uint64_t>(this->u32()) << 32);
 		return result_;
 	}
 
 	/// Returns a float between `[0..1)`. Can safely be used to generate array
 	/// indices without overflowing.
-	hxattr_nodiscard hxconstexpr float generate_f01(void) {
-		return static_cast<float>(this->generate_32()) * (1.0f / 4294967296.0f); // 0x1p-32f
+	hxattr_nodiscard hxconstexpr float f01(void) {
+		return static_cast<float>(this->u32()) * (1.0f / 4294967296.0f); // 0x1p-32f
 	}
 
 	/// Returns a double between `[0..1)`. Can safely be used to generate array
 	/// indices without overflowing.
-	hxattr_nodiscard hxconstexpr double generate_d01(void) {
-		return static_cast<double>(this->generate_64()) * (1.0 / 18446744073709551616.0); // 0x1p-64;
+	hxattr_nodiscard hxconstexpr double d01(void) {
+		return static_cast<double>(this->u64()) * (1.0 / 18446744073709551616.0); // 0x1p-64;
 	}
 
 private:
 	uint64_t m_state_;
 };
 
-/// `operator&(hxrandom& a, T b)` - Bitwise `&` with random `T` generated from
-/// `a`.
-/// - `a` : Bits to mask off. Undefined behavior when a negative integer.
-/// - `b` : A `hxrandom`.
-template <typename T_> T_ operator&(T_ a_, hxrandom& b_) {
-	return static_cast<T_>(static_cast<uint32_t>(a_) & b_.generate_32());
-}
-
-/// `operator&(int64_t a_, hxrandom& b_)` - 64-bit version. Allows a signed
-/// 64-bit type here because it can be generated without automatically hitting
-/// undefined behavior.
-/// - `a` : Bits to mask off. Undefined behavior when negative.
-/// - `b` : A `hxrandom`.
-inline int64_t operator&(int64_t a_, hxrandom& b_) {
-	return static_cast<int64_t>(static_cast<uint64_t>(a_) & b_.generate_64());
-}
-
-/// `operator&(uint64_t a_, hxrandom& b_)` - 64-bit version.
-inline uint64_t operator&(uint64_t a_, hxrandom& b_) {
-	return a_ & b_.generate_64();
-}
-
-/// `operator&(T a, hxrandom& b)` - Bitwise `&` with random `T` generated from `a`.
-/// - `a` : A `hxrandom`.
-/// - `b` : Bits to mask off. Must be a positive integer.
-template<typename T_> T_ operator&(hxrandom& a_, T_ b_) {
-	return b_ & a_;
-}
-
-/// `operator&=(T& a, hxrandom& b)` - Bitwise `&=` with random `T` generated
-/// from `b`.
-/// - `a` : Bits to mask off. Must be a positive integer.
-/// - `b` : A `hxrandom`.
-template<typename T_> T_ operator&=(T_& a_, hxrandom& b_) {
-	return (a_ = a_ & b_);
-}
-
-/// `operator%(hxrandom& a, T_ b)` - Generates a number of type `T` in the range
-/// `[0..b)`. Works with floating point divisors and uses no actual modulo or
-/// division.
-template<typename T_> T_ operator%(hxrandom& dividend_, T_ divisor_) {
-	return dividend_.range(T_(0), divisor_);
-}
+HX_NS_END_

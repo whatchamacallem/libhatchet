@@ -19,7 +19,7 @@ export POSIXLY_CORRECT=1
 
 # Builds a module that uses MUSL lic headers only.
 C_FLAGS="-DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG -m32 -ggdb3"
-CPP_FLAGS="$C_FLAGS -DHX_USE_LIBCXX=0 -DHX_PROVIDE_NEW_DELETE=0 \
+CPP_FLAGS="$C_FLAGS -DHX_USE_LIBCXX=0 -DHX_PROVIDE_NEW_DELETE=0 -DHX_NAMESPACE=hx \
 	-std=c++23 -nostdinc++ -fno-exceptions -fno-rtti"
 LINK_FLAGS="-m32 -nodefaultlibs -lc -lpthread -lm"
 

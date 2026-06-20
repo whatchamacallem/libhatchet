@@ -6,6 +6,8 @@
 #include <hx/hxarray.hpp>
 #include <hx/hxtest.hpp>
 
+HX_NS_USE
+
 TEST(hxrandom_test, generation) {
 	hxrandom rng(1u);
 
@@ -14,10 +16,10 @@ TEST(hxrandom_test, generation) {
 	uint16_t uint16 = 0u;
 	uint32_t uint32 = 0u;
 	uint64_t uint64 = 0u;
-	uint8 = rng.generate_8();
-	uint16 = rng.generate_16();
+	uint8 = rng.u8();
+	uint16 = rng.u16();
 	uint32 = rng();
-	uint64 = rng.generate_64();
+	uint64 = rng.u64();
 
 	// None of these should be zero on the second sample.
 	EXPECT_NE((static_cast<uint64_t>(uint8) * static_cast<uint64_t>(uint16) *
@@ -26,91 +28,14 @@ TEST(hxrandom_test, generation) {
 	for(int s=100; s-- != 0;) {
 		// "Automatically casts to an unsigned integer or floating point value."
 		// Grab floats in [0..1).
-		const float f = rng.generate_f01();
-		const double d = rng.generate_d01();
+		const float f = rng.f01();
+		const double d = rng.d01();
 
 		// WARNING: While 0.0 is legal, it is being treated as an error
 		// because it is likely to be so. The odds of hitting zero in the first
 		// 200 numbers is effectively zero.
 		EXPECT_TRUE(f > 0.0f && f < 1.0f);
 		EXPECT_TRUE(d > 0.0 && d < 1.0);
-	}
-}
-
-TEST(hxrandom_test, ops) {
-	hxrandom rng(20000);
-	for(int s=100; s-- != 0;) {
-		// "Bitwise &= with random T generated from hxrandom." Exercises bounded
-		// masks on signed/unsigned types.
-		int i = 255; i &= rng;
-		EXPECT_TRUE(i >= 0 && i < 256);
-
-		unsigned int u = 255; u &= rng;
-		EXPECT_LT(u, 256);
-
-		char c = 'x'; c &= rng;
-		EXPECT_EQ((c & ~static_cast<unsigned char>('x')), 0);
-
-		// "Generates a number of type T in the range [0, divisor)." Floating
-		// modulus uses operator% overloads.
-		const float f = rng % 255.0f;
-		EXPECT_TRUE(f >= 0.0f && f < 255.0f);
-		const double d = rng % 255.0;
-		EXPECT_TRUE(d >= 0.0 && d < 255.0);
-
-		{
-			const int r = 255 & rng;
-			EXPECT_TRUE(r >= 0 && r < 256);
-
-			const int l = rng & 255;
-			EXPECT_TRUE(l >= 0 && l < 256);
-
-			const int m = rng % 255;
-			EXPECT_TRUE(m >= 0 && m < 255);
-		}
-		{
-			const unsigned short r = static_cast<unsigned short>(255) & rng;
-			EXPECT_LT(r, static_cast<unsigned short>(256));
-
-			const unsigned short l = rng & static_cast<unsigned short>(255);
-			EXPECT_LT(l, static_cast<unsigned short>(256));
-
-			const unsigned short m = rng % static_cast<unsigned short>(255);
-			EXPECT_LT(m, static_cast<unsigned short>(255));
-		}
-		{
-			const int64_t r = 255ll & rng;
-			EXPECT_TRUE(r >= 0ll && r < 256ll);
-
-			const int64_t l = rng & 255ll;
-			EXPECT_TRUE(l >= 0ll && l < 256ll);
-
-			const int64_t m = rng % 255ll;
-			EXPECT_TRUE(m >= 0ll && m < 255ll);
-		}
-		{
-			const uint64_t r = 255ull & rng;
-			EXPECT_LT(r, 256ull);
-
-			const uint64_t l = rng & 255ull;
-			EXPECT_LT(l, 256ull);
-
-			const uint64_t m = rng % 255ull;
-			EXPECT_LT(m, 255ull);
-		}
-
-		// Check a different modulo.
-		EXPECT_TRUE((rng%100) >= 0 && (rng%100) < 100);
-		EXPECT_TRUE((rng%100.0f) >= 0.0f && (rng%100.0f) < 100.0f);
-		EXPECT_TRUE((rng%100.0) >= 0.0 && (rng%100.0) < 100.0);
-		EXPECT_LT((rng%100u), 100u);
-		EXPECT_TRUE((rng%100l) >= 0l && (rng%100l) < 100l);
-		EXPECT_LT((rng%100ul), 100ul);
-		EXPECT_TRUE((rng%100ll) >= 0ll && (rng%100ll) < 100ll);
-		EXPECT_LT((rng%100ull), 100ull);
-
-		// Check that the RNG isn't just spitting out zeros.
-		EXPECT_TRUE(rng() | rng());
 	}
 }
 
@@ -126,7 +51,7 @@ TEST(hxrandom_test, read_populates_buffer) {
 	const size_t read_count = size - 2; // 7. Intentionally odd.
 
 	// "Reads a specified number of random bytes into the provided buffer."
-	// Little-endian stream should match manual generate_32 sequence.
+	// Little-endian stream should match manual u32 sequence.
 	rng.read(buffer, read_count);
 
 	hxrandom verifier(0x654321u);
@@ -135,7 +60,7 @@ TEST(hxrandom_test, read_populates_buffer) {
 
 	// This just documents an expected interface and sequence.
 	while(remaining >= 4) {
-		const uint32_t x = verifier.generate_32();
+		const uint32_t x = verifier.u32();
 		EXPECT_EQ(*expected++, static_cast<uint8_t>(x));
 		EXPECT_EQ(*expected++, static_cast<uint8_t>(x >> 8));
 		EXPECT_EQ(*expected++, static_cast<uint8_t>(x >> 16));
@@ -143,7 +68,7 @@ TEST(hxrandom_test, read_populates_buffer) {
 		remaining -= 4;
 	}
 	if(remaining != 0u) {
-		uint32_t x = verifier.generate_32();
+		uint32_t x = verifier.u32();
 		do {
 			EXPECT_EQ(*expected++, static_cast<uint8_t>(x));
 			x >>= 8;
@@ -205,7 +130,7 @@ TEST(hxrandom_test, histogram_f) {
 
 	for(int i=(buckets*iters); i-- != 0;) {
 		// Generate 64-bit doubles.
-		++hist[static_cast<size_t>(rng % static_cast<double>(buckets))];
+		++hist[static_cast<size_t>(rng.range(0.0, static_cast<double>(buckets)))];
 	}
 	for(size_t i=buckets; i-- != 0u;) {
 		EXPECT_LE(hist[i], max);
@@ -216,11 +141,11 @@ TEST(hxrandom_test, histogram_f) {
 
 namespace {
 
-// Returns true when generate_64 produces output across a sequence.
+// Returns true when u64 produces output across a sequence.
 consteval bool hxtest_hxrandom_consteval_range(void) {
 	hxrandom rng(42u);
 	for(int i_ = 0; i_ < 16; ++i_) {
-		const uint64_t v_ = rng.generate_64();
+		const uint64_t v_ = rng.u64();
 		if(v_ == 0u) {
 			return false;
 		}
@@ -229,7 +154,7 @@ consteval bool hxtest_hxrandom_consteval_range(void) {
 }
 
 static_assert(hxtest_hxrandom_consteval_range(),
-	"hxrandom consteval: generate_64 must produce non-zero output across 16 steps");
+	"hxrandom consteval: u64 must produce non-zero output across 16 steps");
 
 } // namespace {
 

@@ -11,6 +11,8 @@
 #pragma GCC diagnostic ignored "-Wformat-zero-length"
 #endif
 
+HX_NS_USE
+
 TEST(hxfile_test, empty_name_rejects_empty_path) {
 	// "Constructs and opens a file with a formatted filename." Empty path under skip_asserts should trip failure.
 	const hxfile f(hxfile::in | hxfile::skip_asserts, "");

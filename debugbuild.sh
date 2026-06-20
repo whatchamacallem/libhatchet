@@ -10,12 +10,13 @@
 # Do not use a .pch with ccache. It won't work as expected.
 
 # Should detect threading and the standard library.
-BUILD="-DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG -DHX_USE_PROFILER=1 -O0"
+BUILD="-DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG -DHX_USE_PROFILER=1 \
+	-DHX_NAMESPACE=hx -O0"
 
 # -Wdate-time is for ccache. -Wno-unused-variable is only for debugging.
 ERRORS="-Wall -Wextra -pedantic-errors -Werror -Wfatal-errors -Wcast-qual \
 	-Wdisabled-optimization -Wshadow -Wundef -Wconversion -Wdate-time     \
-	-Wmissing-declarations -Wno-unused-variable"
+	-Wmissing-declarations -Wno-c2y-extensions -Wno-unused-variable"
 
 FLAGS="-m32 -ggdb3 -fdiagnostics-absolute-paths -fdiagnostics-color=always"
 

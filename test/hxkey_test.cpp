@@ -5,6 +5,8 @@
 #include <hx/hxkey.hpp>
 #include <hx/hxtest.hpp>
 
+HX_NS_USE
+
 static_assert(hxis_same<
 	decltype(hxkey_equal_t<const volatile char*>{}(
 		hxdeclval<const volatile char* const&>(),

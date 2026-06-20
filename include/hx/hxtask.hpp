@@ -13,6 +13,8 @@
 #error Header does not provide macros only.
 #endif
 
+HX_NS_BEGIN_
+
 class hxtask_queue;
 
 /// `hxtask` - Pure virtual base class for operations to be performed on a
@@ -58,3 +60,5 @@ private:
 		}
 	}
 };
+
+HX_NS_END_

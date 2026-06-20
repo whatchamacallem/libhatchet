@@ -30,7 +30,7 @@ public:
 	using iterator = const T*;
 	using const_iterator = const T*;
 
-	constexpr initializer_list(void) noexcept : m_begin(hxnullptr), m_size(0u) { }
+	constexpr initializer_list(void) noexcept : m_begin(0), m_size(0u) { }
 	constexpr size_t size(void) const noexcept { return m_size; }
 	constexpr const T* begin(void) const noexcept { return m_begin; }
 	constexpr const T* end(void) const noexcept { return m_begin + m_size; }

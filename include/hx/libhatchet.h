@@ -33,11 +33,11 @@
 
 /// `int LIBHATCHET_VER` - One digit major, and two digit minor and patch
 /// versions. Odd numbered minor versions are development branches.
-#define LIBHATCHET_VER 13604
+#define LIBHATCHET_VER 13702
 
 /// `LIBHATCHET_TAG` - Major, minor and patch version tag name. Odd numbered
 /// minor versions are development branches and their tags end in `-dev`.
-#define LIBHATCHET_TAG "v1.36.4"
+#define LIBHATCHET_TAG "v1.37.2"
 
 #if !defined HX_HARDENING_MODE
 /// `HX_HARDENING_MODE` - Library hardening level. See the README.md for levels.
@@ -286,6 +286,10 @@ void hxlog_handler_v(enum hxlog_level_t level_, const char* format_, va_list arg
 /// - `handler` : Function pointer of type `void (*)(void)`, or `hxnull`.
 void hxset_assert_handler(bool (*handler_)(void)) hxattr_noexcept;
 
+#if HX_CPLUSPLUS
+} // extern "C"
+#endif
+
 /// \cond INTERNAL
 // WARNING: gcc version 13 was reporting the wrong __cplusplus for C++23.
 #if HX_CPLUSPLUS >= 202302L
@@ -302,7 +306,4 @@ hxattr_noexcept constexpr void hxlog_handler_(enum hxlog_level_t level_, const c
 #endif // HX_CPLUSPLUS >= 202302L
 /// \endcond
 
-#if HX_CPLUSPLUS
-} // extern "C"
-#endif
 #endif // !HX_USE_MODULE

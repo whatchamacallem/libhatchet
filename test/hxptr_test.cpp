@@ -5,6 +5,8 @@
 #include <hx/hxptr.hpp>
 #include <hx/hxtest.hpp>
 
+HX_NS_USE
+
 namespace {
 
 // Tracks destructor calls to verify deleter behavior.

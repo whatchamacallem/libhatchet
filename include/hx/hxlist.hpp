@@ -17,6 +17,8 @@
 #include "hxptr.hpp"
 #include "hxutility.h"
 
+HX_NS_BEGIN_
+
 /// Intrusive doubly linked list node base. Derive from `hxlist_node` to make a
 /// type linkable into an `hxlist`. Nodes default to unlinked on construction.
 /// Copy and move construction and assignment produce or leave a fresh unlinked
@@ -328,3 +330,5 @@ private:
 };
 
 #include "detail/hxlist.inl"
+
+HX_NS_END_

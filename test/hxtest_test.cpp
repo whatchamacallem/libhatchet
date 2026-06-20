@@ -7,6 +7,8 @@
 
 #include "hxctest.h"
 
+HX_NS_USE
+
 namespace {
 
 template<typename T>

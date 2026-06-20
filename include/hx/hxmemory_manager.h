@@ -127,6 +127,20 @@ char* hxstring_duplicate(const char* string_,
 #if HX_CPLUSPLUS
 } // extern "C"
 
+/// `hxmalloc` - Add `hxmalloc_ext` args to `hxmalloc` C interface. Allocates
+/// memory with a specific memory manager and alignment. NOTE: This is not in
+/// the libhatchet namespace.
+inline void* hxmalloc( size_t size_, enum hxsystem_allocator_t allocator_, hxalignment_t alignment_=hxalignment) {
+	return hxmalloc_ext(size_, allocator_, alignment_);
+}
+
+/// `hxstring_duplicate` - Add default args to C interface. The allocator is
+/// `hxsystem_allocator_current`. Duplicates a string using the default memory
+/// manager. NOTE: This is not in the libhatchet namespace.
+inline char* hxstring_duplicate(const char* s_) {
+	return hxstring_duplicate(s_, hxsystem_allocator_current);
+}
+
 // Memory Manager C++ API
 
 #if !(HX_USE_LIBCXX)
@@ -140,6 +154,8 @@ inline void* operator new(size_t, void* ptr_) noexcept { return ptr_; }
 inline void* operator new[](size_t, void* ptr_) noexcept { return ptr_; }
 #endif
 #endif
+
+HX_NS_BEGIN_
 
 /// `hxsystem_allocator_scope` - An RAII class to set the current memory manager
 /// allocator for the current scope. It automatically restores the previous
@@ -197,17 +213,6 @@ private:
 	size_t m_initial_bytes_allocated_;
 };
 
-/// `hxdelete` - Deletes an object of type `T` and frees its memory using the
-/// memory manager.
-/// - `t` : Pointer to the object to delete.
-template <typename T_>
-void hxdelete(T_* t_) {
-	if(t_) {
-		t_->~T_();
-		hxfree(t_);
-	}
-}
-
 /// `hxnew<T, allocator, align>(...)` - Allocates and constructs an object of
 /// type `T` using an optional memory allocator and alignment. Returns a pointer
 /// to the newly constructed object. Will not return on failure.
@@ -217,6 +222,17 @@ template <typename T_, hxsystem_allocator_t allocator_=hxsystem_allocator_curren
 T_* hxnew(Args_&&... args_) {
 	// Implements hxforward.
 	return ::new(hxmalloc_ext(sizeof(T_), allocator_, align_)) T_(static_cast<Args_&&>(args_)...);
+}
+
+/// `hxdelete` - Deletes an object of type `T` and frees its memory using the
+/// memory manager.
+/// - `t` : Pointer to the object to delete.
+template <typename T_>
+void hxdelete(T_* t_) {
+	if(t_) {
+		t_->~T_();
+		hxfree(t_);
+	}
 }
 
 /// A callable that deletes objects of type `T` using `hxdelete`. Used by
@@ -244,19 +260,6 @@ public:
 	/// Always returns false, indicating the deleter should not be called.
 	operator bool(void) const { return false; }
 };
-
-/// `hxmalloc` - Add `hxmalloc_ext` args to `hxmalloc` C interface. Allocates
-/// memory with a specific memory manager and alignment.
-inline void* hxmalloc( size_t size_, enum hxsystem_allocator_t allocator_, hxalignment_t alignment_=hxalignment) {
-	return hxmalloc_ext(size_, allocator_, alignment_);
-}
-
-/// `hxstring_duplicate` - Add default args to C interface. The allocator is
-/// `hxsystem_allocator_current`. Duplicates a string using the default memory
-/// manager.
-inline char* hxstring_duplicate(const char* s_) {
-	return hxstring_duplicate(s_, hxsystem_allocator_current);
-}
 
 #if HX_USE_LIBCXX || (HX_PROVIDE_NEW_DELETE)
 /// `hxconsteval_delete` - A `constexpr`-compatible deleter that uses `::delete`.
@@ -287,5 +290,7 @@ void hxmemory_manager_shut_down_(void) hxattr_cold;
 // `hxmemory_manager_leak_count` - Returns the total number of allocations
 // outstanding made by the memory manager.
 hxattr_nodiscard size_t hxmemory_manager_leak_count(void) hxattr_cold;
+
+HX_NS_END_
 
 #endif // HX_CPLUSPLUS

@@ -5,6 +5,8 @@
 #include <hx/hxthread.hpp>
 #include <hx/hxtest.hpp>
 
+HX_NS_USE
+
 #if HX_USE_THREADS
 
 namespace {

@@ -30,7 +30,7 @@ gcc -I$HX_DIR/include --coverage -O0 -g -DHX_HARDENING_MODE=HX_HARDENING_MODE_DE
 
 g++ -I$HX_DIR/include --coverage -O0 -g -DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG \
     -DHX_TEST_ERROR_HANDLING=1 -DHX_USE_PROFILER=1 -std=c++23 -Wall -Werror         \
-    -Wfatal-errors -fno-exceptions -pthread -lpthread -lstdc++                      \
+    -Wfatal-errors -fno-exceptions -Wno-c2y-extensions -pthread -lpthread -lstdc++  \
     $HX_DIR/src/*.cpp $HX_DIR/test/*.cpp *.o -o hxtest
 
 echo runtests | ./hxtest help execstdin

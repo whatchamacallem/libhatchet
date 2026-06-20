@@ -6,6 +6,8 @@
 
 #include <hx/hxtask_dag_node.hpp>
 
+HX_NS_USE
+
 namespace {
 
 // Tracks every callback the queue fires on a node.

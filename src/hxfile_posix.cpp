@@ -16,6 +16,12 @@
 
 #include <stdio.h> // ::vsnprintf
 
+#endif // HX_USE_POSIX_FILE_IO
+
+HX_NS_BEGIN_
+
+#if HX_USE_POSIX_FILE_IO
+
 // In this version the file is a POSIX fd stored directly as intptr_t. -1
 // represents closed or hxdev_null; valid fds are >= 0.
 
@@ -310,3 +316,5 @@ int hxfile::scan(const char* format, ...) {
 }
 
 #endif // HX_USE_POSIX_FILE_IO
+
+HX_NS_END_

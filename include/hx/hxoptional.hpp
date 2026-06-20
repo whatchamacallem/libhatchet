@@ -14,6 +14,8 @@
 
 #include "hxutility.h"
 
+HX_NS_BEGIN_
+
 // ----------------------------------------------------------------------------
 // hxnullopt_t / hxnullopt
 
@@ -184,3 +186,5 @@ hxoptional<hxremove_cvref_t<T_>> hxmake_optional(T_&& value_) {
 }
 
 #include "detail/hxoptional.inl"
+
+HX_NS_END_

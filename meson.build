@@ -12,7 +12,7 @@ project('libhatchet', ['c', 'cpp'],
 	]
 )
 
-hx_warning_args = [
+hxwarning_args = [
 	'-Wall',
 	'-Wextra',
 	'-pedantic-errors',
@@ -25,9 +25,10 @@ hx_warning_args = [
 	'-Wconversion',
 	'-Wdate-time',
 	'-Wmissing-declarations',
+	'-Wno-c2y-extensions'
 ]
 
-hx_include_directory = include_directories('include')
+hxinclude_directory = include_directories('include')
 
 if get_option('build_module')
 	# WARNING: This was only tested with GCC 15.2.0, Clang 20.1.8, Meson 1.7.0
@@ -40,29 +41,29 @@ if get_option('build_module')
 	# consumers find it via GCC's default module search path. Depfiles are
 	# omitted because GCC's -MMD output includes module rules that ninja 1.12+
 	# misinterprets as dyndep, producing an "inputs may not also have inputs"
-	# error. -fmodules-ts enables GCC C++20 module support. Clang instead needs
+	# error. -fmodules-ts enables GCC C++23 module support. Clang instead needs
 	# -Wno-include-angled-in-module-purview to suppress warnings for system
 	# headers re-included from the module purview and -fmodule-output=@OUTPUT1@
 	# to produce hx.pcm alongside the object file. Consumers find it via
 	# -fprebuilt-module-path pointing at the build root. Does not declare
 	# DHX_USE_MODULE=1. That is for accessing macros later.
 
-	_hx_cpp = meson.get_compiler('cpp')
-	_hx_is_clang = _hx_cpp.get_id() == 'clang'
+	_hxcpp = meson.get_compiler('cpp')
+	_hxis_clang = _hxcpp.get_id() == 'clang'
 
-	hx_module_include_args = ['-I' + meson.project_source_root() / 'include']
-	hx_module_search_args = _hx_is_clang ? ['-fprebuilt-module-path=' + meson.project_build_root()] : []
+	hxmodule_include_args = ['-I' + meson.project_source_root() / 'include']
+	hxmodule_search_args = _hxis_clang ? ['-fprebuilt-module-path=' + meson.project_build_root()] : []
 
 	# internal
-	_hx_module_special_args = _hx_is_clang ? ['-Wno-include-angled-in-module-purview'] : ['-fmodules-ts']
-	_hx_module_pcm_args = _hx_is_clang ? ['-fmodule-output=@OUTPUT1@'] : []
-	_hx_module_outputs = _hx_is_clang ? ['hxmodule.cppm.o', 'hx.pcm'] : ['hxmodule.cppm.o']
+	_hxmodule_special_args = _hxis_clang ? ['-Wno-include-angled-in-module-purview', '-fdiagnostics-absolute-paths'] : ['-fmodules-ts']
+	_hxmodule_pcm_args = _hxis_clang ? ['-fmodule-output=@OUTPUT1@'] : []
+	_hxmodule_outputs = _hxis_clang ? ['hxmodule.cppm.o', 'hx.pcm'] : ['hxmodule.cppm.o']
 
 	libhatchet_module = custom_target('hatchet',
 		input : 'src/hxmodule.cppm',
-		output : _hx_module_outputs,
-		command : _hx_cpp.cmd_array() + get_option('cpp_args') + hx_warning_args
-			+ hx_module_include_args + _hx_module_special_args + _hx_module_pcm_args
+		output : _hxmodule_outputs,
+		command : _hxcpp.cmd_array() + get_option('cpp_args') + hxwarning_args
+			+ hxmodule_include_args + _hxmodule_special_args + _hxmodule_pcm_args
 			+ [ '-c', '@INPUT@', '-o', '@OUTPUT0@', ],
 	)
 else
@@ -71,13 +72,13 @@ else
 			'find', 'src', '(', '-name', '*.c', '-o', '-name', '*.cpp', ')',
 			check : true,
 		).stdout().split(),
-		include_directories : hx_include_directory,
-		c_args : hx_warning_args,
-		cpp_args : hx_warning_args,
+		include_directories : hxinclude_directory,
+		c_args : hxwarning_args,
+		cpp_args : hxwarning_args,
 	)
 
 	libhatchet_dep = declare_dependency(
-		include_directories: hx_include_directory,
+		include_directories: hxinclude_directory,
 		link_with: libhatchet,
 	)
 endif

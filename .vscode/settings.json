@@ -109,6 +109,7 @@
         "lvalues",
         "MALLOC",
         "memcpy",
+        "metaprogramming",
         "mftb",
         "MMIX",
         "Morwenn",

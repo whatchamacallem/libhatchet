@@ -20,6 +20,12 @@
 #pragma warning(disable: 4996)
 #endif
 
+#endif // !(HX_USE_POSIX_FILE_IO)
+
+HX_NS_BEGIN_
+
+#if !(HX_USE_POSIX_FILE_IO)
+
 // In this version targets require an implementation of fopen(), fclose(),
 // fread(), fwrite(), fgets(), and feof().
 
@@ -251,3 +257,5 @@ int hxfile::scan(const char* format, ...) {
 }
 
 #endif // !HX_USE_POSIX_FILE_IO
+
+HX_NS_END_

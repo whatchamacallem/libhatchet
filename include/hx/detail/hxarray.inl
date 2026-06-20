@@ -274,15 +274,20 @@ void hxarray<T_, capacity_>::erase(size_t index_) {
 
 template<hxarray_concept_ T_, size_t capacity_>
 template<typename callable_t_>
-size_t hxarray<T_, capacity_>::erase_if(callable_t_&& fn_) {
+size_t hxarray<T_, capacity_>::erase_if_unordered(callable_t_&& fn_) {
 	size_t removed_ = 0u;
-	T_* data_ = this->data();
-	for(size_t index_ = this->size(); index_--;) {
-		if(hxforward<callable_t_>(fn_)(data_[index_])) {
-			this->erase_unordered(index_);
+	T_* const begin_ = this->data();
+	T_* hxrestrict end_ = m_end_;
+	for(T_* hxrestrict it_ = end_; it_-- != begin_;) {
+		if(hxforward<callable_t_>(fn_)(*it_)) {
+			if(it_ != --end_) {
+				*it_ = hxmove(*end_);
+			}
+			end_->T_::~T_();
 			++removed_;
 		}
 	}
+	m_end_ = end_;
 	return removed_;
 }
 

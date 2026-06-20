@@ -5,6 +5,8 @@
 #include <hx/hxtask_queue.hpp>
 #include <hx/hxtest.hpp>
 
+HX_NS_USE
+
 class hxtask_queue_test_f :
 	public testing::Test
 {

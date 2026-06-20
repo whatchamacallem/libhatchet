@@ -8,6 +8,8 @@
 #include <hx/hxtest.hpp>
 #include "test_api_trackers.hpp"
 
+HX_NS_USE
+
 #if HX_CPLUSPLUS >= 201402L // C++14 only.
 
 // ==> TEST(hxsort_test, sort_int_case).
@@ -124,7 +126,7 @@ TEST(hxsort_test, sort_grinder) {
 
 	for(int i=12; i-- != 0; ) {
 		// Set up the arrays to be sorted.
-		const size_t size = (max_size_mask >> i) & rng;
+		const size_t size = (max_size_mask >> i) & rng.u32();
 		for(size_t j = size; j-- != 0u;) {
 			insertion_sorted.push_back(hxtest_ref_tracker_t(rng.range(100, 200)));
 			// Use the && constructor and not the const& one.
@@ -162,7 +164,7 @@ TEST(hxsort_test, sort_grinder_generic) {
 	for(int i=10; i-- != 0; ) {
 		// Pick random values of increasing maximum value up to 2^16 and keep a
 		// count of them.
-		const size_t size = (max_size_mask >> i) & rng;
+		const size_t size = (max_size_mask >> i) & rng.u32();
 		if(size <= 16) {
 			continue;
 		}

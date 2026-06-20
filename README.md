@@ -122,8 +122,11 @@ system allocators.
 
 Running the command `doxygen` with no arguments will generate
 `docs/html/index.html`. The markdown source for the documentation is in the
-header files at `include/hx/` and is readable as-is. A modern editor should also
-show the docs in a mouseover box.
+header files at `include/hx/` and is also readable as-is.
+
+Reading `include/hx/settings.h` is recommended. There are many things that can
+be configured on the compiler command line. E.g. whether or not the library is
+wrapped in a namespace.
 
 ## Not Provided
 

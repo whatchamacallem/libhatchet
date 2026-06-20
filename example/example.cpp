@@ -37,19 +37,19 @@ const double s_example_four_pi_over_3 = 4.18879020478639098;
 const double s_example_amplitude      = 127.5;
 
 // Handle exiting on SIGINT or by console command.
-hxmutex s_example_exit_mutex;
+hx::hxmutex s_example_exit_mutex;
 bool s_example_exit = false;
 
 // Sets s_example_exit under lock. Without SA_RESTART, SIGINT also interrupts
 // blocking fgets, causing it to return null and break the main loop.
 void example_notify_sigint(int) {
-	const hxunique_lock lock_(s_example_exit_mutex);
+	const hx::hxunique_lock lock_(s_example_exit_mutex);
 	s_example_exit = true;
 }
 
 // Sets s_example_exit, causing the main loop to break after the current render.
 bool example_exit(void) {
-	const hxunique_lock lock_(s_example_exit_mutex);
+	const hx::hxunique_lock lock_(s_example_exit_mutex);
 	s_example_exit = true;
 	return true;
 }
@@ -83,7 +83,7 @@ hxconsole_command_named(example_out, out);
 
 // hxtask computing one row of the Mandelbrot image. Rows are dispatched in
 // parallel by example_render via hxtask_queue.
-class example_row_task : public hxtask {
+class example_row_task : public hx::hxtask {
 public:
 	void set(size_t row, double center_x, double center_y, double zoom, size_t max_iter, char* row_buffer) {
 		m_row		 = row;
@@ -94,7 +94,7 @@ public:
 		m_row_buffer = row_buffer;
 	}
 
-	bool execute(hxtask_queue*) override {
+	bool execute(hx::hxtask_queue*) override {
 		hxprofile_scope("row");
 
 		const double col_scale = m_zoom / 80.0;
@@ -156,8 +156,8 @@ private:
 // Enqueues all 40 row tasks, waits for completion, then prints the frame.
 // max_iter is scaled with zoom so detail increases as the view narrows. Writes
 // a Chrome tracing profile to profile.json after each render.
-bool example_render(hxtask_queue& queue, hxarray<example_row_task, 40u>& tasks,
-		hxarray<hxarray<char, 2048u>, 40u>& row_storage) {
+bool example_render(hx::hxtask_queue& queue, hx::hxarray<example_row_task, 40u>& tasks,
+		hx::hxarray<hx::hxarray<char, 2048u>, 40u>& row_storage) {
 	size_t max_iter = static_cast<size_t>(50.0 * ::sqrt(::sqrt(1.0 / s_example_zoom))) + 20;
 	if(max_iter < 64)   { max_iter = 64; }
 	if(max_iter > 4096) { max_iter = 4096; }
@@ -175,10 +175,10 @@ bool example_render(hxtask_queue& queue, hxarray<example_row_task, 40u>& tasks,
 	hxprofiler_write_to_chrome_tracing("profile.json");
 
 	for(size_t row = 0; row < 40u; ++row) {
-		hxout.print("%s", row_storage[row].data());
+		hx::hxout.print("%s", row_storage[row].data());
 	}
 
-	hxout.print("center (%.6g, %.6g) zoom %.6g\n",
+	hx::hxout.print("center (%.6g, %.6g) zoom %.6g\n",
 		s_example_center_x, s_example_center_y, s_example_zoom);
 	return true;
 }
@@ -209,31 +209,31 @@ int example_main(void) {
 	::sigaction(SIGINT, &sa, hxnull);
 
 	int exit_code = EXIT_SUCCESS;
-	if(!hxconsole_exec_filename("example.cfg")) {
-		hxout << "error: example.cfg not found or failed to execute\n";
+	if(!hx::hxconsole_exec_filename("example.cfg")) {
+		hx::hxout << "error: example.cfg not found or failed to execute\n";
 		exit_code = EXIT_FAILURE;
 	} else {
-		hxarray<hxarray<char, 2048u>, 40u>* row_storage =
-			hxnew<hxarray<hxarray<char, 2048u>, 40u>>(40u);
+		hx::hxarray<hx::hxarray<char, 2048u>, 40u>* row_storage =
+			hx::hxnew<hx::hxarray<hx::hxarray<char, 2048u>, 40u>>(40u);
 		for(auto& row : *row_storage) {
 			row.resize(2048u);
 		}
 
-		hxtask_queue queue(40u, 8u);
-		hxarray<example_row_task, 40u> tasks(40u);
+		hx::hxtask_queue queue(40u, 8u);
+		hx::hxarray<example_row_task, 40u> tasks(40u);
 
 		example_render(queue, tasks, *row_storage);
 		example_usage();
 
 		char line[256];
 		for(;;) {
-			hxout << "> ";
+			hx::hxout << "> ";
 			if(::fgets(line, static_cast<int>(sizeof line), stdin) == hxnull) {
 				break;
 			}
-			if(hxconsole_exec_line(line)) {
+			if(hx::hxconsole_exec_line(line)) {
 				{
-					const hxunique_lock lock_(s_example_exit_mutex);
+					const hx::hxunique_lock lock_(s_example_exit_mutex);
 					if(s_example_exit) { break; }
 				}
 
@@ -243,7 +243,7 @@ int example_main(void) {
 				example_usage();
 			}
 		}
-		hxdelete(row_storage);
+		hx::hxdelete(row_storage);
 	}
 
 	hxshutdown();

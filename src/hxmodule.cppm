@@ -8,10 +8,6 @@
 /// `<hx/hxtest.hpp>` may be included separately in the same translation unit in
 /// order to use their macros as long as `HX_USE_MODULE` is true.
 
-#if __cplusplus < 202002L
-#error Requires C++20 or later.
-#endif
-
 module;
 #include <errno.h>
 #include <fenv.h>
@@ -54,9 +50,14 @@ module;
 
 #define HX_PROVIDE_NEW_DELETE 0
 
-// These allow excluding .inl files from the modules export block.
+// Out of line declarations (.inl files) have to be outside the export block.
+#ifdef HX_NAMESPACE
+#define HX_BEGIN_INL_ } } namespace HX_NAMESPACE {
+#define HX_END_INL_ } export { namespace HX_NAMESPACE {
+#else
 #define HX_BEGIN_INL_ }
 #define HX_END_INL_ export {
+#endif
 
 export module hx;
 export {

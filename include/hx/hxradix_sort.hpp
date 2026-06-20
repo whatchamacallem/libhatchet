@@ -12,6 +12,8 @@
 #error Header does not provide macros only.
 #endif
 
+HX_NS_BEGIN_
+
 /// A key-value pair used with `hxradix_sort`. Only 32-bit or smaller fixed size
 /// types from `<stdint.h>` are supported for `key_t`. Stores a pointer to
 /// `value_t` only.
@@ -138,3 +140,5 @@ template<typename key_t_, typename value_t_> hxattr_nonnull(1,2) hxattr_hot
 void hxradix_sort11(hxradix_sort_key<key_t_, value_t_>* begin_, hxradix_sort_key<key_t_, value_t_>* end_) {
 	hxradix_sort_void11(reinterpret_cast<hxradix_sort_key_void*>(begin_), reinterpret_cast<hxradix_sort_key_void*>(end_));
 }
+
+HX_NS_END_

@@ -28,24 +28,6 @@
 #define HX_CPLUSPLUS 0
 #endif
 
-/// \cond HIDDEN
-// Rename the hxdetail_ namespace using the version number to something like
-// `hx31700_`. Also create an identifier that can be used to cause link errors
-// containing the expected version when linking against old code. This is done
-// to force updates in a binary release channel. This will not
-// evaluate the macro `_`.
-#define hxversion__(prefix_, x_) prefix_ ## x_ ## _
-#define hxversion_(prefix_, x_) hxversion__(prefix_, x_)
-#define hxg_init_ver_ hxversion_(hxg_init_ver, LIBHATCHET_VER)
-#define hxdetail_ hxversion_(hx, LIBHATCHET_VER)
-
-// These allow excluding .inl files from the modules export block.
-#if !defined HX_BEGIN_INL_
-#define HX_BEGIN_INL_
-#define HX_END_INL_
-#endif
-/// \endcond
-
 // ----------------------------------------------------------------------------
 // Target settings for Doxygen. See the Doxyfile. Run doxygen with no args.
 #if defined HX_DOXYGEN_PARSER
@@ -59,6 +41,14 @@
 /// C++ standard library is not detected automatically because that depends on
 /// header include order.
 #define HX_USE_LIBCXX 1
+
+/// \def HX_NAMESPACE
+/// \brief If defined the library will be wrapped in the provided namespace. The
+/// C interfaces and macros are not modified.
+
+/// `HX_NAMESPACE` - Wraps the entire library in a namespace when
+/// `HX_NAMESPACE` is defined as a valid namespace identifier.
+#define HX_NAMESPACE
 
 /// `hxbreakpoint` - Can be conditionally evaluated with the `&&` and `||`
 /// operators. Uses intrinsics when available. (E.g., clang's.) Raises `SIGTRAP`
@@ -107,6 +97,10 @@
 /// formatting so it can type-check the format string.
 #define hxattr_printf(...)
 
+/// Allow calling code to override static library code. Note: MSVC treats all
+/// static library symbols as weak.
+#define hxattr_weak
+
 /// `hxattr_scanf` - Indicates to gcc that a function uses `scanf`-style
 /// formatting so it can type-check the format string.
 #define hxattr_scanf(...)
@@ -147,6 +141,7 @@
 #define hxattr_noinline __declspec(noinline)
 #define hxattr_noreturn
 #define hxattr_printf(...)
+#define hxattr_weak
 #define hxattr_scanf(...)
 
 // ----------------------------------------------------------------------------
@@ -211,6 +206,7 @@
 #define hxattr_noinline __attribute__((noinline))
 #define hxattr_noreturn __attribute__((noreturn))
 #define hxattr_printf(pos_, start_) __attribute__((format(printf, pos_, start_)))
+#define hxattr_weak __attribute__((weak)) 
 #define hxattr_scanf(pos_, start_) __attribute__((format(scanf, pos_, start_)))
 
 #endif // target specific settings
@@ -287,6 +283,37 @@
 #endif
 
 /// \cond HIDDEN
+// Rename the hxdetail_ namespace using the version number to something like
+// `hx31700_`. Also create an identifier that can be used to cause link errors
+// containing the expected version when linking against old code. This is done
+// to force updates in a binary release channel. This will not
+// evaluate the macro `_`.
+#define hxversion__(prefix_, x_) prefix_ ## x_ ## _
+#define hxversion_(prefix_, x_) hxversion__(prefix_, x_)
+#define hxg_init_ver_ hxversion_(hxg_init_ver, LIBHATCHET_VER)
+#define hxdetail_ hxversion_(hx, LIBHATCHET_VER)
+
+// HX_BEGIN_INL_/HX_END_INL_ - These allow excluding .inl files from the module
+// export block. See hxmodule.cppm for details.
+#if !defined HX_BEGIN_INL_
+#define HX_BEGIN_INL_
+#define HX_END_INL_
+#endif
+
+// HX_NAMESPACE - Wraps the entire library in a namespace when HX_NAMESPACE is
+// defined as a valid namespace identifier.
+#if defined HX_NAMESPACE
+#define HX_NS_BEGIN_  namespace HX_NAMESPACE {
+#define HX_NS_END_    }
+#define HX_NS_PREFIX_ HX_NAMESPACE::
+#define HX_NS_USE     using namespace HX_NAMESPACE;
+#else
+#define HX_NS_BEGIN_
+#define HX_NS_END_
+#define HX_NS_PREFIX_
+#define HX_NS_USE
+#endif
+
 // HX_APPEND_COUNTER2_ - Used to generate unique identifiers. This is weird
 // because the ## operator happens before macro arg evaluation and both happen
 // before general macro evaluation.

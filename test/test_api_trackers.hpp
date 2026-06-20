@@ -6,6 +6,8 @@
 
 #include <hx/libhatchet.h>
 
+HX_NS_USE
+
 // This codebase has contracts about which operators are required and which are
 // not. hxtest_ref_tracker_t enforces that only the correct operators are used
 // when manipulating object instances. hxtest_iter_api_t does the same for

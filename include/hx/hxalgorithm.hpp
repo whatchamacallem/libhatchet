@@ -19,6 +19,8 @@
 
 #include "hxkey.hpp"
 
+HX_NS_BEGIN_
+
 /// `hxcount_if` - Returns the number of elements in `[begin, end)` for which
 /// `predicate` returns true.
 /// - `begin` : Iterator to the beginning of the range to search.
@@ -377,3 +379,5 @@ template<typename iterator_t_> hxattr_hot hxattr_nodiscard hxconstexpr
 iterator_t_ hxunique(iterator_t_ begin_, iterator_t_ end_) {
 	return hxunique<iterator_t_>(begin_, end_, hxkey_equal_t<decltype(*begin_)>{});
 }
+
+HX_NS_END_

@@ -18,13 +18,15 @@
 #error HX_USE_THREADS must be 0, 1 or 11. 11 is for using <threads.h>.
 #endif
 
-#include "hxutility.h"
-
 #if (HX_USE_THREADS) == 11
 #include <threads.h>
 #elif HX_USE_THREADS
 #include <pthread.h>
 #endif
+
+#include "hxutility.h"
+
+HX_NS_BEGIN_
 
 /// `hxthread_local` - Provides thread-local storage for an integer or a
 /// pointer. The default value must be zero or null. This class is available for
@@ -451,5 +453,7 @@ private:
 	bool m_started_;
 	bool m_joined_;
 };
+
+HX_NS_END_
 
 #endif // HX_USE_THREADS

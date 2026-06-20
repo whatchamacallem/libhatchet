@@ -10,6 +10,8 @@
 
 #include <hx/hxtest.hpp>
 
+HX_NS_USE
+
 #if HX_USE_PROFILER
 
 namespace {

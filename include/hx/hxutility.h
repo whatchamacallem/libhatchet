@@ -42,6 +42,8 @@ void hxhex_dump(const void* address_, size_t bytes_, bool pretty_) hxattr_nonnul
 #if HX_CPLUSPLUS
 } // extern "C"
 
+HX_NS_BEGIN_
+
 // ----------------------------------------------------------------------------
 // C and C++ Utilities
 
@@ -344,6 +346,8 @@ void hxswap_memcpy(T_& x_, T_& y_) {
 	::memcpy(static_cast<void*>(&y_), &x_, sizeof x_);
 	::memcpy(static_cast<void*>(&x_), t_, sizeof x_);
 }
+
+HX_NS_END_
 
 #else // !HX_CPLUSPLUS
 // ----------------------------------------------------------------------------

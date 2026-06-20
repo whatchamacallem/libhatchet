@@ -13,6 +13,8 @@
 #error Header does not provide macros only.
 #endif
 
+HX_NS_BEGIN_
+
 /// A capacity value that allows for dynamic allocation.
 hxinline_constexpr size_t hxallocator_dynamic_capacity = 0u;
 
@@ -119,3 +121,5 @@ protected:
 	size_t m_capacity_;
 	T_* m_data_;
 };
+
+HX_NS_END_

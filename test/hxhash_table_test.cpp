@@ -6,6 +6,8 @@
 #include <hx/hxhash_table.hpp>
 #include <hx/hxtest.hpp>
 
+HX_NS_USE
+
 hxattr_noinline static void hxtest_gdb_break_hxhash_table(void) {}
 
 namespace {

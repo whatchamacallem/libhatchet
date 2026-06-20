@@ -2,23 +2,28 @@
 
 ## Agent Interaction
 
-Always number separate items in any analysis so they are easy referenced.
+"Tradition is not the worship of ashes. Tradition is the preservation of fire."
 
-Do not assume existing code or documentation is "intentionally so" and instead
-consider rewrites, redesign and updating documentation as preferred to
-maintaining existing design whenever that aligns with requests. Existing code
-and documentation may have been recently written by an agent in an exploratory
-mode, and therefore preserving it may actually hinder iterative design.
+Never assume existing code, documentation or tests are "intentionally so" and
+instead consider redesign, rewriting, and updating as preferred to maintaining
+existing design, code and documentation whenever that reduces complexity and
+aligns with requests. Existing code, documentation and tests may have been
+recently written in an entirely exploratory mode, and therefore preserving it
+may actually hinder elegant design and implementation.
 
-when asked to update documentation and tests assume existing bug free code is
+when asked to update documentation or tests assume existing bug free code is
 correct when it conflicts with documentation or tests. If bugs or compile errors
-are found outside of tests when asked to update tests then fix them first before
-proceeding.
+are found outside of tests when asked to update tests then fix the code being
+tested first before proceeding to update the tests. All forward progress must be
+correct. Do not enshrine bugs in tests or documentation.
 
 Do not add features or functionality that has not been explicitly requested. If
 additional functionality is advisable present the user with a numbered list.
+Always number separate items in any analysis so they are easy referenced.
 
 ## Style Guide
+
+The best code is no code. Use K&R style. Use tabs instead of spaces.
 
 This is a bespoke C17/C++20 alternative to the C++ standard library. Never use
 the `std` namespace. The ranges library should not be implemented and do not go
@@ -38,48 +43,51 @@ not allowed. The rules are only checked by `testcmake.sh` and are not checked by
 `vscode`. Declare local variables `const` when they are not modified. Prefer
 `1000u` to `(size_t)1000`.
 
-Prefer code that avoids unnecessary function calls or requires unnecessary
-traversal of data structures in the debugger watch window. In particular avoid
-writing simple one line helper functions. Except prefer delegating constructors
-to repeating member initializers. Never implement hypothetical safety guarantees.
-The best code is no code.
+Do not write simple one line helper functions. Except prefer delegating
+constructors to repeating member initializers. Do not write code that requires
+unnecessary traversal of data structures in the debugger watch window.
 
-Do not use defensive programming or guard against mistakes. Unintended use cases
-need to be identified and fixed instead of guarded against. Compile errors are
-cheaper than debugging. Asserts are cheaper than debugging. Use `hxassertmsg` to
-document preconditions and post conditions instead of null checks.
+Do not use defensive programming or guard against mistakes. Never implement
+hypothetical safety guarantees. Unintended use cases need to be identified with
+asserts and fixed instead of guarded against. Compile errors are cheaper than
+debugging. Asserts are cheaper than debugging. Use `hxassertmsg` to document
+preconditions and post conditions instead of null checks.
 
-Wrap C-style implementation details in C++ classes with normal operators so that
-C++ object models are used for interfaces. However, use hxarray with a static
-capacity instead of large C-style arrays. Use template wrappers for type safety
-while avoiding the associated code bloat.
+Prefer wrapping C-style implementation details in C++ classes with normal
+operators so that C++ object models are used for interfaces. However, use
+hxarray with a static capacity instead of large C-style arrays. Use template
+wrappers for type safety while avoiding the associated code bloat.
 
 Separate code onto individual lines when it helps step through expressions
 individually in the debugger. Use references instead of pointers when a pointer
-would never be null. Use tabs instead of spaces. Use K&R style.
+would never be null.
 
 Make any function or operator implementation that will not fit on one line in
 100 chars an out of line implementation that goes after the class body.
-Alphabetize all the functions, keep operators first. Place the opening brace of
-a function body on the same line as the function signature. When creating a new
-class do not use global operators and use member functions instead.
+Alphabetize all the functions, keeping operators first. Place the opening brace
+of a function body on the same line as the function signature. When creating a
+new class do not use global operators and use member functions instead.
 
-Use C-style headers and not the C++ wrappers around them. E.g. use `<math.h>`
-not `<cmath>`. The goal is to be able to compile against libc alone without
-using the C++ standard library at all.
+When using the C library use C-style headers and not the C++ wrappers around
+them. E.g. use `<math.h>` not `<cmath>`. The goal is to be able to compile
+against libc alone without using the C++ standard library at all.
 
 ## Naming
 
 All symbols are `snake_case`. Except feature test macros and constants are
-`SCREAMING_SNAKE_CASE`. Do not use abbreviated names except for iterators.
+`SCREAMING_SNAKE_CASE`. Do not use abbreviated names except for iterators. Use
+`struct` only in C code and template metaprogramming.
 
 Classes, structs and functions begin with `hx` and not `hx_`. Template
-parameters are `snake_case` and end with `_t_`. Use `struct` only in C code.
-Function parameters and private fields do not begin with `hx` and end with an
-underscore. Private fields begin with `m_`. Global variables start with `hxg_`
-and static or anonymous namespace variables start with `hxs_`. Prefix calls to
-the C standard library with `::` to indicate they are in the global namespace.
-Use `src_` and `dst_` for source and destination iterators.
+parameters are `snake_case` and end with `_t_`. `using` statements may publish
+template parameters and other types with an `_t` suffix in violation of POSIX
+2.2.2. Function parameters and private fields do not begin with `hx` and end
+with an underscore. Private fields begin with `m_`. Global variables start with
+`hxg_` and static or anonymous namespace variables start with `hxs_`. Prefix
+calls to the C standard library with `::` to indicate they are in the global
+namespace. Use `src_` and `dst_` for source and destination iterators.
+
+Prefix calls to member functions with `this->`.
 
 ## Optimization
 

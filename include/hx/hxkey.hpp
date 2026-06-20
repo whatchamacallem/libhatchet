@@ -22,6 +22,8 @@
 
 #include "hxutility.h"
 
+HX_NS_BEGIN_
+
 /// \cond HIDDEN
 // Used for readability.
 using hxcstring_const_ = const char*;
@@ -169,3 +171,5 @@ hxattr_nodiscard hxattr_hot inline hxhash_t hxkey_hash(const char* s_) {
     }
     return hxhash_avalanche_(h_ + len_);
 }
+
+HX_NS_END_

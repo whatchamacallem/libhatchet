@@ -13,6 +13,8 @@
 #error Header does not provide macros only.
 #endif
 
+HX_NS_BEGIN_
+
 class hxfile;
 
 /// Global reference to stdin or equivalent.
@@ -253,3 +255,5 @@ private:
 	bool m_fail_; 		    // Indicates EOF, file errors and user errors.
 	bool m_eof_;  		    // Indicates EOF.
 };
+
+HX_NS_END_

@@ -6,6 +6,8 @@
 #include "../include/hx/hxconsole.hpp"
 #include "../include/hx/hxfile.hpp"
 
+HX_NS_BEGIN_
+
 #if HX_USE_PROFILER
 
 namespace {
@@ -14,21 +16,21 @@ namespace {
 // Console commands
 
 #if HX_CPLUSPLUS >= 202002L
-bool hxprofile_start_command_(void) { hxprofiler_start(); return true; }
+bool hxprofile_start_command(void) { hxprofiler_start(); return true; }
 
-bool hxprofile_stop_command_(void) { hxprofiler_stop(); return true; }
+bool hxprofile_stop_command(void) { hxprofiler_stop(); return true; }
 
-bool hxprofiler_log_command_(void) { hxprofiler_log(); return true; }
+bool hxprofiler_log_command(void) { hxprofiler_log(); return true; }
 
-bool hxprofiler_write_to_chrome_tracing_command_(const char* filename) {
+bool hxprofiler_write_to_chrome_tracing_command(const char* filename) {
 	hxprofiler_write_to_chrome_tracing(filename);
 	return true;
 }
 
-hxconsole_command_named(hxprofile_start_command_, profilestart);
-hxconsole_command_named(hxprofile_stop_command_, profilestop);
-hxconsole_command_named(hxprofiler_log_command_, profilelog);
-hxconsole_command_named(hxprofiler_write_to_chrome_tracing_command_, profilewrite);
+hxconsole_command_named(hxprofile_start_command, profilestart);
+hxconsole_command_named(hxprofile_stop_command, profilestop);
+hxconsole_command_named(hxprofiler_log_command, profilelog);
+hxconsole_command_named(hxprofiler_write_to_chrome_tracing_command, profilewrite);
 #endif // HX_CPLUSPLUS >= 202002L
 
 } // namespace {
@@ -44,18 +46,18 @@ hxprofiler_internal_ hxg_profiler_;
 // hxprofiler_internal_
 
 void hxprofiler_internal_::start_(void) {
-	const hxunique_lock hxprofiler_mutex_lock_(hxg_profiler_.m_mutex_);
+	const hxunique_lock profiler_lock(hxg_profiler_.m_mutex_);
 	m_records.clear();
 	m_is_started_ = true;
 }
 
 void hxprofiler_internal_::stop_(void) {
-	const hxunique_lock hxprofiler_mutex_lock_(hxg_profiler_.m_mutex_);
+	const hxunique_lock profiler_lock(hxg_profiler_.m_mutex_);
 	m_is_started_ = false;
 }
 
 void hxprofiler_internal_::log_(void) {
-	const hxunique_lock hxprofiler_mutex_lock_(hxg_profiler_.m_mutex_);
+	const hxunique_lock profiler_lock(hxg_profiler_.m_mutex_);
 	m_is_started_ = false;
 
 	hxlog_console("[ ");
@@ -76,7 +78,7 @@ void hxprofiler_internal_::log_(void) {
 // ### WARNING: Only https://ui.perfetto.dev/ is working at the moment.
 // ###
 void hxprofiler_internal_::write_to_chrome_tracing_(const char* filename) {
-	const hxunique_lock hxprofiler_mutex_lock_(hxg_profiler_.m_mutex_);
+	const hxunique_lock profiler_lock(hxg_profiler_.m_mutex_);
 	m_is_started_ = false;
 
 	hxfile f(hxfile::out, "%s", filename);
@@ -112,3 +114,5 @@ void hxprofiler_internal_::write_to_chrome_tracing_(const char* filename) {
 } // hxdetail_
 
 #endif // HX_USE_PROFILER
+
+HX_NS_END_

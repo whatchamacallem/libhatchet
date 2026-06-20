@@ -8,6 +8,8 @@
 // This is not a normal dependency of libhatchet.
 #include <ctype.h>
 
+HX_NS_USE
+
 static_assert(hxtrue_t::value, "hxtrue_t must report true");
 static_assert(!hxfalse_t::value, "hxfalse_t must report false");
 

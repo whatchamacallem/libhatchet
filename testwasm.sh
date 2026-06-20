@@ -29,10 +29,10 @@ emcc -I../include -O2 -pthread -fdiagnostics-absolute-paths -c ../test/*.c
 
 # Dump the memory manager because a web browser doesn't need that.
 # -pthread requires SharedArrayBuffer which needs COOP/COEP headers from the server.
-emcc -O2 -fno-exceptions -fno-rtti -fdiagnostics-absolute-paths \
-	 -Werror -Wfatal-errors -DHX_USE_MEMORY_MANAGER=0 -DHX_USE_THREADS=1 -pthread \
-	 -sEXIT_RUNTIME=1 -sPTHREAD_POOL_SIZE=4 -sPROXY_TO_PTHREAD \
-	 -I../include *.o ../src/*.cpp ../test/*.cpp -o index.html
+emcc -O2 -fno-exceptions -fno-rtti -fdiagnostics-absolute-paths         \
+	-Werror -Wfatal-errors -DHX_USE_MEMORY_MANAGER=0 -DHX_USE_THREADS=1 \
+	-Wno-c2y-extensions -pthread -sEXIT_RUNTIME=1 -sPTHREAD_POOL_SIZE=4 \
+	-sPROXY_TO_PTHREAD -I../include *.o ../src/*.cpp ../test/*.cpp -o index.html
 
 if [ "${1:-}" != "--headless" ]; then
 

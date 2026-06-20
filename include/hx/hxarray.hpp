@@ -17,6 +17,8 @@
 #include "hxsort.hpp"
 #include "hxinitializer_list.hpp"
 
+HX_NS_BEGIN_
+
 #if HX_CPLUSPLUS >= 202002L
 
 /// Concept smoke testing the `hxarray` element. Any kind of constructor or
@@ -26,7 +28,7 @@
 template<typename T_>
 concept hxarray_concept_ = requires(T_& x_) {
 	sizeof(T_);
-	{ x_.T_::~T_() };
+	{ x_.~T_() };
 };
 #else
 #define hxarray_concept_ typename
@@ -336,11 +338,11 @@ public:
 	/// the number of erased elements. e.g.,
 	/// ```cpp
 	/// // Erase all the 10s in an array.
-	/// ints.erase_if([](const int& value) -> bool { return value == 10; });
+	/// ints.erase_if_unordered([](const int& value) -> bool { return value == 10; });
 	/// ```
 	/// - `fn` : A callable returning boolean.
 	template<typename callable_t_>
-	size_t erase_if(callable_t_&& fn_);
+	size_t erase_if_unordered(callable_t_&& fn_);
 
 	/// Removes elements for which the predicate returns true while preserving
 	/// the max-heap property maintained by `push_heap`/`pop_heap`. Returns the
@@ -586,3 +588,5 @@ void hxswap(hxarray<T_, hxallocator_dynamic_capacity>& x_,
 #endif // HX_CPLUSPLUS >= 202002L
 
 #include "detail/hxarray.inl"
+
+HX_NS_END_

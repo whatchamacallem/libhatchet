@@ -12,9 +12,9 @@
 #if !(HX_USE_PROFILER)
 #define HX_PROFILE_ONLY_(x_) ((void)0)
 #if !(HX_USE_MODULE)
-inline hxcycles_t hxtime_sample_cycles(void) { return 0; }
+inline HX_NS_PREFIX_ hxcycles_t HX_NS_PREFIX_ hxtime_sample_cycles(void) { return 0; }
 #endif
-#else
+#else // HX_USE_PROFILER
 #define HX_PROFILE_ONLY_(x_) x_
 
 #if !(HX_USE_MODULE)
@@ -29,6 +29,8 @@ extern "C" double emscripten_get_now(void);
 #include <x86intrin.h>
 #endif
 #endif
+
+HX_NS_BEGIN_
 
 inline hxcycles_t hxtime_sample_cycles(void) {
 	uint64_t cycles_ = 0; (void)cycles_;
@@ -125,6 +127,6 @@ private:
 };
 
 } // hxdetail_
-
+HX_NS_END_
 #endif // !(HX_USE_MODULE)
 #endif // HX_USE_PROFILER

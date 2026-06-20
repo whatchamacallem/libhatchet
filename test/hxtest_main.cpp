@@ -10,6 +10,8 @@
 
 #include "hxctest.h"
 
+HX_NS_USE
+
 int test_main(int argc, char**argv);
 bool run_all_tests(void);
 

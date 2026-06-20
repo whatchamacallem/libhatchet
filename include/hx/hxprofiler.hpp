@@ -26,6 +26,8 @@
 #include "hxarray.hpp"
 #include "hxthread.hpp"
 
+HX_NS_BEGIN_
+
 /// `hxcycles_t` - Stores approximately three seconds to 300 years worth of
 /// processor cycles starting from an unspecified origin and wrapping using
 /// unsigned rules. This is intended for profiling, not calendaring. Used by the
@@ -44,6 +46,8 @@ hxinline_constexpr hxcycles_t hxdefault_cycles_cutoff = 1000;
 /// architecture. This is callable without enabling `HX_USE_PROFILER`.
 inline hxcycles_t hxtime_sample_cycles(void);
 
+HX_NS_END_
+
 #endif // !HX_USE_MODULE
 
 /// `hxprofile_scope(const char* label_string_literal)` - Declares an RAII-style
@@ -51,7 +55,7 @@ inline hxcycles_t hxtime_sample_cycles(void);
 /// Compiles to a NOP when not in use.
 /// - `label_string_literal` : A string literal label for the sample.
 #define hxprofile_scope(label_string_literal_) \
-	HX_PROFILE_ONLY_(const hxdetail_::hxprofiler_scope_internal_<> \
+	HX_PROFILE_ONLY_(const HX_NS_PREFIX_ hxdetail_::hxprofiler_scope_internal_<> \
 		HX_APPEND_COUNTER(hxprofile_scope_)(label_string_literal_))
 
 /// `hxprofile_scope_min(const char* label_string_literal, hxcycles_t
@@ -63,20 +67,20 @@ inline hxcycles_t hxtime_sample_cycles(void);
 /// - `min_cycles` : A minimum number of cycles required for a sample to be recorded.
 ///   Must be a compile-time constant.
 #define hxprofile_scope_min(label_string_literal_, min_cycles_) \
-	HX_PROFILE_ONLY_(const hxdetail_::hxprofiler_scope_internal_<min_cycles_> \
+	HX_PROFILE_ONLY_(const HX_NS_PREFIX_ hxdetail_::hxprofiler_scope_internal_<min_cycles_> \
 		HX_APPEND_COUNTER(hxprofile_scope_)(label_string_literal_))
 
 /// `hxprofiler_start(void)` - Clears samples and begins sampling. Compiles to a
 /// NOP when not in use.
-#define hxprofiler_start() HX_PROFILE_ONLY_(hxdetail_::hxg_profiler_.start_())
+#define hxprofiler_start() HX_PROFILE_ONLY_(HX_NS_PREFIX_ hxdetail_::hxg_profiler_.start_())
 
 /// `hxprofiler_stop(void)` - Ends sampling. Does not clear samples. Compiles to
 /// a NOP when not in use.
-#define hxprofiler_stop() HX_PROFILE_ONLY_(hxdetail_::hxg_profiler_.stop_())
+#define hxprofiler_stop() HX_PROFILE_ONLY_(HX_NS_PREFIX_ hxdetail_::hxg_profiler_.stop_())
 
 /// `hxprofiler_log(void)` - Stops sampling and writes samples to the system
 /// log. Compiles to a NOP when not in use.
-#define hxprofiler_log() HX_PROFILE_ONLY_(hxdetail_::hxg_profiler_.log_())
+#define hxprofiler_log() HX_PROFILE_ONLY_(HX_NS_PREFIX_ hxdetail_::hxg_profiler_.log_())
 
 /// ###
 /// ### WARNING: Only https://ui.perfetto.dev/ is working at the moment.
@@ -88,6 +92,6 @@ inline hxcycles_t hxtime_sample_cycles(void);
 /// `chrome://tracing/`. Load the generated `.json` file. Use the W, A, S, and D
 /// keys. Compiles to a NOP when not in use.
 #define hxprofiler_write_to_chrome_tracing(filename_) \
-	HX_PROFILE_ONLY_(hxdetail_::hxg_profiler_.write_to_chrome_tracing_(filename_))
+	HX_PROFILE_ONLY_(HX_NS_PREFIX_ hxdetail_::hxg_profiler_.write_to_chrome_tracing_(filename_))
 
 #include "detail/hxprofiler_detail.hpp"

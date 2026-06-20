@@ -8,6 +8,8 @@
 
 #include "hxtask_queue.hpp"
 
+HX_NS_BEGIN_
+
 /// `hxtask_dag_node<max_successors>` - A `hxtask` subclass that implements DAG
 /// dependency tracking as a layer on top of `hxtask_queue`. To connect nodes
 /// use `add_successor` before enqueueing roots (those with no predecessors).
@@ -62,3 +64,5 @@ private:
 };
 
 #include "detail/hxtask_dag_node.inl"
+
+HX_NS_END_

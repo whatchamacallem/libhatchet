@@ -87,6 +87,9 @@
 
 #if !(HX_USE_MODULE)
 #include "hxfile.hpp"
+
+HX_NS_BEGIN_
+
 #include "detail/hxtest_detail.hpp"
 
 /// `testing` - A partial Google Test reimplementation. Use `-DHX_TEST_MAX_CASES`
@@ -140,9 +143,9 @@ inline void InitGoogleTest(void) { }
 /// - `suite_name` : A valid C identifier for the test suite.
 /// - `case_name` : A valid C identifier for the test case.
 #define TEST(suite_name_, case_name_) \
-	class HX_TEST_NAME_(hxtest_, suite_name_, case_name_) : public hxdetail_::hxtest_case_interface_ { \
+	class HX_TEST_NAME_(hxtest_, suite_name_, case_name_) : public HX_NS_PREFIX_ hxdetail_::hxtest_case_interface_ { \
 	public: \
-		HX_TEST_NAME_(hxtest_, suite_name_, case_name_)(void) { hxdetail_::hxtest_::dispatcher_().add_test_(this); } \
+		HX_TEST_NAME_(hxtest_, suite_name_, case_name_)(void) { HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().add_test_(this); } \
 		virtual void run_test_(void) override; \
 		virtual const char* suite_(void) const override { return #suite_name_; } \
 		virtual const char* case_(void) const override { return #case_name_; } \
@@ -157,10 +160,10 @@ inline void InitGoogleTest(void) { }
 /// - `suite_fixture` : The test suite base class used as a fixture.
 /// - `case_name` : A valid C identifier for the test case.
 #define TEST_F(suite_fixture_, case_name_) \
-	class HX_TEST_NAME_(hxtest_f_, suite_fixture_, case_name_) : public hxdetail_::hxtest_case_interface_ { \
+	class HX_TEST_NAME_(hxtest_f_, suite_fixture_, case_name_) : public HX_NS_PREFIX_ hxdetail_::hxtest_case_interface_ { \
 	public: \
 		class hxtest_case_subclass_ : public suite_fixture_ { virtual void run_test_f_(void) override; }; \
-		HX_TEST_NAME_(hxtest_f_, suite_fixture_, case_name_)(void) { hxdetail_::hxtest_::dispatcher_().add_test_(this); } \
+		HX_TEST_NAME_(hxtest_f_, suite_fixture_, case_name_)(void) { HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().add_test_(this); } \
 		virtual void run_test_(void) override { hxtest_case_subclass_ subclass_; subclass_.run_test_(); } \
 		virtual const char* suite_(void) const override { return #suite_fixture_; } \
 		virtual const char* case_(void) const override { return #case_name_; } \
@@ -171,79 +174,81 @@ inline void InitGoogleTest(void) { }
 
 /// `int RUN_ALL_TESTS(...)` - Executes all registered test cases.
 /// - `...` : Optional const char* matching a specific test suite to run. (Non-standard.)
-#define RUN_ALL_TESTS(...) hxdetail_::hxtest_::dispatcher_().run_all_tests_(__VA_ARGS__)
+#define RUN_ALL_TESTS(...) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().run_all_tests_(__VA_ARGS__)
 
 /// `void SUCCEED(void)` - Marks the current test as successful without any checks.
-#define SUCCEED() hxdetail_::hxtest_::dispatcher_().condition_check_(true, __FILE__, __LINE__, "SUCCEED()", false)
+#define SUCCEED() HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_(true, __FILE__, __LINE__, "SUCCEED()", false)
 
 /// `void FAIL(void)` - WARNING. Calls `return`. Marks the current test as failed.
-#define FAIL() do { hxdetail_::hxtest_::dispatcher_().condition_check_(false, __FILE__, __LINE__, "FAIL()", false); return; } while (0)
+#define FAIL() do { HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_(false, __FILE__, __LINE__, "FAIL()", false); return; } while (0)
 /// `void ADD_FAILURE(void)` - Adds a non-fatal failure at the current location.
-#define ADD_FAILURE() hxdetail_::hxtest_::dispatcher_().condition_check_(false, __FILE__, __LINE__, "ADD_FAILURE()", false)
+#define ADD_FAILURE() HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_(false, __FILE__, __LINE__, "ADD_FAILURE()", false)
 /// `void ADD_FAILURE_AT(const char*, size_t)` - Adds a non-fatal failure at the specified location.
-#define ADD_FAILURE_AT(file_, line_) hxdetail_::hxtest_::dispatcher_().condition_check_(false, (file_), (size_t)(line_), "ADD_FAILURE_AT()", false)
+#define ADD_FAILURE_AT(file_, line_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_(false, (file_), (size_t)(line_), "ADD_FAILURE_AT()", false)
 
 /// `void EXPECT_TRUE(bool)` - Requires that the condition is true.
-#define EXPECT_TRUE(x_) hxdetail_::hxtest_::dispatcher_().condition_check_((x_), __FILE__, __LINE__, #x_, false)
+#define EXPECT_TRUE(x_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_((x_), __FILE__, __LINE__, #x_, false)
 /// `void EXPECT_FALSE(bool)` - Requires that the condition is false.
-#define EXPECT_FALSE(x_) hxdetail_::hxtest_::dispatcher_().condition_check_(!(x_), __FILE__, __LINE__, "!" #x_, false)
+#define EXPECT_FALSE(x_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_(!(x_), __FILE__, __LINE__, "!" #x_, false)
 /// `void EXPECT_NEAR(T expected, T actual, T absolute_error)` - Requires that two values are within a given range.
 /// - `expected` : Reference value to compare against.
 /// - `actual` : Value being tested.
 /// - `absolute_error` : Maximum permitted absolute difference.
-#define EXPECT_NEAR(expected_, actual_, absolute_range_) hxdetail_::hxtest_::dispatcher_().condition_check_( \
+#define EXPECT_NEAR(expected_, actual_, absolute_range_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_( \
 	(((expected_) < (actual_)) ? ((actual_)-(expected_)) : ((expected_)-(actual_))) <= (absolute_range_), \
 	__FILE__, __LINE__, "abs(" #expected_ "-" #actual_ ") <= " #absolute_range_, false)
 /// `void EXPECT_LT(T a, T b)` - Requires `a < b`.
-#define EXPECT_LT(a_, b_) hxdetail_::hxtest_::dispatcher_().condition_check_((a_) < (b_), __FILE__, __LINE__, #a_ " < " #b_, false)
+#define EXPECT_LT(a_, b_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_((a_) < (b_), __FILE__, __LINE__, #a_ " < " #b_, false)
 /// `void EXPECT_GT(T a, T b)` - Requires `a > b` using `b < a`.
-#define EXPECT_GT(a_, b_) hxdetail_::hxtest_::dispatcher_().condition_check_((b_) < (a_), __FILE__, __LINE__, #a_ " > " #b_, false)
+#define EXPECT_GT(a_, b_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_((b_) < (a_), __FILE__, __LINE__, #a_ " > " #b_, false)
 /// `void EXPECT_LE(T a, T b)` - Requires `a <= b` using `!(b < a)`.
-#define EXPECT_LE(a_, b_) hxdetail_::hxtest_::dispatcher_().condition_check_(!((b_) < (a_)), __FILE__, __LINE__, #a_ " <= " #b_, false)
+#define EXPECT_LE(a_, b_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_(!((b_) < (a_)), __FILE__, __LINE__, #a_ " <= " #b_, false)
 /// `void EXPECT_GE(T a, T b)` - Requires `a >= b` using `!(a < b)`.
-#define EXPECT_GE(a_, b_) hxdetail_::hxtest_::dispatcher_().condition_check_(!((a_) < (b_)), __FILE__, __LINE__, #a_ " >= " #b_, false)
+#define EXPECT_GE(a_, b_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_(!((a_) < (b_)), __FILE__, __LINE__, #a_ " >= " #b_, false)
 /// `void EXPECT_EQ(T a, T b)` - Requires `a == b`.
-#define EXPECT_EQ(a_, b_) hxdetail_::hxtest_::dispatcher_().condition_check_((a_) == (b_), __FILE__, __LINE__, #a_ " == " #b_, false)
+#define EXPECT_EQ(a_, b_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_((a_) == (b_), __FILE__, __LINE__, #a_ " == " #b_, false)
 /// `void EXPECT_NE(T a, T b)` - Requires `a != b` using `!(a == b)`.
-#define EXPECT_NE(a_, b_) hxdetail_::hxtest_::dispatcher_().condition_check_(!((a_) == (b_)), __FILE__, __LINE__, #a_ " != " #b_, false)
+#define EXPECT_NE(a_, b_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_(!((a_) == (b_)), __FILE__, __LINE__, #a_ " != " #b_, false)
 /// `void EXPECT_FLOAT_EQ(float a, float b)` - Requires floats for equality within a scaled tolerance.
-#define EXPECT_FLOAT_EQ(a_, b_) hxdetail_::hxtest_::dispatcher_().condition_check_(hxdetail_::hxtest_float_eq_((a_), (b_)), __FILE__, __LINE__, #a_ " ~= " #b_, false)
+#define EXPECT_FLOAT_EQ(a_, b_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_(HX_NS_PREFIX_ hxdetail_::hxtest_float_eq_((a_), (b_)), __FILE__, __LINE__, #a_ " ~= " #b_, false)
 /// `void EXPECT_DOUBLE_EQ(double a, double b)` - Requires doubles for equality within a scaled tolerance.
-#define EXPECT_DOUBLE_EQ(a_, b_) hxdetail_::hxtest_::dispatcher_().condition_check_(hxdetail_::hxtest_double_eq_((a_), (b_)), __FILE__, __LINE__, #a_ " ~= " #b_, false)
+#define EXPECT_DOUBLE_EQ(a_, b_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_(HX_NS_PREFIX_ hxdetail_::hxtest_double_eq_((a_), (b_)), __FILE__, __LINE__, #a_ " ~= " #b_, false)
 /// `void EXPECT_STREQ(const char* a, const char* b)` - Requires that two C strings are equal, without checking null pointers.
-#define EXPECT_STREQ(a_, b_) hxdetail_::hxtest_::dispatcher_().condition_check_(hxtest_str_eq_((a_), (b_)), __FILE__, __LINE__, #a_ " == " #b_, false)
+#define EXPECT_STREQ(a_, b_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_(hxtest_str_eq_((a_), (b_)), __FILE__, __LINE__, #a_ " == " #b_, false)
 /// `void EXPECT_STRNE(const char* a, const char* b)` - Requires that two C strings differ, without checking null pointers.
-#define EXPECT_STRNE(a_, b_) hxdetail_::hxtest_::dispatcher_().condition_check_(!hxtest_str_eq_((a_), (b_)), __FILE__, __LINE__, #a_ " != " #b_, false)
+#define EXPECT_STRNE(a_, b_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_(!hxtest_str_eq_((a_), (b_)), __FILE__, __LINE__, #a_ " != " #b_, false)
 /// `void ASSERT_TRUE(bool)` - Requires that the condition is true.
-#define ASSERT_TRUE(x_) hxdetail_::hxtest_::dispatcher_().condition_check_((x_), __FILE__, __LINE__, #x_, true)
+#define ASSERT_TRUE(x_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_((x_), __FILE__, __LINE__, #x_, true)
 /// `void ASSERT_FALSE(bool)` - Requires that the condition is false.
-#define ASSERT_FALSE(x_) hxdetail_::hxtest_::dispatcher_().condition_check_(!(x_), __FILE__, __LINE__, "!" #x_, true)
+#define ASSERT_FALSE(x_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_(!(x_), __FILE__, __LINE__, "!" #x_, true)
 /// `void ASSERT_NEAR(T expected, T actual, T absolute_error)` - Requires that two values are within a given range.
 /// - `expected` : Reference value to compare against.
 /// - `actual` : Value being tested.
 /// - `absolute_error` : Maximum permitted absolute difference.
-#define ASSERT_NEAR(expected_, actual_, absolute_error_) hxdetail_::hxtest_::dispatcher_().condition_check_( \
+#define ASSERT_NEAR(expected_, actual_, absolute_error_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_( \
 	(((expected_) < (actual_)) ? ((actual_)-(expected_)) : ((expected_)-(actual_))) <= (absolute_error_), \
 	__FILE__, __LINE__, "abs(" #expected_ " - " #actual_ ") <= " #absolute_error_, true)
 /// `void ASSERT_LT(T a, T b)` - Requires `a < b`.
-#define ASSERT_LT(a_, b_) hxdetail_::hxtest_::dispatcher_().condition_check_((a_) < (b_), __FILE__, __LINE__, #a_ " < " #b_, true)
+#define ASSERT_LT(a_, b_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_((a_) < (b_), __FILE__, __LINE__, #a_ " < " #b_, true)
 /// `void ASSERT_GT(T a, T b)` - Requires `a > b` using `b < a`.
-#define ASSERT_GT(a_, b_) hxdetail_::hxtest_::dispatcher_().condition_check_((b_) < (a_), __FILE__, __LINE__, #a_ " > " #b_, true)
+#define ASSERT_GT(a_, b_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_((b_) < (a_), __FILE__, __LINE__, #a_ " > " #b_, true)
 /// `void ASSERT_LE(T a, T b)` - Requires `a <= b` using `!(b < a)`.
-#define ASSERT_LE(a_, b_) hxdetail_::hxtest_::dispatcher_().condition_check_(!((b_) < (a_)), __FILE__, __LINE__, #a_ " <= " #b_, true)
+#define ASSERT_LE(a_, b_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_(!((b_) < (a_)), __FILE__, __LINE__, #a_ " <= " #b_, true)
 /// `void ASSERT_GE(T a, T b)` - Requires `a >= b` using `!(a < b)`.
-#define ASSERT_GE(a_, b_) hxdetail_::hxtest_::dispatcher_().condition_check_(!((a_) < (b_)), __FILE__, __LINE__, #a_ " >= " #b_, true)
+#define ASSERT_GE(a_, b_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_(!((a_) < (b_)), __FILE__, __LINE__, #a_ " >= " #b_, true)
 /// `void ASSERT_EQ(T a, T b)` - Requires `a == b`.
-#define ASSERT_EQ(a_, b_) hxdetail_::hxtest_::dispatcher_().condition_check_((a_) == (b_), __FILE__, __LINE__, #a_ " == " #b_, true)
+#define ASSERT_EQ(a_, b_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_((a_) == (b_), __FILE__, __LINE__, #a_ " == " #b_, true)
 /// `void ASSERT_NE(T a, T b)` - Requires `a != b` using `!(a == b)`.
-#define ASSERT_NE(a_, b_) hxdetail_::hxtest_::dispatcher_().condition_check_(!((a_) == (b_)), __FILE__, __LINE__, #a_ " != " #b_, true)
+#define ASSERT_NE(a_, b_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_(!((a_) == (b_)), __FILE__, __LINE__, #a_ " != " #b_, true)
 /// `void ASSERT_FLOAT_EQ(float a, float b)` - Requires floats for equality within a scaled tolerance.
-#define ASSERT_FLOAT_EQ(a_, b_) hxdetail_::hxtest_::dispatcher_().condition_check_(hxdetail_::hxtest_float_eq_((a_), (b_)), __FILE__, __LINE__, #a_ " ~= " #b_, true)
+#define ASSERT_FLOAT_EQ(a_, b_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_(HX_NS_PREFIX_ hxdetail_::hxtest_float_eq_((a_), (b_)), __FILE__, __LINE__, #a_ " ~= " #b_, true)
 /// `void ASSERT_DOUBLE_EQ(double a, double b)` - Requires doubles for equality within a scaled tolerance.
-#define ASSERT_DOUBLE_EQ(a_, b_) hxdetail_::hxtest_::dispatcher_().condition_check_(hxdetail_::hxtest_double_eq_((a_), (b_)), __FILE__, __LINE__, #a_ " ~= " #b_, true)
+#define ASSERT_DOUBLE_EQ(a_, b_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_(HX_NS_PREFIX_ hxdetail_::hxtest_double_eq_((a_), (b_)), __FILE__, __LINE__, #a_ " ~= " #b_, true)
 /// `void ASSERT_STREQ(const char* a, const char* b)` - Requires that two C strings are equal, without checking null pointers.
-#define ASSERT_STREQ(a_, b_) hxdetail_::hxtest_::dispatcher_().condition_check_(hxtest_str_eq_((a_), (b_)), __FILE__, __LINE__, #a_ " == " #b_, true)
+#define ASSERT_STREQ(a_, b_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_(hxtest_str_eq_((a_), (b_)), __FILE__, __LINE__, #a_ " == " #b_, true)
 /// `void ASSERT_STRNE(const char* a, const char* b)` - Requires that two C strings differ, without checking null pointers.
-#define ASSERT_STRNE(a_, b_) hxdetail_::hxtest_::dispatcher_().condition_check_(!hxtest_str_eq_((a_), (b_)), __FILE__, __LINE__, #a_ " != " #b_, true)
+#define ASSERT_STRNE(a_, b_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_(!hxtest_str_eq_((a_), (b_)), __FILE__, __LINE__, #a_ " != " #b_, true)
+
+HX_NS_END_
 
 #endif // !HX_USE_GOOGLE_TEST

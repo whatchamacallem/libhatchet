@@ -1,13 +1,20 @@
 @echo off
-:: Debugging instructions for AI:
+
+:: AI agents must follow these debugging instructions.
 ::
-:: cmake.exe is not on PATH until VsDevCmd.bat runs. VsDevCmd.bat does not
-:: change the working directory when called with no args, so relative paths used
-:: below remain valid. Use .\hxtest.exe not hxtest.exe. cmd.exe does not search
-:: the current directory for bare executable names. cmake configure failures
+:: Use the PowerShell tool (not the Bash tool) to run this script:
+::
+:: Set-Location "...\libhatchet"; & cmd.exe /c "...\libhatchet\testmsvc.bat"
+::
+:: Where "..."" is replaced with the path components leading to the script.
+::
+:: The full absolute path to the .bat file is required because cmd.exe does not
+:: search the current directory for bare names when invoked from PowerShell.
+:: cmake.exe is not on PATH until VsDevCmd.bat runs. cmake configure failures
 :: ("No CMAKE_C_COMPILER could be found") can be the result of a stale build.
-:: Delete the stale build directory and retry. To capture output from
-:: PowerShell: cmd /c """testmsvc.bat""" 2>&1 | ...
+:: Delete the stale build directory and retry. A "'vswhere.exe' is not
+:: recognized" error at the start of the output is a sandbox artifact and can be
+:: ignored as long as the build and tests succeed.
 
 setlocal
 for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath`) do set VSDIR=%%i

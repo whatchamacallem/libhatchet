@@ -5,6 +5,8 @@
 #include "../include/hx/hxradix_sort.hpp"
 #include "../include/hx/hxsort.hpp"
 
+HX_NS_BEGIN_
+
 // An unsigned integer used for the histogram. uint32_t or size_t would be a
 // reasonable choice here.
 using hxhistogram_t = uint32_t;
@@ -140,3 +142,5 @@ hxattr_hot void hxradix_sort_void11(hxradix_sort_key_void* begin, hxradix_sort_k
 	hxfree(histograms);
 	hxfree(buf1);
 }
+
+HX_NS_END_

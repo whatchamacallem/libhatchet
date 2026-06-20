@@ -5,6 +5,8 @@
 #include <hx/hxutility.h>
 #include <hx/hxtest.hpp>
 
+HX_NS_USE
+
 // Using ASSERT* instead of EXPECT* in this file adds coverage for those
 // macros. Memory corruption sounds fatal, so that seems appropriate.
 

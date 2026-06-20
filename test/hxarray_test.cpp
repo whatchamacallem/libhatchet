@@ -12,6 +12,8 @@
 #include <utility>
 #endif
 
+HX_NS_USE
+
 hxattr_noinline static void hxtest_gdb_break_hxarray(void) {}
 
 namespace {
@@ -577,7 +579,7 @@ TEST(hxarray_test, find_returns_first_match) {
 #endif
 }
 
-TEST(hxarray_test, erase_if) {
+TEST(hxarray_test, erase_if_unordered) {
 	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
 	hxarray<int, 5> objs { 1, 2, 3, 4, 5 };
 
@@ -586,7 +588,7 @@ TEST(hxarray_test, erase_if) {
 		++remove_calls;
 		return (value & 1) == 0;
 	};
-	EXPECT_EQ(objs.erase_if(remove_even), 2u);
+	EXPECT_EQ(objs.erase_if_unordered(remove_even), 2u);
 	EXPECT_EQ(remove_calls, 5);
 
 	static const int expected[] = { 1, 5, 3 };
@@ -594,7 +596,7 @@ TEST(hxarray_test, erase_if) {
 		EXPECT_EQ(objs[i], expected[i]);
 	}
 
-	EXPECT_EQ(objs.erase_if([](int x) { return x == 1; }), 1u);
+	EXPECT_EQ(objs.erase_if_unordered([](int x) { return x == 1; }), 1u);
 	EXPECT_EQ(objs.size(), 2u);
 
 	objs.clear();
@@ -602,7 +604,7 @@ TEST(hxarray_test, erase_if) {
 		hxassertmsg(0, "internal error");
 		return false;
 	};
-	EXPECT_EQ(objs.erase_if(empty_predicate), 0u);
+	EXPECT_EQ(objs.erase_if_unordered(empty_predicate), 0u);
 }
 
 TEST_F(hxarray_test_f, resizing) {

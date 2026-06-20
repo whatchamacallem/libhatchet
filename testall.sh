@@ -71,22 +71,23 @@ find . -type f \( -name "*.hpp" -o -name "*.cpp" -o -name "*.h" -o -name "*.c" -
   fi
 done
 
+PS4='\e[38;5;208m[${SECONDS}s] ${BASH_SOURCE}:${LINENO}: \e[0m'
 set -o xtrace
 
 # Delete files matching .gitignore and reset ccache.
 ./clean.sh
 
-time ./debugbuild.sh --run
-time ./testcmake.sh
-time ./testcoverage.sh --headless
-time ./testerrorhandling.sh
-time ./testexample.sh
-time ./testmatrix.sh
-time ./teststrip.sh
-time ./testwasm.sh --headless
-time doxygen
+./debugbuild.sh --run
+./testcmake.sh
+./testcoverage.sh --headless
+./testerrorhandling.sh
+./testexample.sh
+./testmatrix.sh
+./teststrip.sh
+./testwasm.sh --headless
+doxygen
 
-{ set +o xtrace; } 2> /dev/null
 ./clean.sh
 
+{ set +o xtrace; } 2> /dev/null
 echo "testall.sh: All test scripts passed."

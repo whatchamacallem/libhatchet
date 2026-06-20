@@ -17,6 +17,8 @@
 #include "hxtask.hpp"
 #include "hxthread.hpp"
 
+HX_NS_BEGIN_
+
 /// `hxtask_queue` - Provides a priority queue of tasks and a worker thread
 /// pool. Implements single-threaded task queuing when `HX_USE_THREADS=0`. For
 /// DAG dependency tracking see `<hx/hxtask_dag_node.hpp>`.
@@ -89,9 +91,9 @@ public:
 
 	/// Locks the queue and calls `fn` on each task. Removes queued tasks for
 	/// which `fn` evaluates true. Does not call `on_cancel` on each. The
-	/// `record_t&` passed to `erase_if` may be modified and the tasks will be
-	/// re-prioritized according to their new priorities.
-	/// - `fn` : Predicate accepting a `record_t&`.
+	/// `record_t&` passed to `erase_if` may be modified and the tasks
+	/// will be re-prioritized according to their new priorities. - `fn` :
+	/// Predicate accepting a `record_t&`.
 	template<typename callable_t_>
 	size_t erase_if(callable_t_&& fn_);
 
@@ -127,7 +129,6 @@ public:
 private:
 	hxtask_queue(const hxtask_queue&) = delete;
 	void operator=(const hxtask_queue&) = delete;
-	template<size_t max_successors_> friend class hxtask_dag_node;
 
 	hxarray<record_t> m_tasks_;
 
@@ -136,6 +137,7 @@ private:
 
 	friend class hxtask_wait_for_tasks_;
 	friend class hxtask_wait_for_completion_;
+	template<size_t> friend class hxtask_dag_node;
 
 	enum thread_mode_t_ : uint8_t {
 		thread_mode_pool_,
@@ -163,3 +165,5 @@ private:
 };
 
 #include "detail/hxtask_queue.inl"
+
+HX_NS_END_

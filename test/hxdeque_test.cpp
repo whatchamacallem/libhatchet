@@ -5,6 +5,8 @@
 #include <hx/hxdeque.hpp>
 #include <hx/hxtest.hpp>
 
+HX_NS_USE
+
 hxattr_noinline static void hxtest_gdb_break_hxdeque(void) {}
 
 namespace {

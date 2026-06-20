@@ -8,6 +8,8 @@
 #include <hx/hxarray.hpp>
 #include <hx/hxtest.hpp>
 
+HX_NS_USE
+
 class hxradix_sort_test_f :
 	public testing::Test
 {
