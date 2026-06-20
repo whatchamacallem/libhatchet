@@ -70,9 +70,7 @@ public:
 	};
 
 	/// Default-constructs as a closed file.
-	hxfile(void) {
-		::memset(static_cast<void*>(this), 0x00, sizeof *this);
-	}
+	hxfile(void);
 
 	/// Constructs and opens a file with a formatted filename. Uses a
 	/// non-standard argument order.
@@ -81,10 +79,10 @@ public:
 	/// - `...` : Additional arguments matching the `filename` format specifiers.
 	hxfile(uint8_t mode_, const char* filename_, ...) hxattr_printf(3, 4);
 
-	/// Constructs the file object with an unowned implementation object and a
-	/// specific mode. Performs no checks. Use `hxin`, `hxout`, `hxerr`, and
-	/// `hxdev_null` instead.
-	hxfile(void* file_, uint8_t mode_);
+	/// Constructs the file object with an unowned implementation-defined handle
+	/// and a specific mode. Performs no checks. Use `hxin`, `hxout`, `hxerr`,
+	/// and `hxdev_null` instead.
+	hxfile(intptr_t file_, uint8_t mode_);
 
 	/// Disallow usage where the filename comes first, like with `fopen`.
 	hxfile(const char* file_, uint8_t mode_=0) = delete;
@@ -101,7 +99,7 @@ public:
 
 	/// Checks if the file is open, `EOF` has not been reached, and no error has
 	/// been encountered. See usage example in the class documentation.
-	operator bool(void) const { return (m_file_pimpl_ != hxnull) && !m_fail_; }
+	operator bool(void) const;
 
 	/// Opens a file with the specified mode and formatted filename.
 	/// - `mode` : Combination of `open_mode` flags describing how to open the file.
@@ -113,7 +111,7 @@ public:
 	void close(void);
 
 	/// Checks if the file is open.
-	hxattr_nodiscard bool is_open(void) const { return m_file_pimpl_ != hxnull; }
+	hxattr_nodiscard bool is_open(void) const;
 
 	/// Checks if an error has been encountered, EOF set or `set_fail` called.
 	hxattr_nodiscard bool fail(void) const { return m_fail_; }
@@ -238,9 +236,9 @@ private:
 	// arguments.
 	bool openv_(uint8_t mode_, const char* format_, va_list args_);
 
-	void* m_file_pimpl_;   // FILE* file pointer.
-	uint8_t m_open_mode_;  // Current open_mode flags.
-	bool m_owns_;  		   // Indicates if the FILE* is owned.
-	bool m_fail_; 		   // Indicates EOF, file errors and user errors.
-	bool m_eof_;  		   // Indicates EOF.
+	intptr_t m_file_pimpl_; // FILE* file pointer.
+	uint8_t m_open_mode_;   // Current open_mode flags.
+	bool m_owns_;  		    // Indicates if the FILE* is owned.
+	bool m_fail_; 		    // Indicates EOF, file errors and user errors.
+	bool m_eof_;  		    // Indicates EOF.
 };

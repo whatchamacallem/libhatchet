@@ -33,11 +33,11 @@
 
 /// `int LIBHATCHET_VER` - One digit major, and two digit minor and patch
 /// versions. Odd numbered minor versions are development branches.
-#define LIBHATCHET_VER 12403
+#define LIBHATCHET_VER 12601
 
 /// `LIBHATCHET_TAG` - Major, minor and patch version tag name. Odd numbered
 /// minor versions are development branches and their tags end in `-dev`.
-#define LIBHATCHET_TAG "v1.24.3"
+#define LIBHATCHET_TAG "v1.26.1"
 
 #if !defined HX_HARDENING_MODE
 #if defined NDEBUG

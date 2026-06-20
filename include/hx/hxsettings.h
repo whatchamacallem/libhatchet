@@ -206,6 +206,12 @@ extern "C" {
 // ----------------------------------------------------------------------------
 // Target independent.
 
+/// `HX_KIB` - A KiB is 1024 bytes.
+#define HX_KIB (1 << 10)
+
+/// `HX_MIB` - A MiB is 1,048,576 bytes.
+#define HX_MIB (1 << 20)
+
 /// \cond HIDDEN
 // HX_APPEND_COUNTER2_ - Used to generate unique identifiers. This is weird
 // because the ## operator happens before macro arg evaluation and both
@@ -222,7 +228,7 @@ extern "C" {
 #if !defined HX_MAX_LINE
 /// `HX_MAX_LINE` - Set to 512. Maximum length for formatted messages printed
 /// with this platform. Stack space needs to be available for it.
-#define HX_MAX_LINE 512
+#define HX_MAX_LINE (2 * HX_KIB)
 #endif
 
 #if !defined HX_MEMORY_MANAGER_DISABLE
@@ -233,12 +239,6 @@ extern "C" {
 /// - `1` : remove code entirely
 #define HX_MEMORY_MANAGER_DISABLE 0
 #endif
-
-/// `HX_KIB` - A KiB is 1024 bytes.
-#define HX_KIB (1u << 10)
-
-/// `HX_MIB` - A MiB is 1,048,576 bytes.
-#define HX_MIB (1u << 20)
 
 #if !defined HX_MEMORY_BUDGET_PERMANENT
 /// `HX_MEMORY_BUDGET_PERMANENT` - Pool sizes. Set to 5 KiB if not defined.
@@ -266,6 +266,11 @@ extern "C" {
 #if !defined HX_USE_GOOGLE_TEST
 /// `HX_USE_GOOGLE_TEST` - In case you need to use Google Test. Defaults to `0`.
 #define HX_USE_GOOGLE_TEST 0
+#endif
+
+#if !defined HX_USE_POSIX_FILE_IO
+/// `HX_USE_POSIX_FILE_IO` - Have hxfile use POSIX I/O instead of C file I/O.
+#define HX_USE_POSIX_FILE_IO 0
 #endif
 
 #if !defined HX_TEST_ERROR_HANDLING

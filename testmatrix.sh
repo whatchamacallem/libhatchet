@@ -40,7 +40,7 @@ ERRORS="-Wall -Wextra -pedantic-errors -Werror -Wfatal-errors -Wcast-qual \
 	-Wdisabled-optimization -Wshadow -Wundef -Wconversion -Wdate-time \
 	-Wmissing-declarations"
 
-FLAGS="-ffast-math -ggdb3 -D_FORTIFY_SOURCE=3"
+FLAGS="-DHX_USE_POSIX_FILE_IO=1 -ffast-math -ggdb3 -D_FORTIFY_SOURCE=3"
 
 SANITIZE_UNDEF="-fsanitize=undefined,address"
 SANITIZE_THREAD="-fsanitize=thread"
