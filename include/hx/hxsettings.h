@@ -51,7 +51,12 @@ extern "C" {
 /// and `0` is for no threading.
 #define HX_USE_THREADS 11
 
-/// `HX_USE_LIBCXX`: 1 - Set to 0 when libstdc++/libc++ are not present.
+/// `HX_USE_LIBCXX`: Indicates whether libstdc++/libc++ are present. Set
+/// `-DHX_USE_LIBCXX=0` to signal the C++ standard library is not in use. The
+/// C++ standard library is not detected automatically because that depends on
+/// header include order.
+#define HX_USE_LIBCXX 1
+
 /// Indicates whether the implementation is incompatible with the standard C++
 /// library and may not have a complete C library or an operating system.
 #define HX_USE_LIBCXX 1
@@ -159,11 +164,11 @@ extern "C" {
 #endif
 #endif
 
-#if defined __GLIBCXX__ || defined _LIBCPP_VERSION
+// Set HX_USE_LIBCXX to 0 to signal the C++ standard library is not in use. The
+// C++ standard library is not detected automatically because that depends on
+// header include order.
+#if !defined HX_USE_LIBCXX
 #define HX_USE_LIBCXX 1
-#else
-// Always true in C.
-#define HX_USE_LIBCXX 0
 #endif
 
 #if !defined HX_USE_SIGTRAP && defined __has_builtin && __has_builtin(__builtin_debugtrap)
@@ -183,7 +188,7 @@ extern "C" {
 	__attribute__((returns_nonnull)) __attribute__((warn_unused_result))
 #endif
 
-#if defined(__clang__)
+#if defined __clang__
 #define hxattr_assume(condition_) __builtin_assume(condition_)
 #else
 // The solution for gcc may have side effects. Use with caution.
@@ -230,9 +235,9 @@ extern "C" {
 #endif
 
 #if !defined HX_USE_MEMORY_MANAGER
-/// `HX_USE_MEMORY_MANAGER` - Disables memory management for debugging and for
-/// platforms like wasm where extra system allocations are probably cheaper than
-/// code size.
+/// `HX_USE_MEMORY_MANAGER` - Used to disables memory management for debugging
+/// and for platforms like wasm where extra system allocations are probably
+/// cheaper than code size.
 /// - `0` : normal target operation
 /// - `1` : remove code entirely
 #define HX_USE_MEMORY_MANAGER 1
@@ -245,7 +250,7 @@ extern "C" {
 #define HX_MIB (1 << 20)
 
 #if !defined HX_MAX_LINE
-/// `HX_MAX_LINE` - Set to 512. Maximum length for formatted messages printed
+/// `HX_MAX_LINE` - Set to 2KiB. Maximum length for formatted messages printed
 /// with this platform. Stack space needs to be available for it.
 #define HX_MAX_LINE (2 * HX_KIB)
 #endif

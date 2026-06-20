@@ -3,10 +3,13 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
+/// \file hxbitset - A fixed-size bitset stored as an array of `size_t` words
+/// with no heap allocation.
+
 #include "libhatchet.h"
 
-/// A fixed-size bitset stored as an array of `size_t` words with no heap
-/// allocation.
+/// hxbitset - A fixed-size bitset stored as an array of `size_t` words with no
+/// heap allocation.
 /// - `bit_count` : The number of bits in the `hxbitset`. Must be greater than zero. Also known as the popcount.
 template<size_t bit_count_>
 class hxbitset {
@@ -57,9 +60,8 @@ public:
 	/// - `x` : The `hxbitset` to compare with.
 	hxattr_nodiscard hxconstexpr bool operator==(const hxbitset& x_) const;
 
-#if HX_CPLUSPLUS < 202002L
-	/// Returns `true` if any bits differ from those of `x`. Only defined when
-	/// `HX_CPLUSPLUS < 202002L`.
+#if HX_CPLUSPLUS < 202002L // C++20 defaults != from ==.
+	/// Returns `true` if any bits differ from those of `x`.
 	/// - `x` : The `hxbitset` to compare with.
 	hxattr_nodiscard bool operator!=(const hxbitset& x_) const { return !(*this == x_); }
 #endif

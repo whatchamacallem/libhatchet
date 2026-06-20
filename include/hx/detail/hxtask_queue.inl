@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
+static_assert(LIBHATCHET_VER, "Internal. Do not include this file directly.");
+
 template<typename callable_t_>
 bool hxtask_queue::all_of(callable_t_&& fn_) const {
 	hxtask_queue_lock_;

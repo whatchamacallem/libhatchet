@@ -3,9 +3,11 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
+/// \file - Implements or includes std::initializer_list depending on HX_USE_LIBCXX.
+
 #include "libhatchet.h"
 
-#if HX_USE_LIBCXX
+#if (HX_USE_LIBCXX)
 #include <initializer_list>
 #else // !HX_USE_LIBCXX
 

@@ -4,11 +4,7 @@
 // This file is licensed under the MIT license found in the LICENSE.md file.
 // hxconsole inline header and internals. See hxconsole.hpp.
 
-#include "../hxutility.h"
-
-#include <limits.h>
-
-#if HX_CPLUSPLUS >= 202002L
+static_assert(LIBHATCHET_VER, "Internal. Do not include this file directly.");
 
 namespace hxdetail_ {
 
@@ -340,5 +336,3 @@ private:
 
 } // hxdetail_
 using namespace hxdetail_;
-
-#endif // HX_CPLUSPLUS >= 202002L

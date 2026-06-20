@@ -82,7 +82,7 @@ const hxsystem_allocator_scope temp(hxsystem_allocator_temporary_stack);
 	hxfree(p);
 }
 
-#if HX_USE_MEMORY_MANAGER
+#if (HX_USE_MEMORY_MANAGER)
 
 // This test case documents a contract between the system allocators and the
 // rest of the program.

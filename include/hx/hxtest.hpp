@@ -78,11 +78,11 @@
 ///
 /// See: https://google.github.io/googletest/reference/assertions.html
 
-// Used to resolve `HX_USE_GOOGLE_TEST`.
-#include "libhatchet.h"
+#include "hxsort.hpp"
+#include "hxfile.hpp"
 
 // HX_USE_GOOGLE_TEST - Enable this to use Google Test instead of hxtest.
-#if HX_USE_GOOGLE_TEST
+#if (HX_USE_GOOGLE_TEST)
 #include <gtest/gtest.h>
 #else // !HX_USE_GOOGLE_TEST
 #include "detail/hxtest_detail.hpp"

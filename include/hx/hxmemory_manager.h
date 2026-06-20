@@ -3,19 +3,21 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file hx/hxmemory_manager.h Memory Manager C API. Memory allocators are
+/// \file hx/hxmemory_manager.h Memory Manager C/C++ API. Memory allocators are
 /// selected using an ID. These are the large system-wide allocators, not the
-/// per-container `hxallocator` which allocates from here.
+/// per-container `hxallocator` which allocates from here. A complex streaming
+/// design would require this code to be modified to add more instances of the
+/// temporary allocators than the single one provided here. 
 ///
 /// General purpose memory allocators are inefficient and unsafe to use. The
 /// problem is that long running code requires a lot of extra space to make sure
 /// it doesn't fragment and unexpectedly fail to make a large allocation.
-/// (Hardware support for virtual memory can be used to defrag the program heap,
-/// but that requires processor support and system call overhead.) For code that
-/// uses a lot of small intermediate allocations 1/3 of your memory and 1/3 or
-/// your processor time could get eaten by the program heap allocator. The
-/// `hxsystem_allocator_temporary_stack` is provided as a replacement in that
-/// case.
+/// (Hardware support for virtual memory can help defrag the program heap, but
+/// that requires processor support and even more expensive system call
+/// overhead.) For code that uses a lot of temporary intermediate allocations
+/// 1/3 of your memory and 1/3 or your processor time could get eaten by the
+/// heap allocator. The `hxsystem_allocator_temporary_stack` is provided as a
+/// replacement for that use case.
 ///
 /// There are also a category of allocations that are expected to last for the
 /// lifetime of the application. They can be allocated with 0 overhead using
@@ -49,7 +51,7 @@
 #endif
 
 #if HX_CPLUSPLUS
-#if HX_USE_LIBCXX
+#if (HX_USE_LIBCXX)
 #include <new>
 #endif
 
@@ -123,7 +125,7 @@ char* hxstring_duplicate(const char* string_,
 
 // Memory Manager C++ API
 
-#if !HX_USE_LIBCXX
+#if !(HX_USE_LIBCXX)
 // Declare placement new. These are not built into the compiler.
 inline void* operator new(size_t, void* ptr_) noexcept { return ptr_; }
 inline void* operator new[](size_t, void* ptr_) noexcept { return ptr_; }
@@ -258,7 +260,7 @@ inline char* hxstring_duplicate(const char* s_) {
 	return hxstring_duplicate(s_, hxsystem_allocator_current);
 }
 
-#if HX_USE_LIBCXX
+#if (HX_USE_LIBCXX)
 /// `hxconsteval_delete` - A `constexpr`-compatible deleter that uses `::delete`.
 /// Required for `consteval` contexts where `hxdefault_delete` cannot be used
 /// because `hxdelete` calls `hxfree` which is not `constexpr`.

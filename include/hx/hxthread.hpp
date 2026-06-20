@@ -8,7 +8,6 @@
 /// `hxcondition_variable`, and `hxthread`. For atomics consider
 /// `<stdatomic.h>`.
 
-#include "libhatchet.h"
 #include "hxutility.h"
 
 static_assert((HX_USE_THREADS) == 0 || (HX_USE_THREADS) == 1 || (HX_USE_THREADS) == 11,
@@ -16,7 +15,7 @@ static_assert((HX_USE_THREADS) == 0 || (HX_USE_THREADS) == 1 || (HX_USE_THREADS)
 
 #if (HX_USE_THREADS) == 11
 #include <threads.h>
-#elif HX_USE_THREADS
+#elif (HX_USE_THREADS)
 #include <pthread.h>
 #endif
 
@@ -32,7 +31,7 @@ public:
 #if (HX_USE_THREADS) == 11
 		const int code_ = ::tss_create(&m_key_, destroy_local_);
 		hxassert_always(code_ == thrd_success, "tss_create %d", code_); (void)code_;
-#elif HX_USE_THREADS
+#elif (HX_USE_THREADS)
 		const int code_ = ::pthread_key_create(&m_key_, destroy_local_);
 		hxassert_always(code_ == 0, "pthread_key_create %s", ::strerror(code_)); (void)code_;
 #endif
@@ -42,7 +41,7 @@ public:
 	~hxthread_local() {
 #if (HX_USE_THREADS) == 11
 		::tss_delete(m_key_);
-#elif HX_USE_THREADS
+#elif (HX_USE_THREADS)
 		::pthread_key_delete(m_key_);
 #endif
 	}
@@ -62,7 +61,7 @@ public:
 private:
 	// This is a form of "mutable when const." A thread should not
 	// know or care when storage is allocated for it.
-#if HX_USE_THREADS
+#if (HX_USE_THREADS)
 	T_* get_local_() const {
 #if (HX_USE_THREADS) == 11
 		T_* local_ = static_cast<T_*>(::tss_get(m_key_));
@@ -99,7 +98,7 @@ private:
 
 #if (HX_USE_THREADS) == 11
 	::tss_t m_key_;
-#elif HX_USE_THREADS
+#elif (HX_USE_THREADS)
 	::pthread_key_t m_key_;
 #endif
 	T_ m_default_value_;
@@ -111,7 +110,7 @@ inline size_t hxthread_id() {
 #if (HX_USE_THREADS) == 11
     static hxthread_local<size_t> tid_;
     return reinterpret_cast<uintptr_t>(&tid_);
-#elif HX_USE_THREADS
+#elif (HX_USE_THREADS)
 	return static_cast<size_t>(::pthread_self());
 #else
 	return 0; // Single threaded.
@@ -120,7 +119,7 @@ inline size_t hxthread_id() {
 
 // The remaining classes are only available when threading is enabled. Emulating
 // pthreads is a little too nutty because it has a range of valid implementations.
-#if HX_USE_THREADS
+#if (HX_USE_THREADS)
 
 /// `hxmutex` - `std::mutex` style wrapper for the configured thread backend.
 /// Asserts on unexpected failure by the native API. Currently default behavior

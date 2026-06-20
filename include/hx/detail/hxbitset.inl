@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
+static_assert(LIBHATCHET_VER, "Internal. Do not include this file directly.");
+
 template<size_t bit_count_>
 inline hxconstexpr hxbitset<bit_count_>::hxbitset(size_t val_) {
 	static_assert(bit_count_ == s_bits_per_word_,

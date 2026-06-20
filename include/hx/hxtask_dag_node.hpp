@@ -10,7 +10,7 @@
 
 // This functionality is only available when !HX_USE_THREADS || HX_CPLUSPLUS >=
 // 202302L.
-#if HX_USE_THREADS
+#if (HX_USE_THREADS)
 #if HX_CPLUSPLUS < 202302L
 #error "<stdatomic.h> requires C++23."
 #endif
@@ -52,7 +52,8 @@ public:
 	void on_cancel(hxtask_queue* q_) override { this->dag_node_completed_(q_, true); }
 
 private:
-	struct edge_t_ {
+	class edge_t_ {
+	public:
 		hxtask_dag_node* node_;
 		int priority_;
 	};
@@ -62,7 +63,7 @@ private:
 	edge_t_ m_successors_[max_successors_];
 	size_t  m_successor_count_;
 
-#if HX_USE_THREADS
+#if (HX_USE_THREADS)
 	atomic_int  m_pending_;
 	atomic_bool m_is_cancelled_;
 #else

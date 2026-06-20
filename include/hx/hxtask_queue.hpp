@@ -3,7 +3,9 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-#include "libhatchet.h"
+/// \file `hxtask_queue` - Provides a priority queue of tasks and a worker
+/// thread pool.
+
 #include "hxarray.hpp"
 #include "hxtask.hpp"
 #include "hxthread.hpp"
@@ -121,7 +123,7 @@ private:
 
 	hxarray<record_t> m_tasks_;
 
-#if HX_USE_THREADS
+#if (HX_USE_THREADS)
 #define hxtask_queue_lock_ const hxunique_lock lock_(m_mutex_)
 
 	friend class hxtask_wait_for_tasks_;

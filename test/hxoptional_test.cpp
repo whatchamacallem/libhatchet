@@ -27,12 +27,11 @@ struct hxtest_optional_counted_t {
 	bool operator==(const hxtest_optional_counted_t& o) const {
 		return value == o.value;
 	}
+#if HX_CPLUSPLUS < 202002L // C++20 defaults != from ==.
 	bool operator!=(const hxtest_optional_counted_t& o) const {
 		return value != o.value;
 	}
-	bool operator<(const hxtest_optional_counted_t& o) const {
-		return value < o.value;
-	}
+#endif
 	int value;
 };
 
@@ -252,40 +251,6 @@ TEST(hxoptional_test, eq_nullopt_and_value) {
 	EXPECT_TRUE(empty != 0);
 }
 
-// operator< ordering covers all four engaged/disengaged combinations and equal.
-TEST(hxoptional_test, ordering) {
-	const hxoptional<int> empty = hxtest_make_int(false);
-	const hxoptional<int> zero = hxtest_make_int(true, 0);
-	const hxoptional<int> one = hxtest_make_int(true, 1);
-	const hxoptional<int> two = hxtest_make_int(true, 2);
-	// Both disengaged: not less, equal.
-	EXPECT_FALSE(empty < empty);
-	EXPECT_TRUE(empty <= empty);
-	EXPECT_FALSE(empty > empty);
-	EXPECT_TRUE(empty >= empty);
-	// Disengaged < engaged.
-	EXPECT_TRUE(empty < zero);
-	EXPECT_FALSE(zero < empty);
-	EXPECT_TRUE(empty <= zero);
-	EXPECT_FALSE(empty >= zero);
-	EXPECT_FALSE(empty > zero);
-	EXPECT_TRUE(zero > empty);
-	// Both engaged, less.
-	EXPECT_TRUE(one < two);
-	EXPECT_FALSE(two < one);
-	EXPECT_TRUE(one <= two);
-	EXPECT_FALSE(two <= one);
-	EXPECT_FALSE(one > two);
-	EXPECT_TRUE(two > one);
-	EXPECT_FALSE(one >= two);
-	EXPECT_TRUE(two >= one);
-	// Both engaged, equal.
-	EXPECT_FALSE(one < one);
-	EXPECT_TRUE(one <= one);
-	EXPECT_FALSE(one > one);
-	EXPECT_TRUE(one >= one);
-}
-
 // reset on an engaged optional destroys the value and disengages.
 TEST(hxoptional_test, reset_engaged_disengages) {
 	hxoptional<hxtest_optional_counted_t> o = hxtest_make_counted(true, 1);
@@ -333,6 +298,38 @@ TEST(hxoptional_test, value_or) {
 	const hxoptional<int> empty = hxtest_make_int(false);
 	EXPECT_EQ(engaged.value_or(99), 3);
 	EXPECT_EQ(empty.value_or(7), 7);
+}
+
+// Converting copy construction from a disengaged optional is disengaged.
+TEST(hxoptional_test, converting_copy_construction_from_disengaged) {
+	const hxoptional<int> a = hxtest_make_int(false);
+	const hxoptional<long> b(a);
+	EXPECT_FALSE((bool)b);
+}
+
+// Converting copy construction from an engaged optional converts the value.
+TEST(hxoptional_test, converting_copy_construction_from_engaged) {
+	const hxoptional<int> a = hxtest_make_int(true, 42);
+	const hxoptional<long> b(a);
+	EXPECT_TRUE((bool)b);
+	EXPECT_EQ(*b, 42);
+}
+
+// Converting move construction from a disengaged optional is disengaged.
+TEST(hxoptional_test, converting_move_construction_from_disengaged) {
+	hxoptional<int> a = hxtest_make_int(false);
+	const hxoptional<long> b(hxmove(a));
+	EXPECT_FALSE((bool)b);
+}
+
+// Converting move construction from an engaged optional converts the value and
+// disengages the source.
+TEST(hxoptional_test, converting_move_construction_from_engaged) {
+	hxoptional<int> a = hxtest_make_int(true, 7);
+	const hxoptional<long> b(hxmove(a));
+	EXPECT_TRUE((bool)b);
+	EXPECT_EQ(*b, 7);
+	EXPECT_FALSE((bool)a);
 }
 
 // emplace on disengaged engages; on engaged destroys old and constructs new;

@@ -3,6 +3,9 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
+/// \file `hxfile` - Single-ownership C++ RAII abstraction for file I/O. Both
+/// POSIX and libc implementations are available.
+
 #include "libhatchet.h"
 
 class hxfile;
@@ -23,8 +26,8 @@ extern hxfile hxdev_null;
 /// Non-empty POSIX text files must end with `\n`.
 #define hxendl "\n"
 
-/// `hxfile` - Single-ownership C++ RAII abstraction for C-style `FILE*` I/O.
-/// Provides a mixture of unformatted binary stream operations and formatted
+/// `hxfile` - Single-ownership C++ RAII abstraction for file I/O. Provides a
+/// mixture of unformatted binary stream operations and formatted
 /// `printf`/`scanf` style I/O, along with optional error handling. `gcc` is
 /// useful for validating `printf`/`scanf` style arguments. However,
 /// memory-imaged data structures are still recommended. `hxfile` uses binary

@@ -10,7 +10,7 @@
 
 #include <hx/hxtest.hpp>
 
-#if HX_USE_PROFILER
+#if (HX_USE_PROFILER)
 
 namespace {
 

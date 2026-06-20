@@ -5,7 +5,7 @@
 #include <hx/hxthread.hpp>
 #include <hx/hxtest.hpp>
 
-#if HX_USE_THREADS
+#if (HX_USE_THREADS)
 
 namespace {
 

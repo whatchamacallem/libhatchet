@@ -3,10 +3,7 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-#include "../hxfile.hpp"
-#include "../hxalgorithm.hpp"
-#include "../hxsort.hpp"
-
+static_assert(LIBHATCHET_VER, "Internal. Do not include this file directly.");
 static_assert(!HX_USE_GOOGLE_TEST, "Internal. Do not include this file directly.");
 
 namespace hxdetail_ {

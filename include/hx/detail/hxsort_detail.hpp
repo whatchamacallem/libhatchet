@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-#include "../hxkey.hpp"
+static_assert(LIBHATCHET_VER, "Internal. Do not include this file directly.");
 
 template<typename iterator_t_, typename less_t_> hxattr_hot hxconstexpr
 void hxinsertion_sort(iterator_t_ begin_, iterator_t_ end_, const less_t_& less_);
@@ -93,7 +93,8 @@ void hxpartition_sort_(hxrestrict_t<iterator_t_> begin_, iterator_t_ end_, const
 	iterator_t_ p4_ = p3_ + seventh_;
 
 	// This is a Bose-Nelson sorting network for 5 elements. It should work well
-	// with a processor that has branch prediction.
+	// with a processor that has branch prediction. (This intentionally swaps
+	// pointers instead of the potentially heavy values pointed at.)
 	if(less_(*p3_, *p0_)) { hxswap(p3_, p0_); }
 	if(less_(*p4_, *p1_)) { hxswap(p4_, p1_); }
 	if(less_(*p2_, *p0_)) { hxswap(p2_, p0_); }

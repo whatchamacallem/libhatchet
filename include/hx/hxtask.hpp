@@ -3,6 +3,9 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
+/// \file `hxtask` - Pure virtual base class for operations to be performed on a
+/// different thread or at a later time.
+
 #include "libhatchet.h"
 
 class hxtask_queue;

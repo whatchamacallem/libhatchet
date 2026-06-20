@@ -6,6 +6,8 @@
 /// \file hx/hxsort.hpp Sorting utilities: `hxbinary_search`, `hxinsertion_sort`,
 /// `hxheapsort`, and `hxsort`. For scalar key sorting see `hxradix_sort.hpp`.
 
+#include "hxkey.hpp"
+
 #include "detail/hxsort_detail.hpp"
 
 /// `hxbinary_search` - Performs a binary search in the range `[first, last)`.

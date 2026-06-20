@@ -13,7 +13,7 @@
 #define HX_USE_STD_ALIGNED_ALLOC (HX_CPLUSPLUS >= 201703L && (HX_HARDENING_MODE) != HX_HARDENING_MODE_DEBUG)
 #endif
 
-#if !HX_USE_LIBCXX
+#if !(HX_USE_LIBCXX)
 // Forward declare for C++11.
 hxattr_hot void operator delete(void* ptr, size_t) noexcept;
 hxattr_hot void operator delete[](void* ptr, size_t) noexcept;
@@ -65,11 +65,11 @@ hxattr_allocator(free) hxattr_hot hxattr_noexcept static void* hxmalloc_checked_
 }
 
 // HX_USE_MEMORY_MANAGER. See hxsettings.h.
-#if HX_USE_MEMORY_MANAGER
+#if (HX_USE_MEMORY_MANAGER)
 
 // All pathways are thread-safe by default. In theory locking could be removed
 // if threads avoided sharing allocators, but I do not want to scare anyone.
-#if HX_USE_THREADS
+#if (HX_USE_THREADS)
 static hxmutex s_hxmemory_manager_mutex;
 #define HX_MEMORY_MANAGER_LOCK_() const hxunique_lock memory_manager_lock_(s_hxmemory_manager_mutex)
 #else
@@ -155,7 +155,7 @@ public:
 	}
 
 	hxattr_hot void* on_alloc(size_t size, hxalignment_t alignment) override {
-#if HX_USE_STD_ALIGNED_ALLOC
+#if (HX_USE_STD_ALIGNED_ALLOC)
 		++m_allocation_count;
 
 		// Round up the size to be a multiple of the alignment so aligned_alloc
@@ -191,7 +191,7 @@ public:
 	}
 
 	hxattr_hot void on_free_non_virtual(void* ptr) {
-#if HX_USE_STD_ALIGNED_ALLOC
+#if (HX_USE_STD_ALIGNED_ALLOC)
 		--m_allocation_count;
 		::free(ptr);
 #else

@@ -3,10 +3,12 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
+static_assert(LIBHATCHET_VER, "Internal. Do not include this file directly.");
+
 template<typename T_>
 hxoptional<T_>::hxoptional(const hxoptional& other_) : m_engaged_(false) {
 	if (other_.m_engaged_) {
-		::new(static_cast<void*>(&m_storage_)) T_(*other_.as_ptr_());
+		::new(static_cast<void*>(&m_storage_)) T_(*reinterpret_cast<const T_*>(&other_.m_storage_));
 		m_engaged_ = true;
 	}
 }
@@ -14,7 +16,26 @@ hxoptional<T_>::hxoptional(const hxoptional& other_) : m_engaged_(false) {
 template<typename T_>
 hxoptional<T_>::hxoptional(hxoptional&& other_) : m_engaged_(false) {
 	if (other_.m_engaged_) {
-		::new(static_cast<void*>(&m_storage_)) T_(hxmove(*other_.as_ptr_()));
+		::new(static_cast<void*>(&m_storage_)) T_(hxmove(*reinterpret_cast<T_*>(&other_.m_storage_)));
+		m_engaged_ = true;
+		other_.reset();
+	}
+}
+
+template<typename T_>
+template<typename U_>
+hxoptional<T_>::hxoptional(const hxoptional<U_>& other_) : m_engaged_(false) {
+	if (other_.has_value()) {
+		::new(static_cast<void*>(&m_storage_)) T_(*other_);
+		m_engaged_ = true;
+	}
+}
+
+template<typename T_>
+template<typename U_>
+hxoptional<T_>::hxoptional(hxoptional<U_>&& other_) : m_engaged_(false) {
+	if (other_.has_value()) {
+		::new(static_cast<void*>(&m_storage_)) T_(hxmove(*other_));
 		m_engaged_ = true;
 		other_.reset();
 	}
@@ -34,7 +55,7 @@ hxoptional<T_>& hxoptional<T_>::operator=(const hxoptional& other_) {
 	}
 	reset();
 	if (other_.m_engaged_) {
-		::new(static_cast<void*>(&m_storage_)) T_(*other_.as_ptr_());
+		::new(static_cast<void*>(&m_storage_)) T_(*reinterpret_cast<const T_*>(&other_.m_storage_));
 		m_engaged_ = true;
 	}
 	return *this;
@@ -45,7 +66,7 @@ hxoptional<T_>& hxoptional<T_>::operator=(hxoptional&& other_) {
 	hxassertmsg(this != &other_, "self_assignment");
 	reset();
 	if (other_.m_engaged_) {
-		::new(static_cast<void*>(&m_storage_)) T_(hxmove(*other_.as_ptr_()));
+		::new(static_cast<void*>(&m_storage_)) T_(hxmove(*reinterpret_cast<T_*>(&other_.m_storage_)));
 		m_engaged_ = true;
 		other_.reset();
 	}
@@ -56,7 +77,7 @@ template<typename T_>
 template<typename U_>
 hxoptional<T_>& hxoptional<T_>::operator=(U_&& value_) {
 	if (m_engaged_) {
-		*as_ptr_() = hxforward<U_>(value_);
+		*reinterpret_cast<T_*>(&m_storage_) = hxforward<U_>(value_);
 	} else {
 		::new(static_cast<void*>(&m_storage_)) T_(hxforward<U_>(value_));
 		m_engaged_ = true;
@@ -65,23 +86,46 @@ hxoptional<T_>& hxoptional<T_>::operator=(U_&& value_) {
 }
 
 template<typename T_>
+T_& hxoptional<T_>::operator*(void) {
+	hxassertmsg(m_engaged_, "optional_disengaged"); return *reinterpret_cast<T_*>(&m_storage_);
+}
+
+template<typename T_>
+const T_& hxoptional<T_>::operator*(void) const {
+	hxassertmsg(m_engaged_, "optional_disengaged"); return *reinterpret_cast<const T_*>(&m_storage_);
+}
+
+template<typename T_>
+T_* hxoptional<T_>::operator->(void) {
+	hxassertmsg(m_engaged_, "optional_disengaged"); return reinterpret_cast<T_*>(&m_storage_);
+}
+
+template<typename T_>
+const T_* hxoptional<T_>::operator->(void) const {
+	hxassertmsg(m_engaged_, "optional_disengaged"); return reinterpret_cast<const T_*>(&m_storage_);
+}
+
+template<typename T_>
 bool hxoptional<T_>::operator==(const hxoptional& rhs_) const {
 	if (m_engaged_ != rhs_.m_engaged_) {
 		return false;
 	}
-	return !m_engaged_ || (*as_ptr_() == *rhs_.as_ptr_());
+	const T_& l_ = *reinterpret_cast<const T_*>(&m_storage_);
+	const T_& r_ = *reinterpret_cast<const T_*>(&rhs_.m_storage_);
+	return !m_engaged_ || (l_ == r_);
 }
 
 template<typename T_>
-bool hxoptional<T_>::operator<(const hxoptional& rhs_) const {
-	if (!rhs_.m_engaged_) {
-		return false;
-	}
-	if (!m_engaged_) {
-		return true;
-	}
-	return *as_ptr_() < *rhs_.as_ptr_();
+bool hxoptional<T_>::operator==(const T_& value_) const {
+	return m_engaged_ && (*reinterpret_cast<const T_*>(&m_storage_) == value_);
 }
+
+#if HX_CPLUSPLUS < 202002L // C++20 defaults != from ==.
+template<typename T_>
+bool hxoptional<T_>::operator!=(const T_& value_) const {
+	return !m_engaged_ || (*reinterpret_cast<const T_*>(&m_storage_) != value_);
+}
+#endif
 
 template<typename T_>
 template<typename... args_t_>
@@ -89,13 +133,13 @@ T_& hxoptional<T_>::emplace(args_t_&&... args_) {
 	reset();
 	::new(static_cast<void*>(&m_storage_)) T_(hxforward<args_t_>(args_)...);
 	m_engaged_ = true;
-	return *as_ptr_();
+	return *reinterpret_cast<T_*>(&m_storage_);
 }
 
 template<typename T_>
 void hxoptional<T_>::reset(void) {
 	if (m_engaged_) {
-		as_ptr_()->~T_();
+		reinterpret_cast<T_*>(&m_storage_)->~T_();
 		m_engaged_ = false;
 	}
 }
@@ -103,14 +147,29 @@ void hxoptional<T_>::reset(void) {
 template<typename T_>
 void hxoptional<T_>::swap(hxoptional& other_) {
 	if (m_engaged_ && other_.m_engaged_) {
-		hxswap(*as_ptr_(), *other_.as_ptr_());
+		hxswap(*reinterpret_cast<T_*>(&m_storage_), *reinterpret_cast<T_*>(&other_.m_storage_));
 	} else if (m_engaged_) {
-		::new(static_cast<void*>(&other_.m_storage_)) T_(hxmove(*as_ptr_()));
+		::new(static_cast<void*>(&other_.m_storage_)) T_(hxmove(*reinterpret_cast<T_*>(&m_storage_)));
 		other_.m_engaged_ = true;
 		reset();
 	} else if (other_.m_engaged_) {
-		::new(static_cast<void*>(&m_storage_)) T_(hxmove(*other_.as_ptr_()));
+		::new(static_cast<void*>(&m_storage_)) T_(hxmove(*reinterpret_cast<T_*>(&other_.m_storage_)));
 		m_engaged_ = true;
 		other_.reset();
 	}
+}
+
+template<typename T_>
+T_& hxoptional<T_>::value(void) {
+	hxassertmsg(m_engaged_, "optional_disengaged"); return *reinterpret_cast<T_*>(&m_storage_);
+}
+
+template<typename T_>
+const T_& hxoptional<T_>::value(void) const {
+	hxassertmsg(m_engaged_, "optional_disengaged"); return *reinterpret_cast<const T_*>(&m_storage_);
+}
+
+template<typename T_>
+T_ hxoptional<T_>::value_or(const T_& default_value_) const {
+	return m_engaged_ ? *reinterpret_cast<const T_*>(&m_storage_) : default_value_;
 }

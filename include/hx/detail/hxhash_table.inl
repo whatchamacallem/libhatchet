@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
+static_assert(LIBHATCHET_VER, "Internal. Do not include this file directly.");
+
 template<hxhash_table_concept_ node_t_, hxhash_t table_size_bits_, bool multi_t_, typename deleter_t_>
 inline const node_t_&
 hxhash_table<node_t_, table_size_bits_, multi_t_, deleter_t_>::const_iterator::operator*(void) const {
@@ -67,12 +69,14 @@ hxhash_table<node_t_, table_size_bits_, multi_t_, deleter_t_>::const_iterator::o
 	return m_current_node_ == x_.m_current_node_;
 }
 
+#if HX_CPLUSPLUS < 202002L // C++20 defaults != from ==.
 template<hxhash_table_concept_ node_t_, hxhash_t table_size_bits_, bool multi_t_, typename deleter_t_>
 inline bool
 hxhash_table<node_t_, table_size_bits_, multi_t_, deleter_t_>::const_iterator::operator!=(
 	const const_iterator& x_) const {
 	return m_current_node_ != x_.m_current_node_;
 }
+#endif
 
 template<hxhash_table_concept_ node_t_, hxhash_t table_size_bits_, bool multi_t_, typename deleter_t_>
 inline void

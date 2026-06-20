@@ -13,7 +13,6 @@
 /// for complex use cases because they are relatively easy to debug. See
 /// `hxkey_equal_t` and `hxkey_less_t` for generating default callables.
 
-#include "libhatchet.h"
 #include "hxutility.h"
 
 /// \cond HIDDEN
@@ -66,10 +65,11 @@ hxattr_nodiscard inline bool hxkey_equal(const hxcstring_& a_, const hxcstring_&
     return ::strcmp(a_, b_) == 0;
 }
 
-/// `hxkey_equal_t<T>` - A `constexpr` callable struct that invokes `hxkey_equal`.
+/// `hxkey_equal_t<T>` - A `constexpr` callable that invokes `hxkey_equal`.
 /// - `T` : The type to compare.
 template<typename T_>
-struct hxkey_equal_t {
+class hxkey_equal_t {
+public:
 	hxattr_nodiscard constexpr bool operator()(const hxremove_cvref_t<T_>& a_,
 			const hxremove_cvref_t<T_>& b_) const {
 		return hxkey_equal(a_, b_);
@@ -105,10 +105,11 @@ hxattr_nodiscard inline bool hxkey_less(const hxcstring_& a_, const hxcstring_& 
     return ::strcmp(a_, b_) < 0;
 }
 
-/// `hxkey_less_t<T>` - A `constexpr` callable struct that invokes `hxkey_less`.
+/// `hxkey_less_t<T>` - A `constexpr` callable that invokes `hxkey_less`.
 /// - `T` : The type to compare.
 template<typename T_>
-struct hxkey_less_t {
+class hxkey_less_t {
+public:
 	hxattr_nodiscard constexpr bool operator()(const hxremove_cvref_t<T_>& a_,
 			const hxremove_cvref_t<T_>& b_) const {
 		return hxkey_less(a_, b_);

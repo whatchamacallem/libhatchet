@@ -44,13 +44,11 @@ rm -rf ./build; mkdir ./build && cd ./build
 
 PIDS=""
 for FILE in ../src/*.c ../test/*.c; do
-	ccache clang $BUILD $ERRORS $FLAGS -I../include \
-		-std=c17 -pthread -c $FILE & PIDS="$PIDS $!"
+	ccache clang $BUILD $ERRORS $FLAGS -I../include -std=c17 -c $FILE & PIDS="$PIDS $!"
 done
 
 for FILE in ../src/*.cpp ../test/*.cpp; do
-	ccache clang++ $BUILD $ERRORS $FLAGS -I../include \
-		-std=c++23 -pthread -fno-exceptions -fno-rtti \
+	ccache clang++ $BUILD $ERRORS $FLAGS -I../include -std=c++23 -fno-exceptions -fno-rtti \
 		-c $FILE & PIDS="$PIDS $!"
 done
 

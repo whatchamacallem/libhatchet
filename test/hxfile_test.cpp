@@ -256,7 +256,8 @@ TEST(hxfile_test, print_max_line_boundary) {
 		hxfile f(hxfile::out, "hxfile_test_print_limit.txt");
 		EXPECT_TRUE(f.print("%s", str));
 		EXPECT_FALSE(f.fail());
-#if HX_USE_POSIX_FILE_IO
+		// TODO
+#if (HX_USE_POSIX_FILE_IO)
 		EXPECT_EQ(f.get_pos(), static_cast<size_t>(HX_MAX_LINE - 1));
 #else
 		EXPECT_EQ(f.get_pos(), static_cast<size_t>(HX_MAX_LINE));

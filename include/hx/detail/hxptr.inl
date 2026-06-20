@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
+static_assert(LIBHATCHET_VER, "Internal. Do not include this file directly.");
+
 template<typename T_, typename deleter_t_>
 hxconstexpr hxptr<T_, deleter_t_>::hxptr(hxptr&& other_) : m_ptr_(other_.m_ptr_) {
 	other_.m_ptr_ = hxnull;
@@ -52,20 +54,24 @@ hxconstexpr bool hxptr<T_, deleter_t_>::operator==(const hxptr& other_) const {
 	return m_ptr_ == other_.m_ptr_;
 }
 
+#if HX_CPLUSPLUS < 202002L // C++20 defaults != from ==.
 template<typename T_, typename deleter_t_>
 hxconstexpr bool hxptr<T_, deleter_t_>::operator!=(const hxptr& other_) const {
 	return m_ptr_ != other_.m_ptr_;
 }
+#endif
 
 template<typename T_, typename deleter_t_>
 hxconstexpr bool hxptr<T_, deleter_t_>::operator==(hxnullptr_t) const {
 	return m_ptr_ == hxnull;
 }
 
+#if HX_CPLUSPLUS < 202002L // C++20 defaults != from ==.
 template<typename T_, typename deleter_t_>
 hxconstexpr bool hxptr<T_, deleter_t_>::operator!=(hxnullptr_t) const {
 	return m_ptr_ != hxnull;
 }
+#endif
 
 template<typename T_, typename deleter_t_>
 hxconstexpr T_* hxptr<T_, deleter_t_>::release(void) {

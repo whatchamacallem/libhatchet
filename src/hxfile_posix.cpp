@@ -7,7 +7,7 @@
 
 #include "../include/hx/hxfile.hpp"
 
-#if HX_USE_POSIX_FILE_IO
+#if (HX_USE_POSIX_FILE_IO)
 
 // These are only dependencies of the POSIX implementation. This is to allow
 // easy reimplementation.

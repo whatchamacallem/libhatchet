@@ -18,7 +18,10 @@
 /// | `hxprofiler_log` | Logs captured samples to the system log. |
 /// | `hxprofiler_write_to_chrome_tracing` | Writes captured samples to Chrome tracing JSON. |
 
-#include "libhatchet.h"
+// These are always included so the build doesn't break when the profiler is
+// turned off.
+#include "hxarray.hpp"
+#include "hxthread.hpp"
 
 #if defined __wasm__
 // from "emscripten/emscripten.h"
@@ -37,7 +40,7 @@ extern "C" double emscripten_get_now(void);
 /// following include.
 using hxcycles_t = size_t;
 
-#if HX_USE_PROFILER
+#if (HX_USE_PROFILER)
 #include "detail/hxprofiler_detail.hpp"
 /// \cond HIDDEN
 #define HX_PROFILE_ONLY_(x_) x_

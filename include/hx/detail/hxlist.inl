@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
+static_assert(LIBHATCHET_VER, "Internal. Do not include this file directly.");
+
 template<typename node_t_, typename deleter_t_>
 inline hxconstexpr auto hxlist<node_t_, deleter_t_>::const_iterator::operator++(void)
 		-> const_iterator& {
@@ -48,11 +50,13 @@ inline hxconstexpr bool hxlist<node_t_, deleter_t_>::const_iterator::operator==(
 	return m_current_node_ == x_.m_current_node_;
 }
 
+#if HX_CPLUSPLUS < 202002L // C++20 defaults != from ==.
 template<typename node_t_, typename deleter_t_>
 inline hxconstexpr bool hxlist<node_t_, deleter_t_>::const_iterator::operator!=(
 		const const_iterator& x_) const {
 	return m_current_node_ != x_.m_current_node_;
 }
+#endif
 
 // iterator
 

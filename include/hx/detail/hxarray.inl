@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
+static_assert(LIBHATCHET_VER, "Internal. Do not include this file directly.");
+
 template<hxarray_concept_ T_, size_t capacity_>
 hxarray<T_, capacity_>::hxarray(void) : m_end_(this->data()) { }
 

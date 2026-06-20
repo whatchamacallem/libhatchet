@@ -4,7 +4,6 @@
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
 /// \file hx/hxptr.hpp A unique owning pointer.
-#include "libhatchet.h"
 #include "hxutility.h"
 
 /// `hxptr<T, deleter_t>` - A unique owning pointer. Owns a single dynamically
@@ -61,15 +60,19 @@ public:
 	/// - `other` : The `hxptr` to compare against.
 	hxattr_nodiscard hxconstexpr bool operator==(const hxptr& other_) const;
 
+#if HX_CPLUSPLUS < 202002L // C++20 defaults != from ==.
 	/// Returns `true` if this and `other` point to different objects.
 	/// - `other` : The `hxptr` to compare against.
 	hxattr_nodiscard hxconstexpr bool operator!=(const hxptr& other_) const;
+#endif
 
 	/// Returns `true` if the owned pointer is null.
 	hxattr_nodiscard hxconstexpr bool operator==(hxnullptr_t) const;
 
+#if HX_CPLUSPLUS < 202002L // C++20 defaults != from ==.
 	/// Returns `true` if the owned pointer is non-null.
 	hxattr_nodiscard hxconstexpr bool operator!=(hxnullptr_t) const;
+#endif
 
 	/// Returns the owned pointer without releasing ownership.
 	hxattr_nodiscard hxconstexpr T_* get(void) const { return m_ptr_; }

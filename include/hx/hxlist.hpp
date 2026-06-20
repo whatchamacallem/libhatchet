@@ -92,9 +92,11 @@ public:
 		/// Returns `true` if both iterators point to the same node.
 		/// - `x` : The iterator to compare against.
 		hxconstexpr bool operator==(const const_iterator& x_) const;
+#if HX_CPLUSPLUS < 202002L // C++20 defaults != from ==.
 		/// Returns `true` if the iterators point to different nodes.
 		/// - `x` : The iterator to compare against.
 		hxconstexpr bool operator!=(const const_iterator& x_) const;
+#endif
 
 		/// Returns a const reference to the current node.
 		hxconstexpr const node_t_& operator*(void) const {

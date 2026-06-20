@@ -5,18 +5,17 @@
 //
 // hxprofiler_internal_ internals. See hxprofiler.hpp instead.
 
+static_assert(LIBHATCHET_VER, "Internal. Do not include this file directly.");
+
 #if !defined HX_USE_PROFILER
 #error #include <hx/hxprofiler.h> instead.
 #endif
 
-#include "../hxarray.hpp"
-#include "../hxthread.hpp"
-
-#if defined(_MSC_VER)
+#if defined _MSC_VER
 #include <intrin.h>
 #endif
 
-#if HX_USE_THREADS
+#if (HX_USE_THREADS)
 #define HX_PROFILER_LOCK_() const hxunique_lock hxprofiler_mutex_lock_(g_hxprofiler_.m_mutex_)
 #else
 #define HX_PROFILER_LOCK_() (void)0
@@ -71,7 +70,7 @@ private:
 	template<hxcycles_t min_cycles_> friend class hxprofiler_scope_internal_;
 
 	bool m_is_started_;
-#if HX_USE_THREADS
+#if (HX_USE_THREADS)
 	hxmutex m_mutex_;
 #endif
 	hxarray<hxprofiler_record_, HX_PROFILER_MAX_RECORDS> m_records;

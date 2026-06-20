@@ -5,7 +5,6 @@
 
 /// \file hx/hxoptional.hpp An optional value type.
 
-#include "libhatchet.h"
 #include "hxutility.h"
 
 // ----------------------------------------------------------------------------
@@ -49,6 +48,19 @@ public:
 	/// - `other` : The `hxoptional` to move from.
 	hxoptional(hxoptional&& other_);
 
+	/// Constructs by copying the engaged state and converting the value of
+	/// `other_` to `T_`. `U_` must be convertible to `T_`.
+	/// - `other_` : The `hxoptional` to copy from.
+	template<typename U_>
+	hxoptional(const hxoptional<U_>& other_);
+
+	/// Constructs by moving the engaged state and converting the value of
+	/// `other_` to `T_`. `other_` is left disengaged. `U_` must be
+	/// convertible to `T_`.
+	/// - `other_` : The `hxoptional` to move from.
+	template<typename U_>
+	hxoptional(hxoptional<U_>&& other_);
+
 	/// Constructs an engaged `hxoptional` by forwarding `value` into storage.
 	/// - `value` : The value to construct from. Must be convertible to `T`.
 	template<typename U_=T_, hxenable_if_t<!hxis_same<hxremove_cvref_t<U_>, hxoptional>::value, bool> = true>
@@ -58,26 +70,18 @@ public:
 	~hxoptional(void) { reset(); }
 
 	/// Returns a reference to the contained value. The optional must be engaged.
-	hxattr_nodiscard T_& operator*(void) {
-		hxassertmsg(m_engaged_, "optional_disengaged"); return *as_ptr_();
-	}
+	hxattr_nodiscard T_& operator*(void);
 
 	/// Returns a const reference to the contained value. The optional must be
 	/// engaged.
-	hxattr_nodiscard const T_& operator*(void) const {
-		hxassertmsg(m_engaged_, "optional_disengaged"); return *as_ptr_();
-	}
+	hxattr_nodiscard const T_& operator*(void) const;
 
 	/// Returns a pointer to the contained value. The optional must be engaged.
-	hxattr_nodiscard T_* operator->(void) {
-		hxassertmsg(m_engaged_, "optional_disengaged"); return as_ptr_();
-	}
+	hxattr_nodiscard T_* operator->(void);
 
 	/// Returns a const pointer to the contained value. The optional must be
 	/// engaged.
-	hxattr_nodiscard const T_* operator->(void) const {
-		hxassertmsg(m_engaged_, "optional_disengaged"); return as_ptr_();
-	}
+	hxattr_nodiscard const T_* operator->(void) const;
 
 	/// Returns `true` if the optional contains a value.
 	hxattr_nodiscard constexpr operator bool(void) const { return m_engaged_; }
@@ -97,8 +101,7 @@ public:
 
 	/// Assigns `value` by forwarding, engaging the optional.
 	/// - `value` : The value to assign from. Must be convertible to `T`.
-	template<typename U_=T_>
-	hxoptional& operator=(U_&& value_);
+	template<typename U_=T_> hxoptional& operator=(U_&& value_);
 
 	/// Returns `true` if both optionals are disengaged or both are engaged with
 	/// equal values.
@@ -111,15 +114,12 @@ public:
 
 	/// Returns `true` if this optional is engaged and its value equals `value`.
 	/// - `value` : The value to compare against.
-	hxattr_nodiscard bool operator==(const T_& value_) const {
-		return m_engaged_ && (*as_ptr_() == value_);
-	}
+	hxattr_nodiscard bool operator==(const T_& value_) const;
 
+#if HX_CPLUSPLUS < 202002L // C++20 defaults != from ==.
 	/// Returns `true` if the optionals are not equal.
 	/// - `rhs` : Right-hand side optional.
-	hxattr_nodiscard bool operator!=(const hxoptional& rhs_) const {
-		return !(*this == rhs_);
-	}
+	hxattr_nodiscard bool operator!=(const hxoptional& rhs_) const { return !(*this == rhs_); }
 
 	/// Returns `true` if this optional is engaged.
 	/// - `nullopt` : The disengaged sentinel.
@@ -128,32 +128,8 @@ public:
 	/// Returns `true` if this optional is disengaged or its value does not
 	/// equal `value`.
 	/// - `value` : The value to compare against.
-	hxattr_nodiscard bool operator!=(const T_& value_) const {
-		return !m_engaged_ || (*as_ptr_() != value_);
-	}
-
-	/// Returns `true` if this is disengaged or this compares less than `rhs`.
-	/// A disengaged optional is less than any engaged optional.
-	/// - `rhs` : Right-hand side optional.
-	hxattr_nodiscard bool operator<(const hxoptional& rhs_) const;
-
-	/// Returns `true` if this compares less than or equal to `rhs`.
-	/// - `rhs` : Right-hand side optional.
-	hxattr_nodiscard bool operator<=(const hxoptional& rhs_) const {
-		return !(rhs_ < *this);
-	}
-
-	/// Returns `true` if this compares greater than `rhs`.
-	/// - `rhs` : Right-hand side optional.
-	hxattr_nodiscard bool operator>(const hxoptional& rhs_) const {
-		return rhs_ < *this;
-	}
-
-	/// Returns `true` if this compares greater than or equal to `rhs`.
-	/// - `rhs` : Right-hand side optional.
-	hxattr_nodiscard bool operator>=(const hxoptional& rhs_) const {
-		return !(*this < rhs_);
-	}
+	hxattr_nodiscard bool operator!=(const T_& value_) const;
+#endif
 
 	/// Constructs the contained value in place from `args`, destroying any
 	/// previous value.
@@ -174,33 +150,30 @@ public:
 	void swap(hxoptional& other_);
 
 	/// Returns a reference to the contained value. The optional must be engaged.
-	hxattr_nodiscard T_& value(void) {
-		hxassertmsg(m_engaged_, "optional_disengaged"); return *as_ptr_();
-	}
+	hxattr_nodiscard T_& value(void);
 
 	/// Returns a const reference to the contained value. The optional must be
 	/// engaged.
-	hxattr_nodiscard const T_& value(void) const {
-		hxassertmsg(m_engaged_, "optional_disengaged"); return *as_ptr_();
-	}
+	hxattr_nodiscard const T_& value(void) const;
 
 	/// Returns the contained value if engaged, otherwise returns `default_value`.
 	/// - `default_value` : The value to return when disengaged.
-	hxattr_nodiscard T_ value_or(const T_& default_value_) const {
-		return m_engaged_ ? *as_ptr_() : default_value_;
-	}
+	hxattr_nodiscard T_ value_or(const T_& default_value_) const;
 
 private:
-	hxattr_nodiscard T_* as_ptr_(void) {
-		return reinterpret_cast<T_*>(&m_storage_);
-	}
-
-	hxattr_nodiscard const T_* as_ptr_(void) const {
-		return reinterpret_cast<const T_*>(&m_storage_);
-	}
-
 	alignas(T_) unsigned char m_storage_[sizeof(T_)];
 	bool m_engaged_;
 };
+
+// ----------------------------------------------------------------------------
+// hxmake_optional
+
+/// `hxmake_optional` - Returns an engaged `hxoptional<hxremove_cvref_t<T>>`
+/// constructed by forwarding `value`.
+/// - `value_` : The value to forward into the optional.
+template<typename T_>
+hxoptional<hxremove_cvref_t<T_>> hxmake_optional(T_&& value_) {
+	return hxoptional<hxremove_cvref_t<T_>>(hxforward<T_>(value_));
+}
 
 #include "detail/hxoptional.inl"

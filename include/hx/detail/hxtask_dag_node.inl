@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
+static_assert(LIBHATCHET_VER, "Internal. Do not include this file directly.");
+
 template<size_t max_successors_>
 hxtask_dag_node<max_successors_>::hxtask_dag_node(void) {
 	m_successor_count_ = 0u;
@@ -23,7 +25,7 @@ void hxtask_dag_node<max_successors_>::dag_node_completed_(hxtask_queue* q_, boo
 		hxtask_dag_node* const successor_ = m_successors_[i_].node_;
 
 		if(is_cancelled_) {
-#if HX_USE_THREADS
+#if (HX_USE_THREADS)
 			atomic_store_explicit(&successor_->m_is_cancelled_, true, memory_order_relaxed);
 		}
 		if(atomic_fetch_sub_explicit(&successor_->m_pending_, 1, memory_order_acq_rel) == 1) {

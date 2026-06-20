@@ -3,13 +3,14 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-#include "libhatchet.h"
+/// \file hxdeque - A fixed-capacity deque backed by a power-of-two ring buffer
+
 #include "hxallocator.hpp"
 #include "hxutility.h"
 
-/// A fixed-capacity deque backed by a power-of-two ring buffer. All operations
-/// are `O(1)`. The capacity must be a power of two and greater than zero.
-/// This designed to do one thing very well and that is all.
+/// hxdeque - A fixed-capacity deque backed by a power-of-two ring buffer. All
+/// operations are `O(1)`. The capacity must be a power of two and greater than
+/// zero. This designed to do one thing very well and that is all.
 /// - `T` : The element type stored in the deque.
 /// - `capacity` : Maximum element count or `hxallocator_dynamic_capacity` for dynamic storage.
 template<typename T_, size_t capacity_=hxallocator_dynamic_capacity>

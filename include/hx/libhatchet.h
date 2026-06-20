@@ -33,11 +33,11 @@
 
 /// `int LIBHATCHET_VER` - One digit major, and two digit minor and patch
 /// versions. Odd numbered minor versions are development branches.
-#define LIBHATCHET_VER 13000
+#define LIBHATCHET_VER 13200
 
 /// `LIBHATCHET_TAG` - Major, minor and patch version tag name. Odd numbered
 /// minor versions are development branches and their tags end in `-dev`.
-#define LIBHATCHET_TAG "v1.30.0"
+#define LIBHATCHET_TAG "v1.32.0"
 
 #if !defined HX_HARDENING_MODE
 #if defined NDEBUG
@@ -92,7 +92,7 @@ enum hxlog_level_t {
 /// meaning of `0` in pointer context as a null pointer of the expected type.
 /// However they do not define whether `NULL` is `0` or `((void*)0)`. `hxnull`
 /// fills that gap by having an unambiguous type. See `hxnullptr`/`hxnullptr_t` if
-/// you need a `std::nullptr_t` replacement.
+/// you need a `std::nullptr` replacement.
 #define hxnull 0
 
 /// `hxhash_t` - Unsigned 32-bit hash value. Expect collisions.
@@ -143,8 +143,8 @@ typedef uint32_t hxhash_t;
 /// May be used as a compile time assert after C++23.
 /// - `x` : The condition to evaluate.
 /// - `...` Printf-style formatted log message.
-#define hxassert_hard(x_, ...) (void)((bool)(x_) /* THIS IS USED AS A COMPILE TIME ASSERT: */ \
-	|| (hxlog_handler_(hxlog_level_assert, __VA_ARGS__), hxassert_handler(__FILE__, __LINE__))  \
+#define hxassert_hard(x_, ...) (void)((bool)(x_) /* THIS IS USED AS A COMPILE TIME ASSERT: */  \
+	|| (hxlog_handler_(hxlog_level_assert, __VA_ARGS__), hxassert_handler(__FILE__, __LINE__)) \
 	|| hxbreakpoint())
 
 /// `hxassert_always(bool x, ...)` - Logs an error and terminates execution if
@@ -209,7 +209,7 @@ void hxassert_handler(void) hxattr_noexcept hxattr_cold;
 // hxassert_hard has 4 variations. See above. It is only evaluated when
 // HX_HARDENING_MODE != HX_HARDENING_MODE_NONE.
 #if (HX_HARDENING_MODE) == HX_HARDENING_MODE_VERBOSE
-#define hxassert_hard(x_, ...) (void)((bool)(x_)     \
+#define hxassert_hard(x_, ...) (void)((bool)(x_)         \
 	|| (hxlog_handler_(hxlog_level_assert, __VA_ARGS__), \
 		hxassert_handler(), 0)) // THIS IS USED AS A COMPILE TIME ASSERT.
 #elif (HX_HARDENING_MODE) == HX_HARDENING_MODE_STANDARD

@@ -6,7 +6,7 @@
 #include "../include/hx/hxconsole.hpp"
 #include "../include/hx/hxfile.hpp"
 
-#if HX_USE_PROFILER
+#if (HX_USE_PROFILER)
 
 namespace {
 

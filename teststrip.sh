@@ -20,13 +20,13 @@ set -eu
 export POSIXLY_CORRECT=1
 
 # Should detect no C++ standard library.
-BUILD="-DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG -DHX_USE_THREADS=11 -Os -static"
+BUILD="-DHX_USE_LIBCXX=0 -DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG -DHX_USE_THREADS=11"
 
 ERRORS="-Wall -Wextra -pedantic-errors -Werror -Wfatal-errors -Wcast-qual \
 	-Wdisabled-optimization -Wshadow -Wundef -Wconversion -Wdate-time \
 	-Wmissing-declarations -Wno-assume"
 
-FLAGS="-g -ffunction-sections -fdata-sections -ffast-math"
+FLAGS="-Os -static -g -ffunction-sections -fdata-sections -ffast-math"
 
 HX_DIR=`pwd`
 

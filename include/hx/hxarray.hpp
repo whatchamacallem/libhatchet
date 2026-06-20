@@ -3,6 +3,9 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
+/// \file `hxarray` - Implements `std::vector`, `std::inplace_vector` and
+/// `std::back_insert_iterator` with a chunk added a few things unimplemented.
+
 #include "hxallocator.hpp"
 #include "hxsort.hpp"
 #include "hxinitializer_list.hpp"

@@ -7,7 +7,9 @@
 /// or for parsing configuration files. Output is directed to the system log
 /// with `hxlog_level_console`. Requires C++20 or later.
 
-#include "libhatchet.h"
+#include "hxutility.h"
+
+#include <limits.h>
 
 #if HX_CPLUSPLUS >= 202002L
 

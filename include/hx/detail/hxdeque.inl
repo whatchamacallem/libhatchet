@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
+static_assert(LIBHATCHET_VER, "Internal. Do not include this file directly.");
+
 template<typename T_, size_t capacity_>
 hxdeque<T_, capacity_>::hxdeque(size_t dynamic_capacity_)
 	: m_mask_(0u), m_head_(0u), m_tail_(0u), m_count_(0u)

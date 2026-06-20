@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
+/// \file A few utility functions and most standard C++ meta programming functionsb.
+
 #include "libhatchet.h"
 
 #if HX_CPLUSPLUS

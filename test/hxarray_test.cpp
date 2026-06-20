@@ -8,7 +8,7 @@
 
 #include <limits.h>
 
-#if HX_USE_LIBCXX
+#if (HX_USE_LIBCXX)
 #include <utility>
 #endif
 

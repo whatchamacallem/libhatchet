@@ -6,10 +6,12 @@
 /// \file hx/hxhash_table.hpp A fixed-size hash table with embedded
 /// singly-linked list buckets.
 
-#include "detail/hxhash_table_detail.hpp"
 #include "hxkey.hpp"
 #include "hxptr.hpp"
 #include "hxutility.h"
+#include "hxallocator.hpp"
+
+#include "detail/hxhash_table_detail.hpp"
 
 #if HX_CPLUSPLUS >= 202002L
 /// Concept capturing the interface requirements for `hxhash_table` nodes.
@@ -196,9 +198,11 @@ public:
 		/// - `x` : The iterator to compare against.
 		bool operator==(const const_iterator& x_) const;
 
+#if HX_CPLUSPLUS < 202002L // C++20 defaults != from ==.
 		/// Compares two iterators for inequality.
 		/// - `x` : The iterator to compare against.
 		bool operator!=(const const_iterator& x_) const;
+#endif
 
 		/// Dereferences the iterator to access the current `node_t`.
 		const node_t_& operator*(void) const;
