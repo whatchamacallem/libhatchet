@@ -138,6 +138,10 @@ private:
 	char*  m_row_buffer;
 };
 
+bool hxexample_render(hxtask_queue& queue, hxarray<hxexample_row_task, 40u>& tasks,
+		hxarray<hxarray<char, 82u>, 40u>& row_storage);
+void hxexample_usage(void);
+
 // ----------------------------------------------------------------------------
 
 // Enqueues all 40 row tasks, waits for completion, then prints the frame.

@@ -15,20 +15,28 @@ standard library. For those with a low-level mindset, the developer experience
 is better than with the C++ standard library. For example, the template
 instantiation errors are easier to read, and `hxassertmsg` will format your
 assert messages before setting a breakpoint for you. There is nothing
-unnecessary to step through in the debugger. Compile times are shockingly fast
-when using `ccache` without precompiled headers. The compiler's budget for
-optimization isn't blown out by layers you don't normally need. Although
-intrinsics are available for that problem.
+unnecessary to step through in the debugger.
 
 <img src="libhatchet.jpg" alt="banner" width="200" height="200" align="right" hspace="20">
 
-A key property of this codebase is its embrace of clang's Undefined Behavior
-Sanitizer (UBSan), which enables developers to write pointer-centric C++ code
-while enjoying runtime checks comparable to managed languages. The
-implementation maintains compatibility with all possible warning flags and
-sanitizers for both gcc and clang. Of course, asserts are also widely used. The
-implementation also avoids dynamic allocations except when initializing system
-allocators.
+Compile times are shockingly fast when using `ccache` without precompiled
+headers. Here is a comparison of the include cost of libhatchet vs. the
+equivalent headers in the standard library. libhatchet intentionally implements
+only a subset of the standard leaving the remaining functionality as an exercise
+for the user. This does not include a comparison between the lightweight
+`<hx/hxtest.hpp>` and Google Test. Comments and blank lines are not included in
+this count as `ccache` prevents the compiler from ever seeing them.
+
+| Library                        |    LOC | LOC mult |     ms |  ms mult |
+|:-------------------------------|-------:|---------:|-------:|---------:|
+| libhatchet  (clang)            |  12685 |        - |     21 |        - |
+| libstdc++   (g++/libstdc++)    | 100382 |     7.9x |     88 |     4.2x |
+| libc++      (clang++/libc++)   | 101535 |     8.0x |    108 |     5.1x |
+
+The implementation maintains compatibility with every sensible warning flag and
+with sanitizers for both gcc and clang. Of course, asserts are also widely used.
+The implementation also avoids dynamic allocations except when initializing
+system allocators.
 
 ## Key Features
 
@@ -57,11 +65,14 @@ allocators.
   uses W, A, S, and D keys). One line of assembly may be needed for uncommon
   hardware.
 
-- **Memory Management**: RAII-based abstraction layer supporting various
-  allocation strategies, particularly valuable for applications where crashing
-  from memory fragmentation is unacceptable. If you have a lot of temporary
-  allocations, this system reasonably offers 30% memory and 30% performance
-  improvements with minor modifications to your code.
+- **Memory Management**: Support for various allocation semantics, particularly
+  valuable for applications where crashing from memory fragmentation is
+  unacceptable. If you have a lot of temporary allocations, this system
+  reasonably offers 30% memory and 30% performance improvements with minor
+  modifications to your code. In complex applications additional stacks would be
+  required for streaming different resources. Fancy tools like heaptrack can be
+  used by disabling the memory manager with `-DHX_USE_MEMORY_MANAGER=0`. Leak
+  tracking is also built in.
 
 - **Console**: Provides an embedded command processor with automatic C++
   function binding using templates. Useful for interactive target debugging
@@ -118,18 +129,6 @@ allocators.
 - **constexpr ready**: C++11 `constexpr` are used where possible. Asserts,
   algorithms, `hxlist`, `hxbitset` and `hxrandom` support `consteval` in C++23.
 
-## Memory Management
-
-An optional memory manager is provided that allows for stack based allocators.
-This removes overhead from permanent and temporary allocations. In complex
-applications additional stacks would be required for streaming different
-resources. Different allocation strategies can also be added.
-
-Fancy tools like heaptrack can be used by disabling the memory manager with
-`-DHX_USE_MEMORY_MANAGER=0`. Leak tracking is also built in.
-
-`hxptr` is provided just in case you want a `std::unique_ptr` replacement.
-
 ## Documentation
 
 Running the command `doxygen` with no arguments will generate
@@ -182,8 +181,9 @@ The scripted builds exercise the following toolchains, language modes, and
 
 `testall.sh` runs all of the above and also enforces certain naming conventions.
 
-Use `Terminal->Run Task...` in VS Code to build Windows using `cmake`. Your
-version of MSVC should be automatically discovered.
+`testmsvc.bat` tests 32 and 64-bit configurations of debug and release on
+Windows. The currently installed version of MSVC should be automatically
+discovered.
 
 ## Project Structure
 

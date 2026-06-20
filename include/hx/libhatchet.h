@@ -33,15 +33,15 @@
 
 /// `int LIBHATCHET_VER` - One digit major, and two digit minor and patch
 /// versions. Odd numbered minor versions are development branches.
-#define LIBHATCHET_VER 13200
+#define LIBHATCHET_VER 13400
 
 /// `LIBHATCHET_TAG` - Major, minor and patch version tag name. Odd numbered
 /// minor versions are development branches and their tags end in `-dev`.
-#define LIBHATCHET_TAG "v1.32.0"
+#define LIBHATCHET_TAG "v1.34.0"
 
 #if !defined HX_HARDENING_MODE
 #if defined NDEBUG
-#define HX_HARDENING_MODE HX_HARDENING_MODE_STANDARD
+#define HX_HARDENING_MODE HX_HARDENING_MODE_NONE
 #else
 /// `HX_HARDENING_MODE` - Library hardening level. See the README.md for levels.
 #define HX_HARDENING_MODE HX_HARDENING_MODE_DEBUG

@@ -13,8 +13,7 @@
       "Skill(*)",
       "WebFetch(*)",
       "WebSearch(*)",
-      "Write(*)",
-      "Read(//c/Program Files/Microsoft Visual Studio/2022/Community/VC/**)"
+      "Write(*)"
     ],
     "deny": [
       "Edit(/mnt/**)",
