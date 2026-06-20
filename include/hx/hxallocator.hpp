@@ -28,7 +28,8 @@ public:
 	/// Template specialization below should have been selected.
 	static_assert(fixed_capacity_ > 0u, "Fixed capacity must be > 0.");
 
-	/// Initializes memory to `0xab` when `HX_HARDENING_MODE == HX_HARDENING_MODE_DEBUG`.
+	/// Initializes memory to `0xab` when `HX_HARDENING_MODE ==
+	/// HX_HARDENING_MODE_DEBUG`.
 	hxallocator() {
 #if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
 		::memset(m_data_, 0xab, sizeof m_data_);

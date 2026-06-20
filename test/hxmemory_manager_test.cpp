@@ -48,7 +48,7 @@ TEST(hxmemory_manager_test, hxnew) {
 
 TEST(hxmemory_manager_test, bytes) {
 const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
-	hxlog_console("EXPECTING_TEST_WARNINGS\n");
+	hxlog_warning("EXPECTING_TEST_WARNINGS\n");
 	for(size_t i=10u; i-- != 0u;) {
 		void* p = hxmalloc(i);
 		ASSERT_NE(p, hxnullptr);
@@ -67,7 +67,7 @@ const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporar
 }
 
 TEST(hxmemory_manager_test, temp_overflow) {
-	hxlog_console("EXPECTING_TEST_WARNINGS\n");
+	hxlog_warning("EXPECTING_TEST_WARNINGS\n");
 
 	// "Allocates memory of the specified size with a specific allocator and
 	// alignment." Request temp_stack byte-count { budget + 1 } using explicit
@@ -203,7 +203,7 @@ TEST_F(hxmemory_manager_test_f, execute) {
 		test_memory_allocator_normal(static_cast<hxsystem_allocator_t>(i));
 	}
 
-	hxlog("EXPECTING_TEST_FAILURE\n");
+	hxlog_warning("EXPECTING_TEST_FAILURE\n");
 
 	// Only the temporary stack asserts all allocations are to be freed.
 	test_memory_allocator_leak();

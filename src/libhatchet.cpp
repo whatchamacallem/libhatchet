@@ -6,7 +6,7 @@
 #include "../include/hx/hxfile.hpp"
 #include "../include/hx/hxalgorithm.hpp"
 
-#include <stdio.h> // vsnprintf only.
+#include <stdio.h>
 
 // This file has C linkage only. HX_NS_BEGIN_ is not used.
 HX_NS_USE
@@ -149,20 +149,31 @@ hxattr_weak hxattr_noexcept void hxlog_handler_v(hxlog_level_t level, const char
 	// Do not try to print the format string because it may be invalid.
 	hxassert_hard(len >= 0 && len < (int)HX_MAX_LINE, "vsnprintf");
 
+#if HX_USE_FILE_IO
 	hxfile& f = level == hxlog_level_log ? hxout : hxerr;
 	if(level == hxlog_level_warning) {
 		f << "WARNING ";
 		line_buf[len++] = '\n';
 	}
 	else if(level == hxlog_level_assert) {
-		f.write("ASSERT_FAIL ", (sizeof "ASSERT_FAIL ") - 1u);
+		f << "ASSERT_FAIL ";
 		line_buf[len++] = '\n';
 	}
 	f.write(line_buf, (size_t)len);
+#else
+	// Fall back to stdout when there is no filesystem.
+	if(level == hxlog_level_warning) {
+		::fputs("WARNING ", stdout);
+		line_buf[len++] = '\n';
+	}
+	else if(level == hxlog_level_assert) {
+		::fputs("ASSERT_FAIL ", stdout);
+		line_buf[len++] = '\n';
+	}
+	::fwrite(line_buf, 1u, (size_t)len, stdout);
+#endif
 }
 
-// HX_HARDENING_MODE != HX_HARDENING_MODE_NONE provides facilities for testing
-// teardown. Just call _Exit() otherwise.
 hxattr_weak void hxshutdown(void) {
 	if(hxg_init_ver_ != 0) {
 		hxmemory_manager_shut_down_();

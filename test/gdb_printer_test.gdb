@@ -9,6 +9,7 @@
 
 source ../gdb/hxarray_printer.py
 source ../gdb/hxbitset_printer.py
+source ../gdb/hxconst_list_printer.py
 source ../gdb/hxdeque_printer.py
 source ../gdb/hxhash_table_printer.py
 source ../gdb/hxlist_printer.py
@@ -38,6 +39,16 @@ commands
   print src
   echo === hxbitset ===\n
   print dst
+  echo \n======\n
+  continue
+end
+
+# ----- hxconst_list -----
+break hxtest_gdb_break_hxconst_list
+commands
+  up
+  echo \n=== hxconst_list ===\n
+  print list
   echo \n======\n
   continue
 end

@@ -18,7 +18,7 @@ hxoptional<T_>::hxoptional(const hxoptional& other_) : m_engaged_(false) {
 }
 
 template<typename T_>
-hxoptional<T_>::hxoptional(hxoptional&& other_) : m_engaged_(false) {
+hxoptional<T_>::hxoptional(hxoptional&& other_) noexcept : m_engaged_(false) {
 	if (other_.m_engaged_) {
 		::new(static_cast<void*>(&m_storage_)) T_(hxmove(*reinterpret_cast<T_*>(&other_.m_storage_)));
 		m_engaged_ = true;
@@ -66,7 +66,7 @@ hxoptional<T_>& hxoptional<T_>::operator=(const hxoptional& other_) {
 }
 
 template<typename T_>
-hxoptional<T_>& hxoptional<T_>::operator=(hxoptional&& other_) {
+hxoptional<T_>& hxoptional<T_>::operator=(hxoptional&& other_) noexcept {
 	hxassertmsg(this != &other_, "self_assignment");
 	reset();
 	if (other_.m_engaged_) {
@@ -149,7 +149,7 @@ void hxoptional<T_>::reset(void) {
 }
 
 template<typename T_>
-void hxoptional<T_>::swap(hxoptional& other_) {
+void hxoptional<T_>::swap(hxoptional& other_) noexcept {
 	if (m_engaged_ && other_.m_engaged_) {
 		hxswap(*reinterpret_cast<T_*>(&m_storage_), *reinterpret_cast<T_*>(&other_.m_storage_));
 	} else if (m_engaged_) {

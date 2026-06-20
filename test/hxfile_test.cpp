@@ -6,6 +6,8 @@
 #include <hx/hxutility.h>
 #include <hx/hxtest.hpp>
 
+#if HX_USE_FILE_IO
+
 #if defined __GNUC__
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wformat-zero-length"
@@ -55,12 +57,7 @@ TEST(hxfile_test, missing_file_reports_expectations) {
 	const hxfile f(hxfile::in | hxfile::skip_asserts, "test-file-does-not-exist-%d", 123);
 	EXPECT_EQ(f.fail(), true);
 	EXPECT_EQ(f.is_open(), false);
-
-	// EXPECT_EQ should return hxdev_null.
-	EXPECT_EQ((bool)(f.mode() & hxfile::skip_asserts), true)
-		<< "dev/null should not exist";
-
-	hxdev_null << "dev/null should not exist";
+	EXPECT_EQ((bool)(f.mode() & hxfile::skip_asserts), true);
 }
 
 TEST(hxfile_test, seek_and_read_maintain_state) {
@@ -317,3 +314,4 @@ TEST(hxfile_test, eof_variants) {
 		EXPECT_TRUE(reader.eof());
 	}
 }
+#endif // HX_USE_FILE_IO

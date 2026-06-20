@@ -239,7 +239,7 @@ template<hxhash_table_concept_ node_t_, hxhash_t table_size_bits_, bool multi_t_
 inline typename hxhash_table<node_t_, table_size_bits_, multi_t_, deleter_t_>::iterator
 hxhash_table<node_t_, table_size_bits_, multi_t_, deleter_t_>::insert(node_t_* ptr_)
 {
-	hxassert_hard(ptr_ != hxnull, "null_node");
+	hxassertmsg(ptr_ != hxnull, "null_node");
 	hxassertmsg(this->find(ptr_->hash_key()) != ptr_, "container_reinsert");
 	node_t_** pos_ = this->get_bucket_head_(ptr_->hash_value());
 	if(!multi_t_) {
@@ -262,7 +262,7 @@ template<typename ptr_deleter_t_>
 inline typename hxhash_table<node_t_, table_size_bits_, multi_t_, deleter_t_>::iterator
 hxhash_table<node_t_, table_size_bits_, multi_t_, deleter_t_>::insert(hxptr<node_t_, ptr_deleter_t_>&& ptr_)
 {
-	hxassert_hard(ptr_.get() != hxnull, "null_node");
+	hxassertmsg(ptr_.get() != hxnull, "null_node");
 	node_t_* const raw_ = ptr_.get();
 	hxassertmsg(this->find(raw_->hash_key()) != raw_, "container_reinsert");
 	node_t_** pos_ = this->get_bucket_head_(raw_->hash_value());

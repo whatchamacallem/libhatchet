@@ -222,14 +222,36 @@
 #define HX_USE_MODULE 0
 #endif
 
+/// Control whether the console is included in the build. Note: The console has
+/// a couple small debug tools built in as well. C++20 is required to use the
+/// console.
+#if !defined HX_USE_CONSOLE
+#define HX_USE_CONSOLE HX_CPLUSPLUS >= 202002L
+#elif (HX_USE_CONSOLE) && HX_CPLUSPLUS < 202002L
+#error The console requires C++20 or later.
+#endif
+
+/// Control whether logging statements are included in the build. Note:
+/// `hxlog_handler` is always available and is used by the asserts.
+/// `0` - Disables the logging macros.
+/// `1` - All logging except `hxlog`.
+/// `2` - All logging including `hxlog`. This is the default.
+#if !defined HX_USE_LOGGING
+#define HX_USE_LOGGING 2
+#endif
+
+#if !defined HX_USE_FILE_IO
+/// `HX_USE_FILE_IO` - Select if `hxfile` exists and if it uses C file I/O or
+/// POSIX I/O. `stdout` is used for logging even when `hxfile` is disabled.
+/// `0` - Disables hxfile.
+/// `1` - C file I/O.
+/// `2` - POSIX file I/O.
+#define HX_USE_FILE_IO 1
+#endif
+
 #if !defined HX_USE_GOOGLE_TEST
 /// `HX_USE_GOOGLE_TEST` - In case you need to use Google Test. Defaults to `0`.
 #define HX_USE_GOOGLE_TEST 0
-#endif
-
-#if !defined HX_USE_POSIX_FILE_IO
-/// `HX_USE_POSIX_FILE_IO` - Have hxfile use POSIX I/O instead of C file I/O.
-#define HX_USE_POSIX_FILE_IO 0
 #endif
 
 #if !defined HX_USE_PROFILER
@@ -283,15 +305,18 @@
 #endif
 
 /// \cond HIDDEN
-// Rename the hxdetail_ namespace using the version number to something like
-// `hx31700_`. Also create an identifier that can be used to cause link errors
-// containing the expected version when linking against old code. This is done
-// to force updates in a binary release channel. This will not
-// evaluate the macro `_`.
-#define hxversion__(prefix_, x_) prefix_ ## x_ ## _
-#define hxversion_(prefix_, x_) hxversion__(prefix_, x_)
-#define hxg_init_ver_ hxversion_(hxg_init_ver, LIBHATCHET_VER)
-#define hxdetail_ hxversion_(hx, LIBHATCHET_VER)
+// `HX_TEST_ERROR_HANDLING` - Tests that the failure of tests is handled correctly.
+// Set to `0` if not defined. Set by `testerrorhandling.sh` and `coverage.sh`.
+#if !defined HX_TEST_ERROR_HANDLING
+#define HX_TEST_ERROR_HANDLING 0
+#endif
+
+// HX_APPEND_COUNTER - Used to generate unique identifiers. This is weird
+// because the ## operator happens before macro arg evaluation and both happen
+// before general macro evaluation.
+#define HX_APPEND_COUNTER2_(x_, y_) x_ ## y_
+#define HX_APPEND_COUNTER_(x_, y_) HX_APPEND_COUNTER2_(x_, y_)
+#define HX_APPEND_COUNTER(x_) HX_APPEND_COUNTER_(x_, __COUNTER__)
 
 // HX_BEGIN_INL_/HX_END_INL_ - These allow excluding .inl files from the module
 // export block. See hxmodule.cppm for details.
@@ -313,22 +338,6 @@
 #define HX_NS_PREFIX_
 #define HX_NS_USE
 #endif
-
-// HX_APPEND_COUNTER2_ - Used to generate unique identifiers. This is weird
-// because the ## operator happens before macro arg evaluation and both happen
-// before general macro evaluation.
-#define HX_APPEND_COUNTER2_(x_, y_) x_ ## y_
-// This version does evaluate its macro args.
-#define HX_APPEND_COUNTER_(x_, y_) HX_APPEND_COUNTER2_(x_, y_)
-// `HX_APPEND_COUNTER` - Generates a semi-unique identifier by appending a
-// unique number for that translation unit to `x`.
-#define HX_APPEND_COUNTER(x_) HX_APPEND_COUNTER_(x_, __COUNTER__)
-
-// `HX_TEST_ERROR_HANDLING` - Tests that the failure of tests is handled correctly.
-// Set to `0` if not defined. Set by `testerrorhandling.sh` and `coverage.sh`.
-#if !defined HX_TEST_ERROR_HANDLING
-#define HX_TEST_ERROR_HANDLING 0
-#endif
 /// \endcond
 
 #if !(HX_USE_MODULE)
@@ -336,8 +345,8 @@
 extern "C" {
 #endif
 
-/// `hxsettings` - Constructed by first call to `hxinit` which happens when or
-/// before the system memory allocators construct.
+/// `hxsettings` - Constructed by first call to `hxinit` which happens when on
+/// or before the system memory allocators construct. Not thread safe.
 struct hxsettings {
 	/// Logging level for the application (e.g., verbosity of logs).
 	uint8_t log_level;

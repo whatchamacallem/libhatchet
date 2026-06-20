@@ -24,8 +24,9 @@ __attribute__((optnone))
 #endif
 bool hxtest_float_eq_(float a, float b) {
 #ifndef __FAST_MATH__
-	// -fno-fast-math explicitly breaks isfinite.
-	if(!::isfinite(a) || !::isfinite(b)) { return false; }
+	// No :: prefix on isfinite because isfinite is a macro in C.
+	// -fno-fast-math also explicitly breaks isfinite.
+	if(!isfinite(a) || !isfinite(b)) { return false; }
 #endif
 	if(a == b) { return true; }
 
@@ -70,7 +71,7 @@ static bool hxtest_case_sort(const hxtest_case_interface_* a, const hxtest_case_
 }
 
 hxtest_::hxtest_(void) {
-	::memset((void*)this, 0x00, sizeof *this);
+	::memset(static_cast<void*>(this), 0x00, sizeof *this);
 }
 
 hxtest_& hxtest_::dispatcher_(void) {
@@ -88,7 +89,7 @@ void hxtest_::add_test_(hxtest_case_interface_* fn) {
 
 // Message is required to end with an \n. Returns hxdev_null on success and
 // hxerr otherwise.
-hxfile& hxtest_::condition_check_(bool condition, const char* file, size_t line, const char* message, bool is_assert) {
+void hxtest_::condition_check_(bool condition, const char* file, size_t line, const char* message, bool is_assert) {
 	hxassert_always(m_current_test_, "test_not_started");
 	m_test_state_ = (condition && m_test_state_ != test_state_fail_) ? test_state_pass_ : test_state_fail_;
 		if(!condition) {
@@ -97,7 +98,7 @@ hxfile& hxtest_::condition_check_(bool condition, const char* file, size_t line,
 				if(m_assert_count_ == max_fail_messages_) {
 					hxlog_console("remaining asserts will fail silently...\n");
 				}
-				return hxdev_null;
+				return;
 			}
 
 		// Prints full-path error messages that can be clicked on in an IDE.
@@ -119,9 +120,8 @@ hxfile& hxtest_::condition_check_(bool condition, const char* file, size_t line,
 			hxbreakpoint();
 #endif
 		}
-		return hxerr;
+		return;
 	}
-	return hxdev_null;
 }
 
 size_t hxtest_::run_all_tests_(const char* test_suite_filter) {

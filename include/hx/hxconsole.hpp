@@ -6,10 +6,15 @@
 /// \file hxconsole.hpp Implements a simple console for debugging, remote use
 /// or for parsing configuration files. Output is directed to the system log
 /// with `hxlog_level_console`. Requires C++20 or later.
+///
+/// Here is how to write lambdas that cease to exist entirely when the console is
+/// disabled:
+///
+/// `hxconsole_command_named(*+[](void) -> bool { return true; }, command_name);`
 
 #include "libhatchet.h"
 
-#if HX_CPLUSPLUS >= 202002L
+#if HX_USE_CONSOLE
 #if !(HX_USE_MODULE)
 
 #include <limits.h>
@@ -19,8 +24,6 @@ HX_NS_BEGIN_
 
 // Include internals
 #include "detail/hxconsole_detail.hpp"
-
-class hxfile;
 
 /// `hxconsole_deregister` - Explicitly deregisters a console symbol.
 /// - `id` : Non-null identifier string for the variable or command being
@@ -32,6 +35,11 @@ void hxconsole_deregister(const char* id_) hxattr_nonnull(1);
 /// - `command` : Non-null UTF-8 command string executed by the console.
 bool hxconsole_exec_line(const char* command_) hxattr_nonnull(1);
 
+/// `hxconsole_help` - Logs every console symbol to the console log.
+bool hxconsole_help(void);
+
+#if HX_USE_FILE_IO
+class hxfile;
 /// `hxconsole_exec_file` - Executes a configuration file that is opened for
 /// reading. Ignores blank lines and comments that start with `#`.
 /// - `file` : A file containing commands.
@@ -40,11 +48,7 @@ bool hxconsole_exec_file(hxfile& file_);
 /// `hxconsole_exec_filename` - Opens a configuration file by name and executes it.
 /// - `filename` : Non-null UTF-8 path to a file containing commands.
 bool hxconsole_exec_filename(const char* filename_) hxattr_nonnull(1);
-
-/// `hxconsole_help` - Logs every console symbol to the console log when
-/// `HX_HARDENING_MODE > HX_HARDENING_MODE_STANDARD`. Otherwise returns true
-/// without producing output.
-bool hxconsole_help(void);
+#endif // HX_USE_FILE_IO
 
 HX_NS_END_
 #endif // !HX_USE_MODULE
@@ -88,4 +92,11 @@ HX_NS_END_
 #define hxconsole_variable_named(x_, name_) static HX_NS_PREFIX_ hxdetail_::hxconsole_constructor_ \
 	hxg_console_symbol_##name_(HX_NS_PREFIX_ hxdetail_::hxconsole_variable_factory_(&(x_)), #name_)
 
-#endif // HX_CPLUSPLUS >= 202002L
+#else // !HX_USE_CONSOLE
+
+#define hxconsole_command(x_)
+#define hxconsole_command_named(x_, name_)
+#define hxconsole_variable(x_)
+#define hxconsole_variable_named(x_, name_)
+
+#endif // !HX_USE_CONSOLE

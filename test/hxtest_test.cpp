@@ -105,27 +105,27 @@ TEST(hxtest_test, succeed) {
 // These two tests exercise the test framework by failing.
 #if HX_TEST_ERROR_HANDLING
 TEST(hxtest_error_handling, fail) {
-	hxlog("EXPECTING_TEST_FAILURE\n");
+	hxlog_warning("EXPECTING_TEST_FAILURE\n");
 	SUCCEED();
 	FAIL();
 	hxassert_always(0, "internal_error FAIL() did not return");
 }
 
 TEST(hxtest_error_handling, add_failure) {
-	hxlog("EXPECTING_TEST_FAILURE\n");
+	hxlog_warning("EXPECTING_TEST_FAILURE\n");
 	SUCCEED();
 	for(int i = 10; i--;) {
-		ADD_FAILURE() << "This message is intentionally blank.\n";
+		ADD_FAILURE();
 	}
 }
 
 TEST(hxtest_error_handling, add_failure_at) {
-	hxlog("EXPECTING_TEST_FAILURE\n");
+	hxlog_warning("EXPECTING_TEST_FAILURE\n");
 	SUCCEED();
-	ADD_FAILURE_AT("fake_file.cpp", 10000) << "This message is also intentionally blank.\n";
+	ADD_FAILURE_AT("fake_file.cpp", 10000);
 }
 
 TEST(hxtest_error_handling, nothing_asserted) {
-	hxlog("EXPECTING_TEST_FAILURE\n");
+	hxlog_warning("EXPECTING_TEST_FAILURE\n");
 }
 #endif

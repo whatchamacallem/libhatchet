@@ -19,7 +19,8 @@ set -eu
 
 export POSIXLY_CORRECT=1
 
-BUILD="-DHX_USE_LIBCXX=0 -DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG -DHX_USE_THREADS=11"
+BUILD="-DHX_USE_LIBCXX=0 -DHX_HARDENING_MODE=HX_HARDENING_MODE_NONE \
+    -DHX_USE_LOGGING=1 -DHX_USE_THREADS=11"
 
 ERRORS="-Wall -Wextra -pedantic-errors -Werror -Wfatal-errors -Wcast-qual \
 	-Wdisabled-optimization -Wshadow -Wundef -Wconversion -Wdate-time     \

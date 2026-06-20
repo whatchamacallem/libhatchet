@@ -94,7 +94,7 @@ class HxArrayPrinter:
 def build_pretty_printer():
 	pp = gdb.printing.RegexpCollectionPrettyPrinter('hxarray_printer')
 	# Match both hxarray<T_, 0> and hxarray<T_, N> patterns
-	pp.add_printer('hxarray', '^hxarray<.*,.*>$', HxArrayPrinter)
+	pp.add_printer('hxarray', r'hxarray<', HxArrayPrinter)
 	return pp
 
-gdb.printing.register_pretty_printer(gdb.current_objfile(), build_pretty_printer())
+gdb.printing.register_pretty_printer(gdb.current_objfile(), build_pretty_printer(), replace=True)

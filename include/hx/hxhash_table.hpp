@@ -219,9 +219,6 @@ public:
 		/// Dereferences the iterator to access the current `node_t`'s pointer.
 		const node_t_* operator->(void) const;
 
-		/// Returns a const pointer to the current node.
-		operator const node_t_*(void) const { return m_current_node_; }
-
 	private:
 		friend class hxhash_table;
 		const_iterator(const hxhash_table* table_);
@@ -263,9 +260,6 @@ public:
 
 		/// Dereferences the iterator to access the current `node_t`'s pointer.
 		node_t_* operator->(void) const;
-
-		/// Returns a pointer to the current node.
-		operator node_t_*(void) const { return this->m_current_node_; }
 
 	private:
 		friend class hxhash_table;

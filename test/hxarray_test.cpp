@@ -14,7 +14,7 @@
 
 HX_NS_USE
 
-hxattr_noinline static void hxtest_gdb_break_hxarray(void) {}
+hxattr_noinline static void hxtest_gdb_break_hxarray(void) { }
 
 namespace {
 
@@ -43,7 +43,7 @@ public:
 			id = x;
 			moved_from = false;
 		}
-		hxtest_object(hxtest_object&& x) {
+		hxtest_object(hxtest_object&& x) noexcept {
 			++hxs_test_current->m_constructed;
 			id = x.id;
 			moved_from = false;
@@ -61,7 +61,7 @@ public:
 			id = x.id;
 			moved_from = false;
 		}
-		hxtest_object& operator=(hxtest_object&& x) {
+		hxtest_object& operator=(hxtest_object&& x) noexcept {
 			hxassert(this != &x);
 			id = x.id;
 			moved_from = false;

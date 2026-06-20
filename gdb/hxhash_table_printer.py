@@ -72,7 +72,7 @@ class HxHashTablePrinter:
 
 	def _iter_nodes(self):
 		"""Yield (index, node_ptr GDB value) for every node across all buckets."""
-		ptr_size = gdb.lookup_type('void').pointer().sizeof
+		ptr_size = self._node_ptr_type.sizeof
 		idx = 0
 		for b in range(self._bucket_count):
 			slot_addr = self._bucket_addr + b * ptr_size
@@ -117,7 +117,7 @@ class HxHashTablePrinter:
 
 def build_pretty_printer():
 	pp = gdb.printing.RegexpCollectionPrettyPrinter('hxhash_table_printer')
-	pp.add_printer('hxhash_table', r'^hxhash_table<.*>$', HxHashTablePrinter)
+	pp.add_printer('hxhash_table', r'hxhash_table<', HxHashTablePrinter)
 	return pp
 
-gdb.printing.register_pretty_printer(gdb.current_objfile(), build_pretty_printer())
+gdb.printing.register_pretty_printer(gdb.current_objfile(), build_pretty_printer(), replace=True)

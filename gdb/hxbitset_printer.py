@@ -65,7 +65,7 @@ class HxBitsetPrinter:
 
 def build_pretty_printer():
 	pp = gdb.printing.RegexpCollectionPrettyPrinter('hxbitset_printer')
-	pp.add_printer('hxbitset', r'^hxbitset<\d+u?>$', HxBitsetPrinter)
+	pp.add_printer('hxbitset', r'hxbitset<', HxBitsetPrinter)
 	return pp
 
-gdb.printing.register_pretty_printer(gdb.current_objfile(), build_pretty_printer())
+gdb.printing.register_pretty_printer(gdb.current_objfile(), build_pretty_printer(), replace=True)

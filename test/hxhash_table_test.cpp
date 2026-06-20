@@ -8,7 +8,7 @@
 
 HX_NS_USE
 
-hxattr_noinline static void hxtest_gdb_break_hxhash_table(void) {}
+hxattr_noinline static void hxtest_gdb_break_hxhash_table(void) { }
 
 namespace {
 
@@ -33,9 +33,6 @@ public:
 		void operator=(int32_t x) { id = x; }
 		bool operator==(const hxtest_object& x) const { return id == x.id; }
 		bool operator==(int32_t x) const { return id == x; }
-
-		// XXX???
-		operator float(void) const { return static_cast<float>(id); }
 
 		int32_t id;
 	};
@@ -149,7 +146,7 @@ const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporar
 		const table_t& const_table = table;
 		hxtest_integer* node = hxnew<hxtest_integer>(k);
 		// insert returns an iterator to the inserted node on success.
-		EXPECT_EQ(table.insert(hxptr<hxtest_integer>(node)), node);
+		EXPECT_EQ(&*table.insert(hxptr<hxtest_integer>(node)), node);
 
 		// Iterator + count checks confirm single-entry semantics.
 		EXPECT_NE(table.begin(), table.end());
@@ -161,20 +158,20 @@ const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporar
 
 		// insert with a duplicate key returns an iterator to the existing node.
 		hxtest_integer* dup = hxnew<hxtest_integer>(k);
-		EXPECT_EQ(table.insert(hxptr<hxtest_integer>(dup)), node);
+		EXPECT_EQ(&*table.insert(hxptr<hxtest_integer>(dup)), node);
 
 		// find() hit and miss, both mutable and const.
 		EXPECT_EQ(table.find(k), node);
-		EXPECT_EQ(table.find(k, table.begin()), hxnullptr);
+		EXPECT_EQ(table.find(k, &*table.begin()), hxnullptr);
 		EXPECT_EQ(const_table.find(k), node);
-		EXPECT_EQ(const_table.find(k, const_table.begin()), hxnullptr);
+		EXPECT_EQ(const_table.find(k, &*const_table.begin()), hxnullptr);
 
 		// extract() hit: returns hxptr owning the node; miss: returns empty hxptr.
 		{
 			hxptr<hxtest_integer> extracted = table.extract(k);
 			EXPECT_EQ(extracted.get(), node);
 			EXPECT_EQ(table.extract(k), hxnullptr);
-			EXPECT_EQ(table.insert(hxmove(extracted)), node);
+			EXPECT_EQ(&*table.insert(hxmove(extracted)), node);
 		}
 		// release_all() removes all nodes without deleting them.
 		table.release_all();
@@ -184,7 +181,7 @@ const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporar
 
 		// insert on an empty table inserts and returns an iterator to the node.
 		hxtest_integer* new_node = hxnew<hxtest_integer>(k);
-		EXPECT_EQ(table.insert(hxptr<hxtest_integer>(new_node)), new_node);
+		EXPECT_EQ(&*table.insert(hxptr<hxtest_integer>(new_node)), new_node);
 		EXPECT_NE(new_node->value.id, node->value.id);
 		EXPECT_EQ(table.size(), 1u);
 
@@ -205,7 +202,7 @@ TEST_F(hxhash_table_test_f, map_node_usage) {
 
 		// insert inserts a new node and returns an iterator to it when key is absent.
 		map_node_t* n10 = hxnew<map_node_t>(10);
-		EXPECT_EQ(table.insert(hxptr<map_node_t>(n10)), n10);
+		EXPECT_EQ(&*table.insert(hxptr<map_node_t>(n10)), n10);
 		EXPECT_EQ(table.find(10), n10);
 		EXPECT_EQ(n10->hash_key(), 10);
 		n10->value().id = 123;
@@ -213,7 +210,7 @@ TEST_F(hxhash_table_test_f, map_node_usage) {
 		map_node_t* manual = hxnew<map_node_t>(20);
 		manual->value().id = 321;
 		// Link external allocation through insert to co-exist with first entry.
-		EXPECT_EQ(table.insert(hxptr<map_node_t>(manual)), manual);
+		EXPECT_EQ(&*table.insert(hxptr<map_node_t>(manual)), manual);
 
 		EXPECT_EQ(table.size(), 2u);
 		EXPECT_EQ(table.count(10), 1u);
@@ -381,7 +378,7 @@ TEST_F(hxhash_table_test_f, strings) {
 		// Insert colors in reverse. insert returns an iterator to the inserted node.
 		for(size_t i = sz; i-- != 0;) {
 			hxtest_string* n = hxnew<hxtest_string>(colors[i]);
-			EXPECT_EQ(table.insert(hxptr<hxtest_string>(n)), n);
+			EXPECT_EQ(&*table.insert(hxptr<hxtest_string>(n)), n);
 			EXPECT_STREQ(n->hash_key(), colors[i]);
 		}
 		EXPECT_NE(table.find("Cyan"), hxnullptr);
@@ -405,7 +402,7 @@ TEST_F(hxhash_table_test_f, string_literal_nodes) {
 	for(unsigned int i = 0; i < hxsize(literals); ++i) {
 		// String literal keys are owned externally. The node stores only the pointer.
 		hxtest_string_literal* n = hxnew<hxtest_string_literal>(literals[i]);
-		EXPECT_EQ(table.insert(hxptr<hxtest_string_literal>(n)), n);
+		EXPECT_EQ(&*table.insert(hxptr<hxtest_string_literal>(n)), n);
 		EXPECT_EQ(n->hash_key(), literals[i]);
 		EXPECT_EQ(n->hash_value(), hxkey_hash(literals[i]));
 	}

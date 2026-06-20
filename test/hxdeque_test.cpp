@@ -7,7 +7,7 @@
 
 HX_NS_USE
 
-hxattr_noinline static void hxtest_gdb_break_hxdeque(void) {}
+hxattr_noinline static void hxtest_gdb_break_hxdeque(void) { }
 
 namespace {
 
@@ -34,7 +34,7 @@ public:
 			id = x.id;
 			moved_from = false;
 		}
-		hxtest_object(hxtest_object&& x) {
+		hxtest_object(hxtest_object&& x) noexcept {
 			++hxs_deque_current->m_constructed;
 			id = x.id;
 			moved_from = false;
@@ -50,7 +50,7 @@ public:
 			id = x.id;
 			moved_from = false;
 		}
-		hxtest_object& operator=(hxtest_object&& x) {
+		hxtest_object& operator=(hxtest_object&& x) noexcept {
 			id = x.id;
 			moved_from = false;
 			x.id = 0xefef;
@@ -207,7 +207,7 @@ TEST_F(hxdeque_test_f, emplace_front_constructs_in_place) {
 TEST_F(hxdeque_test_f, emplace_back_forward_multiple_args) {
 	// Use hxtest_pair_t with a two-arg constructor to exercise variadic forwarding.
 	struct hxtest_pair_t {
-		hxtest_pair_t(int a, int b) : x(a), y(b) {}
+		hxtest_pair_t(int a, int b) : x(a), y(b) { }
 		int x, y;
 	};
 	hxdeque<hxtest_pair_t, 2u> d;

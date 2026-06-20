@@ -21,12 +21,13 @@ public:
 		hxtask_test_t() : m_exec_count(0), m_reenqueue_count(0) { }
 
 		bool execute(hxtask_queue* q) override {
-			++m_exec_count;
+			// To avoid a race this has to be done before enqueue().
+			const size_t count = ++m_exec_count;
 			if(m_reenqueue_count > 0) {
 				--m_reenqueue_count;
 				q->enqueue(this);
 			}
-			return (m_exec_count & 1) == 0;
+			return (count & 1) == 0;
 		}
 
 		size_t get_exec_count(void) const { return m_exec_count; }

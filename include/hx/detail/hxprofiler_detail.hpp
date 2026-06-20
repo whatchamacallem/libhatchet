@@ -60,7 +60,9 @@ public:
 	void start_();
 	void stop_();
 	void log_();
+#if HX_USE_FILE_IO
 	void write_to_chrome_tracing_(const char* filename) hxattr_nonnull(2);
+#endif
 
 	// For testing.
 	size_t records_size_(void) { return m_records.size(); }
@@ -103,7 +105,6 @@ public:
 		// Avoid overhead in leaf samples.
 		const hxcycles_t t1_ = hxtime_sample_cycles();
 
-		// TODO: Use an atomic increment. Obviously.
 #if HX_USE_THREADS
 		const hxunique_lock hxprofiler_mutex_lock_(hxg_profiler_.m_mutex_);
 #endif

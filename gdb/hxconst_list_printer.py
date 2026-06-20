@@ -6,21 +6,21 @@ import gdb # type: ignore
 import gdb.printing # type: ignore
 import traceback
 
-# hxlist uses this layout:
+# hxconst_list uses this layout:
 #
-#	class hxlist_node {
-#		intptr_t m_list_link_;  // prev XOR next
+#	class hxconst_list_node {
+#		hxconst_list_node* m_list_prev_;
+#		hxconst_list_node* m_list_next_;
 #	};
 #
 #	template<typename node_t_, typename deleter_t_>
-#	class hxlist {
-#		size_t       m_size_;
-#		hxlist_node  m_sentinel_;  // m_sentinel_.m_list_link_ == tail XOR front
-#		hxlist_node* m_tail_;      // points to last node, or &m_sentinel_ when empty
-#	};
+#	class hxconst_list {
+#		size_t            m_size_;
+#		hxconst_list_node m_sentinel_;  // sentinel: m_sentinel_.m_list_next_ is front,
+#	};                                  //           m_sentinel_.m_list_prev_ is back.
 #
 
-class hxlistPrinter:
+class hxconst_listPrinter:
 	def __init__(self, val):
 		self.val = val
 
@@ -35,8 +35,7 @@ class hxlistPrinter:
 			self._size = size
 			self._node_type = node_type
 			self._sentinel_addr = int(self.val['m_sentinel_'].address)
-			self._tail_addr = int(self.val['m_tail_'])
-			self._sentinel_link = int(self.val['m_sentinel_']['m_list_link_'])
+			self._front_addr = int(self.val['m_sentinel_']['m_list_next_'])
 
 			# Get the base class type and its field names directly from the node
 			# type, avoiding gdb.lookup_type() which is unreliable when the same
@@ -69,9 +68,7 @@ class hxlistPrinter:
 			if not hasattr(self, '_size') or self._base_type is None:
 				return
 			node_ptr_type = self._base_type.pointer()
-			# front = tail XOR m_sentinel_.m_list_link_
-			current_addr = self._tail_addr ^ self._sentinel_link
-			prev_addr = self._sentinel_addr
+			current_addr = self._front_addr
 			for idx in range(self._size):
 				if current_addr == self._sentinel_addr:
 					break
@@ -84,10 +81,7 @@ class hxlistPrinter:
 					for name, val in fields:
 						yield (f'[{idx}] {name}', val)
 				base_ptr = gdb.Value(current_addr).cast(node_ptr_type)
-				link = int(base_ptr['m_list_link_'])
-				next_addr = prev_addr ^ link
-				prev_addr = current_addr
-				current_addr = next_addr
+				current_addr = int(base_ptr['m_list_next_'])
 		except Exception:
 			return
 
@@ -95,8 +89,8 @@ class hxlistPrinter:
 		return 'array'
 
 def build_pretty_printer():
-	pp = gdb.printing.RegexpCollectionPrettyPrinter('hxlist_printer')
-	pp.add_printer('hxlist', r'hxlist<', hxlistPrinter)
+	pp = gdb.printing.RegexpCollectionPrettyPrinter('hxconst_list_printer')
+	pp.add_printer('hxconst_list', r'hxconst_list<', hxconst_listPrinter)
 	return pp
 
 gdb.printing.register_pretty_printer(gdb.current_objfile(), build_pretty_printer(), replace=True)

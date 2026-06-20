@@ -7,14 +7,14 @@ Please use the most recent tagged release.
 > People say that you should not micro-optimize. But if what you love is
 > micro-optimization... that's what you should do. — Linus Torvalds
 
-libhatchet is a lightweight, bespoke C17/C++23 alternative to the C++ standard
-library designed for cross-compilation to resource-constrained targets like
-DSPs, FPGAs, ASICs or WebAssembly. It also falls back to requiring only C99
-libraries and a C++11 compiler, and deliberately avoids dependencies on the C++
-standard library. For those with a low-level mindset, the developer experience
-is better than with the C++ standard library. For example, the template
-instantiation errors are easier to read, and `hxassertmsg` will format your
-assert messages before setting a breakpoint for you. There is nothing
+libhatchet is a fast compiling lightweight, bespoke C17/C++23 alternative to the
+C++ standard library designed for cross-compilation to resource-constrained
+targets like DSPs, FPGAs, ASICs or WebAssembly. It also falls back to requiring
+only C99 libraries and a C++11 compiler, and deliberately avoids dependencies on
+the C++ standard library. For those with a low-level mindset, the developer
+experience is better than with the C++ standard library. For example, the
+template instantiation errors are easier to read, and `hxassertmsg` will format
+your assert messages before setting a breakpoint for you. There is nothing
 unnecessary to step through in the debugger.
 
 <img src="libhatchet.jpg" alt="banner" width="200" height="200" align="right" hspace="20">
@@ -31,8 +31,9 @@ system allocators.
 
 - **Library hardening and asserts** are controlled via `HX_HARDENING_MODE`.
 
-  E.g. usage is `-DHX_HARDENING_MODE=HX_HARDENING_MODE_NONE`. See `libhatchet.h`
-  for the different kinds of asserts available.
+  E.g. usage is `-DHX_HARDENING_MODE=HX_HARDENING_MODE_STANDARD`. See
+  `libhatchet.h` for the different kinds of asserts available. Note: Checks
+  against `null` are only provided at the debug level of hardening.
 
   - `HX_HARDENING_MODE_NONE`: Omits library hardening and disables all asserts.
   - `HX_HARDENING_MODE_STANDARD`: Provides hardening but saves space by omitting
@@ -116,7 +117,8 @@ system allocators.
   macros when writing tests. Using tabs instead of spaces reduces token use.
 
 - **constexpr ready**: C++11 `constexpr` are used where possible. Asserts,
-  algorithms, `hxlist`, `hxbitset` and `hxrandom` support `consteval` in C++23.
+  algorithms, `hxconst_list`, `hxbitset` and `hxrandom` support `consteval` in
+  C++23.
 
 ## Documentation
 

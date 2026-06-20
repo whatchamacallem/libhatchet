@@ -118,14 +118,10 @@ template<> inline const char* hxconsole_arg_label_<const char*>() { return "char
 // ----------------------------------------------------------------------------
 // C++20 concept for parseable types.
 
-#if HX_CPLUSPLUS >= 202002L
 template<typename t_>
 concept hxconsole_parseable_ = requires(const char* s_, char** n_) {
 	requires hxis_same<decltype(hxconsole_parse_arg_<t_>(s_, n_)), t_>::value;
 };
-#else
-#define hxconsole_parseable_ typename
-#endif
 
 // ----------------------------------------------------------------------------
 // Checks for printing characters.
@@ -221,7 +217,7 @@ public:
 			*m_var_ = val_;
 			return true;
 		}
-		hxlog_console("parse error at: %s\n", str_);
+		hxlog_handler(hxlog_level_console, "parse error at: %s\n", str_);
 		return false;
 	}
 

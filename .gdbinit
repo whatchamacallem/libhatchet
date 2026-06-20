@@ -17,6 +17,7 @@ set print pretty on
 set print thread-events off
 source gdb/hxarray_printer.py
 source gdb/hxbitset_printer.py
+source gdb/hxconst_list_printer.py
 source gdb/hxdeque_printer.py
 source gdb/hxhash_table_printer.py
 source gdb/hxlist_printer.py

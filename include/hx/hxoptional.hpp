@@ -55,7 +55,7 @@ public:
 	/// Move constructor. Moves the engaged state and value from `other`.
 	/// `other` is left disengaged.
 	/// - `other` : The `hxoptional` to move from.
-	hxoptional(hxoptional&& other_);
+	hxoptional(hxoptional&& other_) noexcept;
 
 	/// Constructs by copying the engaged state and converting the value of
 	/// `other_` to `T_`. `U_` must be convertible to `T_`.
@@ -102,7 +102,7 @@ public:
 	/// Move assignment. Destroys any current value, then moves from `other`.
 	/// `other` is left disengaged.
 	/// - `other` : The `hxoptional` to move from.
-	hxoptional& operator=(hxoptional&& other_);
+	hxoptional& operator=(hxoptional&& other_) noexcept;
 
 	/// Disengages the optional, destroying any contained value.
 	/// - `nullopt` : The disengaged sentinel.
@@ -156,7 +156,7 @@ public:
 	/// Exchanges the contents with `other`. Both engaged states and values are
 	/// swapped.
 	/// - `other` : The `hxoptional` to swap with.
-	void swap(hxoptional& other_);
+	void swap(hxoptional& other_) noexcept;
 
 	/// Returns a reference to the contained value. The optional must be engaged.
 	hxattr_nodiscard T_& value(void);

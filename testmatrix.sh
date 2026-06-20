@@ -40,11 +40,11 @@ ERRORS="-Wall -Wextra -pedantic-errors -Werror -Wfatal-errors -Wcast-qual \
 	-Wdisabled-optimization -Wshadow -Wundef -Wconversion -Wdate-time \
 	-Wmissing-declarations -Wno-c2y-extensions"
 
-FLAGS="-DHX_USE_POSIX_FILE_IO=1 -ffast-math -ggdb3 -D_FORTIFY_SOURCE=3"
+FLAGS="-DHX_USE_FILE_IO=2 -ffast-math -ggdb3 -D_FORTIFY_SOURCE=3"
 
-SANITIZE_UNDEF="-fsanitize=undefined,address"
-SANITIZE_THREAD="-fsanitize=thread"
-SANITIZE_MEMORY="-fsanitize=memory -fsanitize-memory-track-origins"
+SAN_UNDEF="-fsanitize=undefined,address"
+SAN_THREAD="-fsanitize=thread"
+SAN_MEMORY="-fsanitize=memory -fsanitize-memory-track-origins"
 
 HX_DIR=`pwd`
 
@@ -66,23 +66,24 @@ rm -rf ./build; mkdir ./build && cd ./build
 # clang
 
 run_clang_build() {
-	echo "clang c17/c++20 -O$1 ..."
+	OPT=$1; SAN=$2; shift 2
+	echo "clang c17/c++20 -O$OPT $SAN ..."
 
 	# compile C17
-	clang -I../include -DHX_HARDENING_MODE=3-$1 -O$1 $FLAGS $ERRORS \
-		-fdiagnostics-absolute-paths -pthread -std=c17 -c ../test/*.c
+	clang -I../include -DHX_HARDENING_MODE=3-$OPT -O$OPT $FLAGS $ERRORS $SAN \
+		-fdiagnostics-absolute-paths -pthread -std=c17 "$@" -c ../test/*.c
 
 	# generate C++20 pch. clang does this automatically when a c++ header file
 	# is the target. This is just a test.
-	clang++ -I../include -DHX_HARDENING_MODE=3-$1 -O$1 $FLAGS $ERRORS \
+	clang++ -I../include -DHX_HARDENING_MODE=3-$OPT -O$OPT $FLAGS $ERRORS $SAN \
 		-DHX_USE_THREADS=1 -pthread -std=c++23 \
-		-fno-exceptions -fdiagnostics-absolute-paths \
+		-fno-exceptions -fdiagnostics-absolute-paths "$@" \
 		../include/hx/hxtest.hpp -o hxtest.hpp.pch
 
 	# compile C++23 and link
-	clang++ -I../include -DHX_HARDENING_MODE=3-$1 -O$1 $FLAGS $ERRORS \
+	clang++ -I../include -DHX_HARDENING_MODE=3-$OPT -O$OPT $FLAGS $ERRORS $SAN \
 		-DHX_USE_THREADS=1 -pthread -std=c++23 \
-		-fno-exceptions -fdiagnostics-absolute-paths \
+		-fno-exceptions -fdiagnostics-absolute-paths "$@" \
 		-include-pch hxtest.hpp.pch ../src/*.cpp ../test/*.cpp *.o \
 		-lpthread -lstdc++ -o hxtest
 
@@ -94,15 +95,15 @@ run_clang_build() {
 # Test undefined behavior/address use at all build levels with clang. Uses pch
 # and allows exceptions just to make sure there are none.
 for I in 0 1 2 3; do
-	run_clang_build "$I" "$SANITIZE_UNDEF" "$@"
+	run_clang_build "$I" "$SAN_UNDEF" "$@"
 done
 
-# Run the thread sanitizer with all optimizations on.
-run_clang_build 3 "$SANITIZE_THREAD" "$@"
+# Run the thread SANr with all optimizations on.
+run_clang_build 3 "$SAN_THREAD" "$@"
 
-# Run the memory sanitizer in debug and with all optimizations on.
-run_clang_build 3 "$SANITIZE_MEMORY" "$@"
-run_clang_build 0 "$SANITIZE_MEMORY" "$@"
+# Run the memory SANr in debug and with all optimizations on.
+run_clang_build 3 "$SAN_MEMORY" "$@"
+run_clang_build 0 "$SAN_MEMORY" "$@"
 
 # -----------------------------------------------------------------------------
 # gcc

@@ -32,20 +32,18 @@ module;
 #include <x86intrin.h>
 #endif
 
-#if defined HX_USE_POSIX_FILE_IO && (HX_USE_POSIX_FILE_IO)
+#if defined HX_USE_FILE_IO && (HX_USE_FILE_IO) == 2
 #include <fcntl.h>
 #include <unistd.h>
 #endif
 
-// WARNING: TODO: This is experimental code. Using the standard library in a
-// module was not working with GCC 15.2.0 at all.
 #if !defined HX_USE_LIBCXX || (HX_USE_LIBCXX)
 #include <new>
 #include <initializer_list>
 #endif
 
 #if defined HX_USE_GOOGLE_TEST && (HX_USE_GOOGLE_TEST)
-#error Google Test does not compile as a module.
+#error HX_USE_GOOGLE_TEST is set and Google Test 1.15.2 does not compile as a module.
 #endif
 
 #define HX_PROVIDE_NEW_DELETE 0
@@ -67,6 +65,7 @@ export {
 #include "../include/hx/hxarray.hpp"
 #include "../include/hx/hxbitset.hpp"
 #include "../include/hx/hxconsole.hpp"
+#include "../include/hx/hxconst_list.hpp"
 #include "../include/hx/hxdeque.hpp"
 #include "../include/hx/hxfile.hpp"
 #include "../include/hx/hxhash_table.hpp"

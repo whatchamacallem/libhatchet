@@ -42,8 +42,8 @@
 					"ignoreFailures": false
 				},
 				{
-					"description": "Load hxlist printer",
-					"text": "source ${workspaceFolder}/gdb/hxlist_printer.py",
+					"description": "Load hxconst_list printer",
+					"text": "source ${workspaceFolder}/gdb/hxconst_list_printer.py",
 					"ignoreFailures": false
 				},
 				{

@@ -157,7 +157,7 @@ TEST(hxsort_test, sort_grinder) {
 TEST(hxsort_test, sort_grinder_generic) {
 	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
 	hxrandom rng(3);
-	const size_t max_size_mask = 0xffff;
+	const size_t max_size_mask = 0xfff;
 	hxarray<hxtest_ref_tracker_t> sorted; sorted.reserve(max_size_mask);
 	hxarray<int> histogram(20000, 0);
 

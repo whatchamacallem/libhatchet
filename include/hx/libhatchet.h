@@ -32,12 +32,11 @@
 #endif
 
 /// `int LIBHATCHET_VER` - One digit major, and two digit minor and patch
-/// versions. Odd numbered minor versions are development branches.
-#define LIBHATCHET_VER 13702
+/// versions.
+#define LIBHATCHET_VER 13808
 
-/// `LIBHATCHET_TAG` - Major, minor and patch version tag name. Odd numbered
-/// minor versions are development branches and their tags end in `-dev`.
-#define LIBHATCHET_TAG "v1.37.2"
+/// `LIBHATCHET_TAG` - Major, minor and patch version tag name.
+#define LIBHATCHET_TAG "v1.38.8"
 
 #if !defined HX_HARDENING_MODE
 /// `HX_HARDENING_MODE` - Library hardening level. See the README.md for levels.
@@ -86,12 +85,6 @@
 
 #if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG // These are debug facilities.
 
-/// `hxlog(...)` - Enters formatted messages in the system log. Does not add a
-/// newline. This is only evaluated when `HX_HARDENING_MODE ==
-/// HX_HARDENING_MODE_DEBUG`.
-/// - `...` Printf-style formatted log message.
-#define hxlog(...) hxlog_handler(hxlog_level_log, __VA_ARGS__)
-
 /// `hxassert(bool x)` - Logs an error and terminates execution if `x` is false.
 /// This is only evaluated when `HX_HARDENING_MODE == HX_HARDENING_MODE_DEBUG`.
 /// Always evaluates to an expression of type `void`. May be used as a compile
@@ -135,43 +128,47 @@
 #else // HX_HARDENING_MODE != HX_HARDENING_MODE_DEBUG
 #define hxassertmsg(x_, ...) ((void)0)
 #define hxassert(x_) ((void)0)
-#define hxlog(...) ((void)0)
 #define hxassert_always(x_, ...) (void)((bool)(x_) \
 	|| (hxassert_handler(), 0)) // THIS IS USED AS A COMPILE TIME ASSERT.
 
 #endif // HX_HARDENING_MODE != HX_HARDENING_MODE_DEBUG
 
-#if (HX_HARDENING_MODE) > HX_HARDENING_MODE_STANDARD
+#if (HX_USE_LOGGING) > 1
+/// `hxlog(...)` - Enters formatted messages in the system log. Does not add a
+/// newline. Only evaluated if `HX_USE_LOGGING` is `2` or above.
+/// - `...` Printf-style formatted log message.
+#define hxlog(...) hxlog_handler(hxlog_level_log, __VA_ARGS__)
+#else
+#define hxlog(...) ((void)0)
+#endif
+
+#if HX_USE_LOGGING
 /// `hxlog_release(...)` - Enters formatted messages in the system log up to
-/// release level 1. No automatic newline. This is only evaluated when
-/// `HX_HARDENING_MODE > HX_HARDENING_MODE_STANDARD`.
+/// release level 1.
 /// - `...` Printf-style formatted log message.
 #define hxlog_release(...) hxlog_handler(hxlog_level_log, __VA_ARGS__)
 
 /// `hxlog_console(...)` - Enters formatted messages in the console system log.
-/// This is only evaluated when `HX_HARDENING_MODE > HX_HARDENING_MODE_STANDARD`.
 /// - `...` Variadic arguments for the formatted console log message.
 #define hxlog_console(...) hxlog_handler(hxlog_level_console, __VA_ARGS__)
 
-/// `hxlog_warning(...)` - Enters formatted warnings in the system log. This is
-/// only evaluated when `HX_HARDENING_MODE > HX_HARDENING_MODE_STANDARD`.
+/// `hxlog_warning(...)` - Enters formatted warnings in the system log.
 /// - `...` Variadic arguments for the formatted warning message.
 #define hxlog_warning(...) hxlog_handler(hxlog_level_warning, __VA_ARGS__)
 
 /// `hxwarn_msg(bool x, ...)` - Enters formatted warnings in the system log when
-/// `x` is false. This is only evaluated when `HX_HARDENING_MODE >
-/// HX_HARDENING_MODE_STANDARD`.
+/// `x` is false.
 /// - `x` : The condition to evaluate.
 /// - `...` Variadic arguments for the formatted warning message.
 #define hxwarn_msg(x_, ...) (void)((bool)(x_) \
 	|| (hxlog_handler(hxlog_level_warning, __VA_ARGS__), 0))
 
-#else // HX_HARDENING_MODE < HX_HARDENING_MODE_VERBOSE
+#else // !HX_USE_LOGGING
 #define hxlog_release(...) ((void)0)
 #define hxlog_console(...) ((void)0)
 #define hxlog_warning(...) ((void)0)
 #define hxwarn_msg(x_, ...) ((void)0)
-#endif
+#endif // !HX_USE_LOGGING
 
 // hxassert_hard has 4 variations. See above. It is only evaluated when
 // HX_HARDENING_MODE != HX_HARDENING_MODE_NONE.
@@ -263,18 +260,15 @@ extern int hxg_init_ver_;
 
 /// `hxshutdown` - Terminates service. Releases all resources acquired by the
 /// platform and confirms all memory allocations have been released.
-/// `HX_HARDENING_MODE != HX_HARDENING_MODE_NONE`.
 void hxshutdown(void) hxattr_cold;
 
-/// `hxlog_handler` - Enters formatted messages in the system log. This is the
-/// only access to logging when `HX_HARDENING_MODE < HX_HARDENING_MODE_STANDARD`.
+/// `hxlog_handler` - Enters formatted messages in the system log.
 /// - `level` : The log level (e.g., `hxlog_level_log`, `hxlog_level_warning`).
 /// - `format` : Non-null `printf`-style format string.
 /// - `...` Additional arguments that must satisfy the format string.
 void hxlog_handler(enum hxlog_level_t level_, const char* format_, ...) hxattr_noexcept hxattr_printf(2, 3);
 
-/// `hxlog_handler_v` - A `va_list` version of `hxlog_handler`. This is the only
-/// access to logging when `HX_HARDENING_MODE < HX_HARDENING_MODE_STANDARD`.
+/// `hxlog_handler_v` - A `va_list` version of `hxlog_handler`.
 /// - `level` : The log level (e.g., `hxlog_level_log`, `hxlog_level_warning`).
 /// - `format` : Non-null `printf`-style format string.
 /// - `args` : A `va_list` containing the arguments for the format string.

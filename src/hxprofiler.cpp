@@ -15,23 +15,11 @@ namespace {
 // ----------------------------------------------------------------------------
 // Console commands
 
-#if HX_CPLUSPLUS >= 202002L
-bool hxprofile_start_command(void) { hxprofiler_start(); return true; }
-
-bool hxprofile_stop_command(void) { hxprofiler_stop(); return true; }
-
-bool hxprofiler_log_command(void) { hxprofiler_log(); return true; }
-
-bool hxprofiler_write_to_chrome_tracing_command(const char* filename) {
-	hxprofiler_write_to_chrome_tracing(filename);
-	return true;
-}
-
-hxconsole_command_named(hxprofile_start_command, profilestart);
-hxconsole_command_named(hxprofile_stop_command, profilestop);
-hxconsole_command_named(hxprofiler_log_command, profilelog);
-hxconsole_command_named(hxprofiler_write_to_chrome_tracing_command, profilewrite);
-#endif // HX_CPLUSPLUS >= 202002L
+hxconsole_command_named(*+[](void) -> bool { hxprofiler_start(); return true; }, profilestart);
+hxconsole_command_named(*+[](void) -> bool { hxprofiler_stop(); return true; }, profilestop);
+hxconsole_command_named(*+[](void) -> bool { hxprofiler_log(); return true; }, profilelog);
+hxconsole_command_named(*+[](const char* filename) -> bool {
+	hxprofiler_write_to_chrome_tracing(filename); return true; }, profilewrite);
 
 } // namespace {
 
@@ -60,20 +48,21 @@ void hxprofiler_internal_::log_(void) {
 	const hxunique_lock profiler_lock(hxg_profiler_.m_mutex_);
 	m_is_started_ = false;
 
-	hxlog_console("[ ");
+	hxlog_handler(hxlog_level_console, "[ ");
 	for(size_t i = 0; i < m_records.size(); ++i) {
 		const hxprofiler_record_& rec = m_records[i];
 
-		if(i != 0) { hxlog_console(",\n"); }
+		if(i != 0) { hxlog_handler(hxlog_level_console, ",\n"); }
 
 		const hxcycles_t delta = rec.m_end_ - rec.m_begin_;
-		hxlog_console("{ \"name\":\"%s\", \"ms\":%.15g, \"thread\":\"%x\" }",
+		hxlog_handler(hxlog_level_console, "{ \"name\":\"%s\", \"ms\":%.15g, \"thread\":\"%x\" }",
 		rec.m_label_, static_cast<double>(delta) * hxmilliseconds_per_cycle,
 		static_cast<unsigned int>(rec.m_thread_id_));
 	}
-	hxlog_console(" ]\n");
+	hxlog_handler(hxlog_level_console, " ]\n");
 }
 
+#if HX_USE_FILE_IO
 // ###
 // ### WARNING: Only https://ui.perfetto.dev/ is working at the moment.
 // ###
@@ -108,11 +97,9 @@ void hxprofiler_internal_::write_to_chrome_tracing_(const char* filename) {
 	}
 	f.print("\n]\n");
 
-	hxlog_console("wrote %s.\n", filename);
+	hxlog_handler(hxlog_level_console, "wrote %s.\n", filename);
 }
-
+#endif // HX_USE_FILE_IO
 } // hxdetail_
-
 #endif // HX_USE_PROFILER
-
 HX_NS_END_

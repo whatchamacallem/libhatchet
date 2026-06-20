@@ -23,7 +23,8 @@ public:
 		key_t id;
 	};
 
-	// Move everything onto the temp stack.
+	// Move everything onto the temp stack. test_range_and_type opens a second
+	// scope as well..
 	hxradix_sort_test_f(void) : m_temporary_stack_scope(hxsystem_allocator_temporary_stack) { }
 
 	template<typename key_t>
@@ -46,6 +47,9 @@ public:
 
 	template<typename key_t>
 	void test_range_and_type(uint32_t size, uint32_t mask, key_t offset) {
+		// A second temp stack scope may be required.
+		const hxsystem_allocator_scope temporary_stack_scope_2(hxsystem_allocator_temporary_stack);
+
 		// Generate test data.
 		hxarray<hxtest_object<key_t> > a;
 		generate<key_t>(a, size, mask, offset);

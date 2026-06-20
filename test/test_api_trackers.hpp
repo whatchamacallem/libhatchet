@@ -20,7 +20,7 @@ public:
 
 	// This is what is being used.
 
-	hxtest_ref_tracker_t(hxtest_ref_tracker_t&& other) : value(other.value) {
+	hxtest_ref_tracker_t(hxtest_ref_tracker_t&& other) noexcept : value(other.value) {
 		// Callee may leave itself in an unusable state or crash.
 		hxassert(this != &other);
 	}
@@ -29,7 +29,7 @@ public:
 		value = 0xbad;
 	}
 
-	hxtest_ref_tracker_t& operator=(hxtest_ref_tracker_t&& other) {
+	hxtest_ref_tracker_t& operator=(hxtest_ref_tracker_t&& other) noexcept {
 		// Callee may leave itself in an unusable state or crash.
 		hxassert(this != &other);
 		value = other.value;

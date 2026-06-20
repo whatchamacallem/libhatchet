@@ -82,6 +82,7 @@ HX_NS_END_
 /// log. Compiles to a NOP when not in use.
 #define hxprofiler_log() HX_PROFILE_ONLY_(HX_NS_PREFIX_ hxdetail_::hxg_profiler_.log_())
 
+#if HX_USE_FILE_IO
 /// ###
 /// ### WARNING: Only https://ui.perfetto.dev/ is working at the moment.
 /// ###
@@ -93,5 +94,6 @@ HX_NS_END_
 /// keys. Compiles to a NOP when not in use.
 #define hxprofiler_write_to_chrome_tracing(filename_) \
 	HX_PROFILE_ONLY_(HX_NS_PREFIX_ hxdetail_::hxg_profiler_.write_to_chrome_tracing_(filename_))
+#endif
 
 #include "detail/hxprofiler_detail.hpp"

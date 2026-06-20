@@ -71,7 +71,7 @@ class HxDequePrinter:
 
 def build_pretty_printer():
 	pp = gdb.printing.RegexpCollectionPrettyPrinter('hxdeque_printer')
-	pp.add_printer('hxdeque', r'^hxdeque<.*,.*>$', HxDequePrinter)
+	pp.add_printer('hxdeque', r'hxdeque<', HxDequePrinter)
 	return pp
 
-gdb.printing.register_pretty_printer(gdb.current_objfile(), build_pretty_printer())
+gdb.printing.register_pretty_printer(gdb.current_objfile(), build_pretty_printer(), replace=True)

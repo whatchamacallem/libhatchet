@@ -11,7 +11,7 @@ HX_NS_BEGIN_
 // hxtask_wait_for_tasks_ keeps worker threads waiting for tasks or shutdown.
 class hxtask_wait_for_tasks_ {
 public:
-	hxtask_wait_for_tasks_(hxtask_queue* q) : m_q(q) {}
+	hxtask_wait_for_tasks_(hxtask_queue* q) : m_q(q) { }
 	bool operator()(void) const {
 		return !m_q->m_tasks_.empty()
 			|| m_q->m_queue_run_level_ == hxtask_queue::run_level_stopped_;
@@ -24,7 +24,7 @@ public:
 // started.
 class hxtask_wait_for_completion_ {
 public:
-	hxtask_wait_for_completion_(hxtask_queue* q) : m_q(q) {}
+	hxtask_wait_for_completion_(hxtask_queue* q) : m_q(q) { }
 	bool operator()(void) const {
 		hxassertmsg(m_q->m_queue_run_level_ == hxtask_queue::run_level_running_,
 			"threading_error");

@@ -40,7 +40,7 @@ public:
 	/// Move constructor. Transfers ownership from `other` to this. `other` is
 	/// left null.
 	/// - `other` : The `hxptr` to transfer ownership from.
-	hxconstexpr hxptr(hxptr&& other_);
+	hxconstexpr hxptr(hxptr&& other_) noexcept;
 
 	/// Destroys the owned object using `deleter_t` if non-null.
 	hxconstexpr ~hxptr(void);
@@ -49,7 +49,7 @@ public:
 	/// ownership from `other`. `other` is left null. Self-assignment is not
 	/// supported.
 	/// - `other` : The `hxptr` to transfer ownership from.
-	hxconstexpr hxptr& operator=(hxptr&& other_);
+	hxconstexpr hxptr& operator=(hxptr&& other_) noexcept;
 
 	/// Returns a reference to the owned object. The pointer must not be null.
 	hxattr_nodiscard hxconstexpr T_& operator*(void) const;
@@ -98,7 +98,7 @@ public:
 
 	/// Exchanges ownership with `other`. Neither pointer is deleted.
 	/// - `other` : The `hxptr` to swap with.
-	hxconstexpr void swap(hxptr& other_);
+	hxconstexpr void swap(hxptr& other_) noexcept;
 
 private:
 	hxptr(const hxptr&) = delete;

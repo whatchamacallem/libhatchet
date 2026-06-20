@@ -93,7 +93,7 @@ TEST(hxprofiler_test, single_scope_runs_for_1ms) {
 	}
 
 	// Stop the profiler and dump the sample to the console.
-#if HX_CPLUSPLUS >= 202002L
+#if HX_USE_CONSOLE
 	const bool is_ok = hxconsole_exec_line("profilelog");
 	EXPECT_TRUE(is_ok);
 #else
@@ -102,12 +102,13 @@ TEST(hxprofiler_test, single_scope_runs_for_1ms) {
 #endif
 }
 
+#if HX_USE_FILE_IO
 TEST(hxprofiler_test, write_to_chrome_tracing_command) {
 	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
 
 	// Reset profiling and use console commands for next capture.
 	hxprofiler_stop();
-#if HX_CPLUSPLUS >= 202002L
+#if HX_USE_CONSOLE
 	hxconsole_exec_line("profilestart");
 #else
 	hxprofiler_start();
@@ -124,7 +125,7 @@ TEST(hxprofiler_test, write_to_chrome_tracing_command) {
 	q.wait_for_all();
 
 	// profilewrite emits Chrome tracing JSON.
-#if HX_CPLUSPLUS >= 202002L
+#if HX_USE_CONSOLE
 	const bool is_ok = hxconsole_exec_line("profilewrite profile.json");
 	EXPECT_TRUE(is_ok);
 #else
@@ -134,5 +135,5 @@ TEST(hxprofiler_test, write_to_chrome_tracing_command) {
 	// "Stops sampling and writes samples to the system log."
 	hxprofiler_log();
 }
-
+#endif // HX_USE_FILE_IO
 #endif // HX_USE_PROFILER

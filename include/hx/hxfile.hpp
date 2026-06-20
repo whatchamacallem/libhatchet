@@ -13,6 +13,8 @@
 #error Header does not provide macros only.
 #endif
 
+#if HX_USE_FILE_IO
+
 HX_NS_BEGIN_
 
 class hxfile;
@@ -31,7 +33,7 @@ extern hxfile hxdev_null;
 
 /// Equivalent to `std::endl` without the flush. Does not vary by platform.
 /// Non-empty POSIX text files must end with `\n`.
-#define hxendl "\n"
+hxinline_constexpr char hxendl[] = "\n";
 
 /// `hxfile` - Single-ownership C++ RAII abstraction for file I/O. Provides a
 /// mixture of unformatted binary stream operations and formatted
@@ -101,14 +103,14 @@ public:
 	hxfile(const char* file_, uint8_t mode_=0) = delete;
 
 	// Move constructor. No copy constructor is provided.
-	hxfile(hxfile&& file_);
+	hxfile(hxfile&& file_) noexcept;
 
 	/// Destroys the file and ensures it is closed when the object goes out of
 	/// scope.
 	~hxfile();
 
 	/// Move assignment. No copy assignment operator is provided.
-	void operator=(hxfile&& file_);
+	void operator=(hxfile&& file_) noexcept;
 
 	/// Checks if the file is open, `EOF` has not been reached, and no error has
 	/// been encountered. See usage example in the class documentation.
@@ -257,3 +259,5 @@ private:
 };
 
 HX_NS_END_
+
+#endif // HX_USE_FILE_IO

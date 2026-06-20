@@ -9,7 +9,7 @@
 #include "../include/hx/hxarray.hpp"
 
 HX_NS_BEGIN_
-#if HX_CPLUSPLUS >= 202002L
+#if HX_USE_CONSOLE
 namespace hxdetail_ {
 
 // These C library wrappers reduce code bloat and enforce additional
@@ -139,27 +139,6 @@ bool hxconsole_exec_line(const char* command) {
 #endif
 }
 
-bool hxconsole_exec_file(hxfile& file) {
-	char line_buf[HX_MAX_LINE];
-	bool result = true;
-	while(result && file.getline(line_buf)) {
-		result = hxconsole_exec_line(line_buf);
-	}
-	return result;
-}
-
-bool hxconsole_exec_filename(const char* filename) {
-	// Please don't assert.
-	hxfile file(hxfile::in|hxfile::skip_asserts, "%s", filename);
-	hxwarn_msg(file, "cannot open: %s", filename);
-	if(file) {
-		const bool is_ok = hxconsole_exec_file(file);
-		hxwarn_msg(is_ok, "encountering errors: %s", filename);
-		return is_ok;
-	}
-	return false;
-}
-
 // Lists variables and commands in order.
 bool hxconsole_help(void) {
 	hxinit();
@@ -183,6 +162,29 @@ bool hxconsole_help(void) {
 	}
 	return true;
 }
+
+#if HX_USE_FILE_IO
+bool hxconsole_exec_file(hxfile& file) {
+	char line_buf[HX_MAX_LINE];
+	bool result = true;
+	while(result && file.getline(line_buf)) {
+		result = hxconsole_exec_line(line_buf);
+	}
+	return result;
+}
+
+bool hxconsole_exec_filename(const char* filename) {
+	// Please don't assert.
+	hxfile file(hxfile::in|hxfile::skip_asserts, "%s", filename);
+	hxwarn_msg(file, "cannot open: %s", filename);
+	if(file) {
+		const bool is_ok = hxconsole_exec_file(file);
+		hxwarn_msg(is_ok, "encountering errors: %s", filename);
+		return is_ok;
+	}
+	return false;
+}
+#endif // HX_USE_FILE_IO
 
 // ----------------------------------------------------------------------------
 // Built-in console commands. These are not hooked up as console commands
@@ -233,10 +235,12 @@ hxconsole_command_named(hxconsole_hex_dump, hexdump);
 // Write floats to console.
 hxconsole_command_named(hxconsole_float_dump, floatdump);
 
+#if HX_USE_FILE_IO
 // Executes commands and settings in a file. Usage: "exec <filename>".
 hxconsole_command_named(hxconsole_exec_filename, exec);
+#endif // HX_USE_FILE_IO
 
 } // namespace {
 #endif // !defined __wasm__
-#endif // HX_CPLUSPLUS >= 202002L
+#endif // HX_USE_CONSOLE
 HX_NS_END_

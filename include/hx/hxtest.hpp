@@ -86,7 +86,6 @@
 #else
 
 #if !(HX_USE_MODULE)
-#include "hxfile.hpp"
 
 HX_NS_BEGIN_
 

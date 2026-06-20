@@ -7,7 +7,7 @@
 
 #include "../include/hx/hxfile.hpp"
 
-#if HX_USE_POSIX_FILE_IO
+#if (HX_USE_FILE_IO) == 2
 
 // These are only dependencies of the POSIX implementation. This is to allow
 // easy reimplementation.
@@ -16,11 +16,7 @@
 
 #include <stdio.h> // ::vsnprintf
 
-#endif // HX_USE_POSIX_FILE_IO
-
 HX_NS_BEGIN_
-
-#if HX_USE_POSIX_FILE_IO
 
 // In this version the file is a POSIX fd stored directly as intptr_t. -1
 // represents closed or hxdev_null; valid fds are >= 0.
@@ -53,7 +49,7 @@ hxfile::hxfile(uint8_t mode, const char* filename, ...) : hxfile() {
 	va_end(args);
 }
 
-hxfile::hxfile(hxfile&& file) {
+hxfile::hxfile(hxfile&& file) noexcept {
 	::memcpy(static_cast<void*>(this), static_cast<const void*>(&file), sizeof file);
 	::memset(static_cast<void*>(&file), 0x00, sizeof file);
 	file.m_file_pimpl_ = static_cast<intptr_t>(-1);
@@ -63,7 +59,7 @@ hxfile::~hxfile(void) {
 	close();
 }
 
-void hxfile::operator=(hxfile&& file) {
+void hxfile::operator=(hxfile&& file) noexcept {
 	close();
 	::memcpy(static_cast<void*>(this), static_cast<const void*>(&file), sizeof file);
 	::memset(static_cast<void*>(&file), 0x00, sizeof file);
@@ -210,6 +206,10 @@ bool hxfile::flush(void) { // NOLINT
 	return true;
 }
 
+// read() is a system call and so it is not tracked by the memory sanitizer.
+#if defined __clang__
+__attribute__((no_sanitize("memory")))
+#endif
 bool hxfile::getline(char* buffer, int buffer_size) {
 	hxassertmsg(((m_open_mode_ & hxfile::in) != 0u) && (m_file_pimpl_ >= 0), "invalid_file");
 
@@ -315,6 +315,5 @@ int hxfile::scan(const char* format, ...) {
 	return items_scanned;
 }
 
-#endif // HX_USE_POSIX_FILE_IO
-
 HX_NS_END_
+#endif // (HX_USE_FILE_IO) == 2

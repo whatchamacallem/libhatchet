@@ -69,20 +69,17 @@ hxattr_allocator(free) hxattr_hot hxattr_noexcept static void* hxmalloc_checked_
 // HX_USE_MEMORY_MANAGER. See hxsettings.h.
 #if HX_USE_MEMORY_MANAGER
 
-// NOTE: An anonymous namespace will inhibit the linker from inlining. 
-namespace {
-
 // All pathways are thread-safe by default. In theory locking could be removed
 // if threads avoided sharing allocators, but I do not want to scare anyone.
 #if HX_USE_THREADS
-hxmutex hxs_memory_manager_mutex;
+static hxmutex hxs_memory_manager_mutex;
 #define HX_MEMORY_MANAGER_LOCK_() const hxunique_lock memory_manager_lock_(hxs_memory_manager_mutex)
 #else
 #define HX_MEMORY_MANAGER_LOCK_() (void)0
 #endif
 
 // The current allocator is a thread-local attribute.
-hxthread_local<hxsystem_allocator_t> hxs_current_memory_allocator;
+static hxthread_local<hxsystem_allocator_t> hxs_current_memory_allocator;
 
 // ----------------------------------------------------------------------------
 // hxmemory_allocation_header - Used until C++17.
@@ -91,13 +88,6 @@ class hxmemory_allocation_header {
 public:
 	size_t size;
 	uintptr_t actual; // Address actually returned by malloc.
-
-#if (HX_HARDENING_MODE) != HX_HARDENING_MODE_NONE
-	enum : uint32_t {
-		sentinel_value_allocated = 0x00c0ffeeu,
-		sentinel_value_freed = 0xdeadbeefu
-	} sentinel_value;
-#endif
 };
 #endif
 
@@ -108,7 +98,7 @@ public:
 // consumers. Out-of-line constructors prevent this.
 class hxmemory_allocator_base {
 public:
-	hxmemory_allocator_base();
+	hxmemory_allocator_base() : m_label_(hxnull) { }
 	hxattr_hot void* allocate(size_t size, hxalignment_t alignment) {
 		return on_alloc(size, alignment);
 	}
@@ -129,8 +119,6 @@ private:
 	void operator=(const hxmemory_allocator_base&) = delete;
 };
 
-hxmemory_allocator_base::hxmemory_allocator_base() : m_label_(hxnull) { }
-
 // ----------------------------------------------------------------------------
 // hxmemory_allocator_os_heap
 //
@@ -140,7 +128,6 @@ hxmemory_allocator_base::hxmemory_allocator_base() : m_label_(hxnull) { }
 // allows tracking bytes allocated in debug.
 class hxmemory_allocator_os_heap : public hxmemory_allocator_base {
 public:
-	hxmemory_allocator_os_heap();
 	hxattr_cold void construct(const char* label) {
 		m_label_ = label;
 		m_allocation_count = 0u;
@@ -190,9 +177,6 @@ public:
 		hxmemory_allocation_header& hdr = reinterpret_cast<hxmemory_allocation_header*>(aligned)[-1];
 		hdr.size = size;
 		hdr.actual = actual;
-#if (HX_HARDENING_MODE) != HX_HARDENING_MODE_NONE
-		hdr.sentinel_value = hxmemory_allocation_header::sentinel_value_allocated;
-#endif
 		++m_allocation_count;
 		m_bytes_allocated += size; // Ignore overhead.
 		m_high_water = hxmax(m_high_water, m_bytes_allocated);
@@ -207,19 +191,14 @@ public:
 		::free(ptr);
 #else
 
-		hxmemory_allocation_header& hdr = reinterpret_cast<hxmemory_allocation_header*>(ptr)[-1];
-#if (HX_HARDENING_MODE) != HX_HARDENING_MODE_NONE
-		hxassert_hard(hdr.sentinel_value == hxmemory_allocation_header::sentinel_value_allocated,
-			"bad_free sentinel corrupt");
-#endif
+		const hxmemory_allocation_header& hdr = reinterpret_cast<hxmemory_allocation_header*>(ptr)[-1];
 		hxassertmsg(hdr.size > 0u && m_allocation_count > 0u
 			&& m_bytes_allocated > 0u, "bad_free sentinel corrupt");
 		--m_allocation_count;
 		m_bytes_allocated -= hdr.size;
 
 		const uintptr_t actual = hdr.actual;
-#if (HX_HARDENING_MODE) != HX_HARDENING_MODE_NONE
-		hdr.sentinel_value = hxmemory_allocation_header::sentinel_value_freed;
+#if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
 		::memset(ptr, 0xdd, hdr.size);
 #endif
 		::free(reinterpret_cast<void*>(actual));
@@ -232,14 +211,11 @@ private:
 	size_t m_high_water;
 };
 
-hxmemory_allocator_os_heap::hxmemory_allocator_os_heap() = default;
-
 // ----------------------------------------------------------------------------
 // hxmemory_allocator_stack: Nothing can be freed.
 
 class hxmemory_allocator_stack : public hxmemory_allocator_base {
 public:
-	hxmemory_allocator_stack();
 	hxattr_cold void construct(void* ptr, size_t size, const char* label) {
 		m_label_ = label;
 
@@ -310,14 +286,11 @@ protected:
 	size_t m_allocation_count;
 };
 
-hxmemory_allocator_stack::hxmemory_allocator_stack() = default;
-
 // ----------------------------------------------------------------------------
 // hxmemory_allocator_temp_stack: Resets after a scope closes.
 
 class hxmemory_allocator_temp_stack : public hxmemory_allocator_stack {
 public:
-	hxmemory_allocator_temp_stack();
 	hxattr_cold void construct(void* ptr, size_t size, const char* label) {
 		hxmemory_allocator_stack::construct(ptr, size, label);
 		m_high_water = 0u;
@@ -353,8 +326,6 @@ protected:
 	uintptr_t m_high_water;
 };
 
-hxmemory_allocator_temp_stack::hxmemory_allocator_temp_stack() = default;
-
 // ----------------------------------------------------------------------------
 // hxmemory_manager
 
@@ -387,7 +358,8 @@ private:
 	hxmemory_allocator_temp_stack m_memory_allocator_temporary_stack;
 };
 
-hxmemory_manager hxs_memory_manager;
+// NOTE: Using static instead of an anonymous namespace because of a linker issue.
+static hxmemory_manager hxs_memory_manager;
 
 void hxmemory_manager::construct(void) {
 	m_memory_allocators[hxsystem_allocator_heap] = &m_memory_allocator_heap;
@@ -508,13 +480,10 @@ void hxmemory_manager::free(void* ptr) {
 	m_memory_allocator_heap.on_free_non_virtual(ptr);
 }
 
-} // namespace {
-
 // ----------------------------------------------------------------------------
 // hxsystem_allocator_scope
 
-hxattr_noexcept hxsystem_allocator_scope::hxsystem_allocator_scope(hxsystem_allocator_t id)
-{
+hxattr_noexcept hxsystem_allocator_scope::hxsystem_allocator_scope(hxsystem_allocator_t id) {
 	hxinit();
 	m_this_allocator_ = id;
 	m_initial_allocator_ = hxs_memory_manager.begin_allocation_scope(this, id);
@@ -628,3 +597,11 @@ hxattr_noexcept void hxfree(void *ptr) {
 }
 
 #endif // !HX_USE_MEMORY_MANAGER
+
+extern "C"
+hxattr_noexcept char* hxstring_duplicate(const char* string, enum hxsystem_allocator_t id) {
+	const size_t len = strlen(string);
+	char* temp = static_cast<char*>(hxmalloc_ext(len + 1, id, 1u));
+	::memcpy(temp, string, len + 1);
+	return temp;
+}

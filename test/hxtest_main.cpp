@@ -63,18 +63,13 @@ bool run_all_tests(void) {
 #endif
 }
 
-// Console requires C++20.
-#if HX_CPLUSPLUS >= 202002L
-static bool execute_stdin(void) {
-	return hxconsole_exec_file(hxin);
-}
-
-// Command line parameter to run all tests.
+// Ignored unless HX_USE_CONSOLE=1. Command line parameter to run all tests. 
 hxconsole_command_named(run_all_tests, runtests);
 
-// Command line parameter to execute stdin.
-hxconsole_command_named(execute_stdin, execstdin);
-#endif // HX_CPLUSPLUS >= 202002L
+#if HX_USE_FILE_IO
+// Ignored unless HX_USE_CONSOLE=1. Command line parameter to execute stdin.
+hxconsole_command_named(*+[](void) -> bool { return hxconsole_exec_file(hxin); }, execstdin);
+#endif // HX_USE_FILE_IO
 
 // test_main - Command line console command dispatcher. Each parameter is
 // treated as a separate command.
@@ -83,7 +78,7 @@ int test_main(int argc, char**argv) {
 
 	bool is_ok = true;
 // Console requires C++20.
-#if HX_CPLUSPLUS >= 202002L
+#if HX_USE_CONSOLE
 	if(argc > 1) {
 		for(int i=1; i<argc; ++i) {
 			is_ok = is_ok && hxconsole_exec_line(argv[i]);
@@ -92,7 +87,7 @@ int test_main(int argc, char**argv) {
 	else {
 		is_ok = is_ok && run_all_tests();
 	}
-#else
+#else // !HX_USE_CONSOLE
 	(void)argc; (void)argv;
 	is_ok = is_ok && run_all_tests();
 #endif

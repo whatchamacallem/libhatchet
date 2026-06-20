@@ -8,7 +8,7 @@
 
 HX_NS_USE
 
-#if HX_CPLUSPLUS >= 202002L
+#if HX_USE_CONSOLE
 
 // TEST_F fixtures would not work as the console registers static variables.
 
@@ -152,7 +152,7 @@ hxconsole_command_named(hxconsole_test_failing_command, hxconsole_test_failing_c
 // register_command
 
 TEST(hxconsole_test, register_command) {
-	hxlog_console("EXPECTING_TEST_WARNINGS\n");
+	hxlog_warning("EXPECTING_TEST_WARNINGS\n");
 
 	// 77 + strlen("...") = 80
 	hxs_console_test_result_hook = 0.0f;
@@ -291,7 +291,7 @@ TEST(hxconsole_test, variable_query) {
 // exact boundaries must succeed.
 
 TEST(hxconsole_test, variable_overflow) {
-	hxlog_console("EXPECTING_TEST_WARNINGS\n");
+	hxlog_warning("EXPECTING_TEST_WARNINGS\n");
 
 	// int8_t exact boundaries
 	hxs_console_test_i8 = 0;
@@ -379,7 +379,7 @@ TEST(hxconsole_test, variable_overflow) {
 // variable_parse_error: garbage/trailing-garbage/multi-value leave variable unchanged
 
 TEST(hxconsole_test, variable_parse_error) {
-	hxlog_console("EXPECTING_TEST_WARNINGS\n");
+	hxlog_warning("EXPECTING_TEST_WARNINGS\n");
 
 	// Trailing garbage: parse advances past "42" but trailing "garbage" is not end-of-line.
 	hxs_console_test_i32 = 10;
@@ -496,7 +496,7 @@ TEST(hxconsole_test, function_types) {
 // function_overflow: exact boundary succeeds, one-beyond fails
 
 TEST(hxconsole_test, function_overflow) {
-	hxlog_console("EXPECTING_TEST_WARNINGS\n");
+	hxlog_warning("EXPECTING_TEST_WARNINGS\n");
 
 	// int8_t
 	hxs_console_test_fn_i8 = 0;
@@ -612,7 +612,7 @@ TEST(hxconsole_test, function_multi_arg) {
 // function_arity: too few/too many/wrong-type/zero-arg with args
 
 TEST(hxconsole_test, function_arity) {
-	hxlog_console("EXPECTING_TEST_WARNINGS\n");
+	hxlog_warning("EXPECTING_TEST_WARNINGS\n");
 
 	// Too few args.
 	hxs_console_test_fn_mixed_i32 = -1; hxs_console_test_fn_mixed_f32 = -1.0f;
@@ -662,7 +662,7 @@ TEST(hxconsole_test, comment_lines) {
 // unsigned_negative: negative inputs are rejected for unsigned integer types.
 
 TEST(hxconsole_test, unsigned_negative) {
-	hxlog_console("EXPECTING_TEST_WARNINGS\n");
+	hxlog_warning("EXPECTING_TEST_WARNINGS\n");
 
 	hxs_console_test_u8 = 7;
 	EXPECT_FALSE(hxconsole_exec_line("hxs_console_test_u8 -1"));
@@ -721,6 +721,7 @@ TEST(hxconsole_test, null_test) {
 
 // ============================================================================
 // file_test
+#if HX_USE_FILE_IO
 
 TEST(hxconsole_test, file_test) {
 	{
@@ -741,7 +742,7 @@ TEST(hxconsole_test, file_test) {
 // file_fail
 
 TEST(hxconsole_test, file_fail) {
-	hxlog_console("EXPECTING_TEST_WARNINGS\n");
+	hxlog_warning("EXPECTING_TEST_WARNINGS\n");
 
 	{
 		hxfile(hxfile::out, "hxconsole_test_file_test.txt") << "<unknown symbols>\n";
@@ -776,7 +777,7 @@ TEST(hxconsole_test, file_fail) {
 // ============================================================================
 // file_peek_poke / file_peek_poke_floats
 
-#if (HX_HARDENING_MODE) > HX_HARDENING_MODE_STANDARD && !defined __wasm__
+#if !defined __wasm__
 TEST(hxconsole_test, file_peek_poke) {
 	uint32_t target[] = { 111, 777, 333 };
 	{
@@ -804,5 +805,5 @@ TEST(hxconsole_test, file_peek_poke_floats) {
 	EXPECT_EQ(target[2], 333.0f);
 }
 #endif
-
-#endif // HX_CPLUSPLUS >= 202002L
+#endif // HX_USE_FILE_IO
+#endif // HX_USE_CONSOLE

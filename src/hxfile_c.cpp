@@ -9,7 +9,7 @@
 
 #include "../include/hx/hxfile.hpp"
 
-#if !(HX_USE_POSIX_FILE_IO)
+#if (HX_USE_FILE_IO) == 1
 
 // These are only dependencies of the libhatchet here. This is to allow
 // easy reimplementation.
@@ -20,11 +20,7 @@
 #pragma warning(disable: 4996)
 #endif
 
-#endif // !(HX_USE_POSIX_FILE_IO)
-
 HX_NS_BEGIN_
-
-#if !(HX_USE_POSIX_FILE_IO)
 
 // In this version targets require an implementation of fopen(), fclose(),
 // fread(), fwrite(), fgets(), and feof().
@@ -56,7 +52,7 @@ hxfile::hxfile(uint8_t mode, const char* filename, ...) : hxfile() {
 	va_end(args);
 }
 
-hxfile::hxfile(hxfile&& file) {
+hxfile::hxfile(hxfile&& file) noexcept {
 	::memcpy(static_cast<void*>(this), static_cast<const void*>(&file), sizeof file);
 	::memset(static_cast<void*>(&file), 0x00, sizeof file);
 }
@@ -65,7 +61,7 @@ hxfile::~hxfile(void) {
 	close();
 }
 
-void hxfile::operator=(hxfile&& file) {
+void hxfile::operator=(hxfile&& file) noexcept {
 	close();
 	::memcpy(static_cast<void*>(this), static_cast<const void*>(&file), sizeof file);
 	::memset(static_cast<void*>(&file), 0x00, sizeof file);
@@ -256,6 +252,5 @@ int hxfile::scan(const char* format, ...) {
 	return items_scanned;
 }
 
-#endif // !HX_USE_POSIX_FILE_IO
-
 HX_NS_END_
+#endif // HX_USE_FILE_IO == 1

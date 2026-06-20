@@ -3,7 +3,8 @@
 # SPDX-License-Identifier: MIT
 # This file is licensed under the terms of the LICENSE.md file.
 #
-# After building the emsdk, these commands need to be run in the emsdk directory:
+# After building the emsdk, these commands need to be run in the emsdk
+# directory:
 #
 #   ./emsdk activate latest && source ./emsdk_env.sh
 
@@ -27,18 +28,20 @@ rm -rf ./build; mkdir ./build && cd ./build
 
 emcc -I../include -O2 -pthread -fdiagnostics-absolute-paths -c ../test/*.c
 
-# Dump the memory manager because a web browser doesn't need that.
-# -pthread requires SharedArrayBuffer which needs COOP/COEP headers from the server.
-emcc -O2 -fno-exceptions -fno-rtti -fdiagnostics-absolute-paths         \
-	-Werror -Wfatal-errors -DHX_USE_MEMORY_MANAGER=0 -DHX_USE_THREADS=1 \
-	-Wno-c2y-extensions -pthread -sEXIT_RUNTIME=1 -sPTHREAD_POOL_SIZE=4 \
-	-sPROXY_TO_PTHREAD -I../include *.o ../src/*.cpp ../test/*.cpp -o index.html
+# Dump the memory manager because a web browser doesn't need that. -pthread
+# requires SharedArrayBuffer which needs COOP/COEP headers from the server.
+emcc -O2 -fno-exceptions -fno-rtti -fdiagnostics-absolute-paths            \
+	-Werror -Wfatal-errors -DHX_USE_FILE_IO=0 -DHX_USE_MEMORY_MANAGER=0    \
+	-DHX_USE_THREADS=1 -Wno-c2y-extensions -pthread -sEXIT_RUNTIME=1       \
+	-sPTHREAD_POOL_SIZE=4 -sPROXY_TO_PTHREAD -I../include *.o ../src/*.cpp \
+	../test/*.cpp -o index.html
 
 if [ "${1:-}" != "--headless" ]; then
 
 	echo "Serving http://0.0.0.0:9876/"
 
-	# Start a web server with COOP/COEP headers required for SharedArrayBuffer (pthreads).
+	# Start a web server with COOP/COEP headers required for SharedArrayBuffer
+	# (pthreads).
 	python3 -c "
 import http.server, sys
 class Handler(http.server.SimpleHTTPRequestHandler):

@@ -17,13 +17,13 @@ struct hxtest_optional_counted_t {
 	explicit hxtest_optional_counted_t(int v) : value(v) { ++hxs_test_ctor_count; }
 	hxtest_optional_counted_t(const hxtest_optional_counted_t& o)
 		: value(o.value) { ++hxs_test_ctor_count; }
-	hxtest_optional_counted_t(hxtest_optional_counted_t&& o)
+	hxtest_optional_counted_t(hxtest_optional_counted_t&& o) noexcept
 		: value(o.value) { ++hxs_test_ctor_count; }
 	~hxtest_optional_counted_t(void) { ++hxs_test_dtor_count; }
 	hxtest_optional_counted_t& operator=(const hxtest_optional_counted_t& o) {
 		value = o.value; return *this;
 	}
-	hxtest_optional_counted_t& operator=(hxtest_optional_counted_t&& o) {
+	hxtest_optional_counted_t& operator=(hxtest_optional_counted_t&& o) noexcept {
 		value = o.value; return *this;
 	}
 	bool operator==(const hxtest_optional_counted_t& o) const {

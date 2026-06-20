@@ -20,20 +20,18 @@ extern "C" {
 // ----------------------------------------------------------------------------
 // C Utilities
 
-/// `hxbasename` - Returns a pointer to those characters following the last `\\` or
-/// `/` character or path if those are not present.
+/// `hxbasename` - Returns a pointer to those characters following the last
+/// `'\'` or `'/'` character or `path` if those are not present.
 /// - `path` : Non-null null-terminated path string.
 hxattr_nodiscard const char* hxbasename(const char* path_) hxattr_nonnull(1);
 
-/// `hxfloat_dump` - Prints an array of floating point values. No output is
-/// produced when `HX_HARDENING_MODE < HX_HARDENING_MODE_VERBOSE`.
+/// `hxfloat_dump` - Prints an array of floating point values.
 /// - `address` : Non-null pointer to the start of the float array.
 /// - `floats` : The number of floats to print.
 void hxfloat_dump(const float* address_, size_t floats_) hxattr_nonnull(1) hxattr_cold;
 
 /// `hxhex_dump` - Prints an array of bytes formatted in hexadecimal. Additional
-/// information provided when pretty is non-zero. No output is produced when
-/// `HX_HARDENING_MODE < HX_HARDENING_MODE_VERBOSE`.
+/// information provided when pretty is non-zero.
 /// - `address` : Non-null pointer to the start of the byte array.
 /// - `bytes` : The number of bytes to print.
 /// - `pretty` : Set non-zero to include extended visualization.

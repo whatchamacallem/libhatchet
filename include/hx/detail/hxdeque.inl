@@ -26,42 +26,36 @@ hxdeque<T_, capacity_>::~hxdeque(void) { clear(); }
 
 template<typename T_, size_t capacity_>
 T_& hxdeque<T_, capacity_>::operator[](size_t index_) {
-	hxassert_hard(this->capacity() > 0u, "unallocated_deque");
 	hxassert_hard(index_ < m_count_, "invalid_index %zu", index_);
 	return this->data()[(m_head_ + index_) & m_mask_];
 }
 
 template<typename T_, size_t capacity_>
 const T_& hxdeque<T_, capacity_>::operator[](size_t index_) const {
-	hxassert_hard(this->capacity() > 0u, "unallocated_deque");
 	hxassert_hard(index_ < m_count_, "invalid_index %zu", index_);
 	return this->data()[(m_head_ + index_) & m_mask_];
 }
 
 template<typename T_, size_t capacity_>
 T_& hxdeque<T_, capacity_>::at(size_t index_) {
-	hxassert_hard(this->capacity() > 0u, "unallocated_deque");
 	hxassert_hard(index_ < m_count_, "invalid_index %zu", index_);
 	return this->data()[(m_head_ + index_) & m_mask_];
 }
 
 template<typename T_, size_t capacity_>
 const T_& hxdeque<T_, capacity_>::at(size_t index_) const {
-	hxassert_hard(this->capacity() > 0u, "unallocated_deque");
 	hxassert_hard(index_ < m_count_, "invalid_index %zu", index_);
 	return this->data()[(m_head_ + index_) & m_mask_];
 }
 
 template<typename T_, size_t capacity_>
 T_& hxdeque<T_, capacity_>::back(void) {
-	hxassert_hard(this->capacity() > 0u, "unallocated_deque");
 	hxassert_hard(m_count_ > 0u, "empty_deque");
 	return this->data()[(m_tail_ + m_mask_) & m_mask_];
 }
 
 template<typename T_, size_t capacity_>
 const T_& hxdeque<T_, capacity_>::back(void) const {
-	hxassert_hard(this->capacity() > 0u, "unallocated_deque");
 	hxassert_hard(m_count_ > 0u, "empty_deque");
 	return this->data()[(m_tail_ + m_mask_) & m_mask_];
 }
@@ -94,14 +88,12 @@ bool hxdeque<T_, capacity_>::empty(void) const { return m_count_ == 0u; }
 
 template<typename T_, size_t capacity_>
 T_& hxdeque<T_, capacity_>::front(void) {
-	hxassert_hard(this->capacity() > 0u, "unallocated_deque");
 	hxassert_hard(m_count_ > 0u, "empty_deque");
 	return this->data()[m_head_];
 }
 
 template<typename T_, size_t capacity_>
 const T_& hxdeque<T_, capacity_>::front(void) const {
-	hxassert_hard(this->capacity() > 0u, "unallocated_deque");
 	hxassert_hard(m_count_ > 0u, "empty_deque");
 	return this->data()[m_head_];
 }
@@ -113,7 +105,6 @@ bool hxdeque<T_, capacity_>::full(void) const {
 
 template<typename T_, size_t capacity_>
 void hxdeque<T_, capacity_>::pop_back(void) {
-	hxassert_hard(this->capacity() > 0u, "unallocated_deque");
 	hxassert_hard(m_count_ != 0u, "empty_deque");
 	m_tail_ = (m_tail_ + m_mask_) & m_mask_;
 	T_* slot_ = this->data() + m_tail_;
@@ -123,7 +114,6 @@ void hxdeque<T_, capacity_>::pop_back(void) {
 
 template<typename T_, size_t capacity_>
 void hxdeque<T_, capacity_>::pop_front(void) {
-	hxassert_hard(this->capacity() > 0u, "unallocated_deque");
 	hxassert_hard(m_count_ != 0u, "empty_deque");
 	T_* slot_ = this->data() + m_head_;
 	m_head_ = (m_head_ + 1u) & m_mask_;
