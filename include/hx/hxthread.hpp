@@ -159,7 +159,7 @@ public:
 		return code_ == thrd_success;
 #else
 		const int code_ = ::pthread_mutex_lock(&m_mutex_);
-		hxassertmsg(code_ == 0 || code_ == EBUSY || code_ == EAGAIN, "pthread_mutex_lock %s", ::strerror(code_));
+		hxassertmsg(code_ == 0 || code_ == EAGAIN, "pthread_mutex_lock %s", ::strerror(code_));
 		return code_ == 0;
 #endif
 	}
@@ -283,7 +283,7 @@ public:
 		return code_ == thrd_success;
 #else
 		const int code_ = ::pthread_cond_wait(&m_cond_, mutex_.native_handle());
-		hxassertmsg(code_ == 0, "pthread_cond_init %s", ::strerror(code_));
+		hxassertmsg(code_ == 0, "pthread_cond_wait %s", ::strerror(code_));
 		return code_ == 0;
 #endif
 	}
@@ -316,7 +316,7 @@ public:
 		return code_ == thrd_success;
 #else
 		const int code_ = ::pthread_cond_signal(&m_cond_);
-		hxassertmsg(code_ == 0, "pthread_cond_init %s", ::strerror(code_));
+		hxassertmsg(code_ == 0, "pthread_cond_signal %s", ::strerror(code_));
 		return code_ == 0;
 #endif
 	}
@@ -329,7 +329,7 @@ public:
 		return code_ == thrd_success;
 #else
 		const int code_ = ::pthread_cond_broadcast(&m_cond_);
-		hxassertmsg(code_ == 0, "pthread_cond_init %s", ::strerror(code_));
+		hxassertmsg(code_ == 0, "pthread_cond_broadcast %s", ::strerror(code_));
 		return code_ == 0;
 #endif
 	}
@@ -411,7 +411,7 @@ public:
 #else
 		const int code_ = ::pthread_create(&m_thread_, 0,
 			reinterpret_cast<entry_point_function_t_>(entry_point_), reinterpreted_parameter_);
-		hxassert_always(code_ == 0, "pthread_create %d", code_); (void)code_;
+		hxassert_always(code_ == 0, "pthread_create %s", ::strerror(code_)); (void)code_;
 #endif
 		m_started_ = true;
 		m_joined_ = false;
@@ -423,7 +423,7 @@ public:
 
 	/// Joins the thread. Blocks until the thread finishes.
 	void join(void) {
-		hxassertmsg(this->joinable(), "thread_not_runnning");
+		hxassertmsg(this->joinable(), "thread_not_running");
 #if (HX_USE_THREADS) == 11
 		const int code_ = ::thrd_join(m_thread_, hxnull);
 		hxassert_always(code_ == thrd_success, "thrd_join %d", code_);

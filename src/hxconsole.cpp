@@ -8,18 +8,53 @@
 #include "../include/hx/hxsort.hpp"
 #include "../include/hx/hxarray.hpp"
 
+// The console tests intentionally generate floating point traps.
+#if defined HX_USE_FLOATING_POINT_TRAPS
+#include <fenv.h>
+#endif
+
 HX_NS_BEGIN_
 #if HX_USE_CONSOLE
 namespace hxdetail_ {
 
 // These C library wrappers reduce code bloat and enforce additional
-// constraints. The next_ pointer is reset when parse errors or negative numbers
-// are encountered.
+// constraints. The next_ pointer is reset when parse errors, out of range
+// values or negative numbers are encountered.
 
-long hxconsole_strtol_(const char* str, char** next) {
+float hxconsole_strtof_(const char* str, char** next) {
+#if defined HX_USE_FLOATING_POINT_TRAPS
+	fenv_t fenv_;
+	::feholdexcept(&fenv_);
+#endif
+	errno = 0;
+	const float v = ::strtof(str, next);
+	if(errno == ERANGE) { *next = const_cast<char*>(str); }
+#if defined HX_USE_FLOATING_POINT_TRAPS
+	::feclearexcept(FE_ALL_EXCEPT);
+	::fesetenv(&fenv_);
+#endif
+	return v;
+}
+
+double hxconsole_strtod_(const char* str, char** next) {
+#if defined HX_USE_FLOATING_POINT_TRAPS
+	fenv_t fenv_;
+	::feholdexcept(&fenv_);
+#endif
+	errno = 0;
+	const double v = ::strtod(str, next);
+	if(errno == ERANGE) { *next = const_cast<char*>(str); }
+#if defined HX_USE_FLOATING_POINT_TRAPS
+	::feclearexcept(FE_ALL_EXCEPT);
+	::fesetenv(&fenv_);
+#endif
+	return v;
+}
+
+long hxconsole_strtol_(const char* str, char** next, long min, long max) {
 	errno = 0;
 	const long v = ::strtol(str, next, 0);
-	if(errno == ERANGE) { *next = const_cast<char*>(str); }
+	if(errno == ERANGE || v < min || v > max) { *next = const_cast<char*>(str); }
 	return v;
 }
 
@@ -30,28 +65,52 @@ long long hxconsole_strtoll_(const char* str, char** next) {
 	return v;
 }
 
-unsigned long hxconsole_strtoul_(const char* str, char** next) {
-	// The standard treats negative numbers as large positive values.
+unsigned long hxconsole_strtoul_(const char* str, char** next, unsigned long max) {
+	// The standard treats negative numbers as large positive values. This doesn't.
 	const char* p = str;
 	while(hxisspace(*p)) { ++p; }
-	if(*p == '-') { hxassert(*next == const_cast<char*>(str)); return 0; }
+	if(*p == '-') {
+		hxassert(*next == const_cast<char*>(str));
+		return 0;
+	}
 
 	errno = 0;
 	const unsigned long v = ::strtoul(str, next, 0);
-	if(errno == ERANGE) { *next = const_cast<char*>(str); }
+	if(errno == ERANGE || v > max) { *next = const_cast<char*>(str); }
 	return v;
 }
 
 unsigned long long hxconsole_strtoull_(const char* str, char** next) {
-	// The standard treats negative numbers as large positive values.
+	// The standard treats negative numbers as large positive values. This doesn't.
 	const char* p = str;
 	while(hxisspace(*p)) { ++p; }
-	if(*p == '-') { hxassert(*next == const_cast<char*>(str)); return 0; }
+	if(*p == '-') {
+		hxassert(*next == const_cast<char*>(str));
+		return 0;
+	}
 
 	errno = 0;
 	const unsigned long long v = ::strtoull(str, next, 0);
 	if(errno == ERANGE) { *next = const_cast<char*>(str); }
 	return v;
+}
+
+// const char* captures remainder of line including comments starting with #'s.
+// Leading whitespace is discarded and the string is allowed to be empty.
+template<> const char* hxconsole_parse_arg_<const char*>(const char* str_, char** next_) {
+	while(hxisspace(*str_)) { ++str_; }
+	const char* result_ = str_;
+	while(*str_ != '\0') { ++str_; }
+	*next_ = const_cast<char*>(str_);
+	return result_;
+}
+
+void hxconsole_usage_(const char* id, const char* const* labels) {
+	hxlog_handler(hxlog_level_console, "%s", (id != hxnull) ? id : "usage:");
+	for(const char* const* hxrestrict label = labels; *label != hxnull; ++label) {
+		hxlog_handler(hxlog_level_console, " %s", *label);
+	}
+	hxlog_handler(hxlog_level_console, "\n");
 }
 
 } // hxdetail_
@@ -76,7 +135,7 @@ class hxconsole_command_table
 	: public hxhash_table<hxdetail_::hxconsole_hash_table_node_, 2, false, hxdo_not_delete> {
 };
 
-// Local static to enforce construction-order.
+// Local static to enforce construction-order. Destruction is no-op.
 hxconsole_command_table& hxconsole_commands_(void) {
 	static hxconsole_command_table table_;
 	return table_;
@@ -147,8 +206,8 @@ bool hxconsole_help(void) {
 	cmds.reserve(hxconsole_commands_().size());
 	for(hxconsole_command_table::const_iterator it = hxconsole_commands_().cbegin();
 			it != hxconsole_commands_().cend(); ++it) {
-		if(::strncmp(it->hash_key().str_, "hxconsole_test", 13) == 0 ||
-				::strncmp(it->hash_key().str_, "hxs_console_test", 15) == 0) {
+		if(::strncmp(it->hash_key().str_, "hxconsole_test", 14) == 0 ||
+				::strncmp(it->hash_key().str_, "hxs_console_test", 16) == 0) {
 			continue;
 		}
 		cmds.push_back(&*it);
@@ -191,7 +250,10 @@ bool hxconsole_exec_filename(const char* filename) {
 // automatically for WASM because they didn't seem that useful. WASM will
 // require custom plumbing anyway.
 
-#if !defined __wasm__
+// These are considered too dangerous to enable by default. HX_USE_CONSOLE=2
+// enables the debug console.
+#endif // HX_USE_CONSOLE
+#if (HX_USE_CONSOLE) > 1
 namespace {
 
 bool hxconsole_peek(uint64_t address, uint32_t bytes) {
@@ -239,8 +301,6 @@ hxconsole_command_named(hxconsole_float_dump, floatdump);
 // Executes commands and settings in a file. Usage: "exec <filename>".
 hxconsole_command_named(hxconsole_exec_filename, exec);
 #endif // HX_USE_FILE_IO
-
 } // namespace {
-#endif // !defined __wasm__
-#endif // HX_USE_CONSOLE
+#endif // (HX_USE_CONSOLE) > 1
 HX_NS_END_

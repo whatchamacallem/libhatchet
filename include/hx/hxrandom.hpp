@@ -48,18 +48,20 @@ public:
 	hxattr_nodiscard hxconstexpr double range(double base_, double size_) {
 		// Use `uint64_t` parameters if you need a bigger size. An emulated
 		// floating point multiply is faster and more stable than integer modulo.
-		hxassertmsg(size_ < double{0x40000000000000ll},
-			"insufficient_precision %f", size_); // 0x1p54f
+		hxassertmsg(size_ < double{0x20000000000000ll},
+			"insufficient_precision %f", size_); // 0x1p53
 		return base_ + size_ * this->d01();
 	}
 
-	/// int64_t version. Negative size is undefined.
+	/// int64_t version. Negative or zero size is undefined.
 	hxattr_nodiscard hxconstexpr int64_t range(int64_t base_, int64_t size_) {
+		hxassertmsg(size_ > 0, "zero_size");
 		return base_ + static_cast<int64_t>(this->u64() % static_cast<uint64_t>(size_));
 	}
 
-	/// uint64_t version.
+	/// uint64_t version. Zero size is undefined.
 	hxattr_nodiscard hxconstexpr uint64_t range(uint64_t base_, uint64_t size_) {
+		hxassertmsg(size_ != 0u, "zero_size");
 		return base_ + this->u64() % size_;
 	}
 
@@ -125,13 +127,15 @@ public:
 	/// Returns a float between `[0..1)`. Can safely be used to generate array
 	/// indices without overflowing.
 	hxattr_nodiscard hxconstexpr float f01(void) {
-		return static_cast<float>(this->u32()) * (1.0f / 4294967296.0f); // 0x1p-32f
+		// Shift avoids rounding up.
+		return static_cast<float>(this->u32() >> 8) * (1.0f / 16777216.0f); // 0x1p-24f
 	}
 
 	/// Returns a double between `[0..1)`. Can safely be used to generate array
 	/// indices without overflowing.
 	hxattr_nodiscard hxconstexpr double d01(void) {
-		return static_cast<double>(this->u64()) * (1.0 / 18446744073709551616.0); // 0x1p-64;
+		// Shift avoids rounding up.
+		return static_cast<double>(this->u64() >> 11) * (1.0 / 9007199254740992.0); // 0x1p-53
 	}
 
 private:

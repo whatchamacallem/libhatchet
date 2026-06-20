@@ -65,8 +65,10 @@ typedef unsigned int hxalignment_t;
 /// `hxalignment` - The default alignment. Allows for storing things like
 /// pointers. This alignment should work for most types.
 inline constexpr hxalignment_t hxalignment = static_cast<hxalignment_t>(alignof(size_t));
-#else
+#elif HX_CPLUSPLUS
 #define hxalignment (hxalignment_t)alignof(size_t)
+#else
+#define hxalignment (hxalignment_t)_Alignof(size_t)
 #endif
 
 /// `hxsystem_allocator_t` - This is intended to be extendable by the application.
@@ -261,7 +263,7 @@ public:
 	operator bool(void) const { return false; }
 };
 
-#if HX_USE_LIBCXX || (HX_PROVIDE_NEW_DELETE)
+#if HX_CPLUSPLUS >= 201402L && ((HX_USE_LIBCXX) || (HX_PROVIDE_NEW_DELETE))
 /// `hxconsteval_delete` - A `constexpr`-compatible deleter that uses `::delete`.
 /// Required for `consteval` contexts where `hxdefault_delete` cannot be used
 /// because `hxdelete` calls `hxfree` which is not `constexpr`.
@@ -274,7 +276,7 @@ public:
 	/// Always returns true, indicating the deleter is valid.
 	constexpr operator bool(void) const { return true; }
 };
-#endif // HX_USE_LIBCXX
+#endif
 
 /// \cond HIDDEN
 // `hxmemory_manager_init_` - WARNING: Not intended for direct use. This is

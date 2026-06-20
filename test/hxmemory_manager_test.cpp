@@ -49,7 +49,7 @@ TEST(hxmemory_manager_test, hxnew) {
 TEST(hxmemory_manager_test, bytes) {
 const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
 	hxlog_warning("EXPECTING_TEST_WARNINGS\n");
-	for(size_t i=10u; i-- != 0u;) {
+	for(size_t i=10u; i != 0u; --i) {
 		void* p = hxmalloc(i);
 		ASSERT_NE(p, hxnullptr);
 		::memset(p, 0x66, i);

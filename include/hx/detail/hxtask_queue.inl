@@ -29,6 +29,11 @@ inline bool hxtask_queue::cancel(hxtask* task_) {
 		erased_ = m_tasks_.erase_if_unordered([task_](const record_t& r_) { return r_.task == task_; });
 		if(erased_ != 0u) {
 			hxdetail_::hxmake_heap_(m_tasks_.begin(), m_tasks_.end(), hxkey_less_t<record_t>{});
+#if HX_USE_THREADS
+			if(m_tasks_.empty()) {
+				m_cond_var_completion_.notify_all();
+			}
+#endif
 		}
 	}
 	if(erased_ != 0u) {
@@ -41,6 +46,9 @@ inline bool hxtask_queue::cancel(hxtask* task_) {
 inline void hxtask_queue::clear(void) {
 	hxtask_queue_lock_;
 	m_tasks_.clear();
+#if HX_USE_THREADS
+	m_cond_var_completion_.notify_all();
+#endif
 }
 
 inline bool hxtask_queue::empty(void) const {
@@ -52,11 +60,14 @@ template<typename callable_t_>
 size_t hxtask_queue::erase_if(callable_t_&& fn_) {
 	hxtask_queue_lock_;
 	const size_t erased_ = m_tasks_.erase_if_unordered(hxforward<callable_t_>(fn_));
-	if(erased_ != 0u) {
-		// Restore the heap property all at once. Allows erase_if to modify
-		// priority at the same time.
-		hxdetail_::hxmake_heap_(m_tasks_.begin(), m_tasks_.end(), hxkey_less_t<record_t>{});
+	// Restore the heap property all at once. Allows erase_if to modify priority
+	// at the same time even when nothing is erased.
+	hxdetail_::hxmake_heap_(m_tasks_.begin(), m_tasks_.end(), hxkey_less_t<record_t>{});
+#if HX_USE_THREADS
+	if(erased_ != 0u && m_tasks_.empty()) {
+		m_cond_var_completion_.notify_all();
 	}
+#endif
 	return erased_;
 }
 

@@ -17,10 +17,9 @@ hxattr_nodiscard bool hxtest_float_eq_(float a_, float b_);
 // Internal. 4 ULPs double comparison.
 hxattr_nodiscard bool hxtest_double_eq_(double a_, double b_);
 
-// Internal. A strcmp wrapper. This would crash anyway. The macro adds a console
-// diagnostic and a breakpoint on the right line.
-#define hxtest_str_eq_(a_, b_) \
-	(hxassert_always((a_) && (b_), "strcmp Null arg."), ::strcmp((a_), (b_))==0)
+// Internal. strcmp wrappers that assert on null arguments.
+hxattr_nodiscard bool hxtest_str_eq_(const char* a_, const char* b_);
+hxattr_nodiscard bool hxtest_str_ne_(const char* a_, const char* b_);
 
 // hxtest_case_interface_ - Internal. Used to interrogate and dispatch tests.
 class hxtest_case_interface_ {
@@ -68,7 +67,6 @@ private:
 	hxtest_(const hxtest_&) = delete;
 	void operator=(const hxtest_&) = delete;
 
-	const char* m_test_suite_filter_;
 	hxtest_case_interface_* m_test_cases_[HX_TEST_MAX_CASES];
 	size_t m_num_test_cases_;
 	hxtest_case_interface_* m_current_test_;

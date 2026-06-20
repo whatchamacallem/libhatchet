@@ -44,7 +44,7 @@
 #define HX_USE_LIBCXX 1
 
 /// `hxbreakpoint` - Can be conditionally evaluated with the `&&` and `||`
-/// operators. Uses intrinsics when available. (E.g., clang's.) Raises `SIGTRAP`
+/// operators. Uses intrinsics when available. (E.g., Clang's.) Raises `SIGTRAP`
 /// when `__builtin_debugtrap` is not available.
 #define hxbreakpoint() true
 
@@ -167,11 +167,7 @@
 #error Use -nostdinc++ to use the C headers instead of the C++ ones.
 #endif
 
-// Provide new/delete when the std libray is absent unless overriden.
-#if !defined HX_PROVIDE_NEW_DELETE
-#define HX_PROVIDE_NEW_DELETE !(HX_USE_LIBCXX)
-#endif
-
+// HX_USE_SIGTRAP is not always defined like the other HX_USE_* macros.
 #if !defined HX_USE_SIGTRAP && defined __has_builtin && __has_builtin(__builtin_debugtrap)
 #define hxbreakpoint() (__builtin_debugtrap(),true)
 #else
@@ -184,8 +180,11 @@
 #if defined __clang__
 #define hxattr_allocator(...) \
 	__attribute__((returns_nonnull)) __attribute__((warn_unused_result))
-#else
+#elif __GNUC__ >= 11
 #define hxattr_allocator(...) __attribute__((malloc(__VA_ARGS__))) \
+	__attribute__((returns_nonnull)) __attribute__((warn_unused_result))
+#else
+#define hxattr_allocator(...) __attribute__((malloc)) \
 	__attribute__((returns_nonnull)) __attribute__((warn_unused_result))
 #endif
 
@@ -214,6 +213,23 @@
 // ----------------------------------------------------------------------------
 // Target independent.
 
+#if HX_CPLUSPLUS >= 202302L
+/// hxconstexpr enables C++23 compatable constexpr usage for functions as that
+/// has support for destructors. Falls back to not using constexpr below C++23.
+#define hxconstexpr constexpr
+#else
+#define hxconstexpr
+#endif // HX_CPLUSPLUS < 202302L
+
+#if HX_CPLUSPLUS >= 201703L
+/// hxinline_constexpr enables C++17 compatable "inline constexpr" usage for
+/// variables so they can be exported from modules. Falls back to not using
+/// inline below C++17.
+#define hxinline_constexpr inline constexpr
+#else
+#define hxinline_constexpr constexpr
+#endif
+
 /// Setting `-DHX_USE_MODULE=1` when using modules (e.g. `import hx;`) will
 /// allow the macros in `<hx/libhatchet.h>`, `<hx/hxconsole.hpp>`,
 /// `<hx/hxprofiler.hpp>` and `<hx/hxtest.hpp>` to be textually included
@@ -222,13 +238,19 @@
 #define HX_USE_MODULE 0
 #endif
 
-/// Control whether the console is included in the build. Note: The console has
-/// a couple small debug tools built in as well. C++20 is required to use the
-/// console.
+/// Control whether the console is included in the build. C++20 is required to
+/// use the console.
+/// `0` - Disables the console.
+/// `1` - Enables the console.
+/// `2` - Enables the debug console. This allows executing files and modifying memory.
 #if !defined HX_USE_CONSOLE
-#define HX_USE_CONSOLE HX_CPLUSPLUS >= 202002L
+#define HX_USE_CONSOLE ((HX_CPLUSPLUS >= 202002L) ? 2 : 0)
 #elif (HX_USE_CONSOLE) && HX_CPLUSPLUS && HX_CPLUSPLUS < 202002L
 #error The console requires C++20 or later.
+#endif
+#if (HX_USE_CONSOLE) > 1 && defined __wasm__
+// This warning is primarilly for security and sanity checking reasons.
+#error The debug console is not designed for use with WASM.
 #endif
 
 /// Control whether logging statements are included in the build. Note:
@@ -276,6 +298,11 @@
 #define HX_USE_MEMORY_MANAGER 1
 #endif
 
+// Provide new/delete when the std libray is absent unless overriden.
+#if !defined HX_PROVIDE_NEW_DELETE
+#define HX_PROVIDE_NEW_DELETE !(HX_USE_LIBCXX)
+#endif
+
 /// `HX_KIB` - A KiB is 1024 bytes.
 #define HX_KIB (1 << 10)
 
@@ -304,6 +331,17 @@
 #define HX_RADIX_SORT_MIN_SIZE 32u
 #endif
 
+/// HX_USE_FLOATING_POINT_TRAPS - Traps (FE_DIVBYZERO|FE_INVALID|FE_OVERFLOW) in
+/// glibc debug builds. There are a number of relevant compiler flags.
+#if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG && defined __GLIBC__ && !defined __FAST_MATH__
+#if !defined HX_USE_FLOATING_POINT_TRAPS
+#define HX_USE_FLOATING_POINT_TRAPS 1
+#endif
+#else
+#undef HX_USE_FLOATING_POINT_TRAPS
+#define HX_USE_FLOATING_POINT_TRAPS 0
+#endif
+
 /// Converts its arg into a string.
 #define HX_QUOTE(x_) #x_
 
@@ -318,17 +356,18 @@
 #if HX_CPLUSPLUS
 // HX_USE_* feature test flags must not be empty as that is evaluated as 0.
 #define HX_CHECK_USE_(x_) static_assert(HX_QUOTE(x_)[0] != 0, #x_ " must not be empty.");
-HX_CHECK_USE_(HX_PROVIDE_NEW_DELETE);
-HX_CHECK_USE_(HX_TEST_ERROR_HANDLING);
-HX_CHECK_USE_(HX_USE_CONSOLE);
-HX_CHECK_USE_(HX_USE_FILE_IO);
-HX_CHECK_USE_(HX_USE_GOOGLE_TEST);
-HX_CHECK_USE_(HX_USE_LIBCXX);
-HX_CHECK_USE_(HX_USE_LOGGING);
-HX_CHECK_USE_(HX_USE_MEMORY_MANAGER);
-HX_CHECK_USE_(HX_USE_MODULE);
-HX_CHECK_USE_(HX_USE_PROFILER);
-HX_CHECK_USE_(HX_USE_THREADS);
+HX_CHECK_USE_(HX_PROVIDE_NEW_DELETE)
+HX_CHECK_USE_(HX_TEST_ERROR_HANDLING)
+HX_CHECK_USE_(HX_USE_CONSOLE)
+HX_CHECK_USE_(HX_USE_FILE_IO)
+HX_CHECK_USE_(HX_USE_FLOATING_POINT_TRAPS)
+HX_CHECK_USE_(HX_USE_GOOGLE_TEST)
+HX_CHECK_USE_(HX_USE_LIBCXX)
+HX_CHECK_USE_(HX_USE_LOGGING)
+HX_CHECK_USE_(HX_USE_MEMORY_MANAGER)
+HX_CHECK_USE_(HX_USE_MODULE)
+HX_CHECK_USE_(HX_USE_PROFILER)
+HX_CHECK_USE_(HX_USE_THREADS)
 #endif
 
 // HX_APPEND_COUNTER - Used to generate unique identifiers. This is weird
@@ -348,7 +387,7 @@ HX_CHECK_USE_(HX_USE_THREADS);
 // HX_USE_NAMESPACE - Wraps the entire library in a namespace when HX_USE_NAMESPACE is
 // defined as a valid namespace identifier.
 #if HX_CPLUSPLUS && defined HX_USE_NAMESPACE
-HX_CHECK_USE_(HX_USE_NAMESPACE);
+HX_CHECK_USE_(HX_USE_NAMESPACE)
 #define HX_NS_BEGIN_  namespace HX_USE_NAMESPACE {
 #define HX_NS_END_    }
 #define HX_NS_PREFIX_ HX_USE_NAMESPACE::

@@ -84,8 +84,8 @@ void hxtask_queue::enqueue(hxtask* task, int priority) {
 	};
 
 #if HX_USE_THREADS
-	const hxunique_lock lock(m_mutex_);
 	if(m_thread_pool_size_ > 0) {
+		const hxunique_lock lock(m_mutex_);
 		hxassert_hard(m_queue_run_level_ == run_level_running_, "stopped_queue");
 		m_tasks_.push_heap(entry);
 		m_cond_var_new_tasks_.notify_one();
@@ -111,7 +111,7 @@ void hxtask_queue::wait_for_all(void) {
 			m_tasks_.pop_heap();
 
 			// This is the last time this object is touched. It may delete or
-			// re-enqueue itself. We don't care.
+			// re-enqueue itself. Label is a static string. 
 			hxprofile_scope(task->get_label());
 			task->process(this);
 		}
@@ -171,7 +171,7 @@ void hxtask_queue::thread_task_loop_(hxtask_queue* q, thread_mode_t_ mode) {
 					// This triggers a release assert in any unexpected waiting threads.
 					q->m_cond_var_completion_.notify_all();
 				}
-				}
+			}
 				return;
 			}
 		}

@@ -13,7 +13,6 @@ source ../gdb/hxconst_list_printer.py
 source ../gdb/hxdeque_printer.py
 source ../gdb/hxhash_table_printer.py
 source ../gdb/hxlist_printer.py
-source ../gdb/hxrbtree_printer.py
 
 set print thread-events off
 set logging file gdb_printer_output.txt

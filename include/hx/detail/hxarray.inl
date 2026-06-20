@@ -109,7 +109,7 @@ void hxarray<T_, capacity_>::operator+=(T_&& x_) {
 template<hxarray_concept_ T_, size_t capacity_>
 template<size_t capacity_x_>
 void hxarray<T_, capacity_>::operator+=(const hxarray<T_, capacity_x_>& x_) {
-	hxassertmsg((const void*)this != (const void*)&x_, "invalid_reference Assignment to self.");
+	hxassertmsg((const void*)this != (const void*)&x_, "invalid_reference Append to self.");
 	for(const T_* hxrestrict it_ = x_.data(), *end_ = x_.end(); it_ != end_; ++it_) {
 		::new(this->push_back_unconstructed_()) T_(*it_);
 	}
@@ -118,7 +118,7 @@ void hxarray<T_, capacity_>::operator+=(const hxarray<T_, capacity_x_>& x_) {
 template<hxarray_concept_ T_, size_t capacity_>
 template<size_t capacity_x_>
 void hxarray<T_, capacity_>::operator+=(hxarray<T_, capacity_x_>&& x_) {
-	hxassertmsg((const void*)this != (const void*)&x_, "invalid_reference Assignment to self.");
+	hxassertmsg((const void*)this != (const void*)&x_, "invalid_reference Append to self.");
 	// Non-const mutable operation.
 	for(T_* hxrestrict it_ = x_.data(), *end_ = x_.end(); it_ != end_; ++it_) {
 		::new(this->push_back_unconstructed_()) T_(hxmove(*it_));
@@ -437,7 +437,7 @@ void hxarray<T_, capacity_>::insert(const T_* pos_, ref_t_&& x_) {
 		T_* it_ = static_cast<T_*>(this->push_back_unconstructed_());
 		::new(it_) T_(hxmove(it_[-1]));
 		while(pos_ < --it_) {
-			*it_ = it_[-1];
+			*it_ = hxmove(it_[-1]);
 		}
 		*it_ = hxforward<ref_t_>(x_);
 	}
@@ -517,10 +517,12 @@ T_& hxarray<T_, capacity_>::push_back(args_t_&&... args_) {
 template<hxarray_concept_ T_, size_t capacity_>
 template<typename ref_t_>
 T_& hxarray<T_, capacity_>::push_heap(ref_t_&& arg_) {
-	T_* begin_ = this->data();
+	T_* const begin_ = this->data();
 	T_* node_ = static_cast<T_*>(this->push_back_unconstructed_());
-	while(node_ != begin_) {
-		T_* parent_ = begin_ + ((node_ - begin_ - 1) >> 1);
+	size_t index_ = static_cast<size_t>(node_ - begin_);
+	while(index_ != 0u) {
+		index_ = (index_ - 1u) >> 1;
+		T_* const parent_ = begin_ + index_;
 		// arg_ has to be comparable to T_.
 		if(!hxkey_less(*parent_, arg_)) {
 			break;
@@ -531,7 +533,7 @@ T_& hxarray<T_, capacity_>::push_heap(ref_t_&& arg_) {
 		node_ = parent_;
 	}
 	// Construct new element.
-	::new(node_) T_(hxmove(arg_));
+	::new(node_) T_(hxforward<ref_t_>(arg_));
 	return *node_;
 }
 

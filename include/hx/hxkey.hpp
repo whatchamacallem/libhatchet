@@ -5,13 +5,13 @@
 
 /// \file hxkey.hpp User-overloadable key-equal, key-less, and key-hash
 /// functions. By default this code uses only the `==` and `<` operators, which
-/// works with either the default or a custom `<=>` operator. Alternatively,
-/// these functions can be overloaded to resolve key operations without global
-/// operator overloads. This code uses C++20 concepts when available and
-/// provides no fallbacks for SFINAE otherwise. Partial specialization does not
-/// work before C++20. As an alternative, callables are recommended and
-/// supported for complex use cases because they are relatively easy to debug.
-/// See `hxkey_equal_t` and `hxkey_less_t` for generating default callables.
+/// works with a defaulted `<=>` operator. Alternatively, these functions can be
+/// overloaded to resolve key operations without global operator overloads. This
+/// code uses C++20 concepts when available and provides no fallbacks for SFINAE
+/// otherwise. Partial specialization does not work before C++20. As an
+/// alternative, callables are recommended and supported for complex use cases
+/// because they are relatively easy to debug. See `hxkey_equal_t` and
+/// `hxkey_less_t` for generating default callables.
 
 #include "libhatchet.h"
 
@@ -68,8 +68,12 @@ hxattr_nodiscard constexpr bool hxkey_equal(const A_& a_, const B_& b_) {
 hxattr_nodiscard inline bool hxkey_equal(const hxcstring_const_& a_, const hxcstring_const_& b_) {
     return ::strcmp(a_, b_) == 0;
 }
-
-/// Non-const overload.
+hxattr_nodiscard inline bool hxkey_equal(const hxcstring_const_& a_, const hxcstring_& b_) {
+    return ::strcmp(a_, b_) == 0;
+}
+hxattr_nodiscard inline bool hxkey_equal(const hxcstring_& a_, const hxcstring_const_& b_) {
+    return ::strcmp(a_, b_) == 0;
+}
 hxattr_nodiscard inline bool hxkey_equal(const hxcstring_& a_, const hxcstring_& b_) {
     return ::strcmp(a_, b_) == 0;
 }
@@ -108,8 +112,12 @@ hxattr_nodiscard constexpr bool hxkey_less(const A_& a_, const B_& b_) {
 hxattr_nodiscard inline bool hxkey_less(const hxcstring_const_& a_, const hxcstring_const_& b_) {
     return ::strcmp(a_, b_) < 0;
 }
-
-/// Non-const overload.
+hxattr_nodiscard inline bool hxkey_less(const hxcstring_const_& a_, const hxcstring_& b_) {
+    return ::strcmp(a_, b_) < 0;
+}
+hxattr_nodiscard inline bool hxkey_less(const hxcstring_& a_, const hxcstring_const_& b_) {
+    return ::strcmp(a_, b_) < 0;
+}
 hxattr_nodiscard inline bool hxkey_less(const hxcstring_& a_, const hxcstring_& b_) {
     return ::strcmp(a_, b_) < 0;
 }
@@ -161,15 +169,13 @@ hxattr_nodiscard inline hxhash_t hxkey_hash(T_ x_) {
 /// xxhash32 byte-by-byte short-input path with seed 0.
 /// - `s` : The C string.
 hxattr_nodiscard hxattr_hot inline hxhash_t hxkey_hash(const char* s_) {
-    // xxhash32 short-input init: seed=0, length accumulated below.
-    hxhash_t h_ = hxhash_prime5_;
-    hxhash_t len_ = hxhash_t{0u};
+    // xxhash32 short-input init: seed=0, length known upfront.
+    hxhash_t h_ = hxhash_prime5_ + static_cast<hxhash_t>(::strlen(s_));
     while(*s_ != '\0') {
         h_ += static_cast<hxhash_t>(static_cast<unsigned char>(*s_++)) * hxhash_prime5_;
         h_ = ((h_ << 11u) | (h_ >> 21u)) * hxhash_prime1_;
-        ++len_;
     }
-    return hxhash_avalanche_(h_ + len_);
+    return hxhash_avalanche_(h_);
 }
 
 HX_NS_END_

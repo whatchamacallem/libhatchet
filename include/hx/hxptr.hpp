@@ -107,12 +107,12 @@ private:
 	T_* m_ptr_;
 };
 
-/// `hxptr<T[], deleter_t>` - Partial specialization of `hxptr` for pointers to
-/// arrays. Use is not allowed as delete[] is not required to exist.
+/// `hxptr<T[], deleter_t>` - Partial specialization of `hxptr` for array types.
+/// Use is not allowed as delete[] is not required to exist.
 template<typename T_, typename deleter_t_>
 class hxptr<T_[], deleter_t_> {
 public:
-	static_assert(sizeof(T_) == 0, "hxptr does not support array types. use hxarray.");
+	static_assert(sizeof(T_) == 0, "hxptr does not support array types.");
 };
 
 /// `hxmake_ptr<T, allocator, align>(args...)` - Allocates and constructs an

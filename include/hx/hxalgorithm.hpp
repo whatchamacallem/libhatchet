@@ -66,7 +66,8 @@ iterator_t_ hxfind_if(iterator_t_ begin_, iterator_t_ end_, const predicate_t_& 
 
 /// `hxmerge` - Performs a stable merge sort of two ordered ranges `[begin0,
 /// end0)` and `[begin1, end1)` -> `output`. The input arrays must not overlap
-/// the destination array. Passing a hxarray as an output iterator like this
+/// each other or the destination array. Elements are move-assigned out of the
+/// input ranges. Passing a hxarray as an output iterator like this
 /// `hxmerge<const int*, hxarray<int>&>(...)` will append to the array.
 ///
 /// Assumes both `[begin0, end0)` and `[begin1, end1)` are ordered by the `less`
@@ -166,12 +167,13 @@ hxminmax_result<iterator_t_> hxminmax(iterator_t_ begin_, iterator_t_ end_) {
 	return hxminmax<iterator_t_>(begin_, end_, hxkey_less_t<decltype(*begin_)>{});
 }
 
-/// `hxset_difference` - Forms the difference of two ordered ranges
-/// `[begin0, end0)` and `[begin1, end1)` into `output`. The output contains keys
-/// that appear in the first range but not the second. The input arrays must
-/// not overlap the destination array. Passing a hxarray as an output iterator
-/// like this `hxset_difference<const int*, hxarray<int>&>(...)` will append
-/// to the array.
+/// `hxset_difference` - Forms the difference of two ordered ranges `[begin0,
+/// end0)` and `[begin1, end1)` into `output`. The output contains keys that
+/// appear in the first range but not the second. The input arrays must not
+/// overlap each other or the destination array. Elements from the first range
+/// are move-assigned into the output. Passing a hxarray as an output iterator
+/// like this `hxset_difference<const int*, hxarray<int>&>(...)` will append to
+/// the array.
 ///
 /// Assumes both ranges are ordered by the `less` callable.
 /// - `begin0` : Pointer to the beginning of the first ordered range.
@@ -230,9 +232,11 @@ output_iterator_t_ hxset_difference(iterator_t_ begin0_, iterator_t_ end0_, iter
 
 /// `hxset_intersection` - Forms the intersection of two ordered ranges
 /// `[begin0, end0)` and `[begin1, end1)` into `output`. Only keys present in
-/// both ranges appear in the output. The input arrays must not overlap the
-/// destination array. Passing a hxarray as an output iterator like this
-/// `hxset_intersection<const int*, hxarray<int>&>(...)` will append to the array.
+/// both ranges appear in the output. The input arrays must not overlap each
+/// other or the destination array. Elements from the first range are
+/// move-assigned into the output. Passing a hxarray as an output iterator like
+/// this `hxset_intersection<const int*, hxarray<int>&>(...)` will append to the
+/// array.
 ///
 /// Assumes both ranges are ordered by the `less` callable.
 /// - `begin0` : Pointer to the beginning of the first ordered range.
@@ -285,10 +289,12 @@ output_iterator_t_ hxset_intersection(iterator_t_ begin0_, iterator_t_ end0_, it
 }
 
 /// `hxset_union` - Forms the union of two ordered ranges `[begin0, end0)` and
-/// `[begin1, end1)` into `output`. Duplicate keys appear once in the output.
-/// The input arrays must not overlap the destination array. Passing a hxarray
-/// as an output iterator like this `hxset_union<const int*,
-/// hxarray<int>&>(...)` will append to the array.
+/// `[begin1, end1)` into `output`. A key appearing `m` times in the first range
+/// and `n` times in the second appears `max(m, n)` times in the output. The
+/// input arrays must not overlap each other or the destination array. Elements
+/// are move-assigned out of the input ranges. Passing a hxarray as an output
+/// iterator like this `hxset_union<const int*, hxarray<int>&>(...)` will append
+/// to the array.
 ///
 /// Assumes both ranges are ordered by the `less` callable.
 /// - `begin0` : Pointer to the beginning of the first ordered range.
@@ -333,9 +339,10 @@ output_iterator_t_ hxset_union(iterator_t_ begin0_, iterator_t_ end0_, iterator_
 }
 
 /// `hxset_union` (specialization) - Forms the union of two ordered ranges
-/// `[begin0, end0)` and `[begin1, end1)` into `output` using `hxless`.
-/// Duplicate keys appear once in the output. The input arrays must not overlap
-/// the destination array. Passing a hxarray as an output iterator like this
+/// `[begin0, end0)` and `[begin1, end1)` into `output` using `hxless`. A key
+/// appearing `m` times in the first range and `n` times in the second appears
+/// `max(m, n)` times in the output. The input arrays must not overlap the
+/// destination array. Passing a hxarray as an output iterator like this
 /// `hxset_union<const int*, hxarray<int>&>(...)` will append to the array.
 /// - `begin0` : Pointer to the beginning of the first ordered range.
 /// - `end0` : Pointer to one past the last element of the first ordered range.

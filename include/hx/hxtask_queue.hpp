@@ -82,29 +82,29 @@ public:
 	hxattr_nodiscard bool empty(void) const;
 
 	/// Queues a task for later execution. Does not delete the task after
-	/// execution. When `HX_USE_THREADS` is enabled, this is thread-safe and
-	/// callable from running tasks. When `HX_USE_THREADS` is `0` there is no
-	/// locking and external synchronization is the caller's responsibility.
+	/// execution. Thread-safe only when `HX_USE_THREADS` is enabled and the
+	/// thread pool size is greater than zero.
 	/// - `task` : Non-null pointer to the task to be enqueued for execution.
 	/// - `priority` : Optional priority for scheduling. Higher values run sooner.
 	void enqueue(hxtask* task_, int priority_=0) hxattr_nonnull(2);
 
 	/// Locks the queue and calls `fn` on each task. Removes queued tasks for
-	/// which `fn` evaluates true. Does not call `on_cancel` on each. The
-	/// `record_t&` passed to `erase_if` may be modified and the tasks
-	/// will be re-prioritized according to their new priorities. - `fn` :
-	/// Predicate accepting a `record_t&`.
+	/// which `fn` evaluates true. Does not call `on_cancel` on each. Returns
+	/// the number of records removed. The `record_t&` passed to `erase_if` may
+	/// be modified and the tasks will be re-prioritized according to their new
+	/// priorities.
+	/// - `fn` : Predicate accepting a `record_t&`.
 	template<typename callable_t_>
 	size_t erase_if(callable_t_&& fn_);
 
 	/// Locks the queue and calls `fn` on each task record.
-	/// - `fn` : callable accepting a `record_t&`.
+	/// - `fn` : callable accepting a `const record_t&`.
 	template<typename callable_t_>
 	void for_each(callable_t_&& fn_) const;
 
 	/// Non-const version of `for_each`. This version will perform `make_heap`
-	/// on the queue after calling `fn` on each task record.  The `record_t&`
-	/// passed to `erase_if` may be modified and the tasks will be
+	/// on the queue after calling `fn` on each task record. The `record_t&`
+	/// passed to `for_each` may be modified and the tasks will be
 	/// re-prioritized according to their new priorities.
 	template<typename callable_t_>
 	void for_each(callable_t_&& fn_);
@@ -123,7 +123,8 @@ public:
 	/// tasks as well. Intended to be called by the thread that owns the queue
 	/// and must not be called from `hxtask::execute`. Tasks may safely call
 	/// `enqueue` during `execute` to schedule additional work before
-	/// `wait_for_all` returns.
+	/// `wait_for_all` returns. WARNING: Calling `wait_for_all` from inside
+	/// `hxtask::execute` deadlocks permanently.
 	void wait_for_all(void);
 
 private:

@@ -29,8 +29,7 @@ concept hxhash_table_concept_ =
 	requires(node_t_& node_, const node_t_& const_node_) {
 		sizeof(node_t_);
 		sizeof(typename node_t_::key_t);
-		node_.hash_next() = static_cast<node_t_*>(hxnull);
-		{ node_.hash_next() } -> hxsame_as<node_t_*&>;
+		node_.set_hash_next(static_cast<node_t_*>(hxnull));
 		{ const_node_.hash_next() } -> hxsame_as<node_t_*>;
 		{ const_node_.hash_key() } -> hxconvertible_to<const typename node_t_::key_t&>;
 		{ const_node_.hash_value() } -> hxconvertible_to<hxhash_t>;
@@ -63,21 +62,22 @@ public:
 	/// is not affected.
 	hxhash_table_set_node& operator=(const hxhash_table_set_node&) { return *this; } // NOLINT
 
-	/// Returns the node pointer used by the table's embedded linked list.
+	/// Returns the next node in the table's embedded linked list.
 	hxhash_table_set_node* hash_next(void) const { return m_hash_next_; }
-	/// Returns a reference to the node pointer so callers can mutate it.
-	hxhash_table_set_node*& hash_next(void) { return m_hash_next_; }
+	/// Sets the next node in the table's embedded linked list.
+	/// - `next` : The new next node pointer.
+	void set_hash_next(hxhash_table_set_node* next_) { m_hash_next_ = next_; }
 
 	/// The key and hash identify the `node_t` and should not change once added.
 	const key_t_& hash_key(void) const { return m_key_; }
 
 	/// Returns the cached hash value for the stored key. Hash values are not
 	/// required to be unique.
-	hxhash_t hash_value(void) const { return m_hash_; };
+	hxhash_t hash_value(void) const { return m_hash_; }
 
 	/// Returns the cached hash value for the stored key. Hash values are not
 	/// required to be unique.
-	static hxhash_t hash_value(key_t_ key_) { return hxkey_hash(key_); };
+	static hxhash_t hash_value(key_t_ key_) { return hxkey_hash(key_); }
 
 private:
 	hxhash_table_set_node(void) = delete;
@@ -108,14 +108,9 @@ public:
 	hxhash_table_map_node(const key_t_& key_, ref_t_&& value_) :
 		hxhash_table_set_node<key_t_>(key_), m_value_(hxforward<ref_t_>(value_)) { }
 
-	/// Returns the next node pointer in the bucket's embedded linked list.
+	/// Returns the next node in the table's embedded linked list.
 	hxhash_table_map_node* hash_next(void) const {
 		return static_cast<hxhash_table_map_node*>(
-			hxhash_table_set_node<key_t_>::hash_next());
-	}
-	/// Returns a reference to the next node pointer so callers can mutate it.
-	hxhash_table_map_node*& hash_next(void) {
-		return reinterpret_cast<hxhash_table_map_node*&>(
 			hxhash_table_set_node<key_t_>::hash_next());
 	}
 
@@ -144,11 +139,11 @@ private:
 ///
 /// ```
 /// class T {
-///   using key_t = K;                  // Tell the hash table what key to use.
-///   T*& hash_next();                  // Used by hxhash_table for an embedded linked list.
-///   T* hash_next() const;             // Constant version of hash_next.
-///   const key_t& hash_key() const;    // Returns key constructed with.
-///   hxhash_t hash_value() const;      // Returns hash of key constructed with.
+///   using key_t = K;               // Tell the hash table what key to use.
+///   T* hash_next() const;          // Next node in hxhash_table's embedded linked list.
+///   void set_hash_next(T*);        // Sets the next node in the embedded linked list.
+///   const key_t& hash_key() const; // Returns key constructed with.
+///   hxhash_t hash_value() const;   // Returns hash of key constructed with.
 /// };
 /// ```
 ///
@@ -189,8 +184,8 @@ public:
 
 	/// A forward iterator. Iteration is Θ(`n + (1 << table_size_bits)`).
 	/// Iterators are only invalidated by the removal of the `node_t`
-	/// referenced. WARNING: The iterators will automatically convert
-	/// themselves to pointers when used in pointer context.
+	/// referenced. WARNING: The iterators will automatically convert themselves
+	/// to pointers when used in pointer context.
 	class const_iterator
 	{
 	public:
@@ -266,7 +261,7 @@ public:
 		iterator(hxhash_table* table_, node_t_* node_) : const_iterator(table_, node_) { }
 	};
 
-	/// Constructs an empty hash table with a capacity of `table_size_bits^2`.
+	/// Constructs an empty hash table with a capacity of `2^table_size_bits`.
 	explicit hxhash_table(void);
 
 	/// Destructs the hash table and deletes all resources.
@@ -279,7 +274,7 @@ public:
 	iterator begin(void) { return iterator(this); }
 
 	/// Returns the number of buckets in the hash table.
-	hxattr_nodiscard size_t bucket_count(void) const { return m_table_.capacity(); };
+	hxattr_nodiscard size_t bucket_count(void) const { return m_table_.capacity(); }
 
 	/// Returns a const iterator pointing to the beginning of the hash table.
 	const_iterator cbegin(void) const { return const_iterator(this); }
@@ -387,7 +382,7 @@ public:
 	/// Sets the number of hash bits and allocate memory for the table. (only
 	/// for dynamic capacity).
 	/// - `bits` : The number of hash bits to set for the hash table.
-	void set_table_size_bits(hxhash_t bits_) { m_table_.set_table_size_bits(bits_); };
+	void set_table_size_bits(hxhash_t bits_) { m_table_.set_table_size_bits(bits_); }
 
 	/// Returns the number of elements in the hash table.
 	hxattr_nodiscard size_t size(void) const { return m_size_; }
@@ -406,7 +401,7 @@ public:
 	hxenable_if_t<!multi_, iterator> try_emplace(const typename node_t_::key_t& key_, args_t_&&... args_);
 
 private:
-	static_assert(table_size_bits_ < hxhash_bits, "Hash bits must be [0..hxhash_bits].");
+	static_assert(table_size_bits_ < hxhash_bits, "Hash bits must be [0..hxhash_bits).");
 
 	// Not ideal.
 	hxhash_table(const hxhash_table&) = delete;

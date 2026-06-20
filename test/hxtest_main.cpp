@@ -13,7 +13,7 @@
 HX_NS_USE
 
 int test_main(int argc, char**argv);
-bool run_all_tests(void);
+bool run_all_tests(const char* test_suite_filter);
 
 namespace {
 int hxs_test_assert_handler_count = 0;
@@ -37,15 +37,20 @@ TEST(hxtest_main, set_assert_handler) {
 	EXPECT_EQ(hxs_test_assert_handler_count, 1);
 }
 
-bool run_all_tests(void) {
+bool run_all_tests(const char* test_suite_filter) {
 	hxlog_console("libhatchet 🪓🪓🪓 " LIBHATCHET_TAG "\n");
 	hxlog_console("C++: %d hardening: %d profiler: %d\n",
 		static_cast<int>(HX_CPLUSPLUS),
 		static_cast<int>(HX_HARDENING_MODE),
 		static_cast<int>(HX_USE_PROFILER));
 
-	// RUN_ALL_TESTS is a Google Test symbol.
-	const size_t tests_failing = static_cast<size_t>(RUN_ALL_TESTS());
+	// RUN_ALL_TESTS is a Google Test symbol. The optional filter arg is a
+	// libhatchet extension. Google Test implements filtering with weird hooks.
+#if !(HX_USE_GOOGLE_TEST)
+	const size_t tests_failing = static_cast<size_t>(RUN_ALL_TESTS(test_suite_filter));
+#else
+	const size_t tests_failing = static_cast<size_t>(RUN_ALL_TESTS()); (void)test_suite_filter;
+#endif
 
 #if HX_TEST_ERROR_HANDLING
 	const int hxs_expected_failures = 4;
@@ -63,7 +68,9 @@ bool run_all_tests(void) {
 #endif
 }
 
-// Ignored unless HX_USE_CONSOLE=1. Command line parameter to run all tests. 
+// Ignored unless HX_USE_CONSOLE=1. Command line parameter to run all tests.
+// A test suite to filter by may be passed as an optional arg. E.g.
+// $ hxtest "runtests hxsort_test"
 hxconsole_command_named(run_all_tests, runtests);
 
 #if HX_USE_FILE_IO
@@ -85,15 +92,18 @@ int test_main(int argc, char**argv) {
 		}
 	}
 	else {
-		is_ok = is_ok && run_all_tests();
+		is_ok = run_all_tests(hxnull);
 	}
 #else // !HX_USE_CONSOLE
 	(void)argc; (void)argv;
-	is_ok = is_ok && run_all_tests();
+	is_ok = run_all_tests(hxnull);
 #endif
 
 	// Logging and asserts are actually unaffected by a shutdown.
 	hxshutdown();
+	if(!is_ok) {
+		hxexit(EXIT_FAILURE);
+	}
 	return is_ok ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 

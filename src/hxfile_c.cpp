@@ -41,8 +41,8 @@ hxfile::hxfile(void) {
 
 // In this version the file is a FILE* reinterpreted as intptr_t.
 hxfile::hxfile(uint8_t mode, intptr_t file) : hxfile() {
-	m_open_mode_ = mode;
 	m_file_pimpl_ = file; // does not own.
+	m_open_mode_ = mode;
 }
 
 hxfile::hxfile(uint8_t mode, const char* filename, ...) : hxfile() {
@@ -53,6 +53,7 @@ hxfile::hxfile(uint8_t mode, const char* filename, ...) : hxfile() {
 }
 
 hxfile::hxfile(hxfile&& file) noexcept {
+	hxassertmsg(this != &file, "self_assignment");
 	::memcpy(static_cast<void*>(this), static_cast<const void*>(&file), sizeof file);
 	::memset(static_cast<void*>(&file), 0x00, sizeof file);
 }
@@ -62,6 +63,7 @@ hxfile::~hxfile(void) {
 }
 
 void hxfile::operator=(hxfile&& file) noexcept {
+	hxassertmsg(this != &file, "self_assignment");
 	close();
 	::memcpy(static_cast<void*>(this), static_cast<const void*>(&file), sizeof file);
 	::memset(static_cast<void*>(&file), 0x00, sizeof file);
@@ -89,7 +91,8 @@ bool hxfile::openv_(uint8_t mode, const char* filename, va_list args) {
 	const char* m = hxnull;
 	switch (static_cast<int>(mode) & (hxfile::in | hxfile::out)) {
 	case hxfile::none:
-		return false; // May assert if used.
+		m_fail_ = true;
+		return false;
 	case hxfile::in:
 		m = "rb";
 		break;
@@ -143,7 +146,9 @@ bool hxfile::set_pos(size_t position) {
 	hxassertmsg(m_file_pimpl_ != 0, "invalid_file");
 	// Requires a 64-bit long to support 64-bit files.
 	m_fail_ = ::fseek(reinterpret_cast<FILE*>(m_file_pimpl_), static_cast<long>(position), 0) != 0;
-	m_eof_ = m_fail_;
+	if(!m_fail_) {
+		m_eof_ = false;
+	}
 	return !m_fail_;
 }
 

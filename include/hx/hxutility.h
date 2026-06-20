@@ -236,24 +236,25 @@ template<typename T_> using hxrestrict_t = typename hxrestrict_t_<T_>::type;
 
 /// Implements standard `isgraph` for a locale where all non-ASCII characters
 /// are considered graphical or mark making. This is compatible with scanf-style
-/// parsing of UTF-8 string parameters. However, this is not `en_US.UTF-8` or
-/// the default C locale.
+/// parsing of UTF-8 string parameters. However, this is not `en_US.UTF-8`, the
+/// default C locale or the POSIX locale.
 hxattr_nodiscard constexpr bool hxisgraph(char ch_) {
 	return ((static_cast<unsigned char>(ch_) - 0x21u) < 0x5eu)
 		|| ((static_cast<unsigned char>(ch_) & 0x80u) != 0u);
 }
 
 /// Implements standard `isspace` for a locale where all non-ASCII characters
-/// are considered graphical or mark making. Returns nonzero for space and
-/// `\t \n \v \f \r`. This is compatible with scanf-style parsing of
-/// UTF-8 string parameters. However, this is not `en_US.UTF-8` or the default
-/// C locale.
+/// are considered graphical or mark making. Returns nonzero for space and `\t
+/// \n \v \f \r`. This is compatible with scanf-style parsing of UTF-8 string
+/// parameters. However, this is not `en_US.UTF-8` or the default C locale.
+/// It does match the POSIX locale.
 hxattr_nodiscard constexpr bool hxisspace(char ch_) {
 	return ch_ == ' ' || (static_cast<unsigned char>(ch_) - 0x09u) < 0x05u;
 }
 
 /// Returns `log2(n)` as an integer which is the power of 2 of the largest bit
-/// in `n`. WARNING: `hxlog2i(0)` is currently -127 and is undefined.
+/// in `n`. WARNING: `hxlog2i(0)` is currently -127 and is UB. `i` >= 2^32-128
+/// will also round up returning an incorrect result.
 /// - `i` : A `uint32_t`.
 hxattr_nodiscard inline int hxlog2i(uint32_t i_) {
 	// Use the floating point hardware because this isn't important enough.
@@ -275,7 +276,9 @@ hxattr_nodiscard constexpr T_ hxabs(T_ x_) { return ((x_) < T_()) ? (T_() - (x_)
 /// - `maximum` : The maximum allowable value.
 template<typename T_>
 hxattr_nodiscard constexpr T_ hxclamp(T_ x_, T_ minimum_, T_ maximum_) {
+#if HX_CPLUSPLUS >= 201402L
 	hxassertmsg(!(maximum_ < minimum_), "minimum <= maximum");
+#endif
 	return (x_ < minimum_) ? minimum_ : ((maximum_ < x_) ? maximum_ : x_);
 }
 
@@ -323,7 +326,7 @@ constexpr hxremove_reference_t<T_>&& hxmove(T_&& t_) {
 /// `hxswap` - Exchanges the contents of `x` and `y` using a temporary. If `T`
 /// has `T::T(T&&)` or `T::operator=(T&&)` then those will be used.
 template<typename T_>
-constexpr void hxswap(T_& x_, T_& y_) {
+hxconstexpr void hxswap(T_& x_, T_& y_) {
 	// Provides an optimization hint.
 	hxassertmsg(&x_ != &y_, "hxswap No swapping with self.");
 	T_ t_(hxmove(x_));

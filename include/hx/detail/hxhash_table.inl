@@ -105,6 +105,9 @@ inline hxhash_table<node_t_, table_size_bits_, multi_t_, deleter_t_>::hxhash_tab
 	static_assert(hxis_same<decltype(hxdeclval<const node_t_&>().hash_next()),
 		node_t_*>::value,
 		"node_t::hash_next must be: node_t* hash_next() const");
+	static_assert(hxis_same<decltype(hxdeclval<node_t_&>().set_hash_next(
+		static_cast<node_t_*>(hxnull))), void>::value,
+		"node_t::set_hash_next must be: void set_hash_next(node_t*)");
 	static_assert(hxis_same<decltype(hxdeclval<const node_t_&>().hash_key()),
 		const typename node_t_::key_t&>::value,
 		"node_t::hash_key must be: const key_t& hash_key() const");
@@ -125,10 +128,11 @@ inline void hxhash_table<node_t_, table_size_bits_, multi_t_, deleter_t_>::clear
 				node_t_* n_ = *it_;
 				if(n_) {
 					*it_ = hxnull;
-					for(node_t_* t_ = n_; t_; t_ = n_) {
-						n_ = n_->hash_next();
-						deleter_(t_);
-					}
+					do {
+						node_t_* const next_ = n_->hash_next();
+						deleter_(n_);
+						n_ = next_;
+					} while(n_);
 				}
 			}
 			m_size_ = 0u;
@@ -166,19 +170,42 @@ template<typename deleter_override_t_>
 inline size_t hxhash_table<node_t_, table_size_bits_, multi_t_, deleter_t_>::erase(
 	const typename node_t_::key_t& key_, const deleter_override_t_& deleter_)
 {
-	size_t count_ = 0u;
 	const hxhash_t hash_ = node_t_::hash_value(key_);
-	node_t_** current_ = this->get_bucket_head_(hash_);
-	while(node_t_* n_ = *current_) {
-		if(hxkey_equal(n_->hash_key(), key_)) {
-			*current_ = n_->hash_next();
+	node_t_** const head_ = this->get_bucket_head_(hash_);
+	node_t_* n_ = *head_;
+	if(n_ == hxnull) { return 0u; }
+
+	// Unlink matches at the head of the bucket so the loop below only unlinks
+	// interior nodes. The bucket head is only written when it changes.
+	size_t count_ = 0u;
+	if(hxkey_equal(n_->hash_key(), key_)) {
+		do {
+			node_t_* const next_ = n_->hash_next();
 			if(deleter_) {
 				deleter_(n_);
 			}
 			++count_;
-		}
-		else {
-			current_ = &n_->hash_next();
+			n_ = next_;
+		} while(n_ != hxnull && hxkey_equal(n_->hash_key(), key_));
+		*head_ = n_;
+	}
+
+	if(n_ != hxnull) {
+		node_t_* previous_ = n_;
+		n_ = n_->hash_next();
+		while(n_ != hxnull) {
+			node_t_* const next_ = n_->hash_next();
+			if(hxkey_equal(n_->hash_key(), key_)) {
+				previous_->set_hash_next(next_);
+				if(deleter_) {
+					deleter_(n_);
+				}
+				++count_;
+			}
+			else {
+				previous_ = n_;
+			}
+			n_ = next_;
 		}
 	}
 	m_size_ -= count_;
@@ -191,15 +218,20 @@ hxhash_table<node_t_, table_size_bits_, multi_t_, deleter_t_>::extract(
 	const typename node_t_::key_t& key_)
 {
 	const hxhash_t hash_ = node_t_::hash_value(key_);
-	node_t_** current_ = this->get_bucket_head_(hash_);
-	while(node_t_* n_ = *current_) {
+	node_t_** const head_ = this->get_bucket_head_(hash_);
+	node_t_* previous_ = hxnull;
+	for(node_t_* n_ = *head_; n_ != hxnull; n_ = n_->hash_next()) {
 		if(hxkey_equal(n_->hash_key(), key_)) {
-			*current_ = n_->hash_next();
+			if(previous_ != hxnull) {
+				previous_->set_hash_next(n_->hash_next());
+			}
+			else {
+				*head_ = n_->hash_next();
+			}
 			--m_size_;
 			return hxptr<node_t_, deleter_t_>(n_);
 		}
-		// This avoids special case code for the head pointer.
-		current_ = &n_->hash_next();
+		previous_ = n_;
 	}
 	return hxptr<node_t_, deleter_t_>();
 }
@@ -252,7 +284,7 @@ hxhash_table<node_t_, table_size_bits_, multi_t_, deleter_t_>::insert(node_t_* p
 			}
 		}
 	}
-	ptr_->hash_next() = *pos_;
+	ptr_->set_hash_next(*pos_);
 	*pos_ = ptr_;
 	++m_size_;
 	return iterator(this, ptr_);
@@ -274,7 +306,7 @@ hxhash_table<node_t_, table_size_bits_, multi_t_, deleter_t_>::insert(hxptr<node
 			}
 		}
 	}
-	raw_->hash_next() = *pos_;
+	raw_->set_hash_next(*pos_);
 	*pos_ = ptr_.release();
 	++m_size_;
 	return iterator(this, raw_);

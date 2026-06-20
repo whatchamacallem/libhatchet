@@ -20,7 +20,7 @@ namespace hxdetail_ {
 enum : ptrdiff_t { hxpartition_sort_cutoff_ = 32 };
 
 // Restores the heap property by pushing the current value down until it is not
-// greater than its children.
+// less than its children.
 template<typename iterator_t_, typename less_t_> hxattr_hot hxconstexpr
 void hxheapsort_heapify_(const iterator_t_ begin_, iterator_t_ current_,
 		const iterator_t_ end_, const less_t_& less_) {
@@ -128,13 +128,12 @@ void hxpartition_sort_(hxrestrict_t<iterator_t_> begin_, iterator_t_ end_, const
 	hxassert(lt_ <= gt_); // Provides an optimization hint.
 	for(iterator_t_ i_ = lt_; i_ <= gt_; ) {
 		if(less_(*i_, *begin_)) {
-			// Swap into less-than range and extend it.
+			// Swap into less-than range and extend it. Values in [lt, i) are
+			// mid range, so the value swapped to i is already classified.
 			if(lt_ != i_) {
 				hxswap(*i_, *lt_);
 			}
-			else {
-				++i_;
-			}
+			++i_;
 			++lt_;
 		}
 		else if(less_(*back_, *i_)) {

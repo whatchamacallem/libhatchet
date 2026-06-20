@@ -17,12 +17,26 @@
 HX_NS_BEGIN_
 
 // ----------------------------------------------------------------------------
+// hxis_hxoptional_
+
+/// \cond HIDDEN
+template<typename T_> class hxoptional;
+
+namespace hxdetail_ {
+// Used to prevent forwarding constructors from hijacking converting-copy
+// construction paths.
+template<typename> struct hxis_hxoptional_ : hxfalse_t { };
+template<typename U_> struct hxis_hxoptional_<hxoptional<U_>> : hxtrue_t { };
+}
+/// \endcond
+
+// ----------------------------------------------------------------------------
 // hxnullopt_t / hxnullopt
 
 /// `hxnullopt_t` - A tag type used to construct a disengaged `hxoptional`.
 struct hxnullopt_t {
 	/// Explicit constructor prevents implicit construction from `{}`.
-	explicit constexpr hxnullopt_t(int) { }
+	explicit hxnullopt_t(int) { }
 };
 
 /// `hxnullopt` - A sentinel value of type `hxnullopt_t` representing a
@@ -42,11 +56,11 @@ public:
 	using value_type = T_;
 
 	/// Constructs a disengaged `hxoptional`.
-	constexpr hxoptional(void) : m_engaged_(false) { }
+	hxoptional(void) : m_engaged_(false) { }
 
 	/// Constructs a disengaged `hxoptional` from `hxnullopt`.
 	/// - `nullopt` : The disengaged sentinel.
-	constexpr hxoptional(hxnullopt_t) : m_engaged_(false) { }
+	hxoptional(hxnullopt_t) : m_engaged_(false) { }
 
 	/// Copy constructor. Copies the engaged state and value from `other`.
 	/// - `other` : The `hxoptional` to copy from.
@@ -72,7 +86,9 @@ public:
 
 	/// Constructs an engaged `hxoptional` by forwarding `value` into storage.
 	/// - `value` : The value to construct from. Must be convertible to `T`.
-	template<typename U_=T_, hxenable_if_t<!hxis_same<hxremove_cvref_t<U_>, hxoptional>::value, bool> = true>
+	template<typename U_=T_, hxenable_if_t<
+		!hxis_same<hxremove_cvref_t<U_>, hxoptional>::value &&
+		!hxdetail_::hxis_hxoptional_<hxremove_cvref_t<U_>>::value, bool> = true>
 	hxoptional(U_&& value_);
 
 	/// Destroys the contained value if engaged.
@@ -93,7 +109,7 @@ public:
 	hxattr_nodiscard const T_* operator->(void) const;
 
 	/// Returns `true` if the optional contains a value.
-	hxattr_nodiscard constexpr operator bool(void) const { return m_engaged_; }
+	hxattr_nodiscard operator bool(void) const { return m_engaged_; }
 
 	/// Copy assignment. Destroys any current value, then copies from `other`.
 	/// - `other` : The `hxoptional` to copy from.
@@ -110,7 +126,8 @@ public:
 
 	/// Assigns `value` by forwarding, engaging the optional.
 	/// - `value` : The value to assign from. Must be convertible to `T`.
-	template<typename U_=T_> hxoptional& operator=(U_&& value_);
+	template<typename U_=T_, hxenable_if_t<!hxis_same<hxremove_cvref_t<U_>, hxoptional>::value, bool> = true>
+	hxoptional& operator=(U_&& value_);
 
 	/// Returns `true` if both optionals are disengaged or both are engaged with
 	/// equal values.
@@ -147,7 +164,7 @@ public:
 	T_& emplace(args_t_&&... args_);
 
 	/// Returns `true` if the optional contains a value.
-	hxattr_nodiscard constexpr bool has_value(void) const { return m_engaged_; }
+	hxattr_nodiscard bool has_value(void) const { return m_engaged_; }
 
 	/// Destroys the contained value if engaged and leaves the optional
 	/// disengaged.

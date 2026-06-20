@@ -43,9 +43,6 @@ public:
 		hxtest_integer* hash_next(void) const {
 			return static_cast<hxtest_integer*>(hxhash_table_node_integer::hash_next());
 		}
-		hxtest_integer*& hash_next(void) {
-			return reinterpret_cast<hxtest_integer*&>(hxhash_table_node_integer::hash_next());
-		}
 		hxtest_object value;
 	};
 
@@ -55,9 +52,6 @@ public:
 		hxtest_string* hash_next(void) const {
 			return static_cast<hxtest_string*>(hxhash_table_node_string::hash_next());
 		}
-		hxtest_string*& hash_next(void) {
-			return reinterpret_cast<hxtest_string*&>(hxhash_table_node_string::hash_next());
-		}
 		hxtest_object value;
 	};
 
@@ -66,9 +60,6 @@ public:
 		hxtest_string_literal(const char* k) : hxhash_table_node_string_literal(k) { }
 		hxtest_string_literal* hash_next(void) const {
 			return static_cast<hxtest_string_literal*>(hxhash_table_node_string_literal::hash_next());
-		}
-		hxtest_string_literal*& hash_next(void) {
-			return reinterpret_cast<hxtest_string_literal*&>(hxhash_table_node_string_literal::hash_next());
 		}
 	};
 
@@ -94,9 +85,6 @@ struct hxtest_integer_node_t : hxhash_table_node_integer<int32_t> {
 	hxtest_integer_node_t* hash_next(void) const {
 		return static_cast<hxtest_integer_node_t*>(hxhash_table_node_integer::hash_next());
 	}
-	hxtest_integer_node_t*& hash_next(void) {
-		return reinterpret_cast<hxtest_integer_node_t*&>(hxhash_table_node_integer::hash_next());
-	}
 };
 
 // A plain hxhash_table_set_node subclass used to test copy/move operators.
@@ -104,9 +92,6 @@ struct hxtest_set_node_t : hxhash_table_set_node<int32_t> {
 	explicit hxtest_set_node_t(int32_t k) : hxhash_table_set_node<int32_t>(k) { }
 	hxtest_set_node_t* hash_next(void) const {
 		return static_cast<hxtest_set_node_t*>(hxhash_table_set_node::hash_next());
-	}
-	hxtest_set_node_t*& hash_next(void) {
-		return reinterpret_cast<hxtest_set_node_t*&>(hxhash_table_set_node::hash_next());
 	}
 };
 
@@ -473,9 +458,6 @@ struct hxtest_map_node_t : hxhash_table_map_node<int32_t, int32_t> {
 		: hxhash_table_map_node<int32_t, int32_t>(k, v) { }
 	hxtest_map_node_t* hash_next(void) const {
 		return static_cast<hxtest_map_node_t*>(hxhash_table_map_node::hash_next());
-	}
-	hxtest_map_node_t*& hash_next(void) {
-		return reinterpret_cast<hxtest_map_node_t*&>(hxhash_table_map_node::hash_next());
 	}
 };
 

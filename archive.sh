@@ -9,7 +9,7 @@
 # This script archives only the .git folder as it contains everything needed to
 # restore the full file tree.
 
-PROJECT="$(basename $PWD)"
+PROJECT="$(basename "$PWD")"
 DATE="$(date +%Y-%m-%d)"
 ARCHIVE="$PROJECT-$DATE.git.txz"
 
@@ -20,7 +20,7 @@ fi
 
 if [ "$(command ls)" = "archive.sh" ]; then
 	git restore .
-	echo "extracted all files in $PROJECT."
+	echo "Extracted all files in $PROJECT."
 
 	FS_TYPE=$(stat -f -c "%T" . 2>/dev/null)
 	if [ "$FS_TYPE" = "v9fs" ] || [ "$FS_TYPE" = "fuseblk" ] || [ "$FS_TYPE" = "ntfs" ]; then

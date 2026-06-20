@@ -75,9 +75,10 @@ against libc alone without using the C++ standard library at all.
 
 ## Naming
 
-All symbols are `snake_case`. Except feature test macros and constants are
-`SCREAMING_SNAKE_CASE`. Do not use abbreviated names except for iterators. Use
-`struct` only in C code and template metaprogramming.
+All symbols are `snake_case`. Except shell variables, feature test macros and
+certain preprocessor symbols are `SCREAMING_SNAKE_CASE`. Do not use abbreviated
+names except for iterators. Use `struct` only in C code and template
+metaprogramming.
 
 Classes, structs and functions begin with `hx` and not `hx_`. Template
 parameters are `snake_case` and end with `_t_`. `using` statements may publish
@@ -105,7 +106,7 @@ implementation. Pack classes and structures for minimum space use.
 Use `debugbuild.sh` to test changes by default and not cmake. 🪓🪓🪓 output
 indicates success. When asked to run tests execute `build/hxtest` with `build`
 as the current directory. Consider all `.sh` files in the project except
-`ubuntu_packages.sh` safe to run at any time. On Windows, fall back to the VS
+`debian_packages.sh` safe to run at any time. On Windows, fall back to the VS
 Code CMake win32 debug task.
 
 Compiling tests with a C++11 compiler against C99 libraries is required. Support

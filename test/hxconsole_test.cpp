@@ -7,7 +7,6 @@
 #include <hx/hxtest.hpp>
 
 HX_NS_USE
-
 #if HX_USE_CONSOLE
 
 // TEST_F fixtures would not work as the console registers static variables.
@@ -148,7 +147,6 @@ hxconsole_variable_named(hxs_console_test_file_var1, hxconsole_test_file_var);
 hxconsole_command_named(hxconsole_test_file_fn, hxconsole_test_file_fn_name);
 hxconsole_command_named(hxconsole_test_failing_command, hxconsole_test_failing_command);
 
-// ============================================================================
 // register_command
 
 TEST(hxconsole_test, register_command) {
@@ -187,7 +185,6 @@ TEST(hxconsole_test, register_command) {
 	EXPECT_FALSE(hxconsole_exec_line("hxconsole_test_register0 77 ..."));
 }
 
-// ============================================================================
 // variable_set: per-type set then verify
 
 TEST(hxconsole_test, variable_set) {
@@ -269,7 +266,6 @@ TEST(hxconsole_test, variable_set) {
 	EXPECT_EQ(hxs_console_test_i32, (int32_t)255);
 }
 
-// ============================================================================
 // variable_query: name with no value logs current value and returns true
 
 TEST(hxconsole_test, variable_query) {
@@ -286,7 +282,6 @@ TEST(hxconsole_test, variable_query) {
 	EXPECT_EQ(hxs_console_test_bool, true); // unchanged
 }
 
-// ============================================================================
 // variable_overflow: out-of-range returns false, variable unchanged.
 // exact boundaries must succeed.
 
@@ -375,7 +370,100 @@ TEST(hxconsole_test, variable_overflow) {
 	EXPECT_EQ(hxs_console_test_u32, (uint32_t)4);
 }
 
-// ============================================================================
+// float_overflow: ERANGE from strtof/strtod resets next and rejects the value.
+// This is the only path that exercises the floating-point ERANGE guard.
+
+TEST(hxconsole_test, float_overflow) {
+	hxlog_warning("EXPECTING_TEST_WARNINGS\n");
+
+	// float: well beyond FLT_MAX (~3.4e38). Value rejected, variable unchanged.
+	hxs_console_test_f32 = 1.0f;
+	EXPECT_FALSE(hxconsole_exec_line("hxs_console_test_f32 1e40"));
+	EXPECT_EQ(hxs_console_test_f32, 1.0f);
+
+	// double: well beyond DBL_MAX (~1.8e308). Value rejected, variable unchanged.
+	hxs_console_test_f64 = 2.0;
+	EXPECT_FALSE(hxconsole_exec_line("hxs_console_test_f64 1e400"));
+	EXPECT_EQ(hxs_console_test_f64, 2.0);
+
+	// Same guard on the function argument path.
+	hxs_console_test_fn_f32 = 3.0f;
+	EXPECT_FALSE(hxconsole_exec_line("hxconsole_test_fn_f32 1e40"));
+	EXPECT_EQ(hxs_console_test_fn_f32, 3.0f);
+
+	hxs_console_test_fn_f64 = 4.0;
+	EXPECT_FALSE(hxconsole_exec_line("hxconsole_test_fn_f64 1e400"));
+	EXPECT_EQ(hxs_console_test_fn_f64, 4.0);
+}
+
+// hex_overflow: out-of-range hexadecimal input is rejected like decimal input.
+
+TEST(hxconsole_test, hex_overflow) {
+	hxlog_warning("EXPECTING_TEST_WARNINGS\n");
+
+	// uint8_t: 0x100 is one beyond UCHAR_MAX.
+	hxs_console_test_u8 = 9;
+	EXPECT_FALSE(hxconsole_exec_line("hxs_console_test_u8 0x100"));
+	EXPECT_EQ(hxs_console_test_u8, (uint8_t)9);
+
+	// uint16_t: 0x10000 is one beyond USHRT_MAX.
+	hxs_console_test_u16 = 9;
+	EXPECT_FALSE(hxconsole_exec_line("hxs_console_test_u16 0x10000"));
+	EXPECT_EQ(hxs_console_test_u16, (uint16_t)9);
+
+	// uint32_t: 0x1FFFFFFFF is one bit beyond UINT32_MAX.
+	hxs_console_test_u32 = 9;
+	EXPECT_FALSE(hxconsole_exec_line("hxs_console_test_u32 0x1FFFFFFFF"));
+	EXPECT_EQ(hxs_console_test_u32, (uint32_t)9);
+
+	// int8_t: 0x80 is one beyond SCHAR_MAX.
+	hxs_console_test_i8 = 9;
+	EXPECT_FALSE(hxconsole_exec_line("hxs_console_test_i8 0x80"));
+	EXPECT_EQ(hxs_console_test_i8, (int8_t)9);
+}
+
+// whitespace_dispatch: leading and extra internal whitespace route correctly.
+
+TEST(hxconsole_test, whitespace_dispatch) {
+	// Leading whitespace before the command name.
+	hxs_console_test_i32 = 0;
+	EXPECT_TRUE(hxconsole_exec_line("   hxs_console_test_i32 17"));
+	EXPECT_EQ(hxs_console_test_i32, (int32_t)17);
+
+	// Tab as leading whitespace and between command and value.
+	hxs_console_test_i32 = 0;
+	EXPECT_TRUE(hxconsole_exec_line("\thxs_console_test_i32\t18"));
+	EXPECT_EQ(hxs_console_test_i32, (int32_t)18);
+
+	// Multiple spaces between command and multiple arguments.
+	hxs_console_test_fn_ints_i32 = 0; hxs_console_test_fn_ints_u32 = 0;
+	EXPECT_TRUE(hxconsole_exec_line("hxconsole_test_fn_ints    -5     100"));
+	EXPECT_EQ(hxs_console_test_fn_ints_i32, (int32_t)-5);
+	EXPECT_EQ(hxs_console_test_fn_ints_u32, (uint32_t)100);
+}
+
+// blank_line: empty and whitespace/comment-only lines succeed without dispatch.
+
+TEST(hxconsole_test, blank_line) {
+	EXPECT_TRUE(hxconsole_exec_line(""));
+	EXPECT_TRUE(hxconsole_exec_line("   "));
+	EXPECT_TRUE(hxconsole_exec_line("\t \t"));
+	EXPECT_TRUE(hxconsole_exec_line("# just a comment"));
+	EXPECT_TRUE(hxconsole_exec_line("   # indented comment"));
+}
+
+// signed_plus_prefix: an explicit '+' sign is accepted for signed and unsigned.
+
+TEST(hxconsole_test, signed_plus_prefix) {
+	hxs_console_test_i32 = 0;
+	EXPECT_TRUE(hxconsole_exec_line("hxs_console_test_i32 +5"));
+	EXPECT_EQ(hxs_console_test_i32, (int32_t)5);
+
+	hxs_console_test_u32 = 0;
+	EXPECT_TRUE(hxconsole_exec_line("hxs_console_test_u32 +6"));
+	EXPECT_EQ(hxs_console_test_u32, (uint32_t)6);
+}
+
 // variable_parse_error: garbage/trailing-garbage/multi-value leave variable unchanged
 
 TEST(hxconsole_test, variable_parse_error) {
@@ -404,7 +492,6 @@ TEST(hxconsole_test, variable_parse_error) {
 	EXPECT_EQ(hxs_console_test_bool, true);
 }
 
-// ============================================================================
 // function_types: single-arg per-type
 
 TEST(hxconsole_test, function_types) {
@@ -492,7 +579,6 @@ TEST(hxconsole_test, function_types) {
 	EXPECT_TRUE(hxs_console_test_fn_str != hxnull && ::strncmp(hxs_console_test_fn_str, "hello", 5) == 0);
 }
 
-// ============================================================================
 // function_overflow: exact boundary succeeds, one-beyond fails
 
 TEST(hxconsole_test, function_overflow) {
@@ -585,7 +671,6 @@ TEST(hxconsole_test, function_overflow) {
 #endif
 }
 
-// ============================================================================
 // function_multi_arg
 
 TEST(hxconsole_test, function_multi_arg) {
@@ -608,7 +693,6 @@ TEST(hxconsole_test, function_multi_arg) {
 	EXPECT_TRUE(hxs_console_test_fn_void_called);
 }
 
-// ============================================================================
 // function_arity: too few/too many/wrong-type/zero-arg with args
 
 TEST(hxconsole_test, function_arity) {
@@ -643,7 +727,6 @@ TEST(hxconsole_test, function_arity) {
 	EXPECT_FALSE(hxs_console_test_fn_void_called);
 }
 
-// ============================================================================
 // comment_lines: '#' comment character in variable and command lines
 
 TEST(hxconsole_test, comment_lines) {
@@ -658,7 +741,6 @@ TEST(hxconsole_test, comment_lines) {
 	EXPECT_TRUE(hxs_console_test_fn_void_called);
 }
 
-// ============================================================================
 // unsigned_negative: negative inputs are rejected for unsigned integer types.
 
 TEST(hxconsole_test, unsigned_negative) {
@@ -681,7 +763,6 @@ TEST(hxconsole_test, unsigned_negative) {
 	EXPECT_EQ(hxs_console_test_u64, (uint64_t)7777);
 }
 
-// ============================================================================
 // string_edge_cases: const char* argument with only whitespace or embedded '#'
 
 TEST(hxconsole_test, string_edge_cases) {
@@ -698,7 +779,6 @@ TEST(hxconsole_test, string_edge_cases) {
 }
 
 
-// ============================================================================
 // null_test
 
 #if defined __GNUC__
@@ -719,8 +799,7 @@ TEST(hxconsole_test, null_test) {
 #pragma GCC diagnostic pop
 #endif
 
-// ============================================================================
-// file_test
+#if (HX_USE_CONSOLE) > 1
 #if HX_USE_FILE_IO
 
 TEST(hxconsole_test, file_test) {
@@ -737,9 +816,6 @@ TEST(hxconsole_test, file_test) {
 	EXPECT_EQ(hxs_console_test_file_var1, 78.0f);
 	EXPECT_EQ(hxs_console_test_file_var2, 89.0f);
 }
-
-// ============================================================================
-// file_fail
 
 TEST(hxconsole_test, file_fail) {
 	hxlog_warning("EXPECTING_TEST_WARNINGS\n");
@@ -774,10 +850,7 @@ TEST(hxconsole_test, file_fail) {
 	EXPECT_FALSE(hxconsole_exec_filename("__nonexistent_hxconsole_test__.txt"));
 }
 
-// ============================================================================
 // file_peek_poke / file_peek_poke_floats
-
-#if !defined __wasm__
 TEST(hxconsole_test, file_peek_poke) {
 	uint32_t target[] = { 111, 777, 333 };
 	{
@@ -806,4 +879,4 @@ TEST(hxconsole_test, file_peek_poke_floats) {
 }
 #endif
 #endif // HX_USE_FILE_IO
-#endif // HX_USE_CONSOLE
+#endif // (HX_USE_CONSOLE) > 1

@@ -13,20 +13,31 @@
 #define HX_USE_STD_ALIGNED_ALLOC (HX_CPLUSPLUS >= 201703L && (HX_HARDENING_MODE) != HX_HARDENING_MODE_DEBUG)
 #endif
 
+// hxmalloc_checked_ always checks malloc and halts on failure. It enforces the
+// overall policy against allocation failure handling routines and the static
+// analysis contract described by hxattr_allocator.
+hxattr_allocator(free) hxattr_hot hxattr_noexcept static void* hxmalloc_checked_(size_t size) {
+	void* t = ::malloc(size);
+	hxassert_hard(t, "malloc %zu", size);
+#if (HX_HARDENING_MODE) == HX_HARDENING_MODE_NONE
+	if(!t) {
+		hxlog_handler(hxlog_level_assert, "malloc %zu", size);
+		hxexit(EXIT_FAILURE);
+	}
+#endif
+	return t;
+}
+
 #if HX_PROVIDE_NEW_DELETE
 // Forward declare for C++11.
 hxattr_hot void operator delete(void* ptr, size_t) noexcept;
 hxattr_hot void operator delete[](void* ptr, size_t) noexcept;
 
 hxattr_hot void* operator new(size_t size) {
-	void* ptr = ::malloc(size);
-	hxassert_hard(ptr, "malloc %zu", size);
-	return ptr;
+	return hxmalloc_checked_(size);
 }
 hxattr_hot void* operator new[](size_t size) {
-	void* ptr = ::malloc(size);
-	hxassert_hard(ptr, "malloc %zu", size);
-	return ptr;
+	return hxmalloc_checked_(size);
 }
 hxattr_hot void operator delete(void* ptr) noexcept {
 	::free(ptr);
@@ -42,21 +53,6 @@ hxattr_hot void operator delete[](void* ptr, size_t) noexcept {
 }
 #endif
 
-// hxmalloc_checked_ always checks malloc and halts on failure. It enforces the
-// overall policy against allocation failure handling routines and the static
-// analysis contract described by hxattr_allocator.
-hxattr_allocator(free) hxattr_hot hxattr_noexcept static void* hxmalloc_checked_(size_t size) {
-	void* t = ::malloc(size);
-	hxassert_hard(t, "malloc %zu", size);
-#if (HX_HARDENING_MODE) == HX_HARDENING_MODE_NONE
-	if(!t) {
-		hxlog_handler(hxlog_level_assert, "malloc %zu", size);
-		::_Exit(EXIT_FAILURE);
-	}
-#endif
-	return t;
-}
-
 // HX_USE_MEMORY_MANAGER. See hxsettings.h.
 #if HX_USE_MEMORY_MANAGER
 
@@ -69,8 +65,10 @@ inline void hxsystem_allocator_scope_init_(hxsystem_allocator_scope* scope,
 	scope->m_initial_bytes_allocated_ = bytes_allocated;
 }
 
-// All pathways are thread-safe by default. In theory locking could be removed
-// if threads avoided sharing allocators, but I do not want to scare anyone.
+// The heap allocator is thread-safe. The permanent allocator is supposed to be
+// single-threaded. And the temp stack requires scopes to be opened and closed
+// on the same thread (asserted in debug). In theory locking could be removed
+// if the leak tracking was ripped out too.
 #if HX_USE_THREADS
 static hxmutex hxs_memory_manager_mutex;
 #define HX_MEMORY_MANAGER_LOCK_() const hxunique_lock memory_manager_lock_(hxs_memory_manager_mutex)
@@ -78,7 +76,10 @@ static hxmutex hxs_memory_manager_mutex;
 #define HX_MEMORY_MANAGER_LOCK_() (void)0
 #endif
 
-// The current allocator is a thread-local attribute.
+// The current allocator is a thread-local attribute. hxthread_local is
+// zero-initialized, which must equal hxsystem_allocator_heap for non-init
+// threads to default safely to the heap.
+static_assert(hxsystem_allocator_heap == 0, "hxsystem_allocator_heap must be 0 for thread-local default");
 static hxthread_local<hxsystem_allocator_t> hxs_current_memory_allocator;
 
 // ----------------------------------------------------------------------------
@@ -154,16 +155,19 @@ public:
 
 	hxattr_hot void* on_alloc(size_t size, hxalignment_t alignment) override {
 #if HX_USE_STD_ALIGNED_ALLOC
-		++m_allocation_count;
-
-		// Round up the size to be a multiple of the alignment so aligned_alloc
-		// doesn't fail. This has to work for every kind of allocation including
-		// a 5-byte string that has the default sizeof(void*) alignment.
+		// C11 aligned_alloc requires alignment >= sizeof(void*) on some platforms.
+		alignment = hxmax(alignment, hxalignment);
 		const size_t alignment_mask = static_cast<size_t>(alignment) - 1u;
-		size = (size + alignment_mask) & ~alignment_mask;
 
-		void* t = ::aligned_alloc(alignment, size);
-		hxassert_always(t, "aligned_alloc %zu %zu", static_cast<size_t>(alignment), size);
+		// Round up size to a multiple of alignment as required by aligned_alloc.
+		// Treat size 0 as 1 so aligned_alloc never receives size 0 (implementation-defined).
+		const size_t rounded = hxmax<size_t>((size + alignment_mask) & ~alignment_mask, alignment);
+		hxassertmsg(rounded >= size, "allocation_error size overflow %zu", size);
+
+		void* t = ::aligned_alloc(alignment, rounded);
+		hxassert_always(t, "aligned_alloc %zu %zu", static_cast<size_t>(alignment), rounded);
+		++m_allocation_count;
+		// Bytes are not tracked because there is no allocation header to examine on free.
 		return t;
 #else
 		// hxmemory_allocation_header has an hxalignment alignment requirement as well.
@@ -171,8 +175,9 @@ public:
 		const uintptr_t alignment_mask = static_cast<uintptr_t>(alignment - 1u);
 
 		// Place header immediately before aligned allocation.
-		const uintptr_t actual = reinterpret_cast<uintptr_t>(hxmalloc_checked_(
-			size + sizeof(hxmemory_allocation_header) + alignment_mask));
+		const size_t total = size + sizeof(hxmemory_allocation_header) + static_cast<size_t>(alignment_mask);
+		hxassertmsg(total > size, "allocation_error size overflow %zu", size);
+		const uintptr_t actual = reinterpret_cast<uintptr_t>(hxmalloc_checked_(total));
 		const uintptr_t aligned = (actual + sizeof(hxmemory_allocation_header) + alignment_mask) & ~alignment_mask;
 		hxmemory_allocation_header& hdr = reinterpret_cast<hxmemory_allocation_header*>(aligned)[-1];
 		hdr.size = size;
@@ -187,13 +192,14 @@ public:
 
 	hxattr_hot void on_free_non_virtual(void* ptr) {
 #if HX_USE_STD_ALIGNED_ALLOC
+		hxassertmsg(m_allocation_count > 0u, "bad_free nothing allocated");
 		--m_allocation_count;
 		::free(ptr);
 #else
 
 		const hxmemory_allocation_header& hdr = reinterpret_cast<hxmemory_allocation_header*>(ptr)[-1];
-		hxassertmsg(hdr.size > 0u && m_allocation_count > 0u
-			&& m_bytes_allocated > 0u, "bad_free sentinel corrupt");
+		hxassertmsg(m_allocation_count > 0u, "bad_free sentinel corrupt");
+		hxassertmsg(hdr.size <= m_bytes_allocated, "bad_free sentinel corrupt");
 		--m_allocation_count;
 		m_bytes_allocated -= hdr.size;
 
@@ -247,15 +253,15 @@ public:
 		(void)id; return m_current - m_begin_;
 	}
 
-	hxattr_cold void* release(void) {
-		void* t = reinterpret_cast<void*>(m_begin_);
-		m_begin_ = 0;
-		return t;
+	hxattr_cold void* release(void) const {
+		// Don't waste space on defensive code.
+		return reinterpret_cast<void*>(m_begin_);
 	}
 
 	hxattr_hot void* allocate_non_virtual(size_t size, hxalignment_t alignment) {
 		const uintptr_t alignment_mask = static_cast<uintptr_t>(alignment - 1u);
 		const uintptr_t aligned = (m_current + alignment_mask) & ~alignment_mask;
+		// Assume size_t doesn't wrap here.
 		if((aligned + size) > m_end_) {
 			return hxnull;
 		}
@@ -294,10 +300,32 @@ public:
 	hxattr_cold void construct(void* ptr, size_t size, const char* label) {
 		hxmemory_allocator_stack::construct(ptr, size, label);
 		m_high_water = 0u;
+#if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
+		m_owner_thread = 0u;
+		m_scope_depth = 0u;
+#endif
+	}
+
+	void begin_allocation_scope(hxsystem_allocator_scope* scope,
+			hxsystem_allocator_t new_id) override {
+#if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
+		hxassertmsg(m_owner_thread == 0u || m_owner_thread == hxthread_id(),
+			"temp_stack cross-thread scope %s", m_label_);
+		m_owner_thread = hxthread_id();
+		++m_scope_depth;
+#endif
+		hxmemory_allocator_stack::begin_allocation_scope(scope, new_id);
 	}
 
 	hxattr_hot void end_allocation_scope(hxsystem_allocator_scope* scope,
 			hxsystem_allocator_t old_id) override {
+#if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
+		hxassertmsg(m_owner_thread == hxthread_id(),
+			"temp_stack cross-thread scope %s", m_label_);
+		if(--m_scope_depth == 0u) {
+			m_owner_thread = 0u;
+		}
+#endif
 		(void)old_id;
 		hxassertmsg(m_allocation_count <= scope->get_initial_allocation_count(),
 			"memory_leak scope %s allocations %zu", m_label_,
@@ -324,6 +352,10 @@ public:
 
 protected:
 	uintptr_t m_high_water;
+#if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
+	size_t m_owner_thread;
+	size_t m_scope_depth;
+#endif
 };
 
 // ----------------------------------------------------------------------------
@@ -430,18 +462,18 @@ void hxmemory_manager::end_allocation_scope(
 // allocations is a bad idea.
 void* hxmemory_manager::allocate(size_t size, hxsystem_allocator_t id, hxalignment_t alignment) {
 	if(id == hxsystem_allocator_current) {
-		// This currently involves a call to pthreads.
+		// This involves a call to pthreads.
 		id = hxs_current_memory_allocator;
 	}
 
-	// Size 0 allocations are only logged as a warning. Size zero is tested and
-	// expected to work without overhead.
-	hxwarn_msg(size != 0u, "allocation_error Size 0 allocation.");
+	// The result of a size 0 allocation is UB and the pointer may or may not
+	// equal a prior result.
+	hxassertmsg(size != 0u, "allocation_error Size 0 allocation");
 
 	// Provide an alignment of 1 for strings and unaligned allocations. The
 	// following code assumes that "alignment-1" is a valid mask of unused bits
 	// and not a mask containing every bit.
-	hxassertmsg(alignment != 0u, "alignment_error Allocate with alignment 1 and not 0.");
+	hxassertmsg(alignment != 0u, "alignment_error Allocate with alignment 1 and not 0");
 	hxassertmsg(((alignment - 1u) & alignment) == 0u,
 		"alignment_error Not pow2 %zu.", static_cast<size_t>(alignment));
 
@@ -507,14 +539,16 @@ size_t hxsystem_allocator_scope::get_current_bytes_allocated(void) const {
 }
 
 void hxmemory_manager_init_(void) {
-	hxassert_hard(!hxg_init_ver_, "hxmemory_manager_init Reinitialized.");
+	// This library is not designed to be reinitialized.
+	hxassertmsg(!hxg_init_ver_, "memory_manager Reinitialized");
 	hxs_memory_manager.construct();
 }
 
 void hxmemory_manager_shut_down_(void) {
 	// Any allocations made while active will crash when freed. If these are not
 	// fixed you will hit a leak sanitizer elsewhere.
-	hxassert_hard(hxs_memory_manager.leak_count() == 0, "memory_leak at shutdown %zu", hxs_memory_manager.leak_count());
+	const size_t leaks = hxs_memory_manager.leak_count();
+	hxassert_hard(leaks == 0u, "memory_leak at shutdown %zu", leaks); (void)leaks;
 
 	// Return everything to the system allocator.
 	hxs_memory_manager.destruct();

@@ -15,6 +15,8 @@
 
 #if HX_USE_LIBCXX
 #include <initializer_list>
+#elif defined _MSC_VER
+#error No custom <initializer_list> provided for MSVC. Set HX_USE_LIBCXX.
 #else // !HX_USE_LIBCXX
 
 /// \cond HIDDEN

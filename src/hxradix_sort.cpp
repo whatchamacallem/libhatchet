@@ -13,7 +13,7 @@ using hxhistogram_t = uint32_t;
 
 hxattr_hot void hxradix_sort_void(hxradix_sort_key_void* begin, hxradix_sort_key_void* end) {
 	// Check for size overflowing hxhistogram_t.
-	hxassertmsg(static_cast<size_t>(end - begin) < ~static_cast<hxhistogram_t>(0), "hxradix_sort_void Too big.");
+	hxassertmsg(static_cast<size_t>(end - begin) < ~static_cast<hxhistogram_t>(0), "radix_sort Too big");
 
 	const hxhistogram_t size = static_cast<hxhistogram_t>(end - begin);
 	if(size < HX_RADIX_SORT_MIN_SIZE) {
@@ -79,7 +79,7 @@ hxattr_hot void hxradix_sort_void(hxradix_sort_key_void* begin, hxradix_sort_key
 
 hxattr_hot void hxradix_sort_void11(hxradix_sort_key_void* begin, hxradix_sort_key_void* end) {
 	// Check for size overflowing hxhistogram_t.
-	hxassertmsg(static_cast<size_t>(end - begin) < ~static_cast<hxhistogram_t>(0), "hxradix_sort_void Too big.");
+	hxassertmsg(static_cast<size_t>(end - begin) < ~static_cast<hxhistogram_t>(0), "radix_sort Too big");
 
 	const hxhistogram_t size = static_cast<hxhistogram_t>(end - begin);
 	if(size < HX_RADIX_SORT_MIN_SIZE) {
@@ -126,14 +126,15 @@ hxattr_hot void hxradix_sort_void11(hxradix_sort_key_void* begin, hxradix_sort_k
 	}
 
 	// 2 or 3 pass radix sort
+	const bool pass2 = (hist2[1] != size);
 	for(const hxradix_sort_key_void* hxrestrict it = buf0; it != buf0End; ++it) {
 		buf1[hist0[it->get_modified_key() & 0x7ffu]++] = *it;
 	}
-	hxradix_sort_key_void* hxrestrict buf20 = (hist2[1] != size) ? buf2 : static_cast<hxradix_sort_key_void*>(buf0);
+	hxradix_sort_key_void* buf20 = pass2 ? buf2 : static_cast<hxradix_sort_key_void*>(buf0);
 	for(const hxradix_sort_key_void* hxrestrict it = buf1; it != buf1End; ++it) {
 		buf20[hist1[(it->get_modified_key() >> 11) & 0x7ffu]++] = *it;
 	}
-	if(hist2[1] != size) {
+	if(pass2) {
 		for(const hxradix_sort_key_void* hxrestrict it = buf2; it != buf2End; ++it) {
 			buf0[hist2[it->get_modified_key() >> 22]++] = *it;
 		}

@@ -5,11 +5,9 @@
 #
 # This build uses 32-bit pointers because they are easier to read.
 #
-# The -m32 switch enables 32-bit compilation. See ubuntu_packages.sh.
+# The -m32 switch enables 32-bit compilation. See debian_packages.sh.
 #
 # Do not use a .pch with ccache. It won't work as expected.
-
-# Should detect threading and the standard library.
 
 # -Wdate-time is for ccache. -Wno-unused-variable is only for debugging.
 ERRORS="-Wall -Wextra -pedantic-errors -Werror -Wfatal-errors -Wcast-qual \
@@ -53,13 +51,9 @@ if [ "$OPT_RUN" = "0" ] && [ -z "${CLAUDE_CODE:-}" ]; then
 	clear
 fi
 
-COUNT=1
 build_hxtest() {
 	# Build artifacts are not retained.
 	rm -rf build; mkdir build
-
-	echo "[$COUNT] $BUILD"
-	COUNT=$((COUNT + 1))
 
 	PIDS=""
 	for FILE in test/*.c; do
@@ -77,17 +71,25 @@ build_hxtest() {
 			exit 1
 		fi
 	done
+
+	ccache clang++ $FLAGS build/*.o -lpthread -lstdc++ -lm -o build/hxtest
 }
 
 if [ "$OPT_GRIND" = "1" ]; then
-	for NAMESPACE in "" "-DHX_USE_NAMESPACE=hx"; do
-	for CONSOLE   in 0 1;    do
+	COUNT=1
+	for NAMESPACE in "" -DHX_USE_NAMESPACE=hx; do
+	for CONSOLE   in 0 1 2;  do
 	for FILE_IO   in 0 1 2;  do
 	for LIBCXX    in 0 1;    do
 	for LOGGING   in 0 1 2;  do
 	for MEMORY    in 0 1;    do
 	for PROFILER  in 0 1;    do
 	for THREADS   in 0 1 11; do
+
+		# Only test every 7th permutation. It is important to use a prime number.
+		COUNT=$((COUNT + 1))
+		[ $(($COUNT % 7)) -eq 0 ] || continue
+
 		BUILD="$NAMESPACE -DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG"
 		[ -n "$CONSOLE"   ] && BUILD="$BUILD -DHX_USE_CONSOLE=$CONSOLE"
 		[ -n "$FILE_IO"   ] && BUILD="$BUILD -DHX_USE_FILE_IO=$FILE_IO"
@@ -97,6 +99,8 @@ if [ "$OPT_GRIND" = "1" ]; then
 		[ -n "$MEMORY"    ] && BUILD="$BUILD -DHX_USE_MEMORY_MANAGER=$MEMORY"
 		[ -n "$PROFILER"  ] && BUILD="$BUILD -DHX_USE_PROFILER=$PROFILER"
 		[ -n "$THREADS"   ] && BUILD="$BUILD -DHX_USE_THREADS=$THREADS"
+
+		echo "[$COUNT] $BUILD"
 		build_hxtest
 	done; done; done; done; done; done; done; done
 else
@@ -104,11 +108,8 @@ else
 	build_hxtest
 fi
 
-# Only link the last set of object files.
-ccache clang++ $BUILD $FLAGS build/*.o -lpthread -lstdc++ -lm -o build/hxtest
-
+# Show stats or save tokens.
 if [ -z "${CLAUDE_CODE:-}" ]; then
-	# save tokens
 	ccache --show-stats
 fi
 

@@ -81,13 +81,13 @@ void hxinsertion_sort(iterator_t_ begin_, iterator_t_ end_, const less_t_& less_
 	// This pointer is the sole owner of the output array.
 	const hxrestrict_t<iterator_t_> begin_r_(begin_);
 	for(iterator_t_ i_ = begin_r_, j_ = begin_r_ + ptrdiff_t{1}; j_ < end_; i_ = j_, ++j_) {
-		if(!less_(*i_, *j_)) {
-			// Default value construct. Use hxmove instead of hxswap because it
-			// should be more efficient for simple types. Complex types will
-			// require an T::operator=(T&&) to be efficient.
+		if(less_(*j_, *i_)) {
+			// Move construct. Use hxmove instead of hxswap because it should be
+			// more efficient for simple types. Complex types will require an
+			// T::operator=(T&&) to be efficient.
 			auto t_ = hxmove(*j_);
 			*j_ = hxmove(*i_);
-			while(begin_r_ < i_ && !less_(*(i_ - ptrdiff_t{1}), t_)) {
+			while(begin_r_ < i_ && less_(t_, *(i_ - ptrdiff_t{1}))) {
 				*i_ = hxmove(*(i_ - ptrdiff_t{1}));
 				--i_;
 			}
@@ -112,6 +112,7 @@ void hxinsertion_sort(iterator_t_ begin_, iterator_t_ end_) {
 /// - `less` : A key comparison callable defining a less-than ordering relationship.
 template<typename iterator_t_, typename less_t_> hxattr_hot hxconstexpr
 void hxheapsort(iterator_t_ begin_, iterator_t_ end_, const less_t_& less_) {
+	if(begin_ == end_) { return; } // Prevents UB.
 
 	// This is std::make_heap with __restrict added to pointers.
 	hxdetail_::hxmake_heap_<iterator_t_>(begin_, end_, less_);
@@ -133,7 +134,7 @@ void hxheapsort(iterator_t_ begin_, iterator_t_ end_) {
 	hxheapsort<iterator_t_>(begin_, end_, hxkey_less_t<decltype(*begin_)>{});
 }
 
-/// `hxsort` - A general purpose sort routine using `T::T()`, `T::~T()`,
+/// `hxsort` - A general purpose sort routine using `T::T(&&)`, `T::~T()`,
 /// `T::operator=(&&)`, the `hxswap` overloads and a `less` callable which
 /// defaults to `hxkey_less`. This version is intended for sorting large numbers
 /// of small objects.

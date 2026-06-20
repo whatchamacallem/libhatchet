@@ -28,7 +28,7 @@
 
 HX_NS_BEGIN_
 
-/// `hxcycles_t` - Stores approximately three seconds to 300 years worth of
+/// `hxcycles_t` - Stores approximately 1.5 seconds to 209 years worth of
 /// processor cycles starting from an unspecified origin and wrapping using
 /// unsigned rules. This is intended for profiling, not calendaring. Used by the
 /// following include.
@@ -40,7 +40,6 @@ using hxcycles_t = size_t;
 hxinline_constexpr double hxcycles_per_second = 2.8e+9;
 hxinline_constexpr double hxmilliseconds_per_cycle = 1.0e+3 / hxcycles_per_second;
 hxinline_constexpr double hxmicroseconds_per_cycle = 1.0e+6 / hxcycles_per_second;
-hxinline_constexpr hxcycles_t hxdefault_cycles_cutoff = 1000;
 
 /// `hxtime_sample_cycles(void)` - Set up the processor cycle counter for your
 /// architecture. This is callable without enabling `HX_USE_PROFILER`.
@@ -61,8 +60,7 @@ HX_NS_END_
 /// `hxprofile_scope_min(const char* label_string_literal, hxcycles_t
 /// min_cycles)` - Declares an RAII-style profiling sample with a minimum cycle
 /// cutoff. WARNING: A pointer to `label_string_literal` is kept. Compiles to a
-/// NOP when not in use. Compiles
-/// to a NOP when not in use.
+/// NOP when not in use.
 /// - `label_string_literal` : A string literal label for the sample.
 /// - `min_cycles` : A minimum number of cycles required for a sample to be recorded.
 ///   Must be a compile-time constant.
@@ -83,15 +81,10 @@ HX_NS_END_
 #define hxprofiler_log() HX_PROFILE_ONLY_(HX_NS_PREFIX_ hxdetail_::hxg_profiler_.log_())
 
 #if HX_USE_FILE_IO
-/// ###
-/// ### WARNING: Only https://ui.perfetto.dev/ is working at the moment.
-/// ###
-///
 /// `hxprofiler_write_to_chrome_tracing(const char* filename)` - Stops sampling
-/// and writes samples to the provided file. Writes profiling data in a format
-/// usable by Chrome's `chrome://tracing` view. Usage: In Chrome go to
-/// `chrome://tracing/`. Load the generated `.json` file. Use the W, A, S, and D
-/// keys. Compiles to a NOP when not in use.
+/// and writes samples to the provided file in JSON format compatible with
+/// https://ui.perfetto.dev/. Compiles to a NOP when not in use.
+/// - `filename` : Path to the output `.json` file.
 #define hxprofiler_write_to_chrome_tracing(filename_) \
 	HX_PROFILE_ONLY_(HX_NS_PREFIX_ hxdetail_::hxg_profiler_.write_to_chrome_tracing_(filename_))
 #endif

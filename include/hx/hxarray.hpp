@@ -518,8 +518,8 @@ public:
 			hxalignment_t alignment_=hxalignment);
 
 	/// Resizes the array to the specified size, constructing or destroying
-	/// elements as needed. Requires a default constructor. Integers and floats
-	/// will be value-initialized to zero as per the standard.
+	/// elements as needed. Requires a default constructor. New elements are
+	/// default-initialized, leaving integers and floats uninitialized.
 	/// - `size` : The new size of the array.
 	void resize(size_t size_);
 

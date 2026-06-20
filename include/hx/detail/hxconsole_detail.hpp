@@ -17,9 +17,11 @@ namespace hxdetail_ {
 // On overflow next_ is reset to str_ to signal a parse failure.
 
 // These C library wrappers reduce code bloat and enforce additional constraints.
-long               hxconsole_strtol_(const char* str_, char** next_);
+float              hxconsole_strtof_(const char* str_, char** next_);
+double             hxconsole_strtod_(const char* str_, char** next_);
+long               hxconsole_strtol_(const char* str_, char** next_, long min_, long max_);
 long long          hxconsole_strtoll_(const char* str_, char** next_);
-unsigned long      hxconsole_strtoul_(const char* str_, char** next_);
+unsigned long      hxconsole_strtoul_(const char* str_, char** next_, unsigned long max_);
 unsigned long long hxconsole_strtoull_(const char* str_, char** next_);
 
 template<typename arg_t_>
@@ -27,95 +29,83 @@ arg_t_ hxconsole_parse_arg_(const char* str_, char** next_) = delete;
 
 // Floating-point types.
 template<> inline float hxconsole_parse_arg_<float>(const char* str_, char** next_) {
-	return ::strtof(str_, next_);
+	return hxconsole_strtof_(str_, next_);
 }
 template<> inline double hxconsole_parse_arg_<double>(const char* str_, char** next_) {
-	return ::strtod(str_, next_);
+	return hxconsole_strtod_(str_, next_);
 }
 
 // char: range CHAR_MIN..CHAR_MAX (platform-defined signedness).
 template<> inline char hxconsole_parse_arg_<char>(const char* str_, char** next_) {
-	const long v_ = hxconsole_strtol_(str_, next_);
-	if(v_ < CHAR_MIN || v_ > CHAR_MAX) { *next_ = const_cast<char*>(str_); }
-	return static_cast<char>(v_);
+	return static_cast<char>(hxconsole_strtol_(str_, next_, CHAR_MIN, CHAR_MAX));
 }
 
 // bool: only 0 or 1 are valid. Anything else is a parse error.
 template<> inline bool hxconsole_parse_arg_<bool>(const char* str_, char** next_) {
-	const long v_ = hxconsole_strtol_(str_, next_);
-	if(v_ != 0 && v_ != 1) { *next_ = const_cast<char*>(str_); }
-	return v_ != 0;
+	return hxconsole_strtol_(str_, next_, 0l, 1l) != 0l;
 }
 
-// Signed integers: parse as long, then range-check into target width.
-template<> inline int8_t hxconsole_parse_arg_<int8_t>(const char* str_, char** next_) {
-	const long v_ = hxconsole_strtol_(str_, next_);
-	if(v_ < SCHAR_MIN || v_ > SCHAR_MAX) { *next_ = const_cast<char*>(str_); }
-	return static_cast<int8_t>(v_);
+// Signed integers: parse as long with a range check into the target width.
+// Specializing the fundamental types instead of the fixed-width aliases covers
+// types like size_t that alias a different fundamental type on each of ILP32,
+// LP64 and LLP64.
+template<> inline signed char hxconsole_parse_arg_<signed char>(const char* str_, char** next_) {
+	return static_cast<signed char>(hxconsole_strtol_(str_, next_, SCHAR_MIN, SCHAR_MAX));
 }
-template<> inline int16_t hxconsole_parse_arg_<int16_t>(const char* str_, char** next_) {
-	const long v_ = hxconsole_strtol_(str_, next_);
-	if(v_ < SHRT_MIN || v_ > SHRT_MAX) { *next_ = const_cast<char*>(str_); }
-	return static_cast<int16_t>(v_);
+template<> inline short hxconsole_parse_arg_<short>(const char* str_, char** next_) {
+	return static_cast<short>(hxconsole_strtol_(str_, next_, SHRT_MIN, SHRT_MAX));
 }
-template<> inline int32_t hxconsole_parse_arg_<int32_t>(const char* str_, char** next_) {
-	const long v_ = hxconsole_strtol_(str_, next_);
-	if(v_ < static_cast<long>(INT32_MIN) || v_ > static_cast<long>(INT32_MAX)) { *next_ = const_cast<char*>(str_); }
-	return static_cast<int32_t>(v_);
+template<> inline int hxconsole_parse_arg_<int>(const char* str_, char** next_) {
+	return static_cast<int>(hxconsole_strtol_(str_, next_, INT_MIN, INT_MAX));
 }
-template<> inline int64_t hxconsole_parse_arg_<int64_t>(const char* str_, char** next_) {
-	const long long v_ = hxconsole_strtoll_(str_, next_);
-	return static_cast<int64_t>(v_);
+template<> inline long hxconsole_parse_arg_<long>(const char* str_, char** next_) {
+	return hxconsole_strtol_(str_, next_, LONG_MIN, LONG_MAX);
 }
-
-// Unsigned integers: parse as unsigned long, then range-check. Negative inputs are rejected.
-template<> inline uint8_t hxconsole_parse_arg_<uint8_t>(const char* str_, char** next_) {
-	const unsigned long v_ = hxconsole_strtoul_(str_, next_);
-	if(v_ > UCHAR_MAX) { *next_ = const_cast<char*>(str_); }
-	return static_cast<uint8_t>(v_);
-}
-template<> inline uint16_t hxconsole_parse_arg_<uint16_t>(const char* str_, char** next_) {
-	const unsigned long v_ = hxconsole_strtoul_(str_, next_);
-	if(v_ > USHRT_MAX) { *next_ = const_cast<char*>(str_); }
-	return static_cast<uint16_t>(v_);
-}
-template<> inline uint32_t hxconsole_parse_arg_<uint32_t>(const char* str_, char** next_) {
-	const unsigned long v_ = hxconsole_strtoul_(str_, next_);
-	if(v_ > static_cast<unsigned long>(UINT32_MAX)) { *next_ = const_cast<char*>(str_); }
-	return static_cast<uint32_t>(v_);
-}
-template<> inline uint64_t hxconsole_parse_arg_<uint64_t>(const char* str_, char** next_) {
-	const unsigned long long v_ = hxconsole_strtoull_(str_, next_);
-	return static_cast<uint64_t>(v_);
+template<> inline long long hxconsole_parse_arg_<long long>(const char* str_, char** next_) {
+	return hxconsole_strtoll_(str_, next_);
 }
 
-// const char* captures remainder of line including comments starting with #'s.
-// Leading whitespace is discarded and string may be empty.
-template<> inline const char* hxconsole_parse_arg_<const char*>(const char* str_, char** next_) {
-	while(hxisspace(*str_)) { ++str_; }
-	const char* result_ = str_;
-	while(*str_ != '\0') { ++str_; }
-	*next_ = const_cast<char*>(str_);
-	return result_;
+// Unsigned integers: parse as unsigned long with a range check. Negative inputs are rejected.
+template<> inline unsigned char hxconsole_parse_arg_<unsigned char>(const char* str_, char** next_) {
+	return static_cast<unsigned char>(hxconsole_strtoul_(str_, next_, UCHAR_MAX));
 }
+template<> inline unsigned short hxconsole_parse_arg_<unsigned short>(const char* str_, char** next_) {
+	return static_cast<unsigned short>(hxconsole_strtoul_(str_, next_, USHRT_MAX));
+}
+template<> inline unsigned int hxconsole_parse_arg_<unsigned int>(const char* str_, char** next_) {
+	return static_cast<unsigned int>(hxconsole_strtoul_(str_, next_, UINT_MAX));
+}
+template<> inline unsigned long hxconsole_parse_arg_<unsigned long>(const char* str_, char** next_) {
+	return hxconsole_strtoul_(str_, next_, ULONG_MAX);
+}
+template<> inline unsigned long long hxconsole_parse_arg_<unsigned long long>(const char* str_, char** next_) {
+	return hxconsole_strtoull_(str_, next_);
+}
+
+template<> const char* hxconsole_parse_arg_<const char*>(const char* str_, char** next_);
 
 // ----------------------------------------------------------------------------
 // Argument labels for usage strings.
 
-template<typename arg_t_> const char* hxconsole_arg_label_() = delete;
-template<> inline const char* hxconsole_arg_label_<float>() { return "f32"; }
-template<> inline const char* hxconsole_arg_label_<double>() { return "f64"; }
-template<> inline const char* hxconsole_arg_label_<char>() { return "char"; }
-template<> inline const char* hxconsole_arg_label_<bool>() { return "bool"; }
-template<> inline const char* hxconsole_arg_label_<int8_t>() { return "i8"; }
-template<> inline const char* hxconsole_arg_label_<uint8_t>() { return "u8"; }
-template<> inline const char* hxconsole_arg_label_<int16_t>() { return "i16"; }
-template<> inline const char* hxconsole_arg_label_<uint16_t>() { return "u16"; }
-template<> inline const char* hxconsole_arg_label_<int32_t>() { return "i32"; }
-template<> inline const char* hxconsole_arg_label_<uint32_t>() { return "u32"; }
-template<> inline const char* hxconsole_arg_label_<int64_t>() { return "i64"; }
-template<> inline const char* hxconsole_arg_label_<uint64_t>() { return "u64"; }
-template<> inline const char* hxconsole_arg_label_<const char*>() { return "char*"; }
+template<typename arg_t_> constexpr const char* hxconsole_arg_label_() = delete;
+template<> constexpr const char* hxconsole_arg_label_<float>() { return "f32"; }
+template<> constexpr const char* hxconsole_arg_label_<double>() { return "f64"; }
+template<> constexpr const char* hxconsole_arg_label_<char>() { return "char"; }
+template<> constexpr const char* hxconsole_arg_label_<bool>() { return "bool"; }
+template<> constexpr const char* hxconsole_arg_label_<signed char>() { return "i8"; }
+template<> constexpr const char* hxconsole_arg_label_<unsigned char>() { return "u8"; }
+template<> constexpr const char* hxconsole_arg_label_<short>() { return "i16"; }
+template<> constexpr const char* hxconsole_arg_label_<unsigned short>() { return "u16"; }
+template<> constexpr const char* hxconsole_arg_label_<int>() { return "i32"; }
+template<> constexpr const char* hxconsole_arg_label_<unsigned int>() { return "u32"; }
+template<> constexpr const char* hxconsole_arg_label_<long>() { return sizeof(long) == 4u ? "i32" : "i64"; }
+template<> constexpr const char* hxconsole_arg_label_<unsigned long>() { return sizeof(long) == 4u ? "u32" : "u64"; }
+template<> constexpr const char* hxconsole_arg_label_<long long>() { return "i64"; }
+template<> constexpr const char* hxconsole_arg_label_<unsigned long long>() { return "u64"; }
+template<> constexpr const char* hxconsole_arg_label_<const char*>() { return "char*"; }
+
+// Prints id (or "usage:") followed by a null terminated array of labels.
+void hxconsole_usage_(const char* id_, const char* const* labels_);
 
 // ----------------------------------------------------------------------------
 // C++20 concept for parseable types.
@@ -167,13 +157,8 @@ public:
 	}
 
 	void usage_(const char* id_=hxnull) override {
-		hxlog_handler(hxlog_level_console, "%s", (id_ != hxnull) ? id_ : "usage:");
-		if constexpr (sizeof...(args_t_) == 0) {
-			hxlog_handler(hxlog_level_console, "\n");
-		} else {
-			(hxlog_handler(hxlog_level_console, " %s", hxconsole_arg_label_<args_t_>()), ...);
-			hxlog_handler(hxlog_level_console, "\n");
-		}
+		static constexpr const char* labels_[] = { hxconsole_arg_label_<args_t_>()..., hxnull };
+		hxconsole_usage_(id_, labels_);
 	}
 
 private:
@@ -190,10 +175,12 @@ private:
 	template<typename first_t_, typename... rest_t_, typename fn_t_, typename... parsed_t_>
 	static bool call_(fn_t_ fn_, const char* pos_, char* next_, parsed_t_... parsed_) {
 		first_t_ val_ = hxconsole_parse_arg_<first_t_>(pos_, &next_);
-		if(pos_ < next_) {
+		// Empty strings are valid string args.
+		if constexpr(hxis_same<first_t_, const char*>::value) {
 			return call_<rest_t_...>(fn_, next_, next_, parsed_..., val_);
+		} else {
+			return (pos_ < next_) && call_<rest_t_...>(fn_, next_, next_, parsed_..., val_);
 		}
-		return false;
 	}
 
 	bool(*m_fn_)(args_t_...);
@@ -224,7 +211,8 @@ public:
 	}
 
 	void usage_(const char* id_) override {
-		hxlog_handler(hxlog_level_console, "%s <optional-value>\n", (id_ != hxnull) ? id_ : "usage:");
+		static constexpr const char* labels_[] = { "<optional-value>", hxnull };
+		hxconsole_usage_(id_, labels_);
 	}
 private:
 	volatile var_t_* m_var_;
@@ -246,12 +234,12 @@ inline hxconsole_variable_<var_t_> hxconsole_variable_factory_(volatile var_t_* 
 
 // ERROR: Pointers cannot be console variables.
 template<typename var_t_>
-inline void hxconsole_variable_factory_(volatile var_t_** var_) = delete;
+inline void hxconsole_variable_factory_(var_t_** var_) = delete;
 template<typename var_t_>
-inline void hxconsole_variable_factory_(const volatile var_t_** var_) = delete;
+inline void hxconsole_variable_factory_(const var_t_** var_) = delete;
 
 // ----------------------------------------------------------------------------
-// Hash table infrastructure (unchanged).
+// Hash table infrastructure.
 
 // Wrap the string literal type because it is not used normally.
 class hxconsole_hash_table_key_ {
@@ -294,7 +282,7 @@ public:
 
 	// Boilerplate required by hxhash_table.
 	hxconsole_hash_table_node_* hash_next(void) const { return m_hash_next_; }
-	hxconsole_hash_table_node_*& hash_next(void) { return m_hash_next_; }
+	void set_hash_next(hxconsole_hash_table_node_* next_) { m_hash_next_ = next_; }
 
 	const hxconsole_hash_table_key_& hash_key(void) const { return m_key_; }
 	hxhash_t hash_value(void) const { return m_hash_; }

@@ -40,7 +40,7 @@ void hxtask_dag_node<max_successors_>::dag_node_completed_(hxtask_queue* q_, boo
 				if(is_cancelled_) {
 					successor_.node_->m_predecessor_count_ = 0;
 					last_predecessor_[i_] = true;
-				} else if(successor_.node_->m_predecessor_count_ > 0) {
+				} else {
 					last_predecessor_[i_] = --successor_.node_->m_predecessor_count_ == 0;
 				}
 			} else {

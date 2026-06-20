@@ -10,6 +10,7 @@
 #ifndef HX_DOXYGEN_PARSER
 HX_BEGIN_INL_
 
+
 template<typename T_>
 hxoptional<T_>::hxoptional(const hxoptional& other_) : m_engaged_(false) {
 	if (other_.m_engaged_) {
@@ -47,7 +48,9 @@ hxoptional<T_>::hxoptional(hxoptional<U_>&& other_) : m_engaged_(false) {
 }
 
 template<typename T_>
-template<typename U_, hxenable_if_t<!hxis_same<hxremove_cvref_t<U_>, hxoptional<T_>>::value, bool>>
+template<typename U_, hxenable_if_t<
+	!hxis_same<hxremove_cvref_t<U_>, hxoptional<T_>>::value &&
+	!hxdetail_::hxis_hxoptional_<hxremove_cvref_t<U_>>::value, bool>>
 hxoptional<T_>::hxoptional(U_&& value_) : m_engaged_(false) {
 	::new(static_cast<void*>(&m_storage_)) T_(hxforward<U_>(value_));
 	m_engaged_ = true;
@@ -79,7 +82,7 @@ hxoptional<T_>& hxoptional<T_>::operator=(hxoptional&& other_) noexcept {
 }
 
 template<typename T_>
-template<typename U_>
+template<typename U_, hxenable_if_t<!hxis_same<hxremove_cvref_t<U_>, hxoptional<T_>>::value, bool>>
 hxoptional<T_>& hxoptional<T_>::operator=(U_&& value_) {
 	if (m_engaged_) {
 		*reinterpret_cast<T_*>(&m_storage_) = hxforward<U_>(value_);

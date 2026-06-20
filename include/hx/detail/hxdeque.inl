@@ -14,6 +14,8 @@ template<typename T_, size_t capacity_>
 hxdeque<T_, capacity_>::hxdeque(size_t dynamic_capacity_)
 	: m_mask_(0u), m_head_(0u), m_tail_(0u), m_count_(0u)
 {
+	static_assert(capacity_ == 0u || (capacity_ & (capacity_ - 1u)) == 0u,
+		"invalid_capacity capacity must be a power of 2");
 	hxassert_hard(dynamic_capacity_ == 0u || (dynamic_capacity_ & (dynamic_capacity_ - 1u)) == 0u,
 		"invalid_capacity capacity must be a power of 2");
 	if(dynamic_capacity_ != 0u) {

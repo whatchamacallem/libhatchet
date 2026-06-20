@@ -46,7 +46,7 @@ SAN_UNDEF="-fsanitize=undefined,address"
 SAN_THREAD="-fsanitize=thread"
 SAN_MEMORY="-fsanitize=memory -fsanitize-memory-track-origins"
 
-HX_DIR=`pwd`
+HX_DIR=$PWD
 
 run_hxtest() {
 	if ./hxtest runtests > console_output.txt 2>&1; then
@@ -67,7 +67,7 @@ rm -rf ./build; mkdir ./build && cd ./build
 
 run_clang_build() {
 	OPT=$1; SAN=$2; shift 2
-	echo "clang c17/c++20 -O$OPT $SAN ..."
+	echo "clang c17/c++20 -O$OPT $SAN $* ..."
 
 	# compile C17
 	clang -I../include -DHX_HARDENING_MODE=3-$OPT -O$OPT $FLAGS $ERRORS $SAN \
@@ -109,14 +109,14 @@ run_clang_build 0 "$SAN_MEMORY" "$@"
 # gcc
 
 for I in 0 1 2 3; do
-echo "gcc c99/c++11 -O$I $@ ..."
+echo "gcc c99/c++11 -O$I $* ..."
 
-gcc -I$HX_DIR/include -DHX_HARDENING_MODE=3-$I -O$I $FLAGS $ERRORS \
-	-pthread -std=c99 -m32 "$@" -c $HX_DIR/test/*.c
+gcc -I"$HX_DIR/include" -DHX_HARDENING_MODE=3-$I -O$I $FLAGS $ERRORS \
+	-pthread -std=c99 -m32 "$@" -c "$HX_DIR"/test/*.c
 
-gcc -I$HX_DIR/include -DHX_HARDENING_MODE=3-$I -O$I $FLAGS $ERRORS \
-	-pthread -std=c++11 -fno-exceptions -fno-rtti "$@" $HX_DIR/src/*.cpp \
-	$HX_DIR/test/*.cpp *.o -lpthread -lstdc++ -m32 -o hxtest
+gcc -I"$HX_DIR/include" -DHX_HARDENING_MODE=3-$I -O$I $FLAGS $ERRORS \
+	-pthread -std=c++11 -fno-exceptions -fno-rtti "$@" "$HX_DIR"/src/*.cpp \
+	"$HX_DIR"/test/*.cpp *.o -lpthread -lstdc++ -m32 -o hxtest
 
 run_hxtest
 

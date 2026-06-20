@@ -77,7 +77,6 @@ done
 PS4='\e[38;5;208m[${SECONDS}s] ${BASH_SOURCE}:${LINENO}: \e[0m'
 set -o xtrace
 
-./debugbuild.sh --grind --run
 ./testcmake.sh
 ./testcoverage.sh --headless
 ./testerrorhandling.sh
@@ -85,6 +84,7 @@ set -o xtrace
 ./testmatrix.sh
 ./teststrip.sh
 ./testwasm.sh --headless
+./debugbuild.sh --grind --run
 doxygen
 
 ./clean.sh

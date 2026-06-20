@@ -24,8 +24,8 @@ inline HX_NS_PREFIX_ hxcycles_t HX_NS_PREFIX_ hxtime_sample_cycles(void) { retur
 #if defined __wasm__
 // from "emscripten/emscripten.h"
 extern "C" double emscripten_get_now(void);
-#elif defined __x86_64__ || defined __i386__
-#ifdef _MSC_VER
+#elif defined __x86_64__ || defined __i386__ || defined _M_X64 || defined _M_IX86
+#if defined _MSC_VER || defined __INTEL_COMPILER
 #include <intrin.h>
 #else
 #include <x86intrin.h>
@@ -39,9 +39,7 @@ inline hxcycles_t hxtime_sample_cycles(void) {
 #if defined __wasm__
 	const double t_ = emscripten_get_now() * 1.0e+6;
 	cycles_ = (uint64_t)t_;
-#elif defined __x86_64__ || defined __i386__
-	cycles_ = __rdtsc();
-#elif defined _MSC_VER && (defined _M_X64 || defined _M_IX86)
+#elif defined __x86_64__ || defined __i386__ || defined _M_X64 || defined _M_IX86
 	cycles_ = __rdtsc();
 #else
 static_assert(0, "Implement hxtime_sample_cycles.");

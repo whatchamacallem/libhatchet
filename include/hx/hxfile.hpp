@@ -50,7 +50,7 @@ hxinline_constexpr char hxendl[] = "\n";
 ///
 /// ```cpp
 /// if(hxfile f=hxfile(hxfile::in|hxfile::skip_asserts, "pkg%d.bin", i)) {
-///   f => manifest; // binary read.
+///   f >> manifest; // binary read.
 ///   // ...
 /// }
 /// ```
@@ -245,17 +245,17 @@ public:
 private:
 	hxfile(const hxfile&) = delete;
 	void operator=(const hxfile&) = delete;
-	template<typename T_> hxfile& operator>>(const T_* t_) = delete; // Use >=.
+	template<typename T_> hxfile& operator>>(const T_* t_) = delete;
 
 	// Internal function to open a file with a formatted filename and variable
 	// arguments.
 	bool openv_(uint8_t mode_, const char* format_, va_list args_);
 
-	uint8_t m_open_mode_;   // Current open_mode flags.
 	intptr_t m_file_pimpl_; // POSIX fd/FILE* file pointer.
-	bool m_owns_;  		    // Indicates if the FILE* is owned.
-	bool m_fail_; 		    // Indicates EOF, file errors and user errors.
-	bool m_eof_;  		    // Indicates EOF.
+	uint8_t  m_open_mode_;  // Current open_mode flags.
+	bool     m_owns_;  		// Indicates if the file is owned.
+	bool     m_fail_; 		// Indicates EOF, file errors and user errors.
+	bool     m_eof_;  		// Indicates EOF.
 };
 
 HX_NS_END_

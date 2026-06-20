@@ -29,23 +29,23 @@ ERRORS="-Wall -Wextra -pedantic-errors -Werror -Wfatal-errors -Wcast-qual \
 # 32-bit MUSL is not tested as it is unsupported on Ubuntu.
 FLAGS="-Os -static -g -ffunction-sections -fdata-sections -ffast-math"
 
-HX_DIR=`pwd`
+HX_DIR=$PWD
 
 # Build artifacts are not retained.
 rm -rf ./build; mkdir ./build && cd ./build
 
 set -o xtrace
 
-musl-gcc $BUILD $ERRORS $FLAGS -I$HX_DIR/include \
-	-std=c17 -c $HX_DIR/test/*.c
+musl-gcc $BUILD $ERRORS $FLAGS -I"$HX_DIR/include" \
+	-std=c17 -c "$HX_DIR"/test/*.c
 
 # Test every supported version of the standard without libc++.
 for VERSION in 11 14 17 20; do
 
 # -Wl,--gc-sections and -flto=12 should reduce size.
-musl-gcc $BUILD $ERRORS $FLAGS -I$HX_DIR/include -std=c++$VERSION -nostdinc++ \
+musl-gcc $BUILD $ERRORS $FLAGS -I"$HX_DIR/include" -std=c++$VERSION -nostdinc++ \
     -fno-exceptions -fno-rtti -Wl,--gc-sections -nodefaultlibs -flto=12 \
-	$HX_DIR/src/*.cpp $HX_DIR/test/*.cpp *.o -lc -lpthread -lm -o hxtest
+	"$HX_DIR"/src/*.cpp "$HX_DIR"/test/*.cpp *.o -lc -lpthread -lm -o hxtest
 
 done
 

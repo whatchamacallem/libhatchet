@@ -34,8 +34,8 @@ public:
 	virtual void on_completion(hxtask_queue*) { }
 
 	/// Indicates failed execution. This call is the last time this object is
-	/// touched by the `hxtask_queue`. An `on_completion` override may delete or
-	/// re-enqueue the `this` pointer. 
+	/// touched by the `hxtask_queue`. An `on_failure` override may delete or
+	/// re-enqueue the `this` pointer.
 	/// - `q` : Pointer to the task queue managing this task.
 	virtual void on_failure(hxtask_queue*) { }
 

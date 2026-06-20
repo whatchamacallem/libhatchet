@@ -269,12 +269,12 @@ public:
 	/// - `ptr` : The node to insert. Must not be null.
 	hxconstexpr iterator insert(const_iterator pos_, node_t_* ptr_);
 
-	/// `pop_back` - Returns an `hxptr` owning the last node, or an empty
-	/// `hxptr` if the list is empty.
+	/// `pop_back` - Returns an `hxptr` owning the last node. The list must
+	/// not be empty.
 	hxconstexpr hxptr<node_t_, deleter_t_> pop_back(void);
 
-	/// `pop_front` - Returns an `hxptr` owning the first node, or an empty
-	/// `hxptr` if the list is empty.
+	/// `pop_front` - Returns an `hxptr` owning the first node. The list must
+	/// not be empty.
 	hxconstexpr hxptr<node_t_, deleter_t_> pop_front(void);
 
 	/// `push_back` - Inserts the node owned by `ptr` at the back of the list.

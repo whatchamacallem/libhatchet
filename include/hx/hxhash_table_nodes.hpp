@@ -36,23 +36,23 @@ public:
 	hxhash_table_node_integer(const hxhash_table_node_integer& src_) :
 		m_hash_next_(hxnull), m_key_(src_.m_key_), m_hash_(src_.m_hash_) { }
 
-
 	/// Assigns nothing. Hash table linkage of either node is not affected.
 	hxhash_table_node_integer& operator=(const hxhash_table_node_integer& other_) {
 		hxassertmsg(this != &other_, "self_assignment"); (void)other_;
 		return *this;
 	}
 
-	/// Returns the next node pointer in the bucket's embedded linked list.
+	/// Returns the next node in the table's embedded linked list.
 	hxhash_table_node_integer* hash_next(void) const { return m_hash_next_; }
-	/// Returns a reference to the next node pointer so callers can mutate it.
-	hxhash_table_node_integer*& hash_next(void) { return m_hash_next_; }
+	/// Sets the next node in the table's embedded linked list.
+	/// - `next` : The new next node pointer.
+	void set_hash_next(hxhash_table_node_integer* next_) { m_hash_next_ = next_; }
 
 	/// The key and hash identify the `node_t` and should not change once added.
 	const key_t_& hash_key(void) const { return m_key_; }
 	/// Returns the cached hash value for the stored key.
-	hxhash_t hash_value(void) const { return m_hash_; };
-	static hxhash_t hash_value(key_t_ key_) { return hxkey_hash(key_); };
+	hxhash_t hash_value(void) const { return m_hash_; }
+	static hxhash_t hash_value(key_t_ key_) { return hxkey_hash(key_); }
 
 private:
 	hxhash_table_node_integer(void) = delete;
@@ -75,13 +75,9 @@ public:
 	hxattr_nonnull(2) hxhash_table_node_string_literal(const char* k_)
 		: hxhash_table_set_node<const char*>(k_) { }
 
-	/// Returns the next node pointer in the bucket's embedded linked list.
+	/// Returns the next node in the table's embedded linked list.
 	hxhash_table_node_string_literal* hash_next(void) const {
 		return static_cast<hxhash_table_node_string_literal*>(hxhash_table_set_node<const char*>::hash_next());
-	}
-	/// Returns a reference to the next node pointer so callers can mutate it.
-	hxhash_table_node_string_literal*& hash_next(void) {
-		return reinterpret_cast<hxhash_table_node_string_literal*&>(hxhash_table_set_node<const char*>::hash_next());
 	}
 };
 
@@ -101,13 +97,9 @@ public:
 	/// Destructor frees the allocated string key.
 	~hxhash_table_node_string(void) { hxfree(const_cast<char *>(this->hash_key())); }
 
-	/// Returns the next node pointer in the bucket's embedded linked list.
+	/// Returns the next node in the table's embedded linked list.
 	hxhash_table_node_string* hash_next(void) const {
 		return static_cast<hxhash_table_node_string*>(hxhash_table_set_node<const char*>::hash_next());
-	}
-	/// Returns a reference to the next node pointer so callers can mutate it.
-	hxhash_table_node_string*& hash_next(void) {
-		return reinterpret_cast<hxhash_table_node_string*&>(hxhash_table_set_node<const char*>::hash_next());
 	}
 
 private:

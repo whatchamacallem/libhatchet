@@ -50,6 +50,7 @@ hxfile::hxfile(uint8_t mode, const char* filename, ...) : hxfile() {
 }
 
 hxfile::hxfile(hxfile&& file) noexcept {
+	hxassertmsg(this != &file, "self_assignment");
 	::memcpy(static_cast<void*>(this), static_cast<const void*>(&file), sizeof file);
 	::memset(static_cast<void*>(&file), 0x00, sizeof file);
 	file.m_file_pimpl_ = static_cast<intptr_t>(-1);
@@ -60,6 +61,7 @@ hxfile::~hxfile(void) {
 }
 
 void hxfile::operator=(hxfile&& file) noexcept {
+	hxassertmsg(this != &file, "self_assignment");
 	close();
 	::memcpy(static_cast<void*>(this), static_cast<const void*>(&file), sizeof file);
 	::memset(static_cast<void*>(&file), 0x00, sizeof file);
@@ -86,6 +88,7 @@ bool hxfile::openv_(uint8_t mode, const char* filename, va_list args) {
 	int flags = 0;
 	switch (static_cast<int>(mode) & (hxfile::in | hxfile::out)) {
 	case hxfile::none:
+		m_fail_ = true;
 		return false;
 	case hxfile::in:
 		flags = O_RDONLY;
@@ -133,14 +136,23 @@ void hxfile::clear(void) {
 
 size_t hxfile::get_pos(void) const {
 	hxassertmsg(m_file_pimpl_ >= 0, "invalid_file");
-	return static_cast<size_t>(::lseek(static_cast<int>(m_file_pimpl_), 0, SEEK_CUR));
+	const off_t result = ::lseek(static_cast<int>(m_file_pimpl_), 0, SEEK_CUR);
+	hxassertmsg(result >= 0 || ((m_open_mode_ & hxfile::skip_asserts) != 0u), "seek_failed");
+	if(result < 0) {
+		// m_fail_ = true; // Files that do not support lseek do not set m_fail_.
+		return 0u;
+	}
+	return static_cast<size_t>(result);
 }
 
 bool hxfile::set_pos(size_t position) {
 	hxassertmsg(m_file_pimpl_ >= 0, "invalid_file");
 	const off_t result = ::lseek(static_cast<int>(m_file_pimpl_), static_cast<off_t>(position), SEEK_SET);
+	hxassertmsg(result >= 0 || ((m_open_mode_ & hxfile::skip_asserts) != 0u), "seek_failed");
 	m_fail_ = (result < 0);
-	m_eof_ = m_fail_;
+	if(!m_fail_) {
+		m_eof_ = false;
+	}
 	return !m_fail_;
 }
 
@@ -158,7 +170,9 @@ size_t hxfile::read(void* bytes, size_t buffer_size, size_t byte_count) {
 	size_t total = 0u;
 	ssize_t last_n = 0;
 	while(total < byte_count) {
-		last_n = ::read(static_cast<int>(m_file_pimpl_), dst + total, byte_count - total);
+		do {
+			last_n = ::read(static_cast<int>(m_file_pimpl_), dst + total, byte_count - total);
+		} while(last_n < 0 && errno == EINTR);
 		if(last_n <= 0) {
 			break;
 		}
@@ -166,7 +180,8 @@ size_t hxfile::read(void* bytes, size_t buffer_size, size_t byte_count) {
 	}
 
 	hxassertmsg(total == byte_count || ((m_open_mode_ & hxfile::skip_asserts) != 0u),
-		"read expected %zu != actual %zu: %s", byte_count, total, ::strerror(errno));
+		"read expected %zu != actual %zu %s", byte_count, total,
+		(last_n < 0) ? ::strerror(errno) : "");
 
 	if(total != byte_count) {
 		m_fail_ = true;
@@ -186,7 +201,10 @@ size_t hxfile::write(const void* bytes, size_t byte_count) {
 	const uint8_t* src = static_cast<const uint8_t*>(bytes);
 	size_t total = 0u;
 	while(total < byte_count) {
-		const ssize_t n = ::write(static_cast<int>(m_file_pimpl_), src + total, byte_count - total);
+		ssize_t n = 0;
+		do {
+			n = ::write(static_cast<int>(m_file_pimpl_), src + total, byte_count - total);
+		} while(n < 0 && errno == EINTR);
 		if(n <= 0) {
 			break;
 		}
@@ -212,12 +230,16 @@ __attribute__((no_sanitize("memory")))
 #endif
 bool hxfile::getline(char* buffer, int buffer_size) {
 	hxassertmsg(((m_open_mode_ & hxfile::in) != 0u) && (m_file_pimpl_ >= 0), "invalid_file");
+	hxassertmsg(buffer_size >= 2, "buffer_size too small");
 
 	int written = 0;
 	char buf[HX_MAX_LINE];
 
 	for(;;) {
-		const ssize_t bytes_read = ::read(static_cast<int>(m_file_pimpl_), buf, HX_MAX_LINE - 1u);
+		ssize_t bytes_read = 0;
+		do {
+			bytes_read = ::read(static_cast<int>(m_file_pimpl_), buf, HX_MAX_LINE - 1u);
+		} while(bytes_read < 0 && errno == EINTR);
 
 		if(bytes_read <= 0) {
 			buffer[written] = '\0';
@@ -238,8 +260,9 @@ bool hxfile::getline(char* buffer, int buffer_size) {
 
 		if(nl || written == buffer_size - 1) {
 			if(static_cast<ssize_t>(copy_len) < bytes_read) {
-				::lseek(static_cast<int>(m_file_pimpl_),
+				const off_t seek_result = ::lseek(static_cast<int>(m_file_pimpl_),
 					static_cast<off_t>(copy_len) - static_cast<off_t>(bytes_read), SEEK_CUR);
+				hxassert_always(seek_result >= 0, "lseek: %s", ::strerror(errno));
 			}
 			buffer[written] = '\0';
 			return true;
@@ -271,7 +294,10 @@ bool hxfile::print(const char* format, ...) { // NOLINT
 		static_cast<size_t>(len) : static_cast<size_t>(HX_MAX_LINE);
 	size_t written = 0u;
 	while(written < to_write) {
-		const ssize_t n = ::write(static_cast<int>(m_file_pimpl_), buf + written, to_write - written);
+		ssize_t n = 0;
+		do {
+			n = ::write(static_cast<int>(m_file_pimpl_), buf + written, to_write - written);
+		} while(n < 0 && errno == EINTR);
 		if(n <= 0) {
 			break;
 		}

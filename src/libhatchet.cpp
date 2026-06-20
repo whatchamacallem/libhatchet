@@ -7,6 +7,9 @@
 #include "../include/hx/hxalgorithm.hpp"
 
 #include <stdio.h>
+#if defined HX_USE_FLOATING_POINT_TRAPS
+#include <fenv.h>
+#endif
 
 // This file has C linkage only. HX_NS_BEGIN_ is not used.
 HX_NS_USE
@@ -15,36 +18,17 @@ extern "C" {
 
 // hxg_init_ver_ should not be explicitly zero-initialized. MSVC handles that
 // differently. If non-zero the platform has been initialized without being shut
-// down. See `#define hxg_init_ver_` in hxsettings.h for rationale.
+// down.
 int hxg_init_ver_; // Static initialize to 0.
 
 // Allows observation of asserts. Return true to ignore.
 bool (*hxg_assert_handler)(void);
 
-// HX_FLOATING_POINT_TRAPS - Traps (FE_DIVBYZERO|FE_INVALID|FE_OVERFLOW) in
-// debug builds so you can safely run without checks in release builds. Use
-// -DHX_FLOATING_POINT_TRAPS=0 to disable this debug facility. There is no C++
-// standard-conforming way to disable floating point error checking. That
-// requires a gcc/clang extension. Using -fno-math-errno and -fno-trapping-math
-// will work if you require C++ conforming accuracy without the overhead of
-// error checking. -ffast-math includes both of those switches. You need the
-// math library -lm. Triggering or explicitly checking for floating point
-// exceptions is not recommended.
-#if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG && defined __GLIBC__ && !defined __FAST_MATH__
-#include <fenv.h>
-#if !defined HX_FLOATING_POINT_TRAPS
-#define HX_FLOATING_POINT_TRAPS 1
-#endif
-#else
-#undef HX_FLOATING_POINT_TRAPS
-#define HX_FLOATING_POINT_TRAPS 0
-#endif
-
 // Exception-handling semantics exist in a few places in case they are enabled,
 // but you are advised to use -fno-exceptions. This library does not provide the
 // exception handling functions expected by the C++ ABI.
 #if !(HX_USE_LIBCXX) && defined __cpp_exceptions && !defined __INTELLISENSE__
-static_assert(0, "Warning: C++ exceptions are not supported.");
+static_assert(0, "Warning: C++ exceptions are not supported");
 #endif
 
 // ----------------------------------------------------------------------------
@@ -111,16 +95,15 @@ hxattr_weak void __sanitizer_report_error_summary(const char *error_summary) {
 // Initialization, shutdown, exit, assert, and logging.
 
 hxattr_weak void hxinit_internal(int version) {
-	// Check if compiled in expected_version matches callers.
-	const long expected_version = LIBHATCHET_VER;
-	hxassert_hard(expected_version == version, "LIBHATCHET_VER mismatch.");
-	hxassert_hard((hxg_init_ver_ == 0) || (hxg_init_ver_ == version), "LIBHATCHET_VER mismatch.");
-	(void)version; (void)expected_version;
+	// Check if compile time version matches callers.
+	hxassert_hard(LIBHATCHET_VER == version, "hxinit binary mismatch");
+	hxassert_hard((hxg_init_ver_ == 0) || (hxg_init_ver_ == version), "hxinit after shutdown");
+	(void)version;
 
 	if(hxg_init_ver_ == 0) {
 		hxsettings_construct();
 
-#if HX_FLOATING_POINT_TRAPS
+#if HX_USE_FLOATING_POINT_TRAPS
 		// You need the math library -lm. This is a nonstandard glibc/_GNU_SOURCE extension.
 		::feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 #endif
@@ -144,11 +127,12 @@ hxattr_weak hxattr_noexcept void hxlog_handler_v(hxlog_level_t level, const char
 
 	// vsnprintf leaves a trailing NUL that may be overwritten below.
 	char line_buf[HX_MAX_LINE];
-	int len = ::vsnprintf(line_buf, HX_MAX_LINE, format, args);
+	int len = ::vsnprintf(line_buf, HX_MAX_LINE-1, format, args);
 
-	// Do not try to print the format string because it may be invalid.
-	hxassert_hard(len >= 0 && len < (int)HX_MAX_LINE, "hxlog_handler_v");
-	len = hxmin(len, HX_MAX_LINE - 1);
+	// Do not try to print the format string because it may be corrupt.
+	// Assume "hxlog_handler_v" will not cause recursion when logged.
+	hxassert_hard(len >= 0 && len < ((HX_MAX_LINE)-2), "hxlog_handler_v");
+	len = hxclamp(len, 0, (HX_MAX_LINE)-2);
 
 #if HX_USE_FILE_IO
 	hxfile& f = level == hxlog_level_log ? hxout : hxerr;
@@ -178,9 +162,15 @@ hxattr_weak hxattr_noexcept void hxlog_handler_v(hxlog_level_t level, const char
 hxattr_weak void hxshutdown(void) {
 	if(hxg_init_ver_ != 0) {
 		hxmemory_manager_shut_down_();
-		// Try to trap further activity. This breaks global destructors that call
-		// hxfree. There is no easier way to track leaks.
-		hxg_init_ver_ = 0;
+
+#if HX_USE_FLOATING_POINT_TRAPS
+		::feenableexcept(0);
+#endif
+
+		// Trap reinitialization. This intentionally breaks global destructors
+		// that call hxfree. Leak tracking has to run before that. Just don't
+		// call hxshutdown() if you don't need this.
+		hxg_init_ver_ = 1;
 	}
 }
 
@@ -199,7 +189,7 @@ hxattr_weak hxattr_noexcept bool hxassert_handler(const char* file, size_t line)
 	if(hxg_assert_handler != hxnull && hxg_assert_handler()) {
 		return true;
 	}
-	hxlog_handler(hxlog_level_assert, "breakpoint %s(%zu)\n", f, line);
+	hxlog_handler(hxlog_level_assert, "breakpoint %s(%zu)", f, line);
 	// Return to hxbreakpoint at the calling line.
 	return false;
 }
@@ -209,8 +199,19 @@ hxattr_weak hxattr_noexcept void hxassert_handler(void) {
 		return;
 	}
 	hxlog_handler(hxlog_level_assert, "assert_fail\n");
-	_Exit(EXIT_FAILURE);
+	hxexit(EXIT_FAILURE);
 }
 #endif
+
+// Make sure error messages are reported.
+hxattr_noreturn hxattr_weak hxattr_noexcept void hxexit(int status) {
+#if HX_USE_FILE_IO
+	hxout.flush();
+	hxerr.flush();
+#else
+	::fflush(stdout);
+#endif
+	::_Exit(status);
+}
 
 } // extern "C"

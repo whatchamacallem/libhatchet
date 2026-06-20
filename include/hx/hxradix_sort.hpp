@@ -15,21 +15,20 @@
 HX_NS_BEGIN_
 
 /// A key-value pair used with `hxradix_sort`. Only 32-bit or smaller fixed size
-/// types from `<stdint.h>` are supported for `key_t`. Stores a pointer to
-/// `value_t` only.
+/// types from `<stdint.h>` are supported for `key_t`. Stores `value_t` by value.
 template<typename key_t_, typename value_t_>
 class hxradix_sort_key {
 public:
-	/// Constructs from the required `key_t` type and `value_t*` type.
+	/// Constructs from the required `key_t` type and `value_t` type.
 	hxradix_sort_key(key_t_ key_, value_t_ value_) { this->set_(key_, value_); }
 
-	/// Sets from the required `key_t` type and `value_t*` type.
+	/// Sets from the required `key_t` type and `value_t` type.
 	void set(key_t_ key_, value_t_ value_) { this->set_(key_, value_); }
 
 	/// Returns the stored `value_t`.
 	hxattr_nodiscard value_t_ get_value(void) const { return m_value_; }
 
-	/// Returns the stored `value_t*`.
+	/// Returns the stored `value_t`.
 	hxattr_nodiscard value_t_ get_value(void) { return m_value_; }
 
 	/// Comparison operator for comparison sorting `hxradix_sort_key` objects
@@ -99,21 +98,21 @@ void hxradix_sort_void(hxradix_sort_key_void* begin_, hxradix_sort_key_void* end
 hxattr_nonnull(1,2) hxattr_hot
 void hxradix_sort_void11(hxradix_sort_key_void* begin_, hxradix_sort_key_void* end_);
 
-/// `hxradix_sort` - Sorts an array of `value_t*` by `key_t` using 8-bit digits.
-/// `key_t` is the sort key and `value_t` the value being sorted. Keys of
-/// `double`, `int64_t`, and `uint64_t` are not supported. This is an Θ(n)
-/// algorithm that does not cause code bloat and is the fastest sorting algorithm
-/// available for scalar keys. Radix sort is best when you need real-time
-/// guarantees and have a massive workload. IBM used it to sort punch cards.
-/// `hxradix_sort` scales linearly with the byte-length of the key, whereas
-/// `hxinsertion_sort` is Θ(n) on mostly sorted data.
+/// `hxradix_sort` - Sorts an array of `hxradix_sort_key<key_t, value_t>` by
+/// `key_t` using 8-bit digits. `key_t` is the sort key and `value_t` the value
+/// being sorted. Keys of `double`, `int64_t`, and `uint64_t` are not supported.
+/// This is an Θ(n) algorithm that does not cause code bloat and is the fastest
+/// sorting algorithm available for scalar keys. Radix sort is best when you
+/// need real-time guarantees and have a massive workload. IBM used it to sort
+/// punch cards. `hxradix_sort` scales linearly with the byte-length of the key,
+/// whereas `hxinsertion_sort` is Θ(n) on mostly sorted data.
 ///
 /// For example:
 ///
 /// ```cpp
-///   hxarray<hxradix_sort_key<key_t, example_t>> rs; rs.reserve(size);
+///   hxarray<hxradix_sort_key<key_t, example_t*>> rs; rs.reserve(size);
 ///   for(uint32_t i = size; i--;) {
-///     rs.push_back(hxradix_sort_key<key_t, example_t>(x[i].id, &x[i]));
+///     rs.push_back(hxradix_sort_key<key_t, example_t*>(x[i].id, &x[i]));
 ///   }
 ///   hxradix_sort(rs.begin(), rs.end());
 /// ```
@@ -127,11 +126,11 @@ void hxradix_sort(hxradix_sort_key<key_t_, value_t_>* begin_, hxradix_sort_key<k
 	hxradix_sort_void(reinterpret_cast<hxradix_sort_key_void*>(begin_), reinterpret_cast<hxradix_sort_key_void*>(end_));
 }
 
-/// Sorts an array of `value_t*` by `key_t` using 11-bit digits. `key_t` is the
-/// sort key and `value_t` the value being sorted. Keys of `double`, `int64_t`,
-/// and `uint64_t` are not supported. `hxradix_sort` scales linearly with the
-/// byte-length of the key, whereas `hxinsertion_sort` is Θ(n) on mostly sorted
-/// data.
+/// Sorts an array of `hxradix_sort_key<key_t, value_t>` by `key_t` using 11-bit
+/// digits. `key_t` is the sort key and `value_t` the value being sorted. Keys
+/// of `double`, `int64_t`, and `uint64_t` are not supported. `hxradix_sort`
+/// scales linearly with the byte-length of the key, whereas `hxinsertion_sort`
+/// is Θ(n) on mostly sorted data.
 /// - `begin` : Non-null pointer to the first element in the range being
 ///   reordered.
 /// - `end` : Non-null pointer one past the last element in the range. Must
