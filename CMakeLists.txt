@@ -45,8 +45,10 @@ else()
 
 	target_include_directories(hxtest PRIVATE ${CMAKE_SOURCE_DIR}/include)
 	target_compile_definitions(hxtest PRIVATE HX_USE_GOOGLE_TEST=1)
-	target_compile_definitions(hxtest PRIVATE HX_USE_THREADS=0)
-	target_compile_definitions(hxtest PRIVATE HX_USE_LOGGING=0)
+
+	# Turn on everything so Clang-Tidy sees it.
+	target_compile_definitions(hxtest PRIVATE HX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG)
+	target_compile_definitions(hxtest PRIVATE HX_USE_PROFILER=1)
 
 	if(MSVC)
 		target_compile_options(

@@ -4,7 +4,7 @@
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
 /// \file hxlist.hpp An embedded doubly linked list with intrusive node linkage.
-/// This is the same as `hxconst_list` except that it does not work with
+/// This is the same as `hxconstexpr_list` except that it does not work with
 /// `constexpr` as it uses pointer arithmetic to save one pointer per-node.
 
 #include "libhatchet.h"
@@ -47,7 +47,7 @@ private:
 
 /// `hxlist` - An intrusive doubly linked list that takes ownership of nodes via
 /// a `deleter_t` callable, defaulting to `hxdefault_delete`. This is the same
-/// as `hxconst_list` except that it does not work with `constexpr` as it uses
+/// as `hxconstexpr_list` except that it does not work with `constexpr` as it uses
 /// pointer arithmetic to save one pointer per-node. `node_t` must derive from
 /// `hxlist_node`. The destructor calls `clear()` which invokes the deleter on
 /// all remaining nodes. Subclasses of `node_t` may be inserted heterogeneously.

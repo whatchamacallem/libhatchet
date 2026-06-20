@@ -56,8 +56,8 @@ preconditions and post conditions instead of null checks.
 
 Prefer wrapping C-style implementation details in C++ classes with normal
 operators so that C++ object models are used for interfaces. However, use
-hxarray with a static capacity instead of large C-style arrays. Use template
-wrappers for type safety while avoiding the associated code bloat.
+`hxarray`/`hxvector` with a static capacity instead of large C-style arrays. Use
+template wrappers for type safety while avoiding the associated code bloat.
 
 Separate code onto individual lines when it helps step through expressions
 individually in the debugger. Use references instead of pointers when a pointer
@@ -138,12 +138,14 @@ will cause memory corruption or other failures in subsequent tests.
 ## Debugging
 
 Debug non-obvious test failures, asserts, and crashes with GDB. When debugging,
-build with `debugbuild.sh` without `--headless`. Then run GDB in batch mode
-passing `-x .gdbinit` explicitly to load pretty printers, with `-ex "run"` and
-`-ex "bt"` to capture the backtrace, and `build/hxtest` as the target with no
-args (do not use `--gtest_filter`). Both `hxassert()` and `hxbreakpoint()` will
-raise `SIGTRAP` and can be added temporarily to stop execution at a specific
-point. Do not look for a core dump on WSL as cores are discarded.
+build with `debugbuild.sh` without `--run`. Then run GDB in batch mode passing
+`-x .gdbinit` explicitly to load pretty printers, with `-ex "run"` and `-ex
+"bt"` to capture the backtrace, and `build/hxtest` as the target with no args
+(do not use `--gtest_filter`). Use the `--cd` arg to specify the `build`
+directory as the working directory to avoid polluting the unstaged changes. Both
+`hxassert()` and `hxbreakpoint()` will raise `SIGTRAP` and can be added
+temporarily to stop execution at a specific point. Do not look for a core dump
+on WSL as cores are discarded.
 
 ## Documentation
 

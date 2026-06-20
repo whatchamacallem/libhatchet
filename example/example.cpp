@@ -17,6 +17,7 @@
 #if defined HX_USE_MODULE && (HX_USE_MODULE)
 import hx;
 #else
+#include <hx/hxarray.hpp>
 #include <hx/hxfile.hpp>
 #include <hx/hxtask_queue.hpp>
 #endif
@@ -216,13 +217,10 @@ int example_main(void) {
 		exit_code = EXIT_FAILURE;
 	} else {
 		hx::hxarray<hx::hxarray<char, 2048u>, 40u>* row_storage =
-			hx::hxnew<hx::hxarray<hx::hxarray<char, 2048u>, 40u>>(40u);
-		for(auto& row : *row_storage) {
-			row.resize(2048u);
-		}
+			hx::hxnew<hx::hxarray<hx::hxarray<char, 2048u>, 40u>>();
 
 		hx::hxtask_queue queue(40u, 8u);
-		hx::hxarray<example_row_task, 40u> tasks(40u);
+		hx::hxarray<example_row_task, 40u> tasks;
 
 		example_render(queue, tasks, *row_storage);
 		example_usage();

@@ -12,6 +12,7 @@ HX_NS_BEGIN_
 using hxhistogram_t = uint32_t;
 
 hxattr_hot void hxradix_sort_void(hxradix_sort_key_void* begin, hxradix_sort_key_void* end) {
+	hxassertmsg(end >= begin, "radix_sort end < begin");
 	// Check for size overflowing hxhistogram_t.
 	hxassertmsg(static_cast<size_t>(end - begin) < ~static_cast<hxhistogram_t>(0), "radix_sort Too big");
 
@@ -78,6 +79,7 @@ hxattr_hot void hxradix_sort_void(hxradix_sort_key_void* begin, hxradix_sort_key
 }
 
 hxattr_hot void hxradix_sort_void11(hxradix_sort_key_void* begin, hxradix_sort_key_void* end) {
+	hxassertmsg(end >= begin, "radix_sort end < begin");
 	// Check for size overflowing hxhistogram_t.
 	hxassertmsg(static_cast<size_t>(end - begin) < ~static_cast<hxhistogram_t>(0), "radix_sort Too big");
 

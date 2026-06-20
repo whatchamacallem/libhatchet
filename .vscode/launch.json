@@ -42,8 +42,13 @@
 					"ignoreFailures": false
 				},
 				{
-					"description": "Load hxconst_list printer",
+					"description": "Load hxconstexpr_list printer",
 					"text": "source ${workspaceFolder}/gdb/hxconst_list_printer.py",
+					"ignoreFailures": false
+				},
+				{
+					"description": "Load hxvector printer",
+					"text": "source ${workspaceFolder}/gdb/hxvector_printer.py",
 					"ignoreFailures": false
 				},
 				{

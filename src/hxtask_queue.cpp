@@ -153,10 +153,13 @@ void hxtask_queue::thread_task_loop_(hxtask_queue* q, thread_mode_t_ mode) {
 				++q->m_executing_count_;
 			}
 			else {
-				// Nothing left for worker threads to do. The waiting threads still
-				// have work to do before they leave the main task loop.
+				// Nothing left for worker threads to do. Pool threads exit when
+				// stopped. Waiting threads still have work to do before leaving.
 
-				if(mode != thread_mode_pool_) {
+				if(mode == thread_mode_pool_) {
+					return;
+				}
+				else {
 					// All tasks are dispatched. Now wait for m_executing_count_ to hit 0.
 					// Tasks may enqueue subtasks before processing is considered done.
 					// This asserts the queue is still running.
@@ -165,14 +168,14 @@ void hxtask_queue::thread_task_loop_(hxtask_queue* q, thread_mode_t_ mode) {
 					// All tasks are now considered complete. The workers can be
 					// released if the queue is shutting down.
 					if(mode == thread_mode_stopping_) {
-					q->m_queue_run_level_ = run_level_stopped_;
-					q->m_cond_var_new_tasks_.notify_all();
+						q->m_queue_run_level_ = run_level_stopped_;
+						q->m_cond_var_new_tasks_.notify_all();
 
-					// This triggers a release assert in any unexpected waiting threads.
-					q->m_cond_var_completion_.notify_all();
+						// This triggers a release assert in any unexpected waiting threads.
+						q->m_cond_var_completion_.notify_all();
+					}
+					return;
 				}
-			}
-				return;
 			}
 		}
 

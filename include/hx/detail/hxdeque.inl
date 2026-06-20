@@ -129,7 +129,8 @@ template<typename... args_t_>
 void hxdeque<T_, capacity_>::push_back(args_t_&&... args_) {
 	hxassert_hard(m_count_ < this->capacity(), "full_deque");
 	T_* slot_ = this->data() + m_tail_;
-	m_tail_ = (m_tail_ + 1u) & m_mask_; ++m_count_;
+	m_tail_ = (m_tail_ + 1u) & m_mask_;
+	++m_count_;
 	::new(slot_) T_(hxforward<args_t_>(args_)...);
 }
 

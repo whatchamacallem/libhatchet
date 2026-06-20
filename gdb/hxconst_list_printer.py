@@ -6,7 +6,7 @@ import gdb # type: ignore
 import gdb.printing # type: ignore
 import traceback
 
-# hxconst_list uses this layout:
+# hxconstexpr_list uses this layout:
 #
 #	class hxconst_list_node {
 #		hxconst_list_node* m_list_prev_;
@@ -14,7 +14,7 @@ import traceback
 #	};
 #
 #	template<typename node_t_, typename deleter_t_>
-#	class hxconst_list {
+#	class hxconstexpr_list {
 #		size_t            m_size_;
 #		hxconst_list_node m_sentinel_;  // sentinel: m_sentinel_.m_list_next_ is front,
 #	};                                  //           m_sentinel_.m_list_prev_ is back.
@@ -90,7 +90,7 @@ class hxconst_listPrinter:
 
 def build_pretty_printer():
 	pp = gdb.printing.RegexpCollectionPrettyPrinter('hxconst_list_printer')
-	pp.add_printer('hxconst_list', r'hxconst_list<', hxconst_listPrinter)
+	pp.add_printer('hxconstexpr_list', r'hxconstexpr_list<', hxconst_listPrinter)
 	return pp
 
 gdb.printing.register_pretty_printer(gdb.current_objfile(), build_pretty_printer(), replace=True)

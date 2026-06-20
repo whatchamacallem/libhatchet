@@ -58,9 +58,7 @@ hxoptional<T_>::hxoptional(U_&& value_) : m_engaged_(false) {
 
 template<typename T_>
 hxoptional<T_>& hxoptional<T_>::operator=(const hxoptional& other_) {
-	if (this == &other_) {
-		return *this;
-	}
+	hxassertmsg(this != &other_, "self_assignment");
 	reset();
 	if (other_.m_engaged_) {
 		::new(static_cast<void*>(&m_storage_)) T_(*reinterpret_cast<const T_*>(&other_.m_storage_));
@@ -95,22 +93,26 @@ hxoptional<T_>& hxoptional<T_>::operator=(U_&& value_) {
 
 template<typename T_>
 T_& hxoptional<T_>::operator*(void) {
-	hxassertmsg(m_engaged_, "optional_disengaged"); return *reinterpret_cast<T_*>(&m_storage_);
+	hxassertmsg(m_engaged_, "optional_disengaged");
+	return *reinterpret_cast<T_*>(&m_storage_);
 }
 
 template<typename T_>
 const T_& hxoptional<T_>::operator*(void) const {
-	hxassertmsg(m_engaged_, "optional_disengaged"); return *reinterpret_cast<const T_*>(&m_storage_);
+	hxassertmsg(m_engaged_, "optional_disengaged");
+	return *reinterpret_cast<const T_*>(&m_storage_);
 }
 
 template<typename T_>
 T_* hxoptional<T_>::operator->(void) {
-	hxassertmsg(m_engaged_, "optional_disengaged"); return reinterpret_cast<T_*>(&m_storage_);
+	hxassertmsg(m_engaged_, "optional_disengaged");
+	return reinterpret_cast<T_*>(&m_storage_);
 }
 
 template<typename T_>
 const T_* hxoptional<T_>::operator->(void) const {
-	hxassertmsg(m_engaged_, "optional_disengaged"); return reinterpret_cast<const T_*>(&m_storage_);
+	hxassertmsg(m_engaged_, "optional_disengaged");
+	return reinterpret_cast<const T_*>(&m_storage_);
 }
 
 template<typename T_>
@@ -169,12 +171,14 @@ void hxoptional<T_>::swap(hxoptional& other_) noexcept {
 
 template<typename T_>
 T_& hxoptional<T_>::value(void) {
-	hxassertmsg(m_engaged_, "optional_disengaged"); return *reinterpret_cast<T_*>(&m_storage_);
+	hxassertmsg(m_engaged_, "optional_disengaged");
+	return *reinterpret_cast<T_*>(&m_storage_);
 }
 
 template<typename T_>
 const T_& hxoptional<T_>::value(void) const {
-	hxassertmsg(m_engaged_, "optional_disengaged"); return *reinterpret_cast<const T_*>(&m_storage_);
+	hxassertmsg(m_engaged_, "optional_disengaged");
+	return *reinterpret_cast<const T_*>(&m_storage_);
 }
 
 template<typename T_>

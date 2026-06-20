@@ -3,7 +3,6 @@
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
 #include <hx/hxtest.hpp>
-#include <hx/hxarray.hpp>
 
 #include "hxctest.h"
 

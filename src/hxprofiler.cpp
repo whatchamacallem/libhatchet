@@ -85,22 +85,22 @@ void hxprofiler_internal_::write_to_chrome_tracing_(const char* filename) {
 	f.print("[\n");
 	if(!m_records.empty()) {
 		const hxcycles_t epoch = m_records[0].m_begin_;
+		bool first = true;
 		for(size_t i = 0; i < m_records.size(); ++i) {
-			if(i != 0) { f.print(",\n"); }
-
 			const hxprofiler_record_& rec = m_records[i];
 
 			// Register wrapping can cause bad samples. Meanwhile Chrome has been
 			// updated to generate exceptions when any sample has end < begin.
 			if(rec.m_end_ < rec.m_begin_) { continue; }
 
-			const char* label = rec.m_label_;
+			if(!first) { f.print(",\n"); }
+			first = false;
 			f.print("{\"name\":\"%s\",\"cat\":\"PERF\",\"ph\":\"B\",\"pid\":0,\"tid\":%u,\"ts\":%.15g},\n",
-				label,
+				rec.m_label_,
 				static_cast<unsigned int>(rec.m_thread_id_),
 				static_cast<double>(rec.m_begin_ - epoch) * hxmicroseconds_per_cycle);
 			f.print("{\"name\":\"%s\",\"cat\":\"PERF\",\"ph\":\"E\",\"pid\":0,\"tid\":%u,\"ts\":%.15g}",
-				label,
+				rec.m_label_,
 				static_cast<unsigned int>(rec.m_thread_id_),
 				static_cast<double>(rec.m_end_ - epoch) * hxmicroseconds_per_cycle);
 		}

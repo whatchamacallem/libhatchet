@@ -13,7 +13,7 @@
 #error Header does not provide macros only.
 #endif
 
-#include "hxarray.hpp"
+#include "hxvector.hpp"
 #include "hxtask.hpp"
 #include "hxthread.hpp"
 
@@ -131,7 +131,7 @@ private:
 	hxtask_queue(const hxtask_queue&) = delete;
 	void operator=(const hxtask_queue&) = delete;
 
-	hxarray<record_t> m_tasks_;
+	hxvector<record_t> m_tasks_;
 
 #if HX_USE_THREADS
 #define hxtask_queue_lock_ const hxunique_lock lock_(m_mutex_)

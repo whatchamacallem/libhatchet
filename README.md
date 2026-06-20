@@ -43,8 +43,7 @@ system allocators.
   - `HX_HARDENING_MODE_DEBUG`: Provides comprehensive asserts and verbose
     output.
 
-- **Portability**: Porting to different versions of the C++ standard library are
-  no longer a concern. libhatchet can easily be made to run on top of any old
+- **Portability**: libhatchet can easily be made to run on top of any old
   embedded C99 library. musl libc is recommended for embedded Linux and is
   widely packaged: <https://musl.libc.org/>. No other C++ runtime or C++ code is
   required. pthreads or C99's `<thread.h>` may be used for threading, which are
@@ -76,17 +75,25 @@ system allocators.
   An execution graph is also available as a layer on top.
 
 - **Containers**: Provides a set of containers designed for environments where
-  reallocation is not used. `hxarray` provides a statically or dynamically
-  allocated array. This class was written with an exhaustive feature set because
-  arrays are cache-coherent and memory efficient. E.g. it implements a priority
-  queue as well. `hxhash_table` provides unordered sets and maps without
-  requiring nodes to be subclasses or using copies and allocations. `hxlist`
-  similarly operates without requiring copies or allocations. `hxdeque` provides
-  a highly optimized deque compared to the standard. `hxbitset` is available for
-  bit manipulation. That said, this codebase is intended for low-level work
-  where complex container libraries cause code bloat, memory fragmentation, and
-  poor cache coherence. If those are not your concerns, consider using
-  additional libraries. No Red-Black Tree has been provided.
+  reallocation is not used. `hxarray` and `hxvector` provide a statically or
+  dynamically allocated arrays. This class was written with an exhaustive
+  feature set because arrays are cache-coherent and memory efficient. E.g. it
+  implements a priority queue as well. `hxhash_table` provides unordered sets
+  and maps without requiring nodes to be subclasses or using copies and
+  allocations. `hxlist` similarly operates without requiring copies or
+  allocations. `hxdeque` provides a highly optimized deque compared to the
+  standard. `hxbitset` is available for bit manipulation. That said, this
+  codebase is intended for low-level work where complex container libraries
+  cause code bloat, memory fragmentation, and poor cache coherence. If those are
+  not your concerns, consider using additional libraries. No Red-Black Tree has
+  been provided.
+
+  | | capacity > 0 | `hxallocator_dynamic_capacity` |
+  | --- | --- | --- |
+  | `hxarray` | Compile-time fixed size, inline storage | Variable initial size, non-resizable, non-reallocating heap storage [1] |
+  | `hxvector` | Resizable, fixed capacity, inline storage | Resizable, variable initial capacity, non-reallocating heap storage |
+
+  [1] Not provided by the standard.
 
 - **Pretty Printers** Implements GDB-compatible pretty printers, enabling
   debuggers and most code editors to display container contents in a
@@ -117,8 +124,8 @@ system allocators.
   macros when writing tests. Using tabs instead of spaces reduces token use.
 
 - **constexpr ready**: C++11 `constexpr` are used where possible. Asserts,
-  algorithms, `hxconst_list`, `hxbitset` and `hxrandom` support `consteval` in
-  C++23.
+  algorithms, `hxconstexpr_list`, `hxbitset` and `hxrandom` support `consteval`
+  in C++23.
 
 ## Documentation
 

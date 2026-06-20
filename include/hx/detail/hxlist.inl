@@ -19,6 +19,7 @@ HX_BEGIN_INL_
 template<typename node_t_, typename deleter_t_>
 inline auto hxlist<node_t_, deleter_t_>::const_iterator::operator++(void)
 		-> const_iterator& {
+	// Checking for m_sentinel_ is not done for symmetry.
 	hxassertmsg(this->m_sentinel_ != hxnull, "invalid_iterator");
 	hxlist_node* next_ = reinterpret_cast<hxlist_node*>(
 		reinterpret_cast<intptr_t>(m_prev_) ^ m_current_node_->m_list_link_);

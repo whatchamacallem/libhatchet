@@ -20,8 +20,7 @@ HX_NS_BEGIN_
 /// allocated object of type `T` and invokes `deleter_t` on destruction or
 /// `reset`. Only one `hxptr` may own a given object at a time. Move
 /// construction and move assignment transfer ownership. Copy construction and
-/// copy assignment are deleted. WARNING: This class does not call `delete[]`
-/// on owned arrays. Use hxarray.
+/// copy assignment are deleted.
 /// - `T` : The pointed-to type.
 /// - `deleter_t` : A callable that frees the owned pointer. Defaults to
 ///    `hxdefault_delete`. Use `hxconsteval_delete` for `consteval` work.
@@ -58,8 +57,7 @@ public:
 	hxattr_nodiscard hxconstexpr T_* operator->(void) const;
 
 	/// Returns a reference to the element at index `n` relative to the owned
-	/// pointer. The pointer must not be null. WARNING: This class does not
-	/// call `delete[]` on owned arrays. Use hxarray.
+	/// pointer. The pointer must not be null.
 	/// - `n` : The index of the element to return.
 	hxattr_nodiscard hxconstexpr T_& operator[](size_t n_) const;
 

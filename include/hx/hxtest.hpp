@@ -98,22 +98,21 @@ class Test {
 public:
 	/// User override for tests using `TEST_F`.
 	virtual void SetUp(void) { }
+
 	/// User override for tests using `TEST_F`.
 	virtual void TearDown(void) { }
 
-	// Not for direct use. This is the Google Test invocation protocol.
 	/// \cond HIDDEN
-	void run_test_(void) {
+	// Not for direct use. This is the Google Test invocation protocol.
+	void hxrun_test_(void) {
 		SetUp();
-		run_test_f_();
+		hxrun_test_f_();
 		TearDown();
 	}
-	/// \endcond
 
 protected:
 	// Provided and used by the `TEST_F` macro.
-	/// \cond HIDDEN
-	virtual void run_test_f_() = 0;
+	virtual void hxrun_test_f_() = 0;
 	/// \endcond
 };
 
@@ -157,15 +156,15 @@ inline void InitGoogleTest(void) { }
 #define TEST_F(suite_fixture_, case_name_) \
 	class HX_TEST_NAME_(hxtest_f_, suite_fixture_, case_name_) : public HX_NS_PREFIX_ hxdetail_::hxtest_case_interface_ { \
 	public: \
-		class hxtest_case_subclass_ : public suite_fixture_ { virtual void run_test_f_(void) override; }; \
+		class hxtest_case_subclass_ : public suite_fixture_ { virtual void hxrun_test_f_(void) override; }; \
 		HX_TEST_NAME_(hxtest_f_, suite_fixture_, case_name_)(void) { HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().add_test_(this); } \
-		virtual void run_test_(void) override { hxtest_case_subclass_ subclass_; subclass_.run_test_(); } \
+		virtual void run_test_(void) override { hxtest_case_subclass_ subclass_; subclass_.hxrun_test_(); } \
 		virtual const char* suite_(void) const override { return #suite_fixture_; } \
 		virtual const char* case_(void) const override { return #case_name_; } \
 		virtual const char* file_(void) const override { return __FILE__; } \
 		virtual size_t line_(void) const override { return __LINE__; } \
 	} static HX_TEST_NAME_(hxs_test_f_, suite_fixture_, case_name_); \
-	void HX_TEST_NAME_(hxtest_f_, suite_fixture_, case_name_)::hxtest_case_subclass_::run_test_f_(void)
+	void HX_TEST_NAME_(hxtest_f_, suite_fixture_, case_name_)::hxtest_case_subclass_::hxrun_test_f_(void)
 
 /// `int RUN_ALL_TESTS(...)` - Executes all registered test cases.
 /// - `...` : Optional const char* matching a specific test suite to run. (Non-standard.)

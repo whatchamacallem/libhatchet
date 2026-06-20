@@ -262,7 +262,7 @@ inline hxhash_t hxkey_hash(hxconsole_hash_table_key_ k_) {
 inline bool hxkey_equal(hxconsole_hash_table_key_ a_, hxconsole_hash_table_key_ b_) {
 	while(hxisgraph(*a_.str_) && *a_.str_ == *b_.str_) { ++a_.str_; ++b_.str_; }
 	return !hxisgraph(*a_.str_) && !hxisgraph(*b_.str_);
-};
+}
 
 // this is how to write a hash node without including hash table code.
 class hxconsole_hash_table_node_ {

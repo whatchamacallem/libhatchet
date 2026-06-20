@@ -5,7 +5,7 @@
 #include <hx/hxradix_sort.hpp>
 #include <hx/hxrandom.hpp>
 #include <hx/hxalgorithm.hpp>
-#include <hx/hxarray.hpp>
+#include <hx/hxvector.hpp>
 #include <hx/hxtest.hpp>
 
 HX_NS_USE
@@ -28,7 +28,7 @@ public:
 	hxradix_sort_test_f(void) : m_temporary_stack_scope(hxsystem_allocator_temporary_stack) { }
 
 	template<typename key_t>
-	void generate(hxarray<hxtest_object<key_t> >& a, uint32_t size, uint32_t mask, key_t offset) {
+	void generate(hxvector<hxtest_object<key_t> >& a, uint32_t size, uint32_t mask, key_t offset) {
 		a.reserve(size);
 		for(uint32_t i= size;i--;) {
 			const uint32_t x = m_prng() & mask;
@@ -51,17 +51,17 @@ public:
 		const hxsystem_allocator_scope temporary_stack_scope_2(hxsystem_allocator_temporary_stack);
 
 		// Generate test data.
-		hxarray<hxtest_object<key_t> > a;
+		hxvector<hxtest_object<key_t> > a;
 		generate<key_t>(a, size, mask, offset);
 
 		// Copy and sort the test data.
-		hxarray<hxtest_object<key_t> > b(a);
+		hxvector<hxtest_object<key_t> > b(a);
 		::qsort(b.data(), b.size(), sizeof(hxtest_object<key_t>), q_sort_compare<key_t>);
 
 		// Radix sort using 8-bit digits.
 
 		// "A key-value pair used with radix sort. Only 32-bit or smaller fixed size key types supported." Prepare key/value envelope.
-		hxarray<hxradix_sort_key<key_t, hxtest_object<key_t>*>> rs; rs.reserve(size);
+		hxvector<hxradix_sort_key<key_t, hxtest_object<key_t>*>> rs; rs.reserve(size);
 		for(uint32_t i = size; i--;) {
 			rs.emplace_back(a[i].id, &a[i]);
 		}
@@ -100,7 +100,7 @@ public:
 };
 
 TEST_F(hxradix_sort_test_f, null) {
-	hxarray<hxradix_sort_key<uint32_t, const char*>> rs;
+	hxvector<hxradix_sort_key<uint32_t, const char*>> rs;
 	rs.reserve(1u);
 
 	// Empty span remains untouched.
@@ -118,7 +118,7 @@ TEST_F(hxradix_sort_test_f, null) {
 }
 
 TEST_F(hxradix_sort_test_f, null11) {
-	hxarray<hxradix_sort_key<uint32_t, const char*>> rs;
+	hxvector<hxradix_sort_key<uint32_t, const char*>> rs;
 	rs.reserve(1u);
 
 	// 11-bit digit version should no-op on empty range.

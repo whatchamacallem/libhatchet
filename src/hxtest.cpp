@@ -56,8 +56,8 @@ bool hxtest_double_eq_(double a, double b) {
 	if(a == b) { return true; }
 
 	const uint64_t sign_mask = 1ull << 63;
-	const uint64_t ba = ((ua & sign_mask) != 0u) ? (~ua + 1u) : (sign_mask | ua);
-	const uint64_t bb = ((ub & sign_mask) != 0u) ? (~ub + 1u) : (sign_mask | ub);
+	const uint64_t ba = ((ua & sign_mask) != 0ull) ? (~ua + 1ull) : (sign_mask | ua);
+	const uint64_t bb = ((ub & sign_mask) != 0ull) ? (~ub + 1ull) : (sign_mask | ub);
 	const uint64_t delta = (ba >= bb) ? (ba - bb) : (bb - ba);
 
 	return delta <= 4u; // 4 ULPs.
@@ -92,10 +92,8 @@ hxtest_& hxtest_::dispatcher_(void) {
 
 void hxtest_::add_test_(hxtest_case_interface_* fn) {
 	// Use -DHX_TEST_MAX_CASES to provide enough room for all tests.
-	hxassert_always(m_num_test_cases_ < HX_TEST_MAX_CASES, "HX_TEST_MAX_CASES overflow\n");
-	if(m_num_test_cases_ < HX_TEST_MAX_CASES) {
-		m_test_cases_[m_num_test_cases_++] = fn;
-	}
+	hxassert_always(m_num_test_cases_ < HX_TEST_MAX_CASES, "HX_TEST_MAX_CASES overflow");
+	m_test_cases_[m_num_test_cases_++] = fn;
 }
 
 void hxtest_::condition_check_(bool condition, const char* file, size_t line, const char* message, bool is_assert) {

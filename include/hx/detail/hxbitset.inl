@@ -28,7 +28,7 @@ inline hxconstexpr hxbitset<bit_count_>::hxbitset(const hxbitset& x_) {
 template<size_t bit_count_>
 inline hxconstexpr void hxbitset<bit_count_>::operator=(const hxbitset& x_) {
 	hxassertmsg(static_cast<const void*>(this) != static_cast<const void*>(&x_),
-		"invalid_reference Assignment to self.");
+		"invalid_reference");
 	const size_t* hxrestrict src_ = x_.m_data_;
 	size_t* hxrestrict dst_ = m_data_;
 	const size_t* const end_ = dst_ + s_words_;
@@ -45,7 +45,7 @@ inline hxconstexpr bool hxbitset<bit_count_>::operator[](size_t pos_) const {
 template<size_t bit_count_>
 inline hxconstexpr hxbitset<bit_count_>& hxbitset<bit_count_>::operator&=(const hxbitset& x_) {
 	hxassertmsg(static_cast<const void*>(this) != static_cast<const void*>(&x_),
-		"invalid_reference Operation with self.");
+		"invalid_reference");
 	size_t* hxrestrict dst_ = m_data_;
 	const size_t* hxrestrict src_ = x_.m_data_;
 	const size_t* const end_ = dst_ + s_words_;
@@ -56,24 +56,24 @@ inline hxconstexpr hxbitset<bit_count_>& hxbitset<bit_count_>::operator&=(const 
 template<size_t bit_count_>
 inline hxconstexpr hxbitset<bit_count_>& hxbitset<bit_count_>::operator|=(const hxbitset& x_) {
 	hxassertmsg(static_cast<const void*>(this) != static_cast<const void*>(&x_),
-		"invalid_reference Operation with self.");
+		"invalid_reference");
 	size_t* hxrestrict dst_ = m_data_;
 	const size_t* hxrestrict src_ = x_.m_data_;
 	const size_t* const end_ = dst_ + s_words_;
 	while(dst_ != end_) { *dst_++ |= *src_++; }
-	assert_no_trailing_bits_();
+	this->assert_no_trailing_bits_();
 	return *this;
 }
 
 template<size_t bit_count_>
 inline hxconstexpr hxbitset<bit_count_>& hxbitset<bit_count_>::operator^=(const hxbitset& x_) {
 	hxassertmsg(static_cast<const void*>(this) != static_cast<const void*>(&x_),
-		"invalid_reference Operation with self.");
+		"invalid_reference");
 	size_t* hxrestrict dst_ = m_data_;
 	const size_t* hxrestrict src_ = x_.m_data_;
 	const size_t* const end_ = dst_ + s_words_;
 	while(dst_ != end_) { *dst_++ ^= *src_++; }
-	assert_no_trailing_bits_();
+	this->assert_no_trailing_bits_();
 	return *this;
 }
 
@@ -96,7 +96,7 @@ inline hxconstexpr hxbitset<bit_count_>& hxbitset<bit_count_>::operator<<=(size_
 		}
 	}
 	m_data_[s_words_ - 1u] &= s_trailing_mask_;
-	assert_no_trailing_bits_();
+	this->assert_no_trailing_bits_();
 	return *this;
 }
 
@@ -118,14 +118,14 @@ inline hxconstexpr hxbitset<bit_count_>& hxbitset<bit_count_>::operator>>=(size_
 			m_data_[i_] = lo_ | hi_;
 		}
 	}
-	assert_no_trailing_bits_();
+	this->assert_no_trailing_bits_();
 	return *this;
 }
 
 template<size_t bit_count_>
 inline hxconstexpr bool hxbitset<bit_count_>::operator==(const hxbitset& x_) const {
 	hxassertmsg(static_cast<const void*>(this) != static_cast<const void*>(&x_),
-		"invalid_reference Operation with self.");
+		"invalid_reference");
 	const size_t* hxrestrict dst_ = m_data_;
 	const size_t* hxrestrict src_ = x_.m_data_;
 	const size_t* const end_ = dst_ + s_words_;
@@ -135,7 +135,7 @@ inline hxconstexpr bool hxbitset<bit_count_>::operator==(const hxbitset& x_) con
 
 template<size_t bit_count_>
 inline hxconstexpr bool hxbitset<bit_count_>::all(void) const {
-	assert_no_trailing_bits_();
+	this->assert_no_trailing_bits_();
 	const size_t* hxrestrict dst_ = m_data_;
 	const size_t* const end_ = dst_ + (s_words_ - 1u);
 	while(dst_ != end_) {
@@ -146,7 +146,7 @@ inline hxconstexpr bool hxbitset<bit_count_>::all(void) const {
 
 template<size_t bit_count_>
 inline hxconstexpr bool hxbitset<bit_count_>::any(void) const {
-	assert_no_trailing_bits_();
+	this->assert_no_trailing_bits_();
 	const size_t* hxrestrict dst_ = m_data_;
 	const size_t* const end_ = dst_ + s_words_;
 	while(dst_ != end_) {
@@ -172,9 +172,12 @@ inline hxconstexpr hxbitset<bit_count_>& hxbitset<bit_count_>::flip(size_t pos_)
 }
 
 template<size_t bit_count_>
-inline void hxbitset<bit_count_>::load(const char* src_, size_t len_) {
-	hxassert_hard(len_ <= bytes(), "overflow_load %zu", len_);
+inline void hxbitset<bit_count_>::load(const void* src_, size_t len_) {
+	hxassert_hard(len_ <= this->bytes(), "overflow_load %zu", len_);
 	::memcpy(m_data_, src_, len_);
+	if(len_ < this->bytes()) {
+		::memset(reinterpret_cast<char*>(m_data_) + len_, 0, this->bytes() - len_);
+	}
 	m_data_[s_words_ - 1u] &= s_trailing_mask_;
 }
 

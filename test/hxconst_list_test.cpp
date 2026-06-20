@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-#include <hx/hxconst_list.hpp>
+#include <hx/hxconstexpr_list.hpp>
 #include <hx/hxtest.hpp>
 
 HX_NS_USE
@@ -16,7 +16,7 @@ consteval bool hxtest_hxconst_list_consteval_integration(void) {
 		constexpr explicit hxtest_node_t(int v) : value(v) { }
 		int value;
 	};
-	using list_t = hxconst_list<hxtest_node_t, hxconsteval_delete>;
+	using list_t = hxconstexpr_list<hxtest_node_t, hxconsteval_delete>;
 	list_t list;
 
 	// push_back 1..5 -> list: [1, 2, 3, 4, 5].
@@ -144,18 +144,18 @@ consteval bool hxtest_hxconst_list_consteval_integration(void) {
 }
 
 static_assert(hxtest_hxconst_list_consteval_integration(),
-	"hxconst_list consteval: integration test must pass");
+	"hxconstexpr_list consteval: integration test must pass");
 
 } // namespace {
 #endif // HX_CPLUSPLUS >= 202302L
 
 hxattr_noinline static void hxtest_gdb_break_hxconst_list(void) { }
 
-// Use the exact same tests as hxlist with by renaming hxlist to hxconst_list.
+// Use the exact same tests as hxlist with by renaming hxlist to hxconstexpr_list.
 // This ensures identical APIs and eliminates code duplication.
 #define hxtest_gdb_break_hxlist hxtest_gdb_break_hxconst_list
 
-#define hxlist hxconst_list
+#define hxlist hxconstexpr_list
 #define hxlist_node hxconst_list_node
 
 #define hxlist_test hxconst_list_test

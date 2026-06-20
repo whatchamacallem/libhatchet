@@ -6,7 +6,7 @@ import gdb # type: ignore
 import gdb.printing # type: ignore
 import traceback
 
-# hxarray uses this allocation strategy:
+# hxvector uses this allocation strategy:
 #
 #	template<typename T_, size_t fixed_capacity_>
 #	class hxallocator {
@@ -20,16 +20,16 @@ import traceback
 #		T_* m_data_;
 #	};
 #	template<typename T_, size_t capacity_=0>
-#	class hxarray : public hxallocator<T_, capacity_> {
+#	class hxvector : public hxallocator<T_, capacity_> {
 #		// ...
-#		// No m_end_. Size == capacity_ always.
+#		T_* m_end_;
 #	}
 #
 
-class HxArrayPrinter:
+class HxVectorPrinter:
 	"""
-	Pretty printer for hxarray<T, capacity>. Size always equals capacity.
-	Supports both static (capacity > 0) and dynamic (capacity == 0) storage.
+	Pretty printer for hxvector<T, capacity>. There are two different underlying
+	implementations and this logic works for both of them.
 	"""
 
 	def __init__(self, val):
@@ -38,33 +38,42 @@ class HxArrayPrinter:
 	def to_string(self):
 		try:
 			data = self.val['m_data_']
+			end = self.val['m_end_']
 
-			if data.is_optimized_out:
+			if data.is_optimized_out or end.is_optimized_out:
 				return '<optimized out>'
 
-			elem_type = self.val.type.template_argument(0)
-			targ1 = self.val.type.template_argument(1)
-
-			if targ1 == 0:
-				# Dynamic capacity: m_data_ is a pointer, m_capacity_ holds the size.
+			if self.val.type.template_argument(1) == 0:
 				capacity = int(self.val['m_capacity_'])
-				if capacity == 0:
-					return '<unallocated>'
-				raw_data = int(data)
 			else:
-				# Static capacity: m_data_ is an inline array.
-				capacity = int(targ1)
-				if capacity <= 0:
-					return '<invalid capacity>'
-				raw_data = int(data.address)
+				capacity = int(self.val.type.template_argument(1))
+			if capacity == 0:
+				return '<unallocated>'
+			if capacity < 0:
+				return '<negative capacity>'
 
+			# There are two different underlying implementations and this logic
+			# works for both of them. This is Python, so we have int instead of
+			# uintptr_t to calculate addresses with.
+			if self.val.type.template_argument(1) != 0:
+				data = int(data.address)
+			else:
+				data = int(data)
+			end = int(end)
+
+			elem_type = self.val.type.template_argument(0)
+			size = int((end - data) / elem_type.sizeof)
+			if size < 0:
+				return '<negative size>'
+
+			# Cache these for calculating children.
 			self._elem_type = elem_type
-			self._size = capacity
-			self._data = raw_data
+			self._size = size
+			self._data = data
 
 			basename = f'{self._elem_type}'.split(':')[-1]
-			return '[{}] {}'.format(capacity, basename)
-		except Exception:
+			return '[{}/{}] {}'.format(self._size, capacity, basename)
+		except Exception as e:
 			error = f'{traceback.format_exc()}'
 			return error.split('\n', 1)[1]
 
@@ -80,11 +89,11 @@ class HxArrayPrinter:
 			return
 
 	def display_hint(self):
-		return 'array'
+		return 'vector'
 
 def build_pretty_printer():
-	pp = gdb.printing.RegexpCollectionPrettyPrinter('hxarray_printer')
-	pp.add_printer('hxarray', r'^hxarray<', HxArrayPrinter)
+	pp = gdb.printing.RegexpCollectionPrettyPrinter('hxvector_printer')
+	pp.add_printer('hxvector', r'^hxvector<', HxVectorPrinter)
 	return pp
 
 gdb.printing.register_pretty_printer(gdb.current_objfile(), build_pretty_printer(), replace=True)

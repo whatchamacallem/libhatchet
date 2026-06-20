@@ -67,8 +67,8 @@ iterator_t_ hxfind_if(iterator_t_ begin_, iterator_t_ end_, const predicate_t_& 
 /// `hxmerge` - Performs a stable merge sort of two ordered ranges `[begin0,
 /// end0)` and `[begin1, end1)` -> `output`. The input arrays must not overlap
 /// each other or the destination array. Elements are move-assigned out of the
-/// input ranges. Passing a hxarray as an output iterator like this
-/// `hxmerge<const int*, hxarray<int>&>(...)` will append to the array.
+/// input ranges. Passing a hxvector as an output iterator like this
+/// `hxmerge<const int*, hxvector<int>&>(...)` will append to the array.
 ///
 /// Assumes both `[begin0, end0)` and `[begin1, end1)` are ordered by the `less`
 /// callable.
@@ -110,8 +110,8 @@ output_iterator_t_ hxmerge(iterator_t_ begin0_, iterator_t_ end0_, iterator_t_ b
 /// `hxmerge` (specialization) - Performs a stable merge sort of two ordered
 /// ranges `[begin0, end0)` and `[begin1, end1)` -> `output`. The input arrays
 /// must not overlap the destination array. Assumes both `[begin0, end0)` and
-/// `[begin1, end1)` are ordered by `hxless(a,b)`.  Passing a hxarray as an
-/// output iterator like this `hxmerge<const int*, hxarray<int>&>(...)` will
+/// `[begin1, end1)` are ordered by `hxless(a,b)`.  Passing a hxvector as an
+/// output iterator like this `hxmerge<const int*, hxvector<int>&>(...)` will
 /// append to the array.
 /// - `begin0` : Pointer to the beginning of the first ordered range to merge.
 /// - `end0` : Pointer to one past the last element of the first ordered range.
@@ -171,8 +171,8 @@ hxminmax_result<iterator_t_> hxminmax(iterator_t_ begin_, iterator_t_ end_) {
 /// end0)` and `[begin1, end1)` into `output`. The output contains keys that
 /// appear in the first range but not the second. The input arrays must not
 /// overlap each other or the destination array. Elements from the first range
-/// are move-assigned into the output. Passing a hxarray as an output iterator
-/// like this `hxset_difference<const int*, hxarray<int>&>(...)` will append to
+/// are move-assigned into the output. Passing a hxvector as an output iterator
+/// like this `hxset_difference<const int*, hxvector<int>&>(...)` will append to
 /// the array.
 ///
 /// Assumes both ranges are ordered by the `less` callable.
@@ -213,9 +213,9 @@ output_iterator_t_ hxset_difference(iterator_t_ begin0_, iterator_t_ end0_, iter
 /// `hxset_difference` (specialization) - Forms the difference of two ordered
 /// ranges `[begin0, end0)` and `[begin1, end1)` into `output` using `hxless`.
 /// The output contains keys that appear in the first range but not the second.
-/// The input arrays must not overlap the destination array. Passing a hxarray
+/// The input arrays must not overlap the destination array. Passing a hxvector
 /// as an output iterator like this `hxset_difference<const int*,
-/// hxarray<int>&>(...)` will append to the array.
+/// hxvector<int>&>(...)` will append to the array.
 ///
 /// - `begin0` : Pointer to the beginning of the first ordered range.
 /// - `end0` : Pointer to one past the last element of the first ordered range.
@@ -234,8 +234,8 @@ output_iterator_t_ hxset_difference(iterator_t_ begin0_, iterator_t_ end0_, iter
 /// `[begin0, end0)` and `[begin1, end1)` into `output`. Only keys present in
 /// both ranges appear in the output. The input arrays must not overlap each
 /// other or the destination array. Elements from the first range are
-/// move-assigned into the output. Passing a hxarray as an output iterator like
-/// this `hxset_intersection<const int*, hxarray<int>&>(...)` will append to the
+/// move-assigned into the output. Passing a hxvector as an output iterator like
+/// this `hxset_intersection<const int*, hxvector<int>&>(...)` will append to the
 /// array.
 ///
 /// Assumes both ranges are ordered by the `less` callable.
@@ -272,9 +272,9 @@ output_iterator_t_ hxset_intersection(iterator_t_ begin0_, iterator_t_ end0_, it
 /// `hxset_intersection` (specialization) - Forms the intersection of two
 /// ordered ranges `[begin0, end0)` and `[begin1, end1)` into `output` using
 /// `hxless`. Only keys present in both ranges appear in the output. The input
-/// arrays must not overlap the destination array. Passing a hxarray as an
+/// arrays must not overlap the destination array. Passing a hxvector as an
 /// output iterator like this `hxset_intersection<const int*,
-/// hxarray<int>&>(...)` will append to the array.
+/// hxvector<int>&>(...)` will append to the array.
 /// - `begin0` : Pointer to the beginning of the first ordered range.
 /// - `end0` : Pointer to one past the last element of the first ordered range.
 /// - `begin1` : Pointer to the beginning of the second ordered range.
@@ -292,8 +292,8 @@ output_iterator_t_ hxset_intersection(iterator_t_ begin0_, iterator_t_ end0_, it
 /// `[begin1, end1)` into `output`. A key appearing `m` times in the first range
 /// and `n` times in the second appears `max(m, n)` times in the output. The
 /// input arrays must not overlap each other or the destination array. Elements
-/// are move-assigned out of the input ranges. Passing a hxarray as an output
-/// iterator like this `hxset_union<const int*, hxarray<int>&>(...)` will append
+/// are move-assigned out of the input ranges. Passing a hxvector as an output
+/// iterator like this `hxset_union<const int*, hxvector<int>&>(...)` will append
 /// to the array.
 ///
 /// Assumes both ranges are ordered by the `less` callable.
@@ -342,8 +342,8 @@ output_iterator_t_ hxset_union(iterator_t_ begin0_, iterator_t_ end0_, iterator_
 /// `[begin0, end0)` and `[begin1, end1)` into `output` using `hxless`. A key
 /// appearing `m` times in the first range and `n` times in the second appears
 /// `max(m, n)` times in the output. The input arrays must not overlap the
-/// destination array. Passing a hxarray as an output iterator like this
-/// `hxset_union<const int*, hxarray<int>&>(...)` will append to the array.
+/// destination array. Passing a hxvector as an output iterator like this
+/// `hxset_union<const int*, hxvector<int>&>(...)` will append to the array.
 /// - `begin0` : Pointer to the beginning of the first ordered range.
 /// - `end0` : Pointer to one past the last element of the first ordered range.
 /// - `begin1` : Pointer to the beginning of the second ordered range.

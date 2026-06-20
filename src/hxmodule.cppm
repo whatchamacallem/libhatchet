@@ -20,7 +20,6 @@ module;
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 #if __has_include(<pthread.h>)
 #include <pthread.h>
 #endif
@@ -63,9 +62,10 @@ export {
 #include "../include/hx/hxalgorithm.hpp"
 #include "../include/hx/hxallocator.hpp"
 #include "../include/hx/hxarray.hpp"
+#include "../include/hx/hxvector.hpp"
 #include "../include/hx/hxbitset.hpp"
 #include "../include/hx/hxconsole.hpp"
-#include "../include/hx/hxconst_list.hpp"
+#include "../include/hx/hxconstexpr_list.hpp"
 #include "../include/hx/hxdeque.hpp"
 #include "../include/hx/hxfile.hpp"
 #include "../include/hx/hxhash_table.hpp"

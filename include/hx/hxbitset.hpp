@@ -96,11 +96,11 @@ public:
 	hxconstexpr hxbitset& flip(size_t pos_);
 
 	/// Copies `len` bytes from `src` into the `hxbitset` storage. Asserts that
-	/// `len` does not exceed `bytes()`. Trailing bits beyond `bit_count` are masked
-	/// to zero after the copy.
+	/// `len` does not exceed `bytes()`. Missing bytes or trailing bits beyond
+	/// `bit_count` are masked to zero after the copy.
 	/// - `src` : Pointer to the source data.
 	/// - `len` : Number of bytes to copy. Must not exceed `bytes()`.
-	void load(const char* src_, size_t len_);
+	void load(const void* src_, size_t len_);
 
 	/// Returns `true` if no bits are set.
 	hxattr_nodiscard hxconstexpr bool none(void) const { return !this->any(); }

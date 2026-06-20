@@ -9,7 +9,7 @@ HX_NS_USE
 
 hxattr_noinline static void hxtest_gdb_break_hxlist(void) { }
 
-// Use the exact same tests as hxconst_list. This ensures identical APIs and
+// Use the exact same tests as hxconstexpr_list. This ensures identical APIs and
 // eliminates code duplication.
 
 #include "hxshared_list_test.inl"

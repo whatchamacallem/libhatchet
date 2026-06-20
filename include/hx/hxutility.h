@@ -51,9 +51,6 @@ template<typename T_, size_t N_> hxattr_nodiscard constexpr size_t hxsize(T_ (&)
 // ----------------------------------------------------------------------------
 // C++ SFINAE (Substitution Failure Is Not An Error) based enable_if checks.
 
-/// Internal. Implements `std::enable_if`. This is available instead of the
-/// `requires` keyword when backwards compatibility is required. Used by
-/// `hxenable_if_t.`
 /// \cond HIDDEN
 template<bool condition_, typename type_=void> struct hxenable_if_ { };
 template<typename type_> struct hxenable_if_<true, type_> { using type = type_; };
@@ -102,8 +99,6 @@ template<typename T_> struct hxremove_cv_<const volatile T_> { using type = T_; 
 /// This is used to maintain semantic compatibility with the standard.
 template<typename T_> using hxremove_cv_t = typename hxremove_cv_<T_>::type;
 
-/// Internal. Returns `T` with one pointer layer removed as
-/// `hxremove_pointer_<T>::type`. Used by `hxremove_pointer_t`.
 /// \cond HIDDEN
 template<typename T_> struct hxremove_pointer_ { using type = T_; };
 template<typename T_> struct hxremove_pointer_<T_*> { using type = T_; };
@@ -115,8 +110,6 @@ template<typename T_> struct hxremove_pointer_<T_* const volatile> { using type 
 /// `hxremove_pointer_t<T>` - Returns `T` with one pointer level removed.
 template<typename T_> using hxremove_pointer_t = typename hxremove_pointer_<T_>::type;
 
-/// Internal. Returns `T` with references removed as
-/// `hxremove_reference_<T>::type`. Used by `hxremove_reference_t`.
 /// \cond HIDDEN
 template<typename T_> struct hxremove_reference_       { using type = T_; };
 template<typename T_> struct hxremove_reference_<T_&>  { using type = T_; };
@@ -150,17 +143,17 @@ template<typename T_> struct hxis_array<T_[]> : public hxtrue_t { };
 template<typename T_> struct hxis_const : public hxfalse_t { };
 template<typename T_> struct hxis_const<const T_> : public hxtrue_t { };
 
-/// Implements `std::is_floating_point`.
 /// \cond HIDDEN
 template<typename T_> struct hxis_floating_point_ : public hxfalse_t { };
 template<> struct hxis_floating_point_<float> : public hxtrue_t { };
 template<> struct hxis_floating_point_<double> : public hxtrue_t { };
 template<> struct hxis_floating_point_<long double> : public hxtrue_t { };
 /// \endcond
+
+/// Implements `std::is_floating_point`.
 template<typename T_>
 struct hxis_floating_point : public hxis_floating_point_<hxremove_cv_t<T_>> { };
 
-/// Implements `std::is_integral`.
 /// \cond HIDDEN
 template<typename T_> struct hxis_integral_ : public hxfalse_t { };
 template<> struct hxis_integral_<bool> : public hxtrue_t { };
@@ -182,6 +175,8 @@ template<> struct hxis_integral_<unsigned long> : public hxtrue_t { };
 template<> struct hxis_integral_<long long> : public hxtrue_t { };
 template<> struct hxis_integral_<unsigned long long> : public hxtrue_t { };
 /// \endcond
+
+/// Implements `std::is_integral`.
 template<typename T_>
 struct hxis_integral : public hxis_integral_<hxremove_cv_t<T_>> { };
 
@@ -189,8 +184,6 @@ struct hxis_integral : public hxis_integral_<hxremove_cv_t<T_>> { };
 template<typename T_> struct hxis_lvalue_reference : public hxfalse_t { };
 template<typename T_> struct hxis_lvalue_reference<T_&> : public hxtrue_t { };
 
-/// Internal. Returns `std::is_pointer` as `hxis_pointer_<T>::type` but without
-/// handling cv.
 /// \cond HIDDEN
 template<typename T_> struct hxis_pointer_ : public hxfalse_t { };
 template<typename T_> struct hxis_pointer_<T_*> : public hxtrue_t { };
@@ -213,18 +206,17 @@ template<typename T_> struct hxis_rvalue_reference<T_&&> : public hxtrue_t { };
 template<typename A_, typename B_> struct hxis_same : public hxfalse_t { };
 template<typename A_> struct hxis_same<A_, A_> : public hxtrue_t { };
 
-/// Implements `std::is_void`.
 /// \cond HIDDEN
 template<typename T_> struct hxis_void_ : public hxfalse_t { };
 template<> struct hxis_void_<void> : public hxtrue_t { };
 /// \endcond
+
+/// Implements `std::is_void`.
 template<typename T_> struct hxis_void : public hxis_void_<hxremove_cv_t<T_>> { };
 
 // ----------------------------------------------------------------------------
 // C++ Utilities
 
-/// Internal. Adds the `__restrict` keyword to C++ pointers. Used by
-/// `hxrestrict_t`.
 /// \cond HIDDEN
 template<typename T_> struct hxrestrict_t_ { using type = T_; };
 template<typename T_> struct hxrestrict_t_<T_*> { using type = T_* hxrestrict; };
@@ -355,7 +347,7 @@ HX_NS_END_
 // C Macro Utility API - Does it all backwards in heels.
 
 /// Returns the size of a C array.
-#define hxsize(x_) (sizeof (x_) / sizeof (x_)[0])
+#define hxsize(x_) (sizeof(x_) / sizeof(x_)[0])
 
 /// `hxabs` - Returns the absolute value of `x` using a `<` comparison.
 /// - `x` : The value to compute the absolute value for.

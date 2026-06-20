@@ -4,7 +4,7 @@
 
 #include <hx/hxalgorithm.hpp>
 #include <hx/hxrandom.hpp>
-#include <hx/hxarray.hpp>
+#include <hx/hxvector.hpp>
 #include <hx/hxtest.hpp>
 #include "test_api_trackers.hpp"
 
@@ -132,7 +132,7 @@ TEST(hxset_algorithms_test, int_pointer_ranges) {
 TEST(hxset_algorithms_test, hxarray_output_iterator_support) {
 	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
 
-	auto expect_hxarray = [](const hxarray<hxtest_ref_tracker_t>& actual, const int* expected, size_t count) {
+	auto expect_hxarray = [](const hxvector<hxtest_ref_tracker_t>& actual, const int* expected, size_t count) {
 		ASSERT_EQ(actual.size(), count);
 		for(size_t i = 0; i < count; ++i) {
 			EXPECT_EQ(actual[i].value, expected[i]);
@@ -143,13 +143,13 @@ TEST(hxset_algorithms_test, hxarray_output_iterator_support) {
 	hxtest_ref_tracker_t right[] = { hxtest_ref_tracker_t(2), hxtest_ref_tracker_t(4), hxtest_ref_tracker_t(5) };
 
 	// hxmerge
-	hxarray<hxtest_ref_tracker_t> merge_output;
+	hxvector<hxtest_ref_tracker_t> merge_output;
 	merge_output.reserve(hxsize(left) + hxsize(right) + 1u);
 	merge_output.push_back(hxtest_ref_tracker_t(0));
-	// "Passing a hxarray as an output iterator ... will append to the array."
+	// "Passing a hxvector as an output iterator ... will append to the array."
 	//   seed { 0 } then merge -> { 0, 1, 2, 2, 4, 4, 5 }
 	{
-		const hxarray<hxtest_ref_tracker_t>& merge_ret = hxmerge(left+0, left + hxsize(left),
+		const hxvector<hxtest_ref_tracker_t>& merge_ret = hxmerge(left+0, left + hxsize(left),
 			right+0, right + hxsize(right), merge_output);
 		// "Returns an output iterator positioned one past the last element written."
 		//   Returned reference must be the same array that was passed in.
@@ -159,13 +159,13 @@ TEST(hxset_algorithms_test, hxarray_output_iterator_support) {
 	expect_hxarray(merge_output, expected_merge, hxsize(expected_merge));
 
 	// hxset_union
-	hxarray<hxtest_ref_tracker_t> union_output;
+	hxvector<hxtest_ref_tracker_t> union_output;
 	union_output.reserve(hxsize(left) + hxsize(right) + 1u);
 	union_output.push_back(hxtest_ref_tracker_t(0));
-	// "Passing a hxarray as an output iterator ... will append to the array."
+	// "Passing a hxvector as an output iterator ... will append to the array."
 	//   union payload extends { 0 } => { 0, 1, 2, 4, 5 }
 	{
-		const hxarray<hxtest_ref_tracker_t>& union_ret = hxset_union(left+0, left + hxsize(left),
+		const hxvector<hxtest_ref_tracker_t>& union_ret = hxset_union(left+0, left + hxsize(left),
 			right+0, right + hxsize(right), union_output);
 		// "Returns an output iterator positioned one past the last element written."
 		//   Returned reference must be the same array that was passed in.
@@ -175,13 +175,13 @@ TEST(hxset_algorithms_test, hxarray_output_iterator_support) {
 	expect_hxarray(union_output, expected_union, hxsize(expected_union));
 
 	// hxset_intersection
-	hxarray<hxtest_ref_tracker_t> intersection_output;
+	hxvector<hxtest_ref_tracker_t> intersection_output;
 	intersection_output.reserve(hxsize(left) + 1u);
 	intersection_output.push_back(hxtest_ref_tracker_t(0));
 	// "Only keys present in both ranges appear in the output."
 	//   sentinel { 0 } + overlap { 2, 4 } => { 0, 2, 4 }
 	{
-		const hxarray<hxtest_ref_tracker_t>& intersection_ret = hxset_intersection(left+0, left + hxsize(left),
+		const hxvector<hxtest_ref_tracker_t>& intersection_ret = hxset_intersection(left+0, left + hxsize(left),
 			right+0, right + hxsize(right), intersection_output);
 		// "Returns an output iterator positioned one past the last element written."
 		//   Returned reference must be the same array that was passed in.
@@ -191,13 +191,13 @@ TEST(hxset_algorithms_test, hxarray_output_iterator_support) {
 	expect_hxarray(intersection_output, expected_intersection, hxsize(expected_intersection));
 
 	// hxset_difference
-	hxarray<hxtest_ref_tracker_t> difference_output;
+	hxvector<hxtest_ref_tracker_t> difference_output;
 	difference_output.reserve(hxsize(left) + 1u);
 	difference_output.push_back(hxtest_ref_tracker_t(0));
 	// "The output contains keys that appear in the first range but not the second."
 	//   sentinel { 0 } + diff { 1 } => { 0, 1 }
 	{
-		const hxarray<hxtest_ref_tracker_t>& difference_ret = hxset_difference(left+0, left + hxsize(left),
+		const hxvector<hxtest_ref_tracker_t>& difference_ret = hxset_difference(left+0, left + hxsize(left),
 			right+0, right + hxsize(right), difference_output);
 		// "Returns an output iterator positioned one past the last element written."
 		//   Returned reference must be the same array that was passed in.

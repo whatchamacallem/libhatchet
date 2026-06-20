@@ -23,7 +23,7 @@
 
 // These are always included so the build doesn't break when the profiler is
 // turned off.
-#include "hxarray.hpp"
+#include "hxvector.hpp"
 #include "hxthread.hpp"
 
 HX_NS_BEGIN_

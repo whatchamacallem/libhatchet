@@ -131,7 +131,7 @@ hxattr_weak hxattr_noexcept void hxlog_handler_v(hxlog_level_t level, const char
 
 	// Do not try to print the format string because it may be corrupt.
 	// Assume "hxlog_handler_v" will not cause recursion when logged.
-	hxassert_hard(len >= 0 && len < ((HX_MAX_LINE)-2), "hxlog_handler_v");
+	hxassert_hard(len >= 0 && len < ((HX_MAX_LINE)-1), "hxlog_handler_v");
 	len = hxclamp(len, 0, (HX_MAX_LINE)-2);
 
 #if HX_USE_FILE_IO

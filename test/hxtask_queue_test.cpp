@@ -361,6 +361,37 @@ TEST(hxtask_queue_test, for_each_reschedules_queue) {
 	EXPECT_EQ(execution_order[3], 1);
 }
 
+#if HX_USE_THREADS
+// Verifies that wait_for_all returns after tasks complete when a thread pool is
+// active. The bug caused thread_mode_waiting threads to never return from the
+// task loop after the completion wait, hanging wait_for_all indefinitely.
+TEST(hxtask_queue_test, wait_for_all_with_thread_pool) {
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+
+	class hxtask_queue_test_counter_task_t : public hxtask {
+	public:
+		bool execute(hxtask_queue*) override { ++count; return true; }
+		size_t count = 0;
+	};
+
+	const size_t task_count = 4;
+	hxtask_queue_test_counter_task_t tasks[task_count];
+
+	// Use at least one worker thread so wait_for_all takes the
+	// thread_mode_waiting path. With the bug the return was inside if(mode ==
+	// thread_mode_stopping) so thread_mode_waiting would never exit the loop.
+	hxtask_queue q(task_count, 2);
+	for(size_t i = 0; i < task_count; ++i) {
+		q.enqueue(&tasks[i]);
+	}
+	q.wait_for_all();
+
+	for(size_t i = 0; i < task_count; ++i) {
+		EXPECT_EQ(tasks[i].count, 1u);
+	}
+}
+#endif
+
 TEST(hxtask_queue_test, canceling) {
 	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
 

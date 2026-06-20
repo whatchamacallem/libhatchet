@@ -4,7 +4,7 @@
 
 #include <hx/hxsort.hpp>
 #include <hx/hxrandom.hpp>
-#include <hx/hxarray.hpp>
+#include <hx/hxvector.hpp>
 #include <hx/hxtest.hpp>
 #include "test_api_trackers.hpp"
 
@@ -96,7 +96,7 @@ TEST(hxbinary_search_test, simple_case) {
 TEST(hxbinary_search_test, binary_search_grinder) {
 	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
 	hxrandom rng(4);
-	hxarray<hxtest_ref_tracker_t> sorted; sorted.reserve(100);
+	hxvector<hxtest_ref_tracker_t> sorted; sorted.reserve(100);
 
 		for(int i=100; i-- != 0; ) {
 			const int x = rng.range(0, 100);
@@ -120,9 +120,9 @@ TEST(hxsort_test, sort_grinder) {
 	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
 	hxrandom rng(2);
 	const size_t max_size_mask = 0x7f;
-	hxarray<hxtest_ref_tracker_t> insertion_sorted; insertion_sorted.reserve(max_size_mask);
-	hxarray<hxtest_ref_tracker_t> heap_sorted; heap_sorted.reserve(max_size_mask);
-	hxarray<hxtest_ref_tracker_t> generic_sorted; generic_sorted.reserve(max_size_mask);
+	hxvector<hxtest_ref_tracker_t> insertion_sorted; insertion_sorted.reserve(max_size_mask);
+	hxvector<hxtest_ref_tracker_t> heap_sorted; heap_sorted.reserve(max_size_mask);
+	hxvector<hxtest_ref_tracker_t> generic_sorted; generic_sorted.reserve(max_size_mask);
 
 	for(int i=12; i-- != 0; ) {
 		// Set up the arrays to be sorted.
@@ -158,8 +158,8 @@ TEST(hxsort_test, sort_grinder_generic) {
 	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
 	hxrandom rng(3);
 	const size_t max_size_mask = 0xfff;
-	hxarray<hxtest_ref_tracker_t> sorted; sorted.reserve(max_size_mask);
-	hxarray<int> histogram(20000, 0);
+	hxvector<hxtest_ref_tracker_t> sorted; sorted.reserve(max_size_mask);
+	hxvector<int> histogram(20000, 0);
 
 	for(int i=10; i-- != 0; ) {
 		// Pick random values of increasing maximum value up to 2^16 and keep a

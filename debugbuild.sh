@@ -103,10 +103,10 @@ if [ "$OPT_GRIND" = "1" ]; then
 		echo "[$COUNT] $BUILD"
 		build_hxtest
 	done; done; done; done; done; done; done; done
-else
-	BUILD="-DHX_USE_NAMESPACE=hx -DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG -DHX_USE_PROFILER=1"
-	build_hxtest
 fi
+
+BUILD="-DHX_USE_NAMESPACE=hx -DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG -DHX_USE_PROFILER=1"
+build_hxtest
 
 # Show stats or save tokens.
 if [ -z "${CLAUDE_CODE:-}" ]; then

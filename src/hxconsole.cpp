@@ -6,7 +6,7 @@
 #include "../include/hx/hxfile.hpp"
 #include "../include/hx/hxhash_table.hpp"
 #include "../include/hx/hxsort.hpp"
-#include "../include/hx/hxarray.hpp"
+#include "../include/hx/hxvector.hpp"
 
 // The console tests intentionally generate floating point traps.
 #if defined HX_USE_FLOATING_POINT_TRAPS
@@ -202,7 +202,7 @@ bool hxconsole_exec_line(const char* command) {
 bool hxconsole_help(void) {
 	hxinit();
 	const hxsystem_allocator_scope temporary_stack(hxsystem_allocator_temporary_stack);
-	hxarray<const hxdetail_::hxconsole_hash_table_node_*> cmds;
+	hxvector<const hxdetail_::hxconsole_hash_table_node_*> cmds;
 	cmds.reserve(hxconsole_commands_().size());
 	for(hxconsole_command_table::const_iterator it = hxconsole_commands_().cbegin();
 			it != hxconsole_commands_().cend(); ++it) {
@@ -215,7 +215,7 @@ bool hxconsole_help(void) {
 
 	hxinsertion_sort<const hxdetail_::hxconsole_hash_table_node_**, hxconsole_less>(cmds.begin(), cmds.end(), hxconsole_less());
 
-	for(hxarray<const hxdetail_::hxconsole_hash_table_node_*>::iterator it = cmds.begin();
+	for(hxvector<const hxdetail_::hxconsole_hash_table_node_*>::iterator it = cmds.begin();
 			it != cmds.end(); ++it) {
 		(*it)->command_()->usage_((*it)->hash_key().str_);
 	}

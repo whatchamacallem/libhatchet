@@ -86,7 +86,8 @@ hxhash_table<node_t_, table_size_bits_, multi_t_, deleter_t_>::const_iterator::o
 template<hxhash_table_concept_ node_t_, hxhash_t table_size_bits_, bool multi_t_, typename deleter_t_>
 inline void
 hxhash_table<node_t_, table_size_bits_, multi_t_, deleter_t_>::const_iterator::next_bucket(void) {
-	hxassertmsg(m_hash_table_ && !m_current_node_, "invalid_iterator");
+	hxassertmsg(m_hash_table_ != hxnull, "invalid_iterator");
+	hxassertmsg(m_current_node_ == hxnull, "invalid_iterator");
 	while(m_next_index_ < m_hash_table_->m_table_.capacity()) {
 		if(node_t_* n_ = m_hash_table_->m_table_.data()[m_next_index_++]) {
 			m_current_node_ = n_;

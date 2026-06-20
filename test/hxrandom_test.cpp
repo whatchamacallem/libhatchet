@@ -106,10 +106,10 @@ TEST(hxrandom_test, range) {
 TEST(hxrandom_test, histogram) {
 	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
 	hxrandom rng(40000);
-	const int buckets = 1 << 10; // 1k buckets.
-	const int iters = 1000;
-	const int max = 1100; // 10% above the average maximum.
-	hxarray<int> hist(buckets, 0);
+	constexpr int buckets = 1 << 10; // 1k buckets.
+	constexpr int iters = 1000;
+	constexpr int max = 1100; // 10% above the average maximum.
+	hxarray<int, buckets> hist(0);
 
 	for(int i=(buckets*iters); i-- != 0;) {
 		// Doesn't require an unsigned type for %. No floating point math is used.
@@ -123,10 +123,10 @@ TEST(hxrandom_test, histogram) {
 TEST(hxrandom_test, histogram_f) {
 	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
 	hxrandom rng(40000);
-	const int buckets = 1000; // 1k buckets.
-	const int iters = 1000;
-	const int max = 1150; // 15% above the average maximum.
-	hxarray<int> hist(buckets, 0);
+	constexpr int buckets = 1000; // 1k buckets.
+	constexpr int iters = 1000;
+	constexpr int max = 1150; // 15% above the average maximum.
+	hxarray<int, buckets> hist(0);
 
 	for(int i=(buckets*iters); i-- != 0;) {
 		// Generate 64-bit doubles.

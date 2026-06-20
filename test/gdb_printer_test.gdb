@@ -13,6 +13,7 @@ source ../gdb/hxconst_list_printer.py
 source ../gdb/hxdeque_printer.py
 source ../gdb/hxhash_table_printer.py
 source ../gdb/hxlist_printer.py
+source ../gdb/hxvector_printer.py
 
 set print thread-events off
 set logging file gdb_printer_output.txt
@@ -20,12 +21,42 @@ set logging overwrite on
 set logging redirect on
 set logging enabled on
 
-# ----- hxarray -----
-break hxtest_gdb_break_hxarray
+# ----- hxarray static -----
+break hxtest_gdb_break_hxarray_static
 commands
   up
-  echo \n=== hxarray ===\n
+  echo \n=== hxarray static ===\n
+  print a
+  echo \n======\n
+  continue
+end
+
+# ----- hxarray dynamic -----
+break hxtest_gdb_break_hxarray_dynamic
+commands
+  up
+  echo \n=== hxarray dynamic ===\n
+  print a
+  echo \n======\n
+  continue
+end
+
+# ----- hxvector static -----
+break hxtest_gdb_break_hxvector_static
+commands
+  up
+  echo \n=== hxvector static ===\n
   print heap
+  echo \n======\n
+  continue
+end
+
+# ----- hxvector dynamic -----
+break hxtest_gdb_break_hxvector_dynamic
+commands
+  up
+  echo \n=== hxvector dynamic ===\n
+  print objs
   echo \n======\n
   continue
 end
@@ -42,11 +73,11 @@ commands
   continue
 end
 
-# ----- hxconst_list -----
+# ----- hxconstexpr_list -----
 break hxtest_gdb_break_hxconst_list
 commands
   up
-  echo \n=== hxconst_list ===\n
+  echo \n=== hxconstexpr_list ===\n
   print list
   echo \n======\n
   continue

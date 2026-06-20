@@ -42,7 +42,7 @@ public:
 		hxassertmsg(m_table_size_bits_ == 0u || bits_ == m_table_size_bits_, "reallocation_disallowed");
 		if(m_table_size_bits_ == 0u) {
 			// bits_ < hxhash_bits: shifting a hxhash_t by its own width is UB.
-			hxassertmsg(bits_ > 0u && bits_ < hxhash_bits, "bad_hash_bits %d", (int)bits_);
+			hxassertmsg(bits_ > 0u && bits_ < hxhash_bits, "bad_hash_bits %d", static_cast<int>(bits_));
 			m_table_size_bits_ = bits_;
 			this->reserve_storage_(static_cast<size_t>(1u) << bits_);
 			::memset(this->data(), 0x00, sizeof(node_t_*) * this->capacity());

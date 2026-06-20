@@ -110,7 +110,7 @@ void hxradix_sort_void11(hxradix_sort_key_void* begin_, hxradix_sort_key_void* e
 /// For example:
 ///
 /// ```cpp
-///   hxarray<hxradix_sort_key<key_t, example_t*>> rs; rs.reserve(size);
+///   hxvector<hxradix_sort_key<key_t, example_t*>> rs; rs.reserve(size);
 ///   for(uint32_t i = size; i--;) {
 ///     rs.push_back(hxradix_sort_key<key_t, example_t*>(x[i].id, &x[i]));
 ///   }

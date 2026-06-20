@@ -12,7 +12,7 @@ HX_BEGIN_INL_
 
 template<size_t max_successors_>
 hxtask_dag_node<max_successors_>::hxtask_dag_node(void) {
-	m_predecessor_count_ = 0;
+	m_predecessor_count_ = 0u;
 	m_successor_count_ = 0u;
 }
 
