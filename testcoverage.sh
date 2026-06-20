@@ -39,7 +39,7 @@ gcovr --exclude-lines-by-pattern '.*hxassert.*' --html-details coverage.html --r
 { set +o xtrace; } 2> /dev/null
 
 # Launch Chrome if it is installed.
-if [ "$1" != "--headless" ] && which google-chrome; then
+if [ "${1:-}" != "--headless" ] && which google-chrome; then
 	google-chrome coverage.html >/dev/null 2>&1;
 fi
 

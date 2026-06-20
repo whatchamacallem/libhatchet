@@ -20,27 +20,27 @@
 #pragma warning(disable: 4996)
 #endif
 
-// hxfile - Targets require an implementation of fopen(), fclose(), fread(),
-// fwrite(), fgets(), and feof().
+// In this version targets require an implementation of fopen(), fclose(),
+// fread(), fwrite(), fgets(), and feof().
 
-hxfile hxin(reinterpret_cast<intptr_t>(stdin), hxfile::in);
-hxfile hxout(reinterpret_cast<intptr_t>(stdout), hxfile::out);
+hxfile hxin(hxfile::in, reinterpret_cast<intptr_t>(stdin));
+hxfile hxout(hxfile::out, reinterpret_cast<intptr_t>(stdout));
 #ifndef __wasm__
-hxfile hxerr(reinterpret_cast<intptr_t>(stderr), hxfile::out);
+hxfile hxerr(hxfile::out, reinterpret_cast<intptr_t>(stderr));
 #else
 // Don't use stdout with the default index.js provided by the emsdk.
-hxfile hxerr(reinterpret_cast<intptr_t>(stdout), hxfile::out);
+hxfile hxerr(hxfile::out, reinterpret_cast<intptr_t>(stdout));
 #endif
-hxfile hxdev_null(static_cast<intptr_t>(0), hxfile::out);
+hxfile hxdev_null(hxfile::out, static_cast<intptr_t>(0));
 
 hxfile::hxfile(void) {
 	::memset(static_cast<void*>(this), 0x00, sizeof *this);
 }
 
 // In this version the file is a FILE* reinterpreted as intptr_t.
-hxfile::hxfile(intptr_t file, uint8_t mode) : hxfile() {
-	m_file_pimpl_ = file; // does not own.
+hxfile::hxfile(uint8_t mode, intptr_t file) : hxfile() {
 	m_open_mode_ = mode;
+	m_file_pimpl_ = file; // does not own.
 }
 
 hxfile::hxfile(uint8_t mode, const char* filename, ...) : hxfile() {
@@ -50,19 +50,19 @@ hxfile::hxfile(uint8_t mode, const char* filename, ...) : hxfile() {
 	va_end(args);
 }
 
-hxfile::hxfile(hxfile&& file_) {
-	::memcpy((void*)this, &file_, sizeof file_); // NOLINT
-	::memset((void*)&file_, 0x00, sizeof file_); // NOLINT
+hxfile::hxfile(hxfile&& file) {
+	::memcpy((void*)this, &file, sizeof file); // NOLINT
+	::memset((void*)&file, 0x00, sizeof file); // NOLINT
 }
 
 hxfile::~hxfile(void) {
 	close();
 }
 
-void hxfile::operator=(hxfile&& file_) {
+void hxfile::operator=(hxfile&& file) {
 	close();
-	::memcpy((void*)this, &file_, sizeof file_); // NOLINT
-	::memset((void*)&file_, 0x00, sizeof file_); // NOLINT
+	::memcpy((void*)this, &file, sizeof file); // NOLINT
+	::memset((void*)&file, 0x00, sizeof file); // NOLINT
 }
 
 hxfile::operator bool(void) const {
@@ -123,7 +123,6 @@ hxattr_nodiscard bool hxfile::is_open(void) const {
 	return m_file_pimpl_ != 0;
 }
 
-
 void hxfile::clear(void) {
 	m_fail_ = false;
 	m_eof_ = false;
@@ -138,10 +137,10 @@ size_t hxfile::get_pos(void) const {
 	return static_cast<size_t>(::ftell(reinterpret_cast<FILE*>(m_file_pimpl_)));
 }
 
-bool hxfile::set_pos(size_t position_) {
+bool hxfile::set_pos(size_t position) {
 	hxassertmsg(m_file_pimpl_ != 0, "invalid_file");
 	// Requires a 64-bit long to support 64-bit files.
-	m_fail_ = ::fseek(reinterpret_cast<FILE*>(m_file_pimpl_), static_cast<long>(position_), 0) != 0;
+	m_fail_ = ::fseek(reinterpret_cast<FILE*>(m_file_pimpl_), static_cast<long>(position), 0) != 0;
 	m_eof_ = m_fail_;
 	return !m_fail_;
 }
@@ -185,7 +184,7 @@ size_t hxfile::write(const void* bytes, size_t byte_count) {
 	return bytes_written;
 }
 
-bool hxfile::flush(void) {
+bool hxfile::flush(void) { // NOLINT
 	hxassertmsg((m_open_mode_ & hxfile::out) != 0u, "invalid_file");
 	if(m_file_pimpl_ == 0) {
 		return true;
@@ -213,7 +212,7 @@ bool hxfile::getline(char* buffer, int buffer_size) {
 }
 
 // See vsnprintf to reimplement this without FILE* support.
-bool hxfile::print(const char* format, ...) {
+bool hxfile::print(const char* format, ...) {  // NOLINT
 	hxassertmsg((m_open_mode_ & hxfile::out) != 0u, "invalid_file");
 
 	if(m_file_pimpl_ == 0) {
@@ -227,7 +226,11 @@ bool hxfile::print(const char* format, ...) {
 	va_end(args);
 
 	hxassert_always(len >= 0, "vfprintf %s", ::strerror(errno));
-	return len >= 0;
+	if(len < 0) {
+		m_fail_ = true;
+		return false;
+	}
+	return true;
 }
 
 // See vscanf to reimplement this without FILE* support.

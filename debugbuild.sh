@@ -32,7 +32,7 @@ trap '{ set +o xtrace; } 2> /dev/null
 ' 1 2 3 6 15
 
 # Clear the output window when used interactively.
-if [ "$1" != "--run" ] && [ -z "$CLAUDE_CODE" ]; then
+if [ "${1:-}" != "--run" ] && [ -z "$CLAUDE_CODE" ]; then
 	export TERM=xterm-256color
 	clear
 fi
@@ -70,7 +70,7 @@ if [ -z "$CLAUDE_CODE" ]; then
 fi
 
 # This just checks if the build is correct. Run build/hxtest to debug.
-if [ "$1" = "--run" ]; then
+if [ "${1:-}" = "--run" ]; then
 	 ./hxtest
 fi
 

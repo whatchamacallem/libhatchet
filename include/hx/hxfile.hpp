@@ -79,12 +79,15 @@ public:
 	/// - `...` : Additional arguments matching the `filename` format specifiers.
 	hxfile(uint8_t mode_, const char* filename_, ...) hxattr_printf(3, 4);
 
-	/// Constructs the file object with an unowned implementation-defined handle
+	/// Constructs the file object with an unowned implementation-specific handle
 	/// and a specific mode. Performs no checks. Use `hxin`, `hxout`, `hxerr`,
 	/// and `hxdev_null` instead.
-	hxfile(intptr_t file_, uint8_t mode_);
+	/// - `mode` : Combination of `open_mode` flags describing the handle.
+	/// - `file` : Implementation-specific handle.
+	hxfile(uint8_t mode_, intptr_t file_);
 
 	/// Disallow usage where the filename comes first, like with `fopen`.
+	/// This is done because `hxfile::hxfile()` uses variadic arguments. 
 	hxfile(const char* file_, uint8_t mode_=0) = delete;
 
 	// Move constructor. No copy constructor is provided.
@@ -236,8 +239,8 @@ private:
 	// arguments.
 	bool openv_(uint8_t mode_, const char* format_, va_list args_);
 
-	intptr_t m_file_pimpl_; // FILE* file pointer.
 	uint8_t m_open_mode_;   // Current open_mode flags.
+	intptr_t m_file_pimpl_; // POSIX fd/FILE* file pointer.
 	bool m_owns_;  		    // Indicates if the FILE* is owned.
 	bool m_fail_; 		    // Indicates EOF, file errors and user errors.
 	bool m_eof_;  		    // Indicates EOF.

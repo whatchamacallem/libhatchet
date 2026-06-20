@@ -34,7 +34,9 @@ emcc -O2 -fno-exceptions -fno-rtti -fdiagnostics-absolute-paths \
 	 -sEXIT_RUNTIME=1 -sPTHREAD_POOL_SIZE=4 -sPROXY_TO_PTHREAD \
 	 -I../include *.o ../src/*.cpp ../test/*.cpp -o index.html
 
-if [ "$1" != "--headless" ]; then
+if [ "${1:-}" != "--headless" ]; then
+
+	echo "Serving http://0.0.0.0:9876/"
 
 	# Start a web server with COOP/COEP headers required for SharedArrayBuffer (pthreads).
 	python3 -c "

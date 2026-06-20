@@ -160,6 +160,111 @@ TEST(hxfile_test, move_copy_and_stream_operators) {
 	EXPECT_TRUE(!f.is_open());
 }
 
+TEST(hxfile_test, getline_multi_chunk) {
+	// Write a line of exactly HX_MAX_LINE 'x' chars followed by '\n' so that the
+	// first read of HX_MAX_LINE - 1 bytes finds no newline, requiring a second read.
+	const char filename[] = "hxfile_test_getline_long.txt";
+	{
+		hxfile writer(hxfile::out, filename);
+		char content[HX_MAX_LINE + 1];
+		::memset(content, 'x', HX_MAX_LINE);
+		content[HX_MAX_LINE] = '\n';
+		writer.write(content, static_cast<size_t>(HX_MAX_LINE + 1));
+		EXPECT_FALSE(writer.fail());
+	}
+
+	hxfile reader(hxfile::in, filename);
+	char line[HX_MAX_LINE + 2];
+	::memset(line, 0, sizeof line);
+	EXPECT_TRUE(reader.getline(line, static_cast<int>(sizeof line)));
+	EXPECT_FALSE(reader.fail());
+	EXPECT_EQ(line[0], 'x');
+	EXPECT_EQ(line[HX_MAX_LINE - 1], 'x');
+	EXPECT_EQ(line[HX_MAX_LINE], '\n');
+	EXPECT_EQ(line[HX_MAX_LINE + 1], '\0');
+}
+
+
+TEST(hxfile_test, getline_newline_excluded_by_buffer_size) {
+	// buffer_size = len("hello") + 1('\0') = 6: '\n' does not fit, must be left in the stream.
+	const char filename[] = "hxfile_test_getline_excl.txt";
+	{
+		hxfile writer(hxfile::out, filename);
+		writer.write("hello\nworld\n", 12u);
+		EXPECT_FALSE(writer.fail());
+	}
+
+	hxfile reader(hxfile::in, filename);
+	char line[12];
+
+	EXPECT_TRUE(reader.getline(line, 6));
+	EXPECT_FALSE(reader.fail());
+	EXPECT_EQ(line[0], 'h');
+	EXPECT_EQ(line[4], 'o');
+	EXPECT_EQ(line[5], '\0');
+
+	// '\n' must still be the next character in the stream.
+	EXPECT_TRUE(reader.getline(line, static_cast<int>(sizeof line)));
+	EXPECT_EQ(line[0], '\n');
+	EXPECT_EQ(line[1], '\0');
+}
+
+TEST(hxfile_test, getline_buffer_fills_without_newline) {
+	// No newline in file: buffer fills mid-chunk so the fd must be left at the correct position.
+	const char filename[] = "hxfile_test_getline_noeol.txt";
+	{
+		hxfile writer(hxfile::out, filename);
+		writer.write("abcdefghij", 10u);
+		EXPECT_FALSE(writer.fail());
+	}
+
+	hxfile reader(hxfile::in, filename);
+	char line[16];
+
+	EXPECT_TRUE(reader.getline(line, 6));
+	EXPECT_FALSE(reader.fail());
+	EXPECT_EQ(line[0], 'a');
+	EXPECT_EQ(line[4], 'e');
+	EXPECT_EQ(line[5], '\0');
+
+	// 'f' must be the next character — fd was not left at EOF.
+	EXPECT_TRUE(reader.getline(line, static_cast<int>(sizeof line)));
+	EXPECT_EQ(line[0], 'f');
+	EXPECT_EQ(line[4], 'j');
+	EXPECT_EQ(line[5], '\0');
+
+	EXPECT_FALSE(reader.getline(line, static_cast<int>(sizeof line)));
+	EXPECT_TRUE(reader.eof());
+}
+
+TEST(hxfile_test, print_max_line_boundary) {
+	// HX_MAX_LINE - 1 chars: all written.
+	char str[HX_MAX_LINE + 1];
+	::memset(str, 'a', sizeof str);
+	str[HX_MAX_LINE - 1] = '\0';
+	{
+		hxfile f(hxfile::out, "hxfile_test_print_limit.txt");
+		EXPECT_TRUE(f.print("%s", str));
+		EXPECT_FALSE(f.fail());
+		EXPECT_EQ(f.get_pos(), static_cast<size_t>(HX_MAX_LINE - 1));
+	}
+
+	// HX_MAX_LINE chars: posix truncates by 1; c version writes all.
+	str[HX_MAX_LINE - 1] = 'a';
+	str[HX_MAX_LINE] = '\0';
+	{
+		hxfile f(hxfile::out, "hxfile_test_print_limit.txt");
+		EXPECT_TRUE(f.print("%s", str));
+		EXPECT_FALSE(f.fail());
+#if HX_USE_POSIX_FILE_IO
+		EXPECT_EQ(f.get_pos(), static_cast<size_t>(HX_MAX_LINE - 1));
+#else
+		EXPECT_EQ(f.get_pos(), static_cast<size_t>(HX_MAX_LINE));
+#endif
+	}
+}
+
+
 TEST(hxfile_test, eof_variants) {
 	const char filename[] = "hxfile_test_empty.bin";
 
