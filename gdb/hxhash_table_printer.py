@@ -18,7 +18,7 @@ import traceback
 # Each bucket slot is a node_t_* (singly-linked list head via hash_next()).
 # Dynamic tables additionally have an m_table_size_bits_ field.
 #
-# NOTA BENE: These fields are not guaranteed by the contract. If the client code
+# WARNING: These fields are not guaranteed by the contract. If the client code
 # does not use the provided base classes then the pretty printer will not work.
 #
 # hxhash_table_set_node layout:

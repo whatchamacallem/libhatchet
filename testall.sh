@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # SPDX-FileCopyrightText: © 2017-2026 Adrian Johnston.
 # SPDX-License-Identifier: MIT
 # This file is licensed under the terms of the LICENSE.md file.
@@ -16,6 +16,8 @@ trap '{ set +o xtrace; } 2> /dev/null
     done
     exit 1
 ' 1 2 3 6 15
+
+set -euo pipefail
 
 clear
 
@@ -60,7 +62,16 @@ if file $(git ls-files) | grep CRLF; then
   exit 1
 fi
 
-set -o errexit -o xtrace
+# Check text files end with exactly one newline.
+find . -type f \( -name "*.hpp" -o -name "*.cpp" -o -name "*.h" -o -name "*.c" -o -name "*.inl" \
+                  -o -name "*.sh" -o -name "*.py" \) | while read -r FILE; do
+  if [[ $(tail -c 2 "$FILE" | tr -dc '\n' | wc -c) -ne 1 ]]; then
+    echo "error: Text files must end with exactly one newline: $FILE"
+    exit 1
+  fi
+done
+
+set -o xtrace
 
 # Delete files matching .gitignore and reset ccache.
 ./clean.sh
@@ -77,4 +88,5 @@ time doxygen
 
 { set +o xtrace; } 2> /dev/null
 ./clean.sh
+
 echo "testall.sh: All test scripts passed."

@@ -2,14 +2,13 @@
 # SPDX-License-Identifier: MIT
 # This file is licensed under the terms of the LICENSE.md file.
 #
-# This is a CMake build that uses Google Test instead of the hxTest.h
+# This is a CMake build that uses Google Test instead of the <hx/hxtest.h>
 # reimplementation. It is significantly slower than the test scripts when doing
 # a clean build.
 #
 # This file is for testing and is not intended for building a library for your
-# application. There is no expected configuration for use with libhatchet
-# as it is expected to work everywhere with all warnings and errors enabled.
-# You should be able to add this code to your existing build with no problems.
+# application. To add libhatchet to your programs just add the src and include
+# directories directly.
 
 cmake_minimum_required(VERSION 3.10)
 project(libhatchet)
@@ -50,6 +49,7 @@ if(MSVC)
       $<$<NOT:$<CONFIG:Debug>>:/MT>
       /permissive-
       /W4
+      /wd4530
       /wd6326
       /WX
       /Zc:__cplusplus
@@ -67,16 +67,14 @@ else()
   )
 endif()
 
-# Download GoogleTest into a local workspace cache to avoid AI sandbox issues.
-# CMake will still have to be run once to set up the cache after running
-# ./clean.sh.
+# Download or un-tar GoogleTest into a local workspace cache.
 #
-# Use a per-configuration sub-directory so that switching between Win32/x64
-# or Debug/Release builds does not cause conflicts between incompatible cached
+# Uses a per-configuration sub-directory so that switching between Win32/x64 or
+# Debug/Release builds does not cause conflicts between incompatible cached
 # GoogleTest binaries. CMAKE_GENERATOR_PLATFORM is set by the Visual Studio
 # multi-config generator (-A x64 / -A Win32). CMAKE_BUILD_TYPE is set by
 # single-config generators (Ninja, Make) via -DCMAKE_BUILD_TYPE=. When neither
-# is set the cache lives directly under cache/.
+# is set the cache lives directly under ./cache.
 if(CMAKE_GENERATOR_PLATFORM)
   set(HX_CACHE_SUFFIX "${CMAKE_GENERATOR_PLATFORM}")
 elseif(CMAKE_SIZEOF_VOID_P EQUAL 8)

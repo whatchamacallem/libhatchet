@@ -17,6 +17,9 @@ extern "C" {
 	// If non-zero the platform has been initialized without being shut down.
 	// See `#define g_hxinit_ver_` in hxsettings.h for rationale.
 	int g_hxinit_ver_; // Static initialize to 0.
+
+	// Allows observation of asserts. Return true to ignore.
+	bool (*g_hxassert_handler)(void);
 }
 
 // HX_FLOATING_POINT_TRAPS - Traps (FE_DIVBYZERO|FE_INVALID|FE_OVERFLOW) in
@@ -28,7 +31,7 @@ extern "C" {
 // error checking. -ffast-math includes both of those switches. You need the math
 // library -lm. Triggering or explicitly checking for floating point exceptions
 // is not recommended.
-#if (HX_RELEASE) == 0 && defined __GLIBC__ && !defined __FAST_MATH__
+#if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG && defined __GLIBC__ && !defined __FAST_MATH__
 #include <fenv.h>
 #if !defined HX_FLOATING_POINT_TRAPS
 #define HX_FLOATING_POINT_TRAPS 1
@@ -38,64 +41,59 @@ extern "C" {
 #define HX_FLOATING_POINT_TRAPS 0
 #endif
 
-// Exception-handling semantics exist in case they are enabled, but you are
-// advised to use -fno-exceptions. This library does not provide the exception
-// handling functions expected by the C++ ABI. In this codebase memory
-// allocation cannot fail, and it encourages allocating enough memory in
-// advance. The creation of hxthread.h classes cannot fail. By design there are
-// no exceptions to handle, although there are many asserts.
-#if HX_NO_LIBCXX && defined __cpp_exceptions && !defined __INTELLISENSE__
-static_assert(0, "Warning: C++ exceptions are not supported for embedded use.");
+// Exception-handling semantics exist in a few places in case they are enabled,
+// but you are advised to use -fno-exceptions. This library does not provide the
+// exception handling functions expected by the C++ ABI.
+#if !HX_USE_LIBCXX && defined __cpp_exceptions && !defined __INTELLISENSE__
+static_assert(0, "Warning: C++ exceptions are not supported.");
 #endif
 
 // ----------------------------------------------------------------------------
 
 extern "C" {
 
-void __sanitizer_report_error_summary(const char *error_summary); // NOLINT
+#if !HX_USE_LIBCXX
 
-#if HX_NO_LIBCXX
+#if defined(__arm__) && !defined(__aarch64__)
+    typedef int guard_t;
+#else
+    typedef long long guard_t;
+#endif
 
-// When not hosted, do not lock around the initialization of function-scope
-// static variables. Provide release-mode asserts to enforce that locking is
-// unnecessary and to ensure function-static constructors do not _throw_.
-// Also provide error handling for virtual tables.
-
-// Provide declarations even though they are part of the ABI.
-int __cxa_guard_acquire(size_t *guard);
-void __cxa_guard_release(size_t *guard);
-void __cxa_guard_abort(uint64_t *guard);
+// Support for thread-safe initialization of static variables. Use
+// -fno-threadsafe-statics to disable.
+int __cxa_guard_acquire(guard_t* guard);
+void __cxa_guard_release(guard_t* guard);
+void __cxa_guard_abort(guard_t* guard);
 void __cxa_deleted_virtual(void);
 void __cxa_pure_virtual(void);
 
-int __cxa_guard_acquire(size_t *guard) {
-	// Return 0 if already constructed.
-	if(*guard == 1u) { return 0; }
+int __cxa_guard_acquire(guard_t* guard) {
+	uint8_t *status = reinterpret_cast<uint8_t*>(guard);
+	if (__atomic_load_n(status, __ATOMIC_ACQUIRE) == 2) { return 0; }
 
-	// Function scope statics must be initialized before calling worker threads.
-	// Checks whether the constructor is already in progress and flags any
-	// potential race condition or reentrancy.
-	hxassertrelease(*guard != 2u, "__cxa_guard_acquire no function scope static lock");
-	*guard = 2u;
-	return 1; // Signal construction required.
+	uint8_t expected = 0;
+	while (!__atomic_compare_exchange_n(status, &expected, 1, false, __ATOMIC_ACQ_REL, __ATOMIC_ACQUIRE)) {
+		if (expected == 2) { return 0; }
+		expected = 0;
+	}
+	return 1;
 }
 
-void __cxa_guard_release(size_t *guard) {
-	// Marks the constructor as done and clears the in-progress flag.
-	*guard = 1u;
+void __cxa_guard_release(guard_t* guard) {
+	__atomic_store_n(reinterpret_cast<uint8_t*>(guard), 2, __ATOMIC_RELEASE);
 }
 
-void __cxa_guard_abort(uint64_t *guard) {
-	hxassertrelease(0, "__cxa_guard_abort");
-	*guard = 0u;
+void __cxa_guard_abort(guard_t* guard) {
+	__atomic_store_n(reinterpret_cast<uint8_t*>(guard), 0, __ATOMIC_RELEASE);
 }
 
 void __cxa_deleted_virtual(void) {
-	hxassertrelease(0, "__cxa_deleted_virtual");
+	hxassert_hard(0, "__cxa_deleted_virtual");
 }
 
 void __cxa_pure_virtual(void) {
-	hxassertrelease(0, "__cxa_pure_virtual");
+	hxassert_hard(0, "__cxa_pure_virtual");
 }
 
 #endif
@@ -104,6 +102,8 @@ void __cxa_pure_virtual(void) {
 // Hooks clang's sanitizers into the debugger by overriding a weak library
 // symbol in the sanitizer support library. This provides clickable error
 // messages in VS Code and is otherwise unused.
+
+void __sanitizer_report_error_summary(const char *error_summary); // NOLINT
 
 void __sanitizer_report_error_summary(const char *error_summary) {
 	// A clickable message has already been printed to standard output.
@@ -116,12 +116,12 @@ void __sanitizer_report_error_summary(const char *error_summary) {
 // Initialization, shutdown, exit, assert, and logging.
 
 extern "C"
-void hxinit_internal(int version_) {
+void hxinit_internal(int version) {
 	// Check if compiled in expected_version matches callers.
 	const long expected_version = LIBHATCHET_VER;
-	hxassertrelease(expected_version == version_, "LIBHATCHET_VER mismatch.");
-	hxassertrelease((g_hxinit_ver_ == 0) || (g_hxinit_ver_ == version_), "LIBHATCHET_VER mismatch.");
-	(void)version_; (void)expected_version;
+	hxassert_hard(expected_version == version, "LIBHATCHET_VER mismatch.");
+	hxassert_hard((g_hxinit_ver_ == 0) || (g_hxinit_ver_ == version), "LIBHATCHET_VER mismatch.");
+	(void)version; (void)expected_version;
 
 	if(g_hxinit_ver_ == 0) {
 		hxsettings_construct();
@@ -137,15 +137,15 @@ void hxinit_internal(int version_) {
 }
 
 extern "C"
-hxattr_noexcept void hxloghandler(hxloglevel_t level, const char* format, ...) {
+hxattr_noexcept void hxlog_handler(hxlog_level_t level, const char* format, ...) {
 	va_list args;
 	va_start(args, format);
-	hxloghandler_v(level, format, args);
+	hxlog_handler_v(level, format, args);
 	va_end(args);
 }
 
 extern "C"
-hxattr_noexcept void hxloghandler_v(hxloglevel_t level, const char* format, va_list args) {
+hxattr_noexcept void hxlog_handler_v(hxlog_level_t level, const char* format, va_list args) {
 	if((g_hxinit_ver_ != 0) && g_hxsettings.log_level > level) {
 		return;
 	}
@@ -155,25 +155,26 @@ hxattr_noexcept void hxloghandler_v(hxloglevel_t level, const char* format, va_l
 	int len = ::vsnprintf(line_buf, HX_MAX_LINE, format, args);
 
 	// Do not try to print the format string because it may be invalid.
-	hxassertrelease(len >= 0 && len < (int)HX_MAX_LINE, "vsnprintf");
+	hxassert_hard(len >= 0 && len < (int)HX_MAX_LINE, "vsnprintf");
 
-	hxfile& f = level == hxloglevel_log ? hxout : hxerr;
-	if(level == hxloglevel_warning) {
+	hxfile& f = level == hxlog_level_log ? hxout : hxerr;
+	if(level == hxlog_level_warning) {
 		f << "WARNING ";
 		line_buf[len++] = '\n';
 	}
-	else if(level == hxloglevel_assert) {
+	else if(level == hxlog_level_assert) {
 		f.write("ASSERT_FAIL ", (sizeof "ASSERT_FAIL ") - 1u);
 		line_buf[len++] = '\n';
 	}
 	f.write(line_buf, (size_t)len);
 }
 
-// HX_RELEASE < 3 provides facilities for testing teardown. Just call _Exit() otherwise.
+// HX_HARDENING_MODE != HX_HARDENING_MODE_NONE provides facilities for testing
+// teardown. Just call _Exit() otherwise.
 extern "C"
 void hxshutdown(void) {
 	if(g_hxinit_ver_ != 0) {
-#if (HX_RELEASE) < 3
+#if (HX_HARDENING_MODE) != HX_HARDENING_MODE_NONE
 		hxmemory_manager_shut_down();
 		// Try to trap further activity. This breaks global destructors that call
 		// hxfree. There is no easier way to track leaks.
@@ -182,26 +183,34 @@ void hxshutdown(void) {
 	}
 }
 
-#if (HX_RELEASE) == 0
 extern "C"
-hxattr_noexcept bool hxasserthandler(const char* file, size_t line) {
+hxattr_noexcept void hxset_assert_handler(bool (*handler)(void)) {
+	g_hxassert_handler = handler;
+}
+
+#if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
+extern "C"
+hxattr_noexcept bool hxassert_handler(const char* file, size_t line) {
 	const char* f = hxbasename(file);
 	if((g_hxinit_ver_ != 0) && g_hxsettings.asserts_to_be_skipped > 0) {
 		--g_hxsettings.asserts_to_be_skipped;
-		hxloghandler(hxloglevel_assert, "skipped %s(%zu)",
-			f, line);
+		hxlog_handler(hxlog_level_assert, "skipped %s(%zu)", f, line);
 		return true;
 	}
-	hxloghandler(hxloglevel_assert, "breakpoint %s(%zu)\n",
-		f, line);
-
+	if(g_hxassert_handler != hxnull && g_hxassert_handler()) {
+		return true;
+	}
+	hxlog_handler(hxlog_level_assert, "breakpoint %s(%zu)\n", f, line);
 	// Return to hxbreakpoint at the calling line.
 	return false;
 }
 #else
 extern "C"
-hxattr_noexcept hxattr_noreturn void hxasserthandler(void) {
-	hxloghandler(hxloglevel_assert, "exit\n");
+hxattr_noexcept void hxassert_handler(void) {
+	if(g_hxassert_handler != hxnull && g_hxassert_handler()) {
+		return;
+	}
+	hxlog_handler(hxlog_level_assert, "assert_fail\n");
 	_Exit(EXIT_FAILURE);
 }
 #endif

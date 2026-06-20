@@ -77,7 +77,7 @@ hxtest_& hxtest_::dispatcher_(void) {
 
 void hxtest_::add_test_(hxtest_case_interface_* fn_) {
 	// Use -DHX_TEST_MAX_CASES to provide enough room for all tests.
-	hxassertrelease(m_num_test_cases_ < HX_TEST_MAX_CASES, "HX_TEST_MAX_CASES overflow\n");
+	hxassert_always(m_num_test_cases_ < HX_TEST_MAX_CASES, "HX_TEST_MAX_CASES overflow\n");
 	if(m_num_test_cases_ < HX_TEST_MAX_CASES) {
 		m_test_cases_[m_num_test_cases_++] = fn_;
 	}
@@ -86,13 +86,13 @@ void hxtest_::add_test_(hxtest_case_interface_* fn_) {
 // Message is required to end with an \n. Returns hxdev_null on success and
 // hxerr otherwise.
 hxfile& hxtest_::condition_check_(bool condition_, const char* file_, size_t line_, const char* message_, bool is_assert_) {
-	hxassertrelease(m_current_test_, "test_not_started");
+	hxassert_always(m_current_test_, "test_not_started");
 	m_test_state_ = (condition_ && m_test_state_ != test_state_fail_) ? test_state_pass_ : test_state_fail_;
 		if(!condition_) {
 			++m_total_assert_count_;
 			if(++m_assert_count_ >= max_fail_messages_) {
 				if(m_assert_count_ == max_fail_messages_) {
-					hxlogconsole("remaining asserts will fail silently...\n");
+					hxlog_console("remaining asserts will fail silently...\n");
 				}
 				return hxdev_null;
 			}
@@ -100,19 +100,19 @@ hxfile& hxtest_::condition_check_(bool condition_, const char* file_, size_t lin
 		// Prints full-path error messages that can be clicked on in an IDE.
 		m_current_test_->case_();
 		m_current_test_->suite_();
-		hxloghandler(hxloglevel_assert, "test_fail %s.%s", m_current_test_->suite_(), m_current_test_->case_());
-		hxloghandler(hxloglevel_assert, "test_fail_at %s(%zu): %s", file_, line_, message_);
+		hxlog_handler(hxlog_level_assert, "test_fail %s.%s", m_current_test_->suite_(), m_current_test_->case_());
+		hxlog_handler(hxlog_level_assert, "test_fail_at %s(%zu): %s", file_, line_, message_);
 
 		if(is_assert_) {
 			// ASSERT_* macros halt the test suite on failure.
-			hxloghandler(hxloglevel_assert, "test_assert_fail ❌");
+			hxlog_handler(hxlog_level_assert, "test_assert_fail ❌");
 			hxbreakpoint();
 			::_Exit(EXIT_FAILURE);
 		}
 		else {
 			// Debug builds always set breakpoints on unexpected failures.
 			// Implements GTEST_FLAG_SET(break_on_failure, true);
-#if (HX_TEST_ERROR_HANDLING) == 0 && (HX_RELEASE) == 0
+#if (HX_TEST_ERROR_HANDLING) == 0 && (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
 			hxbreakpoint();
 #endif
 		}
@@ -123,7 +123,7 @@ hxfile& hxtest_::condition_check_(bool condition_, const char* file_, size_t lin
 
 size_t hxtest_::run_all_tests_(const char* test_suite_filter_) {
 	hxinit(); // RUN_ALL_TESTS could be called first.
-	hxlogconsole("[==========] Running tests: %s\n", (test_suite_filter_ ? test_suite_filter_ : "All"));
+	hxlog_console("[==========] Running tests: %s\n", (test_suite_filter_ ? test_suite_filter_ : "All"));
 
 	m_test_suite_filter_ = test_suite_filter_;
 	m_pass_count_ = m_fail_count_ = 0u;
@@ -135,14 +135,14 @@ size_t hxtest_::run_all_tests_(const char* test_suite_filter_) {
 	// Starting point. Expected to reset to zero after each test.
 	hxsystem_allocator_scope temporary_stack_base(hxsystem_allocator_temporary_stack);
 
-	hxassertrelease(temporary_stack_base.get_current_allocation_count() == 0u
+	hxassert_always(temporary_stack_base.get_current_allocation_count() == 0u
 				&& temporary_stack_base.get_current_bytes_allocated() == 0u,
 		"test_leaks Temp stack is expected to be empty when running tests.");
 
 	for(hxtest_case_interface_** it_ = m_test_cases_; it_ != (m_test_cases_ + m_num_test_cases_); ++it_) {
 		if((m_test_suite_filter_ == hxnull)
 				|| (::strcmp(m_test_suite_filter_, (*it_)->suite_()) == 0)) {
-			hxlogconsole("[ RUN      ] %s.%s\n", (*it_)->suite_(), (*it_)->case_());
+			hxlog_console("[ RUN      ] %s.%s\n", (*it_)->suite_(), (*it_)->case_());
 			m_current_test_ = *it_;
 			m_test_state_ = test_state_nothing_asserted_;
 			m_assert_count_ = 0u;
@@ -171,28 +171,28 @@ size_t hxtest_::run_all_tests_(const char* test_suite_filter_) {
 			}
 			if(m_test_state_ == test_state_pass_) {
 				++m_pass_count_;
-				hxlogconsole("[       OK ] %s.%s\n", (*it_)->suite_(), (*it_)->case_());
+				hxlog_console("[       OK ] %s.%s\n", (*it_)->suite_(), (*it_)->case_());
 			}
 			else {
 				++m_fail_count_;
-				hxlogconsole("[  FAILED  ] %s.%s\n", (*it_)->suite_(), (*it_)->case_());
+				hxlog_console("[  FAILED  ] %s.%s\n", (*it_)->suite_(), (*it_)->case_());
 			}
 		}
 	}
 	m_current_test_ = hxnull;
 
-	hxlogconsole("[==========] skipped %zu tests. failed %zu assertions.\n",
+	hxlog_console("[==========] skipped %zu tests. failed %zu assertions.\n",
 		m_num_test_cases_ - m_pass_count_ - m_fail_count_, m_total_assert_count_);
 
-	hxwarnmsg(m_pass_count_ + m_fail_count_, "nothing_tested");
+	hxwarn_msg(m_pass_count_ + m_fail_count_, "nothing_tested");
 
 	if(m_pass_count_ != 0u && m_fail_count_ == 0u) {
 		// This is Google Test style. If only it were green.
-		hxloghandler(hxloglevel_console, "[  PASSED  ] %zu test%s.\n", m_pass_count_,
+		hxlog_handler(hxlog_level_console, "[  PASSED  ] %zu test%s.\n", m_pass_count_,
 			((m_pass_count_ != 1u) ? "s" : ""));
 	}
 	else {
-		hxloghandler(hxloglevel_console, "%zu FAILED TEST%s ❌\n", m_fail_count_,
+		hxlog_handler(hxlog_level_console, "%zu FAILED TEST%s ❌\n", m_fail_count_,
 			m_fail_count_ == 1u ? "" : "S");
 		// Count nothing tested as one failure.
 		m_fail_count_ = hxmax(m_fail_count_, (size_t)1u);

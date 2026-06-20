@@ -102,18 +102,6 @@ TEST(hxlist_test, push_front_two_nodes_order) {
 	list.release_all();
 }
 
-// pop_front on empty list returns null (documented behavior).
-TEST(hxlist_test, pop_front_empty_returns_null) {
-	hxlist<hxtest_list_node_t, hxdo_not_delete> list;
-	EXPECT_EQ(list.pop_front(), (hxtest_list_node_t*)hxnull);
-}
-
-// pop_back on empty list returns null (documented behavior).
-TEST(hxlist_test, pop_back_empty_returns_null) {
-	hxlist<hxtest_list_node_t, hxdo_not_delete> list;
-	EXPECT_EQ(list.pop_back(), (hxtest_list_node_t*)hxnull);
-}
-
 // pop_front and pop_back remove from the correct ends, leaving the middle intact,
 // and return null once the list is empty.
 TEST(hxlist_test, pop_front_and_pop_back) {
@@ -129,7 +117,6 @@ TEST(hxlist_test, pop_front_and_pop_back) {
 	EXPECT_EQ(list.size(), 1u);
 	EXPECT_EQ(list.pop_front()->value, 2);
 	EXPECT_TRUE(list.empty());
-	EXPECT_EQ(list.pop_front(), (hxtest_list_node_t*)hxnull);
 }
 
 // insert the front places new node first.
@@ -199,13 +186,12 @@ TEST(hxlist_test, insert_after_middle) {
 	list.release_all();
 }
 
-// extract the only node leaves list empty and returns that node.
+// extract the only node leaves list empty and returns an hxptr owning that node.
 TEST(hxlist_test, extract_single_node) {
 	hxtest_list_node_t a(1);
 	hxlist<hxtest_list_node_t, hxdo_not_delete> list;
 	list.push_back(&a);
-	hxtest_list_node_t* result = list.extract(&a);
-	EXPECT_EQ(result, &a);
+	EXPECT_EQ(list.extract(&a).get(), &a);
 	EXPECT_TRUE(list.empty());
 }
 
@@ -702,15 +688,11 @@ consteval bool hxtest_hxlist_consteval_integration(void) {
 
 	// pop_front removes 1, pop_back removes 5 -> list: [2, 3, 4].
 	{
-		hxtest_node_t* f = list.pop_front();
-		hxtest_node_t* b = list.pop_back();
+		hxptr<hxtest_node_t, hxconsteval_delete> f = list.pop_front();
+		hxptr<hxtest_node_t, hxconsteval_delete> b = list.pop_back();
 		if(f->value != 1 || b->value != 5 || list.size() != 3u) {
-			::delete f;
-			::delete b;
 			return false;
 		}
-		::delete f;
-		::delete b;
 	}
 	if(list.front().value != 2 || list.back().value != 4) { return false; }
 
@@ -741,8 +723,8 @@ consteval bool hxtest_hxlist_consteval_integration(void) {
 	// extract node(20) without deletion and re-insert it at back
 	// -> list: [2, 30, 3, 4, 20].
 	{
-		hxtest_node_t* extracted = list.extract(n20);
-		if(extracted != n20 || list.size() != 4u) { return false; }
+		hxptr<hxtest_node_t, hxconsteval_delete> extracted = list.extract(n20);
+		if(extracted.release() != n20 || list.size() != 4u) { return false; }
 		if(list.front().value != 2 || list.back().value != 4) { return false; }
 		list.push_back(n20);
 	}

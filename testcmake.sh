@@ -15,7 +15,7 @@ trap '{ set +o xtrace; } 2> /dev/null
     exit 1
 ' 1 2 3 6 15
 
-set -o errexit
+set -eu
 
 export POSIXLY_CORRECT=1
 

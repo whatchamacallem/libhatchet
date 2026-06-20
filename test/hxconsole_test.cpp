@@ -150,7 +150,7 @@ hxconsole_command_named(hxconsole_test_failing_command, hxconsole_test_failing_c
 // register_command
 
 TEST(hxconsole_test, register_command) {
-	hxlogconsole("EXPECTING_TEST_WARNINGS\n");
+	hxlog_console("EXPECTING_TEST_WARNINGS\n");
 
 	// 77 + strlen("...") = 80
 	s_hxconsole_test_result_hook = 0.0f;
@@ -289,7 +289,7 @@ TEST(hxconsole_test, variable_query) {
 // exact boundaries must succeed.
 
 TEST(hxconsole_test, variable_overflow) {
-	hxlogconsole("EXPECTING_TEST_WARNINGS\n");
+	hxlog_console("EXPECTING_TEST_WARNINGS\n");
 
 	// int8_t exact boundaries
 	s_hxconsole_test_i8 = 0;
@@ -377,7 +377,7 @@ TEST(hxconsole_test, variable_overflow) {
 // variable_parse_error: garbage/trailing-garbage/multi-value leave variable unchanged
 
 TEST(hxconsole_test, variable_parse_error) {
-	hxlogconsole("EXPECTING_TEST_WARNINGS\n");
+	hxlog_console("EXPECTING_TEST_WARNINGS\n");
 
 	// Trailing garbage: parse advances past "42" but trailing "garbage" is not end-of-line.
 	s_hxconsole_test_i32 = 10;
@@ -494,7 +494,7 @@ TEST(hxconsole_test, function_types) {
 // function_overflow: exact boundary succeeds, one-beyond fails
 
 TEST(hxconsole_test, function_overflow) {
-	hxlogconsole("EXPECTING_TEST_WARNINGS\n");
+	hxlog_console("EXPECTING_TEST_WARNINGS\n");
 
 	// int8_t
 	s_hxconsole_test_fn_i8 = 0;
@@ -610,7 +610,7 @@ TEST(hxconsole_test, function_multi_arg) {
 // function_arity: too few/too many/wrong-type/zero-arg with args
 
 TEST(hxconsole_test, function_arity) {
-	hxlogconsole("EXPECTING_TEST_WARNINGS\n");
+	hxlog_console("EXPECTING_TEST_WARNINGS\n");
 
 	// Too few args.
 	s_hxconsole_test_fn_mixed_i32 = -1; s_hxconsole_test_fn_mixed_f32 = -1.0f;
@@ -660,7 +660,7 @@ TEST(hxconsole_test, comment_lines) {
 // unsigned_negative: negative inputs are rejected for unsigned integer types.
 
 TEST(hxconsole_test, unsigned_negative) {
-	hxlogconsole("EXPECTING_TEST_WARNINGS\n");
+	hxlog_console("EXPECTING_TEST_WARNINGS\n");
 
 	s_hxconsole_test_u8 = 7;
 	EXPECT_FALSE(hxconsole_exec_line("s_hxconsole_test_u8 -1"));
@@ -706,8 +706,8 @@ TEST(hxconsole_test, string_edge_cases) {
 
 TEST(hxconsole_test, null_test) {
 	const uint8_t prev = g_hxsettings.log_level;
-	g_hxsettings.log_level = hxloglevel_warning;
-	hxloghandler(hxloglevel_console, "test_hidden\n");
+	g_hxsettings.log_level = hxlog_level_warning;
+	hxlog_handler(hxlog_level_console, "test_hidden\n");
 	g_hxsettings.log_level = prev;
 	hxlog("");
 	SUCCEED();
@@ -739,7 +739,7 @@ TEST(hxconsole_test, file_test) {
 // file_fail
 
 TEST(hxconsole_test, file_fail) {
-	hxlogconsole("EXPECTING_TEST_WARNINGS\n");
+	hxlog_console("EXPECTING_TEST_WARNINGS\n");
 
 	{
 		hxfile(hxfile::out, "hxconsole_test_file_test.txt") << "<unknown symbols>\n";
@@ -774,7 +774,7 @@ TEST(hxconsole_test, file_fail) {
 // ============================================================================
 // file_peek_poke / file_peek_poke_floats
 
-#if (HX_RELEASE) < 2 && !defined __wasm__
+#if (HX_HARDENING_MODE) > HX_HARDENING_MODE_STANDARD && !defined __wasm__
 TEST(hxconsole_test, file_peek_poke) {
 	uint32_t target[] = { 111, 777, 333 };
 	{

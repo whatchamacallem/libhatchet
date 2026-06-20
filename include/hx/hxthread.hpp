@@ -31,10 +31,10 @@ public:
 			: m_default_value_(default_value_) {
 #if (HX_USE_THREADS) == 11
 		const int code_ = ::tss_create(&m_key_, destroy_local_);
-		hxassertrelease(code_ == thrd_success, "tss_create %d", code_); (void)code_;
+		hxassert_always(code_ == thrd_success, "tss_create %d", code_); (void)code_;
 #elif HX_USE_THREADS
 		const int code_ = ::pthread_key_create(&m_key_, destroy_local_);
-		hxassertrelease(code_ == 0, "pthread_key_create %s", ::strerror(code_)); (void)code_;
+		hxassert_always(code_ == 0, "pthread_key_create %s", ::strerror(code_)); (void)code_;
 #endif
 	}
 
@@ -68,18 +68,18 @@ private:
 		T_* local_ = static_cast<T_*>(::tss_get(m_key_));
 		if(local_ == hxnull) {
 			local_ = new T_(m_default_value_);
-			hxassertrelease(local_, "new T");
+			hxassert_always(local_, "new T");
 			const int code_ = ::tss_set(m_key_, local_);
-			hxassertrelease(code_ == thrd_success, "tss_set %d", code_); (void)code_;
+			hxassert_always(code_ == thrd_success, "tss_set %d", code_); (void)code_;
 		}
 		return local_;
 #else
 		T_* local_ = static_cast<T_*>(::pthread_getspecific(m_key_));
 		if(local_ == hxnull) {
 			local_ = new T_(m_default_value_);
-			hxassertrelease(local_, "new T");
+			hxassert_always(local_, "new T");
 			const int code_ = ::pthread_setspecific(m_key_, local_);
-			hxassertrelease(code_ == 0, "pthread_setspecific %s", ::strerror(code_)); (void)code_;
+			hxassert_always(code_ == 0, "pthread_setspecific %s", ::strerror(code_)); (void)code_;
 		}
 		return local_;
 #endif
@@ -133,10 +133,10 @@ public:
 	inline hxmutex(void) {
 #if (HX_USE_THREADS) == 11
 		const int code_ = ::mtx_init(&m_mutex_, mtx_plain);
-		hxassertrelease(code_ == thrd_success, "mtx_init %d", code_); (void)code_;
+		hxassert_always(code_ == thrd_success, "mtx_init %d", code_); (void)code_;
 #else
 		const int code_ = ::pthread_mutex_init(&m_mutex_, 0);
-		hxassertrelease(code_ == 0, "pthread_mutex_init %s", ::strerror(code_)); (void)code_;
+		hxassert_always(code_ == 0, "pthread_mutex_init %s", ::strerror(code_)); (void)code_;
 #endif
 	}
 
@@ -256,10 +256,10 @@ public:
 	hxcondition_variable(void) {
 #if (HX_USE_THREADS) == 11
 		const int code_ = ::cnd_init(&m_cond_);
-		hxassertrelease(code_ == thrd_success, "cnd_init %d", code_); (void)code_;
+		hxassert_always(code_ == thrd_success, "cnd_init %d", code_); (void)code_;
 #else
 		const int code_ = ::pthread_cond_init(&m_cond_, 0);
-		hxassertrelease(code_ == 0, "pthread_cond_init %s", ::strerror(code_)); (void)code_;
+		hxassert_always(code_ == 0, "pthread_cond_init %s", ::strerror(code_)); (void)code_;
 #endif
 	}
 
@@ -408,11 +408,11 @@ public:
 #if (HX_USE_THREADS) == 11
 		const int code_ = ::thrd_create(&m_thread_,
 			reinterpret_cast<entry_point_function_t_>(entry_point_), reinterpreted_parameter_);
-		hxassertrelease(code_ == thrd_success, "thrd_create %d", code_); (void)code_;
+		hxassert_always(code_ == thrd_success, "thrd_create %d", code_); (void)code_;
 #else
 		const int code_ = ::pthread_create(&m_thread_, 0,
 			reinterpret_cast<entry_point_function_t_>(entry_point_), reinterpreted_parameter_);
-		hxassertrelease(code_ == 0, "pthread_create %d", code_); (void)code_;
+		hxassert_always(code_ == 0, "pthread_create %d", code_); (void)code_;
 #endif
 		m_started_ = true;
 		m_joined_ = false;
@@ -427,11 +427,11 @@ public:
 		hxassertmsg(this->joinable(), "thread_not_runnning");
 #if (HX_USE_THREADS) == 11
 		const int code_ = ::thrd_join(m_thread_, hxnull);
-		hxassertrelease(code_ == thrd_success, "thrd_join %d", code_);
+		hxassert_always(code_ == thrd_success, "thrd_join %d", code_);
 		(void)code_;
 #else
 		const int code_ = ::pthread_join(m_thread_, 0);
-		hxassertrelease(code_ == 0, "pthread_join %s", ::strerror(code_));
+		hxassert_always(code_ == 0, "pthread_join %s", ::strerror(code_));
 		(void)code_;
 #endif
 		m_joined_ = true;

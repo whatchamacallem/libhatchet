@@ -21,13 +21,13 @@
 /// lifetime of the application. They can be allocated with 0 overhead using
 /// `hxsystem_allocator_permanent`.
 ///
-/// NOTA BENE: The current allocator ID is a thread local attribute that is
+/// WARNING: The current allocator ID is a thread local attribute that is
 /// managed by the `hxsystem_allocator_scope` RAII class. This provides a non-
 /// intrusive way to move swaths of code to different allocators.
 ///
 /// Alignment must be a power of two. (It always is.)
 ///
-/// `HX_RELEASE == 0` debug memory byte patterns:
+/// `HX_HARDENING_MODE == HX_HARDENING_MODE_DEBUG` debug memory byte patterns:
 ///
 /// | Hex    | Pattern Description              |
 /// | ------ | -------------------------------- |
@@ -35,7 +35,7 @@
 /// | `0xcd` | Allocated.                       |
 /// | `0xdd` | Deallocated.                     |   
 ///
-/// Global new and delete are provided when `HX_NO_LIBCXX==1`. This is a
+/// Global new and delete are provided when `HX_USE_LIBCXX==0`. This is a
 /// requirement for running as a stand alone C++ runtime. Otherwise they are not
 /// interfered with. Those default versions do not use the memory manager's
 /// current allocator because it may not be safe to do so. `hxnew` and
@@ -49,7 +49,7 @@
 #endif
 
 #if HX_CPLUSPLUS
-#if !HX_NO_LIBCXX
+#if HX_USE_LIBCXX
 #include <new>
 #endif
 
@@ -87,7 +87,7 @@ void hxfree(void* ptr_) hxattr_noexcept hxattr_hot;
 
 /// `hxmalloc` - Allocates memory of the specified size using the default memory
 /// manager. A C++ overload optionally provides the same arguments as
-/// `hxmalloc_ext`. Will not return on failure. NOTA BENE: It is undefined
+/// `hxmalloc_ext`. Will not return on failure. WARNING: It is undefined
 /// behavior to compare pointers to different allocations. This is consistent
 /// with the C++ standard. Allocations of size 0 may or may not return the same
 /// pointer as previous allocations. Returns a pointer that must be released
@@ -123,7 +123,7 @@ char* hxstring_duplicate(const char* string_,
 
 // Memory Manager C++ API
 
-#if HX_NO_LIBCXX
+#if !HX_USE_LIBCXX
 // Declare placement new. These are not built into the compiler.
 inline void* operator new(size_t, void* ptr_) noexcept { return ptr_; }
 inline void* operator new[](size_t, void* ptr_) noexcept { return ptr_; }
@@ -133,7 +133,7 @@ inline void* operator new[](size_t, void* ptr_) noexcept { return ptr_; }
 /// allocator for the current scope. It automatically restores the previous
 /// allocator when the scope ends. It also resets stack allocators to their
 /// initial offsets thereby freeing any allocations made during the lifetime of
-/// this object. NOTA BENE: Two threads cannot share a stack allocator using
+/// this object. WARNING: Two threads cannot share a stack allocator using
 /// this mechanism without due caution. Wait for worker tasks to complete before
 /// freeing their temporary allocations. The closest thing in the standard is
 /// `std::scoped_allocator_adaptor` and it is a template nightmare.
@@ -258,7 +258,7 @@ inline char* hxstring_duplicate(const char* s_) {
 	return hxstring_duplicate(s_, hxsystem_allocator_current);
 }
 
-#if !HX_NO_LIBCXX
+#if HX_USE_LIBCXX
 /// `hxconsteval_delete` - A `constexpr`-compatible deleter that uses `::delete`.
 /// Required for `consteval` contexts where `hxdefault_delete` cannot be used
 /// because `hxdelete` calls `hxfree` which is not `constexpr`.
@@ -271,6 +271,6 @@ public:
 	/// Always returns true, indicating the deleter is valid.
 	constexpr operator bool(void) const { return true; }
 };
-#endif // !HX_NO_LIBCXX
+#endif // HX_USE_LIBCXX
 
 #endif // HX_CPLUSPLUS

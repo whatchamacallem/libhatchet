@@ -106,7 +106,7 @@ TEST(hxtest_error_handling, fail) {
 	hxlog("EXPECTING_TEST_FAILURE\n");
 	SUCCEED();
 	FAIL();
-	hxassertrelease(0, "internal_error FAIL() did not return");
+	hxassert_always(0, "internal_error FAIL() did not return");
 }
 
 TEST(hxtest_error_handling, add_failure) {

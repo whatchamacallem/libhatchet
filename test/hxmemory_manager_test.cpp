@@ -33,7 +33,7 @@ TEST(hxmemory_manager_test, hxnew_forward) {
 // Verify that new and delete plausibly exist and that hxnullptr compiles.
 TEST(hxmemory_manager_test, hxnew) {
 	unsigned int* t = new unsigned int(3);
-	hxassertrelease(t, "new"); // Should be impossible.
+	hxassert_always(t, "new"); // Should be impossible.
 	*t = 0xdeadbeefu;
 	delete t;
 	t = hxnullptr;
@@ -46,7 +46,7 @@ TEST(hxmemory_manager_test, hxnew) {
 
 TEST(hxmemory_manager_test, bytes) {
 const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
-	hxlogconsole("EXPECTING_TEST_WARNINGS\n");
+	hxlog_console("EXPECTING_TEST_WARNINGS\n");
 	for(size_t i=10u; i-- != 0u;) {
 		void* p = hxmalloc(i);
 		ASSERT_NE(p, hxnullptr);
@@ -65,7 +65,7 @@ const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporar
 }
 
 TEST(hxmemory_manager_test, temp_overflow) {
-	hxlogconsole("EXPECTING_TEST_WARNINGS\n");
+	hxlog_console("EXPECTING_TEST_WARNINGS\n");
 
 	// "Allocates memory of the specified size with a specific allocator and
 	// alignment." Request temp_stack byte-count { budget + 1 } using explicit
@@ -149,7 +149,7 @@ public:
 	}
 
 	static void test_memory_allocator_leak(void) {
-#if (HX_RELEASE) < 1
+#if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
 		void* ptr2 = hxnull;
 		const int asserts_allowed = g_hxsettings.asserts_to_be_skipped;
 

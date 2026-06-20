@@ -12,13 +12,13 @@
 // Make sure this all compiles and runs in C99.
 bool hxctest_libhatchet_h(void) {
 	hxlog("Smoke testing from C: hxlog %d, ", 1);
-	hxlogrelease("hxlogrelease %d, ", 2);
-	hxlogconsole("hxlogconsole %d, ", 3);
-	hxlogwarning("hxlogwarning %d", 4);
+	hxlog_release("hxlog_release %d, ", 2);
+	hxlog_console("hxlog_console %d, ", 3);
+	hxlog_warning("hxlog_warning %d", 4);
 	hxassertmsg(1, "hxassertmsg %d", 5);
 	hxassert(1 == 1); // Shouldn't warn because those may be errors.
-	hxassertrelease(1.0, "hxassertrelease %f", 1.0f);
-	hxwarnmsg(1, "not true"); // Cast to bool.
+	hxassert_always(1.0, "hxassert_always %f", 1.0f);
+	hxwarn_msg(1, "not true"); // Cast to bool.
 	return true; // Did not crash.
 }
 

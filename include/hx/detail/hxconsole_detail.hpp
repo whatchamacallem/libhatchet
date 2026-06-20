@@ -172,12 +172,12 @@ public:
 	}
 
 	void usage_(const char* id_=hxnull) override {
-		hxloghandler(hxloglevel_console, "%s", (id_ != hxnull) ? id_ : "usage:");
+		hxlog_handler(hxlog_level_console, "%s", (id_ != hxnull) ? id_ : "usage:");
 		if constexpr (sizeof...(args_t_) == 0) {
-			hxloghandler(hxloglevel_console, "\n");
+			hxlog_handler(hxlog_level_console, "\n");
 		} else {
-			(hxloghandler(hxloglevel_console, " %s", hxconsole_arg_label_<args_t_>()), ...);
-			hxloghandler(hxloglevel_console, "\n");
+			(hxlog_handler(hxlog_level_console, " %s", hxconsole_arg_label_<args_t_>()), ...);
+			hxlog_handler(hxlog_level_console, "\n");
 		}
 	}
 
@@ -215,7 +215,7 @@ public:
 	bool execute_(const char* str_) override {
 		if(hxconsole_is_end_of_line_(str_)) {
 			// 0 parameters is a query.
-			hxloghandler(hxloglevel_console, "%.15g\n", static_cast<double>(*m_var_));
+			hxlog_handler(hxlog_level_console, "%.15g\n", static_cast<double>(*m_var_));
 			return true;
 		}
 		char* next_ = const_cast<char*>(str_);
@@ -224,12 +224,12 @@ public:
 			*m_var_ = val_;
 			return true;
 		}
-		hxlogconsole("parse error at: %s\n", str_);
+		hxlog_console("parse error at: %s\n", str_);
 		return false;
 	}
 
 	void usage_(const char* id_) override {
-		hxloghandler(hxloglevel_console, "%s <optional-value>\n", (id_ != hxnull) ? id_ : "usage:");
+		hxlog_handler(hxlog_level_console, "%s <optional-value>\n", (id_ != hxnull) ? id_ : "usage:");
 	}
 private:
 	volatile var_t_* m_var_;
@@ -288,7 +288,7 @@ public:
 
 	hxconsole_hash_table_node_(hxconsole_hash_table_key_ key_)
 			: m_hash_next_(hxnull), m_key_(key_), m_hash_(hxkey_hash(key_)), m_command_(hxnull) {
-#if (HX_RELEASE) < 1
+#if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
 		const char* k_ = key_.str_;
 		while(hxisgraph(*k_)) {
 			++k_;

@@ -20,12 +20,13 @@ public:
 	public:
 		hxtask_test_t() : m_exec_count(0), m_reenqueue_count(0) { }
 
-		void execute(hxtask_queue* q) override {
+		bool execute(hxtask_queue* q) override {
 			++m_exec_count;
 			if(m_reenqueue_count > 0) {
 				--m_reenqueue_count;
 				q->enqueue(this);
 			}
+			return (m_exec_count & 1) == 0;
 		}
 
 		size_t get_exec_count(void) const { return m_exec_count; }
@@ -151,11 +152,12 @@ TEST(hxtask_queue_test, priority_ordering_single_threaded) {
 			priority_value = p;
 		}
 
-		void execute(hxtask_queue*) override {
+		bool execute(hxtask_queue*) override {
 			hxassertmsg(execution_order, "priority_task_unconfigured");
 			hxassertmsg(write_index, "priority_task_unconfigured");
 			const size_t slot = (*write_index)++;
 			execution_order[slot] = priority_value;
+			return true;
 		}
 
 	private:
@@ -193,16 +195,19 @@ TEST(hxtask_queue_test, predicates_cover_all_any_erase) {
 
 	class hxtask_queue_test_predicate_task_t : public hxtask {
 	public:
-		void configure(bool* f) { executed_flag = f; }
-		void execute(hxtask_queue*) override { *executed_flag = true; }
+		void configure(bool* f, bool* c) { executed_flag = f; cancelled_flag = c; }
+		bool execute(hxtask_queue*) override { *executed_flag = true; return true; }
+		void on_cancel(hxtask_queue*) override { *cancelled_flag = true; }
 	private:
 		bool* executed_flag = hxnull;
+		bool* cancelled_flag = hxnull;
 	};
 
 	bool executed_flags[3] = { false, false, false };
+	bool cancelled_flags[3] = { false, false, false };
 	hxtask_queue_test_predicate_task_t tasks[3];
 	for(size_t i = 0; i < 3; ++i) {
-		tasks[i].configure(&executed_flags[i]);
+		tasks[i].configure(&executed_flags[i], &cancelled_flags[i]);
 	}
 
 	hxtask_queue q(3, 0);
@@ -252,6 +257,8 @@ TEST(hxtask_queue_test, predicates_cover_all_any_erase) {
 	EXPECT_EQ(removed_low_priority, 1u);
 	EXPECT_EQ(q.size(), 2u);
 	EXPECT_TRUE(!q.full());
+	// "Does not call on_cancel on each."
+	EXPECT_FALSE(cancelled_flags[2]);
 
 	const bool any_remaining_low_priority = q.any_of([](const hxtask_queue::record_t& record) {
 		return record.priority < 4;
@@ -269,12 +276,13 @@ TEST(hxtask_queue_test, predicates_cover_all_any_erase) {
 	q.enqueue(&tasks[2], 7);
 	EXPECT_EQ(q.size(), 1u);
 	EXPECT_FALSE(q.empty());
-	// "Removes all queued tasks without executing them."
+	// "Removes all queued tasks without executing them. Does not call on_cancel on each."
 	q.clear();
 	EXPECT_EQ(q.size(), 0u);
 	EXPECT_TRUE(q.empty());
 	q.wait_for_all();
 	EXPECT_TRUE(!executed_flags[2]);
+	EXPECT_FALSE(cancelled_flags[2]);
 }
 
 TEST(hxtask_queue_test, for_each_reschedules_queue) {
@@ -288,9 +296,10 @@ TEST(hxtask_queue_test, for_each_reschedules_queue) {
 			write_index = w;
 		}
 
-		void execute(hxtask_queue*) override {
+		bool execute(hxtask_queue*) override {
 				const size_t slot = (*write_index)++;
 			execution_order[slot] = static_cast<int>(task_index);
+			return true;
 		}
 
 		size_t get_index(void) const { return task_index; }
@@ -349,4 +358,44 @@ TEST(hxtask_queue_test, for_each_reschedules_queue) {
 	EXPECT_EQ(execution_order[1], 0);
 	EXPECT_EQ(execution_order[2], 3);
 	EXPECT_EQ(execution_order[3], 1);
+}
+
+TEST(hxtask_queue_test, canceling) {
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+
+	class hxtask_queue_test_cancel_tracker_t : public hxtask {
+	public:
+		bool execute(hxtask_queue*) override { executed = true; return true; }
+		void on_cancel(hxtask_queue*) override { cancelled = true; }
+		bool executed = false;
+		bool cancelled = false;
+	};
+
+	// Single-threaded: tasks don't run until wait_for_all, so cancel is reliable.
+	hxtask_queue_test_cancel_tracker_t t0, t1, t2, t3;
+	hxtask_queue q(3, 0);
+	q.enqueue(&t0);
+	q.enqueue(&t1);
+	q.enqueue(&t2);
+
+	// "Returns true if the task was found and removed."
+	EXPECT_TRUE(q.cancel(&t1));
+	// "Returns false if the task is already executing or was not queued."
+	EXPECT_FALSE(q.cancel(&t1));
+
+	q.wait_for_all();
+
+	EXPECT_TRUE(t0.executed);
+	EXPECT_FALSE(t0.cancelled);
+	EXPECT_FALSE(t1.executed);
+	EXPECT_TRUE(t1.cancelled);
+	EXPECT_TRUE(t2.executed);
+	EXPECT_FALSE(t2.cancelled);
+
+	// Clear.
+	q.enqueue(&t3);
+	// "Removes all queued tasks without executing them. Does not call on_cancel on each."
+	q.clear();
+	EXPECT_FALSE(t3.executed);
+	EXPECT_FALSE(t3.cancelled);
 }

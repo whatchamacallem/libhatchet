@@ -93,7 +93,7 @@ bool hxfile::openv_(uint8_t mode, const char* filename, va_list args) {
 	hxassertmsg(len >= 0 && len < HX_MAX_LINE, "vsnprintf"); (void)len;
 
 	m_file_pimpl_ = ::fopen(line_buf, m);
-	hxassertrelease((m_file_pimpl_ != hxnull) || ((mode & hxfile::skip_asserts) != 0u),
+	hxassert_always((m_file_pimpl_ != hxnull) || ((mode & hxfile::skip_asserts) != 0u),
 		"fopen %s %s: %s", line_buf, m, ::strerror(errno));
 
 	m_fail_ = (m_file_pimpl_ == hxnull);
@@ -133,7 +133,7 @@ bool hxfile::set_pos(size_t position_) {
 
 size_t hxfile::read(void* bytes, size_t buffer_size, size_t byte_count) {
 	hxassertmsg(((m_open_mode_ & hxfile::in) != 0u) && (m_file_pimpl_ != hxnull), "invalid_file");
-	hxassertrelease(byte_count <= buffer_size || ((m_open_mode_ & hxfile::skip_asserts) != 0u),
+	hxassert_always(byte_count <= buffer_size || ((m_open_mode_ & hxfile::skip_asserts) != 0u),
 		"read %zu overflows %zu", byte_count, buffer_size);
 
 	if(byte_count > buffer_size) {
@@ -211,7 +211,7 @@ bool hxfile::print(const char* format, ...) {
 	const int len = ::vfprintf(static_cast<FILE*>(m_file_pimpl_), format, args);
 	va_end(args);
 
-	hxassertrelease(len >= 0, "vfprintf %s", ::strerror(errno));
+	hxassert_always(len >= 0, "vfprintf %s", ::strerror(errno));
 	return len >= 0;
 }
 
@@ -223,7 +223,7 @@ int hxfile::scan(const char* format, ...) {
 	const int items_scanned = ::vfscanf(static_cast<FILE*>(m_file_pimpl_), format, args); // NOLINT
 	va_end(args);
 
-	hxassertrelease(items_scanned != EOF || ((m_open_mode_ & hxfile::skip_asserts) != 0u), "vfscanf %s", ::strerror(errno));
+	hxassert_always(items_scanned != EOF || ((m_open_mode_ & hxfile::skip_asserts) != 0u), "vfscanf %s", ::strerror(errno));
 
 	if(items_scanned == EOF) {
 		m_fail_ = true;

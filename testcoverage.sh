@@ -16,7 +16,7 @@ trap '{ set +o xtrace; } 2> /dev/null
     exit 1
 ' 1 2 3 6 15
 
-set -o errexit
+set -eu
 
 HX_DIR=`pwd`
 
@@ -25,12 +25,12 @@ rm -rf ./build; mkdir ./build && cd ./build
 
 set -o xtrace
 
-gcc -I$HX_DIR/include --coverage -O0 -g -DHX_RELEASE=0 -std=c99 -Wall \
-	-Werror -Wfatal-errors -pthread -c $HX_DIR/src/*.c $HX_DIR/test/*.c
+gcc -I$HX_DIR/include --coverage -O0 -g -DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG \
+    -std=c99 -Wall -Werror -Wfatal-errors -pthread -c $HX_DIR/src/*.c $HX_DIR/test/*.c
 
-g++ -I$HX_DIR/include --coverage -O0 -g -DHX_RELEASE=0 -DHX_TEST_ERROR_HANDLING=1 \
-	-std=c++23 -Wall -Werror -Wfatal-errors -fno-exceptions -pthread -lpthread \
-	-lstdc++ $HX_DIR/src/*.cpp $HX_DIR/test/*.cpp *.o -o hxtest
+g++ -I$HX_DIR/include --coverage -O0 -g -DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG \
+    -DHX_TEST_ERROR_HANDLING=1 -std=c++23 -Wall -Werror -Wfatal-errors -fno-exceptions \
+    -pthread -lpthread -lstdc++ $HX_DIR/src/*.cpp $HX_DIR/test/*.cpp *.o -o hxtest
 
 echo runtests | ./hxtest help execstdin
 

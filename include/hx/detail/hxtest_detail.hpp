@@ -20,7 +20,7 @@ hxattr_nodiscard bool hxtest_double_eq_(double a_, double b_);
 // Internal. A strcmp wrapper. This would crash anyway. The macro adds a console
 // diagnostic and a breakpoint on the right line.
 #define hxtest_str_eq_(a_, b_) \
-	(hxassertrelease((a_) && (b_), "strcmp Null arg."), ::strcmp((a_), (b_))==0)
+	(hxassert_always((a_) && (b_), "strcmp Null arg."), ::strcmp((a_), (b_))==0)
 
 // hxtest_case_interface_ - Internal. Used to interrogate and dispatch tests.
 class hxtest_case_interface_ {

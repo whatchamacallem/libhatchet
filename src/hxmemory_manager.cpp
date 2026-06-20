@@ -10,22 +10,22 @@
 #ifdef _MSC_VER
 #define HX_USE_STD_ALIGNED_ALLOC 0
 #else
-#define HX_USE_STD_ALIGNED_ALLOC (HX_CPLUSPLUS >= 201703L && (HX_RELEASE) >= 1)
+#define HX_USE_STD_ALIGNED_ALLOC (HX_CPLUSPLUS >= 201703L && (HX_HARDENING_MODE) != HX_HARDENING_MODE_DEBUG)
 #endif
 
-#if HX_NO_LIBCXX
+#if !HX_USE_LIBCXX
 // Forward declare for C++11.
 hxattr_hot void operator delete(void* ptr, size_t) noexcept;
 hxattr_hot void operator delete[](void* ptr, size_t) noexcept;
 
 hxattr_hot void* operator new(size_t size) {
 	void* ptr = ::malloc(size);
-	hxassertrelease(ptr, "malloc %zu", size);
+	hxassert_hard(ptr, "malloc %zu", size);
 	return ptr;
 }
 hxattr_hot void* operator new[](size_t size) {
 	void* ptr = ::malloc(size);
-	hxassertrelease(ptr, "malloc %zu", size);
+	hxassert_hard(ptr, "malloc %zu", size);
 	return ptr;
 }
 hxattr_hot void operator delete(void* ptr) noexcept {
@@ -54,10 +54,10 @@ inline void hxsystem_allocator_scope_init_(hxsystem_allocator_scope* scope_,
 // analysis contract described by hxattr_allocator.
 hxattr_allocator(free) hxattr_hot hxattr_noexcept static void* hxmalloc_checked_(size_t size) {
 	void* t = ::malloc(size);
-	hxassertrelease(t, "malloc %zu", size);
-#if (HX_RELEASE) >= 3
+	hxassert_hard(t, "malloc %zu", size);
+#if (HX_HARDENING_MODE) == HX_HARDENING_MODE_NONE
 	if(!t) {
-		hxloghandler(hxloglevel_assert, "malloc %zu", size);
+		hxlog_handler(hxlog_level_assert, "malloc %zu", size);
 		::_Exit(EXIT_FAILURE);
 	}
 #endif
@@ -86,7 +86,7 @@ public:
 	size_t size;
 	uintptr_t actual; // Address actually returned by malloc.
 
-#if (HX_RELEASE) < 2
+#if (HX_HARDENING_MODE) != HX_HARDENING_MODE_NONE
 	enum : uint32_t {
 		sentinel_value_allocated = 0x00c0ffeeu,
 		sentinel_value_freed = 0xdeadbeefu
@@ -124,9 +124,10 @@ private:
 // ----------------------------------------------------------------------------
 // hxmemory_allocator_os_heap
 //
-// This just calls aligned_alloc when HX_RELEASE > 0. In debug and in C++98
-// mode this code wraps heap allocations with a header and adds padding to
-// obtain required alignment. This allows tracking bytes allocated in debug.
+// This just calls aligned_alloc when HX_HARDENING_MODE !=
+// HX_HARDENING_MODE_DEBUG. In debug and in C++98 mode this code wraps heap
+// allocations with a header and adds padding to obtain required alignment. This
+// allows tracking bytes allocated in debug.
 class hxmemory_allocator_os_heap : public hxmemory_allocator_base {
 public:
 	hxattr_cold void construct(const char* label) {
@@ -164,7 +165,7 @@ public:
 		size = (size + alignment_mask) & ~alignment_mask;
 
 		void* t = ::aligned_alloc(alignment, size);
-		hxassertrelease(t, "aligned_alloc %zu %zu", static_cast<size_t>(alignment), size);
+		hxassert_always(t, "aligned_alloc %zu %zu", static_cast<size_t>(alignment), size);
 		return t;
 #else
 		// hxmemory_allocation_header has an HX_ALIGNMENT alignment requirement as well.
@@ -178,7 +179,7 @@ public:
 		hxmemory_allocation_header& hdr = reinterpret_cast<hxmemory_allocation_header*>(aligned)[-1];
 		hdr.size = size;
 		hdr.actual = actual;
-#if (HX_RELEASE) < 2
+#if (HX_HARDENING_MODE) != HX_HARDENING_MODE_NONE
 		hdr.sentinel_value = hxmemory_allocation_header::sentinel_value_allocated;
 #endif
 		++m_allocation_count;
@@ -196,8 +197,8 @@ public:
 #else
 
 		hxmemory_allocation_header& hdr = reinterpret_cast<hxmemory_allocation_header*>(ptr)[-1];
-#if (HX_RELEASE) < 2
-		hxassertrelease(hdr.sentinel_value == hxmemory_allocation_header::sentinel_value_allocated,
+#if (HX_HARDENING_MODE) != HX_HARDENING_MODE_NONE
+		hxassert_hard(hdr.sentinel_value == hxmemory_allocation_header::sentinel_value_allocated,
 			"bad_free sentinel corrupt");
 #endif
 		hxassertmsg(hdr.size > 0u && m_allocation_count > 0u
@@ -206,7 +207,7 @@ public:
 		m_bytes_allocated -= hdr.size;
 
 		const uintptr_t actual = hdr.actual;
-#if (HX_RELEASE) < 2
+#if (HX_HARDENING_MODE) != HX_HARDENING_MODE_NONE
 		hdr.sentinel_value = hxmemory_allocation_header::sentinel_value_freed;
 		::memset(ptr, 0xdd, hdr.size);
 #endif
@@ -318,7 +319,7 @@ public:
 		// because that would break leak tracking.
 
 		const uintptr_t previous_current = m_begin_ + scope->get_initial_bytes_allocated();
-#if (HX_RELEASE) < 1
+#if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
 		::memset(reinterpret_cast<void*>(previous_current), 0xdd,
 			static_cast<size_t>(m_current - previous_current));
 #endif
@@ -360,7 +361,7 @@ public:
 private:
 	friend class hxsystem_allocator_scope;
 
-	// NOTA BENE:  The current allocator is a thread-local attribute.
+	// WARNING:  The current allocator is a thread-local attribute.
 	static hxthread_local<hxsystem_allocator_t> s_hxcurrent_memory_allocator;
 
 	hxmemory_allocator_base* m_memory_allocators[hxsystem_allocator_current];
@@ -405,7 +406,7 @@ size_t hxmemory_manager::leak_count(void) {
 		hxmemory_allocator_base& allocator = *m_memory_allocators[i];
 		const hxsystem_allocator_t allocator_id = static_cast<hxsystem_allocator_t>(i);
 		if(allocator.get_allocation_count(allocator_id) != 0u) {
-			hxloghandler(hxloglevel_warning,
+			hxlog_handler(hxlog_level_warning,
 				"memory_leak %s count %zu size %zu high_water %zu",
 				allocator.label(),
 				allocator.get_allocation_count(allocator_id),
@@ -436,7 +437,7 @@ void hxmemory_manager::end_allocation_scope(
 	s_hxcurrent_memory_allocator = previous_id;
 }
 
-// NOTA BENE: It is undefined behavior to compare pointers to different
+// WARNING: It is undefined behavior to compare pointers to different
 // allocations. This is consistent with the C++ standard. Allocations of size 0
 // may or may not return the same pointer as previous allocations.
 void* hxmemory_manager::allocate(size_t size, hxsystem_allocator_t id, hxalignment_t alignment) {
@@ -447,7 +448,7 @@ void* hxmemory_manager::allocate(size_t size, hxsystem_allocator_t id, hxalignme
 
 	// Size 0 allocations are only logged as a warning. Size zero is tested and
 	// expected to work without overhead.
-	hxwarnmsg(size != 0u, "allocation_error Size 0 allocation.");
+	hxwarn_msg(size != 0u, "allocation_error Size 0 allocation.");
 
 	// Provide an alignment of 1 for strings and unaligned allocations. The
 	// following code assumes that "alignment-1" is a valid mask of unused bits
@@ -468,7 +469,7 @@ void* hxmemory_manager::allocate(size_t size, hxsystem_allocator_t id, hxalignme
 	if(ptr != hxnull) { return ptr; }
 
 	// Will not return null.
-	hxlogwarning("allocation_error overflowing %s size %zu", get_allocator(id).label(), size);
+	hxlog_warning("allocation_error overflowing %s size %zu", get_allocator(id).label(), size);
 	return m_memory_allocator_heap.allocate(size, alignment);
 }
 
@@ -486,7 +487,7 @@ void hxmemory_manager::free(void* ptr) {
 	}
 
 	if(m_memory_allocator_permanent.contains(ptr)) {
-		hxwarnmsg(g_hxsettings.deallocate_permanent, "ERROR: free from permanent");
+		hxwarn_msg(g_hxsettings.deallocate_permanent, "ERROR: free from permanent");
 		m_memory_allocator_permanent.on_free_non_virtual(ptr);
 		return;
 	}
@@ -527,7 +528,7 @@ extern "C"
 hxattr_noexcept void* hxmalloc(size_t size) {
 	hxinit();
 	void* ptr = s_hxmemory_manager.allocate(size, hxsystem_allocator_current, HX_ALIGNMENT);
-#if (HX_RELEASE) < 1
+#if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
 		::memset(ptr, 0xcd, size);
 #endif
 	return ptr;
@@ -537,7 +538,7 @@ extern "C"
 hxattr_noexcept void* hxmalloc_ext(size_t size, hxsystem_allocator_t id, hxalignment_t alignment) {
 	hxinit();
 	void* ptr = s_hxmemory_manager.allocate(size, id, alignment);
-#if (HX_RELEASE) < 1
+#if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
 		::memset(ptr, 0xcd, size);
 #endif
 	return ptr;
@@ -553,18 +554,18 @@ hxattr_noexcept void hxfree(void *ptr) {
 }
 
 void hxmemory_manager_init(void) {
-	hxassertrelease(!g_hxinit_ver_, "hxmemory_manager_init Reinit.");
+	hxassert_hard(!g_hxinit_ver_, "hxmemory_manager_init Reinit.");
 
 	s_hxmemory_manager.construct();
 }
 
 void hxmemory_manager_shut_down(void) {
-	hxassertrelease(g_hxinit_ver_, "hxmemory_manager_shut_down Not init.");
+	hxassert_hard(g_hxinit_ver_, "hxmemory_manager_shut_down Not init.");
 
 	// Any allocations made while active will crash when freed. If these are not
 	// fixed you will hit a leak sanitizer elsewhere.
 	const size_t leak_count = s_hxmemory_manager.leak_count();
-	hxassertrelease(leak_count == 0, "memory_leak at shutdown %zu", leak_count); (void)leak_count;
+	hxassert_hard(leak_count == 0, "memory_leak at shutdown %zu", leak_count); (void)leak_count;
 
 	// Return everything to the system allocator.
 	s_hxmemory_manager.destruct();

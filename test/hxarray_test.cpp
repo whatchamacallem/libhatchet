@@ -8,7 +8,7 @@
 
 #include <limits.h>
 
-#if !HX_NO_LIBCXX
+#if HX_USE_LIBCXX
 #include <utility>
 #endif
 
@@ -83,7 +83,7 @@ public:
 		s_hxtest_current = this;
 	}
 	~hxarray_test_f(void) override {
-		hxassertrelease(m_constructed == m_destructed, "hxarray_test_f Test object lifecycle error.");
+		hxassert_always(m_constructed == m_destructed, "hxarray_test_f Test object lifecycle error.");
 		s_hxtest_current = 0;
 	}
 

@@ -23,7 +23,7 @@ trap '{ set +o xtrace; } 2> /dev/null
     exit 1
 ' 1 2 3 6 15
 
-set -o errexit
+set -euo pipefail
 
 # bash only line art.
 colors=(208 214 220 226 190 154 118 82 83 84 85 86 87 45 39 33

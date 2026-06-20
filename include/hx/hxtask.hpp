@@ -16,13 +16,26 @@ public:
 
 	/// Executes the task. This is the main function to implement in derived
 	/// classes. It is also wrapped in a `hxprofiler` scope when called.
+	/// Returns `true` on success or `false` on failure.
 	/// - `q` : Pointer to the task queue managing this task.
-	virtual void execute(hxtask_queue* q_) = 0;
+	virtual bool execute(hxtask_queue*) = 0;
 
-	/// This call is the last time this object is touched by the `hxtask_queue`.
-	/// An `on_completion` override may delete or re-enqueue the `this` pointer. 
+	/// Indicates successful execution. This call is the last time this object
+	/// is touched by the `hxtask_queue`. An `on_completion` override may delete
+	/// or re-enqueue the `this` pointer. 
 	/// - `q` : Pointer to the task queue managing this task.
-	virtual void on_completion(hxtask_queue* q_) { (void)q_; };
+	virtual void on_completion(hxtask_queue*) { }
+
+	/// Indicates failed execution. This call is the last time this object is
+	/// touched by the `hxtask_queue`. An `on_completion` override may delete or
+	/// re-enqueue the `this` pointer. 
+	/// - `q` : Pointer to the task queue managing this task.
+	virtual void on_failure(hxtask_queue*) { }
+
+	/// Indicates cancelled execution. This call is the last time this object is
+	/// touched by the `hxtask_queue`. WARNING: on_cancel may not reenqueue.
+	/// - `q` : Pointer to the task queue managing this task.
+	virtual void on_cancel(hxtask_queue*) { }
 
 	/// Returns the label of the task, or `"task"` by default.
 	virtual const char* get_label(void) const { return "task"; }
@@ -32,7 +45,11 @@ private:
 
 	// Reduce confusion by separating these out.
 	void process(hxtask_queue* q_) {
-		execute(q_);
-		on_completion(q_);
+		if(execute(q_)) {
+			on_completion(q_);
+		}
+		else {
+			on_failure(q_);
+		}
 	}
 };

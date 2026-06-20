@@ -93,7 +93,7 @@ void hxdetail_::hxconsole_register_(hxconsole_hash_table_node_* node) {
 	hxassertmsg(node->hash_key().str_ && node->command_(), "invalid_parameter");
 	hxassertmsg(!hxconsole_commands_().find(node->hash_key()), "command_reregistered %s", node->hash_key().str_);
 
-	hxconsole_commands_().insert(hxptr<hxconsole_hash_table_node_, hxdo_not_delete>(node));
+	hxconsole_commands_().insert(node);
 }
 
 // Nodes are statically allocated. Do not delete.
@@ -115,7 +115,7 @@ bool hxconsole_exec_line(const char* command) {
 
 	const hxconsole_hash_table_node_* node = hxconsole_commands_().find(hxconsole_hash_table_key_(pos));
 	if(node == hxnull) {
-		hxwarnmsg(0, "unknown_command %s", command);
+		hxwarn_msg(0, "unknown_command %s", command);
 		return false;
 	}
 
@@ -129,12 +129,12 @@ bool hxconsole_exec_line(const char* command) {
 #endif
 	{
 		const bool result = node->command_()->execute_(pos);
-		hxwarnmsg(result, "command_failed %s", command);
+		hxwarn_msg(result, "command_failed %s", command);
 		return result;
 	}
 #ifdef __cpp_exceptions
 	catch (...) {
-		hxwarnmsg(0, "unexpected_exception %s", command);
+		hxwarn_msg(0, "unexpected_exception %s", command);
 		return false;
 	}
 #endif
@@ -152,10 +152,10 @@ bool hxconsole_exec_file(hxfile& file) {
 bool hxconsole_exec_filename(const char* filename) {
 	// Please don't assert.
 	hxfile file(hxfile::in|hxfile::skip_asserts, "%s", filename);
-	hxwarnmsg(file, "cannot open: %s", filename);
+	hxwarn_msg(file, "cannot open: %s", filename);
 	if(file) {
 		const bool is_ok = hxconsole_exec_file(file);
-		hxwarnmsg(is_ok, "encountering errors: %s", filename);
+		hxwarn_msg(is_ok, "encountering errors: %s", filename);
 		return is_ok;
 	}
 	return false;
@@ -166,7 +166,7 @@ bool hxconsole_exec_filename(const char* filename) {
 
 // Lists variables and commands in order.
 bool hxconsole_help(void) {
-#if (HX_RELEASE) < 2
+#if (HX_HARDENING_MODE) > HX_HARDENING_MODE_STANDARD
 	hxinit();
 	const hxsystem_allocator_scope temporary_stack(hxsystem_allocator_temporary_stack);
 	hxarray<const hxconsole_hash_table_node_*> cmds;
@@ -190,7 +190,7 @@ bool hxconsole_help(void) {
 	return true;
 }
 
-#if (HX_RELEASE) < 2 && !defined __wasm__
+#if (HX_HARDENING_MODE) > HX_HARDENING_MODE_STANDARD && !defined __wasm__
 
 static bool hxconsole_peek(uint64_t address_, uint32_t bytes_) {
 	hxhex_dump(reinterpret_cast<const void*>(static_cast<uintptr_t>(address_)), bytes_, false);

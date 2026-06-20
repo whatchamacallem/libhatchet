@@ -58,22 +58,22 @@ void hxprofiler_internal_::log_(void) {
 	HX_PROFILER_LOCK_();
 	m_is_started_ = false;
 
-	hxlogconsole("[ ");
+	hxlog_console("[ ");
 	for(size_t i = 0; i < m_records.size(); ++i) {
 		const hxprofiler_record_& rec = m_records[i];
 
-		if(i != 0) { hxlogconsole(",\n"); }
+		if(i != 0) { hxlog_console(",\n"); }
 
 		const hxcycles_t delta = rec.m_end_ - rec.m_begin_;
-		hxlogconsole("{ \"name\":\"%s\", \"ms\":%.15g, \"thread\":\"%x\" }",
+		hxlog_console("{ \"name\":\"%s\", \"ms\":%.15g, \"thread\":\"%x\" }",
 		rec.m_label_, static_cast<double>(delta) * hxmilliseconds_per_cycle,
 		static_cast<unsigned int>(rec.m_thread_id_));
 	}
-	hxlogconsole(" ]\n");
+	hxlog_console(" ]\n");
 }
 
 // ###
-// ### NOTA BENE: Only https://ui.perfetto.dev/ is working at the moment.
+// ### WARNING: Only https://ui.perfetto.dev/ is working at the moment.
 // ###
 void hxprofiler_internal_::write_to_chrome_tracing_(const char* filename) {
 	HX_PROFILER_LOCK_();
@@ -106,7 +106,7 @@ void hxprofiler_internal_::write_to_chrome_tracing_(const char* filename) {
 	}
 	f.print("\n]\n");
 
-	hxlogconsole("wrote %s.\n", filename);
+	hxlog_console("wrote %s.\n", filename);
 }
 
 } // hxdetail_

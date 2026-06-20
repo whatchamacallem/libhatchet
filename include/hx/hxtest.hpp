@@ -46,7 +46,7 @@
 ///   | Macro | Assertion |
 ///   | --- | --- |
 ///   | `SUCCEED(void)` | Marks the current test as successful without any checks. |
-///   | `FAIL(void)` | NOTA BENE. Calls `return`. Marks the current test as failed. |
+///   | `FAIL(void)` | WARNING. Calls `return`. Marks the current test as failed. |
 ///   | `ADD_FAILURE(void)` | Adds a non-fatal failure at the current location. |
 ///   | `ADD_FAILURE_AT(const char* file, size_t line)` | Adds a non-fatal failure at the specified location. |
 ///   | `EXPECT_TRUE(bool x)` | Requires that the condition is true. |
@@ -175,7 +175,7 @@ inline void InitGoogleTest(void) { }
 /// `void SUCCEED(void)` - Marks the current test as successful without any checks.
 #define SUCCEED() hxtest_::dispatcher_().condition_check_(true, __FILE__, __LINE__, "SUCCEED()", false)
 
-/// `void FAIL(void)` - NOTA BENE. Calls `return`. Marks the current test as failed.
+/// `void FAIL(void)` - WARNING. Calls `return`. Marks the current test as failed.
 #define FAIL() do { hxtest_::dispatcher_().condition_check_(false, __FILE__, __LINE__, "FAIL()", false); return; } while (0)
 /// `void ADD_FAILURE(void)` - Adds a non-fatal failure at the current location.
 #define ADD_FAILURE() hxtest_::dispatcher_().condition_check_(false, __FILE__, __LINE__, "ADD_FAILURE()", false)

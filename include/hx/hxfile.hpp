@@ -47,7 +47,7 @@ extern hxfile hxdev_null;
 /// your target. Allows `hxerr` to be a serial port while file I/O uses a DMA
 /// controller.
 ///
-/// NOTA BENE: `get_position`/`set_position` over 4 GiB is not supported on
+/// WARNING: `get_position`/`set_position` over 4 GiB is not supported on
 /// Windows. As well, `size_t` is limited to 4 GiB on all 32-bit platforms.
 class hxfile {
 public:

@@ -18,14 +18,14 @@ extern "C" {
 hxattr_nodiscard const char* hxbasename(const char* path_) hxattr_nonnull(1);
 
 /// `hxfloat_dump` - Prints an array of floating point values. No output is
-/// produced when `HX_RELEASE >= 2`.
+/// produced when `HX_HARDENING_MODE < HX_HARDENING_MODE_VERBOSE`.
 /// - `address` : Non-null pointer to the start of the float array.
 /// - `floats` : The number of floats to print.
 void hxfloat_dump(const float* address_, size_t floats_) hxattr_nonnull(1) hxattr_cold;
 
 /// `hxhex_dump` - Prints an array of bytes formatted in hexadecimal. Additional
 /// information provided when pretty is non-zero. No output is produced when
-/// `HX_RELEASE >= 2`.
+/// `HX_HARDENING_MODE < HX_HARDENING_MODE_VERBOSE`.
 /// - `address` : Non-null pointer to the start of the byte array.
 /// - `bytes` : The number of bytes to print.
 /// - `pretty` : Set non-zero to include extended visualization.
@@ -245,7 +245,7 @@ hxattr_nodiscard constexpr bool hxisspace(char ch_) {
 }
 
 /// Returns `log2(n)` as an integer which is the power of 2 of the largest bit
-/// in `n`. NOTA BENE: `hxlog2i(0)` is currently -127 and is undefined.
+/// in `n`. WARNING: `hxlog2i(0)` is currently -127 and is undefined.
 /// - `i` : A `uint32_t`.
 hxattr_nodiscard inline int hxlog2i(uint32_t i_) {
 	// Use the floating point hardware because this isn't important enough.

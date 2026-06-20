@@ -167,11 +167,13 @@ const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporar
 		EXPECT_EQ(const_table.find(k), node);
 		EXPECT_EQ(const_table.find(k, const_table.begin()), hxnullptr);
 
-		// extract() hit and miss.
-		EXPECT_EQ(table.extract(k), node);
-		EXPECT_EQ(table.extract(k), hxnullptr);
-
-		EXPECT_EQ(table.insert(hxptr<hxtest_integer>(node)), node);
+		// extract() hit: returns hxptr owning the node; miss: returns empty hxptr.
+		{
+			hxptr<hxtest_integer> extracted = table.extract(k);
+			EXPECT_EQ(extracted.get(), node);
+			EXPECT_EQ(table.extract(k), hxnullptr);
+			EXPECT_EQ(table.insert(hxmove(extracted)), node);
+		}
 		// release_all() removes all nodes without deleting them.
 		table.release_all();
 		EXPECT_EQ(table.find(k), hxnullptr);
@@ -330,9 +332,8 @@ TEST_F(hxhash_table_test_f, multiple) {
 			EXPECT_EQ(table.erase(i), 2);
 		}
 		for(int i = (size_i/2); i < size_i; ++i) {
-			hxtest_integer* ti = table.extract(i);
+			hxptr<hxtest_integer> ti = table.extract(i);
 			EXPECT_EQ(ti->hash_key(), i);
-			hxdelete(ti);
 		}
 
 		// Check properties of size_i/2 remaining keys.

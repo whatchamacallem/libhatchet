@@ -5,9 +5,9 @@
 
 #include "libhatchet.h"
 
-#if !HX_NO_LIBCXX
+#if HX_USE_LIBCXX
 #include <initializer_list>
-#else // HX_NO_LIBCXX
+#else // !HX_USE_LIBCXX
 
 /// \cond HIDDEN
 namespace std {
@@ -38,4 +38,4 @@ private:
 } // namespace std
 /// \endcond
 
-#endif // HX_NO_LIBCXX
+#endif // !HX_USE_LIBCXX

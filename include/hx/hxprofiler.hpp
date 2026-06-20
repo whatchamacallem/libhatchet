@@ -89,7 +89,7 @@ inline hxcycles_t hxtime_sample_cycles(void);
 #define hxprofiler_log() HX_PROFILE_ONLY_(g_hxprofiler_.log_())
 
 /// ###
-/// ### NOTA BENE: Only https://ui.perfetto.dev/ is working at the moment.
+/// ### WARNING: Only https://ui.perfetto.dev/ is working at the moment.
 /// ###
 ///
 /// `hxprofiler_write_to_chrome_tracing(const char* filename)` - Stops sampling

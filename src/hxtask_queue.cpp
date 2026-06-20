@@ -76,7 +76,7 @@ hxtask_queue::~hxtask_queue(void) {
 
 void hxtask_queue::enqueue(hxtask* task, int priority) {
 	record_t entry = { task, priority
-#if (HX_RELEASE) == 0
+#if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
 		, task->get_label()
 #endif
 	};
@@ -84,7 +84,7 @@ void hxtask_queue::enqueue(hxtask* task, int priority) {
 #if HX_USE_THREADS
 	const hxunique_lock lock_(m_mutex_);
 	if(m_thread_pool_size_ > 0) {
-		hxassertrelease(m_queue_run_level_ == run_level_running_, "stopped_queue");
+		hxassert_hard(m_queue_run_level_ == run_level_running_, "stopped_queue");
 		m_tasks_.push_heap(entry);
 		m_cond_var_new_tasks_.notify_one();
 	}

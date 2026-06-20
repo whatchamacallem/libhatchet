@@ -1,19 +1,24 @@
 {
+  "respectGitignore": true,
   "env": {
     "CLAUDE_CODE": "1"
   },
   "permissions": {
     "allow": [
       "Bash(*)",
-      "Edit",
-      "Write",
-      "WebSearch",
-      "WebFetch",
-      "Skill(update-config)",
-      "Skill(update-config:*)"
+      "Edit(*)",
+      "Glob(*)",
+      "Grep(*)",
+      "Read(*)",
+      "Skill(*)",
+      "WebFetch(*)",
+      "WebSearch(*)",
+      "Write(*)",
+      "Read(//c/Program Files/Microsoft Visual Studio/2022/Community/VC/**)"
     ],
     "deny": [
       "Edit(/mnt/**)",
+      "Read(/mnt/**)",
       "Write(/mnt/**)"
     ]
   },

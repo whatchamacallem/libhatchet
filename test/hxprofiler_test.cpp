@@ -39,9 +39,10 @@ public:
 
 	const char* get_label(void) const override { return m_label; }
 
-	void execute(hxtask_queue* q) override {
+	bool execute(hxtask_queue* q) override {
 		(void)q;
 		generate_scopes(m_target_ms);
+		return true;
 	}
 
 	virtual void generate_scopes(float target_ms) {

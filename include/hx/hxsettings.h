@@ -10,15 +10,6 @@
 #error #include <hx/libhatchet.h> instead.
 #endif
 
-#if !defined HX_RELEASE
-#if defined NDEBUG
-#define HX_RELEASE 1
-#else
-/// `HX_RELEASE` - C/C++ optimization level. See the README.md for levels 0..3.
-#define HX_RELEASE 0
-#endif
-#endif
-
 #if defined HX_DOXYGEN_PARSER
 /// `HX_CPLUSPLUS` - A version of `__cplusplus` that is defined to `0` when
 /// `__cplusplus` is undefined. Allows use in C preprocessor statements without
@@ -60,10 +51,10 @@ extern "C" {
 /// and `0` is for no threading.
 #define HX_USE_THREADS 11
 
-/// `HX_NO_LIBCXX`: 1 - Set to 1 when libstdc++/libc++ are not present.
-/// Indicates the implementation is incompatible with the standard C++ library
-/// and may not have a complete C library or an operating system.
-#define HX_NO_LIBCXX 0
+/// `HX_USE_LIBCXX`: 1 - Set to 0 when libstdc++/libc++ are not present.
+/// Indicates whether the implementation is incompatible with the standard C++
+/// library and may not have a complete C library or an operating system.
+#define HX_USE_LIBCXX 1
 
 /// `hxbreakpoint` - Can be conditionally evaluated with the `&&` and `||`
 /// operators. Uses intrinsics when available. (E.g., clang's.) Raises `SIGTRAP`
@@ -133,7 +124,7 @@ extern "C" {
 #define HX_USE_THREADS 11
 #endif
 
-#define HX_NO_LIBCXX 0
+#define HX_USE_LIBCXX 1
 #define hxbreakpoint() (__debugbreak(),true)
 #define hxrestrict __restrict
 
@@ -169,14 +160,13 @@ extern "C" {
 #endif
 
 #if defined __GLIBCXX__ || defined _LIBCPP_VERSION
-#define HX_NO_LIBCXX 0
+#define HX_USE_LIBCXX 1
 #else
 // Always true in C.
-#define HX_NO_LIBCXX 1
+#define HX_USE_LIBCXX 0
 #endif
 
-// gcc can't set a breakpoint properly.
-#if defined __has_builtin && __has_builtin(__builtin_debugtrap)
+#if !defined HX_USE_SIGTRAP && defined __has_builtin && __has_builtin(__builtin_debugtrap)
 #define hxbreakpoint() (__builtin_debugtrap(),true)
 #else
 #define hxbreakpoint() (raise(SIGTRAP),true)
@@ -264,7 +254,7 @@ extern "C" {
 /// `HX_PROFILE`
 /// - `0` Disables code for capturing profiling data.
 /// - `1` Compiles in code. See `hxprofile_scope`.
-#define HX_PROFILE (HX_RELEASE) < 2
+#define HX_PROFILE (HX_HARDENING_MODE) > HX_HARDENING_MODE_STANDARD
 #endif
 
 #if !defined HX_PROFILER_MAX_RECORDS
@@ -299,7 +289,7 @@ struct hxsettings {
 	/// Allows deallocation of permanent resources at system shut down.
 	bool deallocate_permanent;
 
-#if (HX_RELEASE) < 1
+#if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
 	/// Number of asserts to skip, useful for testing assert behavior.
 	int asserts_to_be_skipped;
 #endif

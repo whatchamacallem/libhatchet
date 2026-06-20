@@ -13,11 +13,11 @@ trap '{ set +o xtrace; } 2> /dev/null
     exit 1
 ' 1 2 3 6 15
 
-set -o errexit
+set -eu
 
 export POSIXLY_CORRECT=1
 
-BUILD="-DHX_RELEASE=0 -O0"
+BUILD="-DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG -O0"
 
 ERRORS="-Wall -Wextra -pedantic-errors -Werror -Wfatal-errors -Wcast-qual \
 	-Wdisabled-optimization -Wshadow -Wundef -Wconversion -Wdate-time \
@@ -30,6 +30,7 @@ HX_DIR=`pwd`
 # Build artifacts are not retained.
 rm -rf ./build; mkdir ./build && cd ./build
 
+PIDS=""
 for FILE in $HX_DIR/src/*.c; do
 	ccache clang $BUILD $ERRORS $FLAGS -I$HX_DIR/include \
 		-std=c17 -pthread -c $FILE & PIDS="$PIDS $!"

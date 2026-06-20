@@ -54,18 +54,18 @@ public:
 	void clear(void);
 
 	/// Constructs an element in place at the back using forwarded arguments.
-	/// Returns `false` if the deque is full or unallocated. Exactly the same
-	/// as `push_back`.
+	/// Asserts if the deque is full or unallocated. Exactly the same as
+	/// `push_back`.
 	/// - `args` : Arguments forwarded to `T`'s constructor.
 	template<typename... args_t_>
-	hxattr_nodiscard bool emplace_back(args_t_&&... args_);
+	void emplace_back(args_t_&&... args_);
 
 	/// Constructs an element in place at the front using forwarded arguments.
-	/// Returns `false` if the deque is full or unallocated. Exactly the same
-	/// as `push_front`.
+	/// Asserts if the deque is full or unallocated. Exactly the same as
+	/// `push_front`.
 	/// - `args` : Arguments forwarded to `T`'s constructor.
 	template<typename... args_t_>
-	hxattr_nodiscard bool emplace_front(args_t_&&... args_);
+	void emplace_front(args_t_&&... args_);
 
 	/// Returns `true` if the deque contains no elements.
 	hxattr_nodiscard bool empty(void) const;
@@ -79,28 +79,23 @@ public:
 	/// Returns `true` if the deque is at capacity.
 	hxattr_nodiscard bool full(void) const;
 
-	/// Removes and destroys the back element, returning it in `out`. Returns
-	/// `false` if empty. Asserts if unallocated.
-	/// - `out` : Receives the removed element.
-	hxattr_nodiscard bool pop_back(T_& out_);
+	/// Removes and destroys the back element. Asserts if empty or unallocated.
+	void pop_back(void);
 
-	/// Removes and destroys the front element, returning it in `out`. Returns
-	/// `false` if empty. Asserts if unallocated.
-	/// - `out` : Receives the removed element.
-	hxattr_nodiscard bool pop_front(T_& out_);
+	/// Removes and destroys the front element. Asserts if empty or unallocated.
+	void pop_front(void);
 
-	/// Appends an element at the back using forwarded arguments. Returns `false`
-	/// if the deque is full or unallocated. Exactly the same as `emplace_back`.
+	/// Appends an element at the back using forwarded arguments. Asserts if
+	/// the deque is full or unallocated. Exactly the same as `emplace_back`.
 	/// - `args` : Arguments forwarded to `T`'s constructor.
 	template<typename... args_t_>
-	hxattr_nodiscard bool push_back(args_t_&&... args_);
+	void push_back(args_t_&&... args_);
 
-	/// Prepends an element at the front using forwarded arguments. Returns
-	/// `false` if the deque is full or unallocated. Exactly the same as
-	/// `emplace_front`.
+	/// Prepends an element at the front using forwarded arguments. Asserts if
+	/// the deque is full or unallocated. Exactly the same as `emplace_front`.
 	/// - `args` : Arguments forwarded to `T`'s constructor.
 	template<typename... args_t_>
-	hxattr_nodiscard bool push_front(args_t_&&... args_);
+	void push_front(args_t_&&... args_);
 
 	/// Allocates storage for a dynamic deque. May only be called once and only
 	/// when the deque has no storage. Asserts that the capacity is a power of
@@ -125,162 +120,4 @@ private:
 	size_t m_count_;
 };
 
-// ----------------------------------------------------------------------------
-
-template<typename T_, size_t capacity_>
-hxdeque<T_, capacity_>::hxdeque(size_t dynamic_capacity_)
-	: m_mask_(0u), m_head_(0u), m_tail_(0u), m_count_(0u)
-{
-	hxassertrelease(dynamic_capacity_ == 0u || (dynamic_capacity_ & (dynamic_capacity_ - 1u)) == 0u,
-		"invalid_capacity capacity must be a power of 2");
-	if(dynamic_capacity_ != 0u) {
-		this->reserve_storage_(dynamic_capacity_);
-	}
-	m_mask_ = this->capacity() - 1u;
-}
-
-template<typename T_, size_t capacity_>
-hxdeque<T_, capacity_>::~hxdeque(void) { clear(); }
-
-template<typename T_, size_t capacity_>
-T_& hxdeque<T_, capacity_>::operator[](size_t index_) {
-	hxassertmsg(this->capacity() > 0u, "unallocated_deque");
-	hxassertmsg(index_ < m_count_, "invalid_index %zu", index_);
-	return this->data()[(m_head_ + index_) & m_mask_];
-}
-
-template<typename T_, size_t capacity_>
-const T_& hxdeque<T_, capacity_>::operator[](size_t index_) const {
-	hxassertmsg(this->capacity() > 0u, "unallocated_deque");
-	hxassertmsg(index_ < m_count_, "invalid_index %zu", index_);
-	return this->data()[(m_head_ + index_) & m_mask_];
-}
-
-template<typename T_, size_t capacity_>
-T_& hxdeque<T_, capacity_>::at(size_t index_) {
-	hxassertmsg(this->capacity() > 0u, "unallocated_deque");
-	hxassertmsg(index_ < m_count_, "invalid_index %zu", index_);
-	return this->data()[(m_head_ + index_) & m_mask_];
-}
-
-template<typename T_, size_t capacity_>
-const T_& hxdeque<T_, capacity_>::at(size_t index_) const {
-	hxassertmsg(this->capacity() > 0u, "unallocated_deque");
-	hxassertmsg(index_ < m_count_, "invalid_index %zu", index_);
-	return this->data()[(m_head_ + index_) & m_mask_];
-}
-
-template<typename T_, size_t capacity_>
-T_& hxdeque<T_, capacity_>::back(void) {
-	hxassertmsg(this->capacity() > 0u, "unallocated_deque");
-	hxassertmsg(m_count_ > 0u, "empty_deque");
-	return this->data()[(m_tail_ + m_mask_) & m_mask_];
-}
-
-template<typename T_, size_t capacity_>
-const T_& hxdeque<T_, capacity_>::back(void) const {
-	hxassertmsg(this->capacity() > 0u, "unallocated_deque");
-	hxassertmsg(m_count_ > 0u, "empty_deque");
-	return this->data()[(m_tail_ + m_mask_) & m_mask_];
-}
-
-template<typename T_, size_t capacity_>
-void hxdeque<T_, capacity_>::clear(void) {
-	T_* const data_ = this->data();
-	for(size_t i_ = 0u; i_ < m_count_; ++i_) {
-		data_[(m_head_ + i_) & m_mask_].~T_();
-	}
-	m_head_ = 0u;
-	m_tail_ = 0u;
-	m_count_ = 0u;
-}
-
-template<typename T_, size_t capacity_>
-template<typename... args_t_>
-bool hxdeque<T_, capacity_>::emplace_back(args_t_&&... args_) {
-	return push_back(hxforward<args_t_>(args_)...);
-}
-
-template<typename T_, size_t capacity_>
-template<typename... args_t_>
-bool hxdeque<T_, capacity_>::emplace_front(args_t_&&... args_) {
-	return push_front(hxforward<args_t_>(args_)...);
-}
-
-template<typename T_, size_t capacity_>
-bool hxdeque<T_, capacity_>::empty(void) const { return m_count_ == 0u; }
-
-template<typename T_, size_t capacity_>
-T_& hxdeque<T_, capacity_>::front(void) {
-	hxassertmsg(this->capacity() > 0u, "unallocated_deque");
-	hxassertmsg(m_count_ > 0u, "empty_deque");
-	return this->data()[m_head_];
-}
-
-template<typename T_, size_t capacity_>
-const T_& hxdeque<T_, capacity_>::front(void) const {
-	hxassertmsg(this->capacity() > 0u, "unallocated_deque");
-	hxassertmsg(m_count_ > 0u, "empty_deque");
-	return this->data()[m_head_];
-}
-
-template<typename T_, size_t capacity_>
-bool hxdeque<T_, capacity_>::full(void) const { return m_count_ == this->capacity(); }
-
-template<typename T_, size_t capacity_>
-bool hxdeque<T_, capacity_>::pop_back(T_& out_) {
-	hxassertmsg(this->capacity() > 0u, "unallocated_deque");
-	if(m_count_ == 0u) { return false; }
-	m_tail_ = (m_tail_ + m_mask_) & m_mask_;
-	T_* slot_ = this->data() + m_tail_;
-	out_ = hxmove(*slot_);
-	slot_->~T_();
-	--m_count_;
-	return true;
-}
-
-template<typename T_, size_t capacity_>
-bool hxdeque<T_, capacity_>::pop_front(T_& out_) {
-	hxassertmsg(this->capacity() > 0u, "unallocated_deque");
-	if(m_count_ == 0u) { return false; }
-	T_* slot_ = this->data() + m_head_;
-	m_head_ = (m_head_ + 1u) & m_mask_;
-	out_ = hxmove(*slot_);
-	slot_->~T_();
-	--m_count_;
-	return true;
-}
-
-template<typename T_, size_t capacity_>
-template<typename... args_t_>
-bool hxdeque<T_, capacity_>::push_back(args_t_&&... args_) {
-	hxassertmsg(this->capacity() > 0u, "unallocated_deque");
-	if(m_count_ >= this->capacity()) { return false; }
-	T_* slot_ = this->data() + m_tail_;
-	m_tail_ = (m_tail_ + 1u) & m_mask_; ++m_count_;
-	::new(slot_) T_(hxforward<args_t_>(args_)...);
-	return true;
-}
-
-template<typename T_, size_t capacity_>
-template<typename... args_t_>
-bool hxdeque<T_, capacity_>::push_front(args_t_&&... args_) {
-	hxassertmsg(this->capacity() > 0u, "unallocated_deque");
-	if(m_count_ >= this->capacity()) { return false; }
-	m_head_ = (m_head_ + m_mask_) & m_mask_;
-	T_* slot_ = this->data() + m_head_;
-	++m_count_;
-	::new(slot_) T_(hxforward<args_t_>(args_)...);
-	return true;
-}
-
-template<typename T_, size_t capacity_>
-void hxdeque<T_, capacity_>::reserve(size_t dynamic_capacity_) {
-	hxassertrelease(dynamic_capacity_ > 0u && (dynamic_capacity_ & (dynamic_capacity_ - 1u)) == 0u,
-		"invalid_capacity capacity must be a power of 2");
-	this->reserve_storage_(dynamic_capacity_);
-	m_mask_ = this->capacity() - 1u;
-}
-
-template<typename T_, size_t capacity_>
-size_t hxdeque<T_, capacity_>::size(void) const { return m_count_; }
+#include "detail/hxdeque.inl"

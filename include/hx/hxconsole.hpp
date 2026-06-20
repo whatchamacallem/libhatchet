@@ -5,7 +5,7 @@
 
 /// \file hx/hxconsole.hpp Implements a simple console for debugging, remote use
 /// or for parsing configuration files. Output is directed to the system log
-/// with `hxloglevel_console`. Requires C++20 or later.
+/// with `hxlog_level_console`. Requires C++20 or later.
 
 #include "libhatchet.h"
 
@@ -72,7 +72,8 @@ bool hxconsole_exec_file(hxfile& file_);
 bool hxconsole_exec_filename(const char* filename_) hxattr_nonnull(1);
 
 /// `hxconsole_help` - Logs every console symbol to the console log when
-/// `HX_RELEASE < 2`. Otherwise returns true without producing output.
+/// `HX_HARDENING_MODE > HX_HARDENING_MODE_STANDARD`. Otherwise returns true
+/// without producing output.
 bool hxconsole_help(void);
 
 // Include internals

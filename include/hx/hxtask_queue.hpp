@@ -3,29 +3,21 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-// A few things are missing: No task dependency / ordering mechanism is
-// provided. For efficiency this would make more sense as a second layer on top
-// of hxtask_queue. Thread affinity has not been added for no other reason than
-// it is not portable.
-
-// TODO: Consider adding try_enqueue. Is this a good problem to have?
-
 #include "libhatchet.h"
 #include "hxarray.hpp"
 #include "hxtask.hpp"
 #include "hxthread.hpp"
 
-/// `hxtask_queue` - Provides a priority queue of tasks and a worker thread pool.
-/// Implements single-threaded task queuing when `HX_USE_THREADS=0`. Does not
-/// support scheduling tasks that are not read to run. Handle that at a higher
-/// level. See `<hx/hxtask.hpp>`.
+/// `hxtask_queue` - Provides a priority queue of tasks and a worker thread
+/// pool. Implements single-threaded task queuing when `HX_USE_THREADS=0`. For
+/// DAG dependency tracking see `<hx/hxtask_dag_node.hpp>`.
 class hxtask_queue {
 public:
 	/// `record_t` - Iterated over by `all_of`, `any_of`, `erase_if` and
-	/// `for_each`. callables passed to either of `erase_if` or `for_each` can
-	/// modify their `record_t` callable args in order to re-prioritize the
-	/// queue. This also allows examining the state of the queue in the debugger
-	/// watch window.
+	/// `for_each`. Callables passed to either of `erase_if` or `for_each` can
+	/// modify their `record_t` callable arg in order to re-prioritize the
+	/// queue. This object allows examining the state of the queue in the
+	/// debugger watch window.
 	class record_t {
 	public:
 		hxtask* task;
@@ -33,7 +25,7 @@ public:
 
 		bool operator<(const record_t& x_) const { return this->priority < x_.priority; }
 
-#if (HX_RELEASE) == 0
+#if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
 		const char* label;
 		~record_t() { ::memset((void*)this, 0xefu, sizeof *this); } // NOLINT
 #endif
@@ -63,15 +55,16 @@ public:
 	template<typename callable_t_>
 	hxattr_nodiscard bool any_of(callable_t_&& fn_) const;
 
-	/// Removes a specific queued task without executing it. Returns true if the
-	/// task was found and removed. Thread-safe. Returns false if the task is
-	/// already executing or was not queued.
+	/// Returns true if the task was found and removed. Calls `on_cancel` on the
+	/// task if found. Thread-safe. Returns false if the task is already
+	/// executing or was not queued.
 	/// - `task` : Non-null pointer to the task to cancel.
-	bool cancel(const hxtask* task_) hxattr_nonnull(2);
+	bool cancel(hxtask* task_) hxattr_nonnull(2);
 
-	/// Removes all queued tasks without executing them. Thread-safe. Does not
-	/// affect tasks that are already executing. Subtasks enqueued by executing
-	/// tasks after a call to `clear` will remain in the queue.
+	/// Removes all queued tasks without executing them. Does not call
+	/// `on_cancel` on each. Does not affect tasks that are already executing.
+	/// Subtasks enqueued by executing tasks after a call to `clear` will remain
+	/// in the queue.
 	void clear(void);
 
 	/// Returns true when no tasks are queued. Thread-safe.
@@ -86,9 +79,9 @@ public:
 	void enqueue(hxtask* task_, int priority_=0) hxattr_nonnull(2);
 
 	/// Locks the queue and calls `fn` on each task. Removes queued tasks for
-	/// which `fn` evaluates true. The `record_t&` passed to `erase_if` may be
-	/// modified and the tasks will be re-prioritized according to their new
-	/// priorities.
+	/// which `fn` evaluates true. Does not call `on_cancel` on each. The
+	/// `record_t&` passed to `erase_if` may be modified and the tasks will be
+	/// re-prioritized according to their new priorities.
 	/// - `fn` : Predicate accepting a `record_t&`.
 	template<typename callable_t_>
 	size_t erase_if(callable_t_&& fn_);
@@ -99,19 +92,11 @@ public:
 	void for_each(callable_t_&& fn_) const;
 
 	/// Non-const version of `for_each`. This version will perform `make_heap`
-	/// on the queue after calling `fn` on each task record. Reestablishing the
-	/// heap allows rescheduling everything by adjusting `record_t::priority` in
-	/// a lambda. Use `for_each_immutable` to iterate a non-const queue without
-	/// the heap rebuild cost.
+	/// on the queue after calling `fn` on each task record.  The `record_t&`
+	/// passed to `erase_if` may be modified and the tasks will be
+	/// re-prioritized according to their new priorities.
 	template<typename callable_t_>
 	void for_each(callable_t_&& fn_);
-
-	/// Locks the queue and calls `fn` on each task record without rebuilding
-	/// the heap. Use this instead of `for_each` when priorities are not
-	/// modified.
-	/// - `fn` : callable accepting a `record_t&`.
-	template<typename callable_t_>
-	void for_each_immutable(callable_t_&& fn_);
 
 	/// Returns true if the queue capacity has been reached.
 	hxattr_nodiscard bool full(void) const;
@@ -137,6 +122,8 @@ private:
 	hxarray<record_t> m_tasks_;
 
 #if HX_USE_THREADS
+#define hxtask_queue_lock_ const hxunique_lock lock_(m_mutex_)
+
 	friend class hxtask_wait_for_tasks_;
 	friend class hxtask_wait_for_completion_;
 
@@ -160,107 +147,9 @@ private:
 	hxcondition_variable m_cond_var_new_tasks_;
 	hxcondition_variable m_cond_var_completion_;
 	int32_t m_executing_count_;
+#else
+#define hxtask_queue_lock_ ((void)0)
 #endif
 };
 
-template<typename callable_t_>
-bool hxtask_queue::all_of(callable_t_&& fn_) const {
-#if HX_USE_THREADS
-	const hxunique_lock lock_(m_mutex_);
-#endif
-	return m_tasks_.all_of(hxforward<callable_t_>(fn_));
-}
-
-template<typename callable_t_>
-bool hxtask_queue::any_of(callable_t_&& fn_) const {
-#if HX_USE_THREADS
-	const hxunique_lock lock_(m_mutex_);
-#endif
-	return m_tasks_.any_of(hxforward<callable_t_>(fn_));
-}
-
-inline bool hxtask_queue::cancel(const hxtask* task_) {
-#if HX_USE_THREADS
-	const hxunique_lock lock_(m_mutex_);
-#endif
-	const size_t erased_ = m_tasks_.erase_if([task_](const record_t& r_) { return r_.task == task_; });
-	if(erased_ != 0u) {
-		hxmake_heap_(m_tasks_.begin(), m_tasks_.end(), hxkey_less_t<record_t>{});
-		return true;
-	}
-	return false;
-}
-
-inline void hxtask_queue::clear(void) {
-#if HX_USE_THREADS
-	const hxunique_lock lock_(m_mutex_);
-#endif
-	m_tasks_.clear();
-}
-
-inline bool hxtask_queue::empty(void) const {
-#if HX_USE_THREADS
-	const hxunique_lock lock_(m_mutex_);
-#endif
-	return m_tasks_.empty();
-}
-
-template<typename callable_t_>
-size_t hxtask_queue::erase_if(callable_t_&& fn_) {
-#if HX_USE_THREADS
-	const hxunique_lock lock_(m_mutex_);
-#endif
-	const size_t erased_ = m_tasks_.erase_if(hxforward<callable_t_>(fn_));
-	if(erased_ != 0u) {
-		// Restore the heap property all at once. Allows erase_if to modify
-		// priority at the same time.
-		hxmake_heap_(m_tasks_.begin(), m_tasks_.end(), hxkey_less_t<record_t>{});
-	}
-	return erased_;
-}
-
-template<typename callable_t_>
-void hxtask_queue::for_each(callable_t_&& fn_) const {
-#if HX_USE_THREADS
-	const hxunique_lock lock_(m_mutex_);
-#endif
-	m_tasks_.for_each(hxforward<callable_t_>(fn_));
-}
-
-template<typename callable_t_>
-void hxtask_queue::for_each(callable_t_&& fn_) {
-#if HX_USE_THREADS
-	const hxunique_lock lock_(m_mutex_);
-#endif
-	m_tasks_.for_each(hxforward<callable_t_>(fn_));
-
-	// Restore the heap property. Use "for_each_immutable" when not modifying priorities.
-	hxmake_heap_(m_tasks_.begin(), m_tasks_.end(), hxkey_less_t<record_t>{});
-}
-
-template<typename callable_t_>
-void hxtask_queue::for_each_immutable(callable_t_&& fn_) {
-#if HX_USE_THREADS
-	const hxunique_lock lock_(m_mutex_);
-#endif
-	m_tasks_.for_each(hxforward<callable_t_>(fn_));
-}
-
-inline bool hxtask_queue::full(void) const {
-#if HX_USE_THREADS
-	const hxunique_lock lock_(m_mutex_);
-#endif
-	return m_tasks_.full();
-}
-
-inline size_t hxtask_queue::max_size(void) const {
-	// Capacity is fixed at construction, no lock needed.
-	return m_tasks_.max_size();
-}
-
-inline size_t hxtask_queue::size(void) const {
-#if HX_USE_THREADS
-	const hxunique_lock lock_(m_mutex_);
-#endif
-	return m_tasks_.size();
-}
+#include "detail/hxtask_queue.inl"

@@ -3,8 +3,8 @@
 # SPDX-License-Identifier: MIT
 # This file is licensed under the terms of the LICENSE.md file.
 #
-# Tests libhatchet with gcc and clang in a variety of configurations.
-# Tests C99, C17, C++11, and C++17.
+# Tests libhatchet with gcc and clang in a variety of configurations. Tests C99,
+# C17, C++11, and C++17.
 #
 # The -m32 switch enables 32-bit compilation. You will need these packages on
 # Ubuntu:
@@ -28,7 +28,7 @@ trap '{ set +o xtrace; } 2> /dev/null
     exit 1
 ' 1 2 3 6 15
 
-set -o errexit
+set -eu
 
 export POSIXLY_CORRECT=1
 
@@ -66,30 +66,24 @@ rm -rf ./build; mkdir ./build && cd ./build
 # clang
 
 run_clang_build() {
-	N="$1"
-	shift
-	# -DHX_RELEASE=3 converts every hxassert into an assume statement.
-	case ${N-} in 3) ASSUME='-Wno-assume';; *) ASSUME=;; esac
-	EXTRAS="$ASSUME $*"
-
-	echo "clang c17/c++20 -O$N $EXTRAS ..."
+	echo "clang c17/c++20 -O$1 ..."
 
 	# compile C17
-	clang -I../include -DHX_RELEASE=$N -O$N $FLAGS $ERRORS \
+	clang -I../include -DHX_HARDENING_MODE=3-$1 -O$1 $FLAGS $ERRORS \
 		-fdiagnostics-absolute-paths -pthread -std=c17 \
-		$EXTRAS -c ../src/*.c ../test/*.c
+		-c ../src/*.c ../test/*.c
 
 	# generate C++20 pch. clang does this automatically when a c++ header file
 	# is the target. This is just a test.
-	clang++ -I../include -DHX_RELEASE=$N -O$N $FLAGS $ERRORS \
+	clang++ -I../include -DHX_HARDENING_MODE=3-$1 -O$1 $FLAGS $ERRORS \
 		-DHX_USE_THREADS=1 -pthread -std=c++23 \
-		-fno-exceptions -fdiagnostics-absolute-paths $EXTRAS \
+		-fno-exceptions -fdiagnostics-absolute-paths \
 		../include/hx/hxtest.hpp -o hxtest.hpp.pch
 
 	# compile C++23 and link
-	clang++ -I../include -DHX_RELEASE=$N -O$N $FLAGS $ERRORS \
+	clang++ -I../include -DHX_HARDENING_MODE=3-$1 -O$1 $FLAGS $ERRORS \
 		-DHX_USE_THREADS=1 -pthread -std=c++23 \
-		-fno-exceptions -fdiagnostics-absolute-paths $EXTRAS \
+		-fno-exceptions -fdiagnostics-absolute-paths \
 		-include-pch hxtest.hpp.pch ../src/*.cpp ../test/*.cpp *.o \
 		-lpthread -lstdc++ -o hxtest
 
@@ -108,8 +102,8 @@ done
 run_clang_build 3 "$SANITIZE_THREAD" "$@"
 
 # Run the memory sanitizer in debug and with all optimizations on.
-run_clang_build 0 "$SANITIZE_MEMORY" "$@"
 run_clang_build 3 "$SANITIZE_MEMORY" "$@"
+run_clang_build 0 "$SANITIZE_MEMORY" "$@"
 
 # -----------------------------------------------------------------------------
 # gcc
@@ -117,10 +111,10 @@ run_clang_build 3 "$SANITIZE_MEMORY" "$@"
 for I in 0 1 2 3; do
 echo "gcc c99/c++11 -O$I $@ ..."
 
-gcc -I$HX_DIR/include -DHX_RELEASE=$I -O$I $FLAGS $ERRORS \
+gcc -I$HX_DIR/include -DHX_HARDENING_MODE=3-$I -O$I $FLAGS $ERRORS \
 	-pthread -std=c99 -m32 "$@" -c $HX_DIR/src/*.c $HX_DIR/test/*.c
 
-gcc -I$HX_DIR/include -DHX_RELEASE=$I -O$I $FLAGS $ERRORS \
+gcc -I$HX_DIR/include -DHX_HARDENING_MODE=3-$I -O$I $FLAGS $ERRORS \
 	-pthread -std=c++11 -fno-exceptions -fno-rtti "$@" $HX_DIR/src/*.cpp \
 	$HX_DIR/test/*.cpp *.o -lpthread -lstdc++ -m32 -o hxtest
 

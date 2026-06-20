@@ -21,9 +21,9 @@ public:
 	/// Template specialization below should have been selected.
 	static_assert(fixed_capacity_ > 0u, "Fixed capacity must be > 0.");
 
-	/// Initializes memory to `0xab` when `HX_RELEASE < 1`.
+	/// Initializes memory to `0xab` when `HX_HARDENING_MODE == HX_HARDENING_MODE_DEBUG`.
 	hxallocator() {
-#if (HX_RELEASE) < 1
+#if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
 		::memset(m_data_, 0xab, sizeof m_data_);
 #endif
 	}
@@ -103,7 +103,7 @@ protected:
 			hxsystem_allocator_t allocator_=hxsystem_allocator_current,
 			hxalignment_t alignment_=HX_ALIGNMENT) {
 		if(size_ <= m_capacity_) { return; }
-		hxassertrelease(m_capacity_ == 0, "reallocation_disallowed");
+		hxassert_always(m_capacity_ == 0, "reallocation_disallowed");
 		m_data_ = static_cast<T_*>(hxmalloc_ext(sizeof(T_) * size_, allocator_, alignment_));
 		m_capacity_ = size_;
 	}

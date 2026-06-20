@@ -11,10 +11,10 @@
 struct hxsettings g_hxsettings;
 
 void hxsettings_construct(void) {
-	g_hxsettings.log_level = hxloglevel_log;
+	g_hxsettings.log_level = hxlog_level_log;
 	g_hxsettings.deallocate_permanent = false;
 
-#if (HX_RELEASE) < 1
+#if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
 	g_hxsettings.asserts_to_be_skipped = 0;
 #endif
 }

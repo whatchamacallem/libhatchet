@@ -5,7 +5,7 @@
 #
 # sudo apt install musl musl-dev musl-tools
 
-set -o errexit
+set -eu
 
 export POSIXLY_CORRECT=1
 

@@ -15,12 +15,12 @@ trap '{ set +o xtrace; } 2> /dev/null
     exit 1
 ' 1 2 3 6 15
 
-set -o errexit
+set -eu
 
 export POSIXLY_CORRECT=1
 
 # Should detect no C++ standard library.
-BUILD="-DHX_RELEASE=3 -DHX_USE_THREADS=11 -Os -static"
+BUILD="-DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG -DHX_USE_THREADS=11 -Os -static"
 
 ERRORS="-Wall -Wextra -pedantic-errors -Werror -Wfatal-errors -Wcast-qual \
 	-Wdisabled-optimization -Wshadow -Wundef -Wconversion -Wdate-time \

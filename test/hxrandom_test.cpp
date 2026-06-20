@@ -29,7 +29,7 @@ TEST(hxrandom_test, generation) {
 		const float f = rng.generate_f01();
 		const double d = rng.generate_d01();
 
-		// NOTA BENE: While 0.0 is legal, it is being treated as an error
+		// WARNING: While 0.0 is legal, it is being treated as an error
 		// because it is likely to be so. The odds of hitting zero in the first
 		// 200 numbers is effectively zero.
 		EXPECT_TRUE(f > 0.0f && f < 1.0f);

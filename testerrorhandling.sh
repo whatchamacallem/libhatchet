@@ -13,11 +13,9 @@ trap '{ set +o xtrace; } 2> /dev/null
     exit 1
 ' 1 2 3 6 15
 
-set -o errexit
+set -eu
 
-# Test configuration options in ways that are not varied by the release level
-# during normal testing.
-echo "NOTA BENE: These tests will spew errors and still return successfully."
-./testmatrix.sh \
-	'-DHX_MEMORY_MANAGER_DISABLE=(HX_RELEASE==2)' \
-	'-DHX_TEST_ERROR_HANDLING=1'
+# Tests additional configuration options as well.
+echo "WARNING: These tests will spew errors and still return successfully."
+./testmatrix.sh -DHX_TEST_ERROR_HANDLING=1 -DHX_USE_THREADS=0 \
+	'-DHX_MEMORY_MANAGER_DISABLE=(HX_HARDENING_MODE==HX_HARDENING_MODE_STANDARD)'

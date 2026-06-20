@@ -93,7 +93,7 @@ public:
 		m_row_buffer = row_buffer;
 	}
 
-	void execute(hxtask_queue*) override {
+	bool execute(hxtask_queue*) override {
 		hxprofile_scope("row");
 
 		const double col_scale = m_zoom / 80.0;
@@ -124,6 +124,7 @@ public:
 		}
 		dst[80] = '\n';
 		dst[81] = '\0';
+		return true;
 	}
 
 	const char* get_label(void) const override { return "row"; }

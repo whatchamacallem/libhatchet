@@ -42,7 +42,7 @@ hxthread::return_t hxthread_test_func_notify_one(hxthread_test_parameters_t* par
 	hxunique_lock lock(*parameters->mutex);
 	while(!*parameters->ready) {
 		const bool wait_result = parameters->condition_variable->wait(lock);
-		hxassertrelease(wait_result, "wait"); (void)wait_result;
+		hxassert_always(wait_result, "wait"); (void)wait_result;
 	};
 	return 0;
 }
@@ -51,7 +51,7 @@ hxthread::return_t hxthread_test_func_notify_all(hxthread_test_parameters_t* par
 	hxunique_lock lock(*parameters->mutex);
 	while(!*parameters->ready) {
 		const bool wait_result = parameters->condition_variable->wait(lock);
-		hxassertrelease(wait_result, "wait"); (void)wait_result;
+		hxassert_always(wait_result, "wait"); (void)wait_result;
 	}
 	if(parameters->woken != hxnull) {
 		++(*parameters->woken);
@@ -69,7 +69,7 @@ hxthread::return_t hxthread_test_func_wait_notify_sequence(hxthread_test_paramet
 	hxunique_lock lock(*parameters->mutex);
 	while(!*parameters->ready) {
 		const bool wait_result = parameters->condition_variable->wait(lock);
-		hxassertrelease(wait_result, "wait"); (void)wait_result;
+		hxassert_always(wait_result, "wait"); (void)wait_result;
 	}
 	return 0;
 }

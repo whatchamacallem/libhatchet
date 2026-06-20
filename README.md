@@ -30,24 +30,23 @@ allocators.
 
 <img src="libhatchet.jpg" alt="banner" width="400" height="400" align="right" hspace="20">
 
-Build configurations are controlled via `HX_RELEASE`, which defines optimization
-levels while allowing separate compiler optimization settings for debugging
-purposes:
-
-- **0**: Debug build with comprehensive asserts using verbose strings. Use this
-  if you need a "hardened implementation" for testing. Minor surgery would be
-  required to enable all asserts in a release build without adding debug
-  strings.
-- **1**: Release build with critical asserts and warnings (suitable for internal
-  `RelWithDebInfo` builds).
-- **2**: Optimized release build with minimal strings and critical asserts only.
-- **3**: Maximum optimization with no runtime checks. NOTA BENE: All asserts are
-  converted into statements that cause the compiler to optimize as if they were
-  true.
-
 ## Key Features
 
-- **Portability**: libhatchet can easily be made to run on top of any old
+- **Library hardening and asserts** are controlled via `HX_HARDENING_MODE`.
+
+  E.g. usage is `-DHX_HARDENING_MODE=HX_HARDENING_MODE_NONE`. See `libhatchet.h`
+  for the different kinds of asserts available.
+
+  - `HX_HARDENING_MODE_NONE`: Omits library hardening and disables all asserts.
+  - `HX_HARDENING_MODE_STANDARD`: Provides hardening but saves space by omitting
+    verbose output. Meets the requirements of the C++ standard.
+  - `HX_HARDENING_MODE_VERBOSE`: Provides verbose messages, suitable for
+    internal release. Meets the requirements of the C++ standard.
+  - `HX_HARDENING_MODE_DEBUG`: Provides comprehensive asserts and verbose
+    output.
+
+- **Portability**: Porting to different versions of the C++ standard library are
+  no longer a concern. libhatchet can easily be made to run on top of any old
   embedded C99 library. musl libc is recommended for embedded Linux and is
   widely packaged: <https://musl.libc.org/>. No other C++ runtime or C++ code is
   required. pthreads or C99's `<thread.h>` may be used for threading, which are
@@ -72,7 +71,8 @@ purposes:
 - **Testing Framework**: Safer, lighter, debuggable reimplementation of core
   Google Test functionality.
 
-- **Task Queue**: An unopinionated task queue with a worker pool.
+- **Task Queue**: An unopinionated task queue with priorities and a worker pool.
+  An execution graph is also available as a layer on top.
 
 - **Containers**: Provides a set of containers designed for environments where
   reallocation is not used. `hxarray` provides a statically or dynamically
@@ -140,7 +140,8 @@ show the docs in a mouseover box.
 ## Not Provided
 
 This project was started for the author's own personal use, and it tries to be
-complete enough for ordinary C++ programmers. However, if you find something
+complete enough for ordinary C++ programmers. It was started before a lot of
+similar functionality was added to the standard. However, if you find something
 missing, odds are your favorite AI already knows how add it, or it was omitted
 because the C library was deemed sufficient.
 
@@ -148,7 +149,6 @@ That said, some functionality of the C++ standard library is not worth
 reimplementing here. If you need these things you are advised to use the
 standard library shipped with your compiler.
 
-- Execution control library. This is server architecture.
 - Iterators Library. This codebase intentionally deemphasizes iterators.
 - Ranges Library. This would be a large and pointless rewrite.
 - Strings Library. These are allocation intensive. See the `{fmt}` project.
@@ -169,9 +169,9 @@ scripts. The latest MSVC 2022 should be working with most warnings enabled as
 well. Although the MSVC static analyzer is not being tested.
 
 The scripted builds exercise the following toolchains, language modes, and
-`HX_RELEASE` combinations:
+`HX_HARDENING_MODE` combinations:
 
-| Script | Toolchain | Language Modes | `HX_RELEASE` | Notes |
+| Script | Toolchain | Language Modes | `HX_HARDENING_MODE` | Notes |
 | --- | --- | --- | --- | --- |
 | `debugbuild.sh` | `clang`/`clang++` | C17, C++23 | 0 | 32-bit debug build with ccache and no exceptions/RTTI. |
 | `testcmake.sh` | `cmake` + default compiler | C17, C++23 | 0 (default) | Uses the real Google Test and runs `hxtest` and clang-tidy. |
@@ -187,8 +187,12 @@ version of MSVC should be automatically discovered.
 
 ## Project Structure
 
+The scripts are at the top level for easy access.
+
 ```text
 ├─ 📁 .vscode           # The vscode configuration files.
+├─ 📁 example           # Simple program showing usage.
+├─ 📁 gdb               # GDB scripts for the container classes.
 ├─ 📁 include           # This is the directory to add to your include path.
 │   └─ 📁 hx            # These are all the <hx/hx*> header files.
 │       └─ 📁 detail    # These are internal header files.
