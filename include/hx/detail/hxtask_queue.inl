@@ -3,7 +3,11 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-static_assert(LIBHATCHET_VER, "Internal. Do not include this file directly.");
+#ifndef LIBHATCHET_VER
+#error Internal. Do not include this file directly.
+#endif
+
+HX_BEGIN_INL_
 
 template<typename callable_t_>
 bool hxtask_queue::all_of(callable_t_&& fn_) const {
@@ -23,7 +27,7 @@ inline bool hxtask_queue::cancel(hxtask* task_) {
 		hxtask_queue_lock_;
 		erased_ = m_tasks_.erase_if([task_](const record_t& r_) { return r_.task == task_; });
 		if(erased_ != 0u) {
-			hxmake_heap_(m_tasks_.begin(), m_tasks_.end(), hxkey_less_t<record_t>{});
+			hxdetail_::hxmake_heap_(m_tasks_.begin(), m_tasks_.end(), hxkey_less_t<record_t>{});
 		}
 	}
 	if(erased_ != 0u) {
@@ -50,7 +54,7 @@ size_t hxtask_queue::erase_if(callable_t_&& fn_) {
 	if(erased_ != 0u) {
 		// Restore the heap property all at once. Allows erase_if to modify
 		// priority at the same time.
-		hxmake_heap_(m_tasks_.begin(), m_tasks_.end(), hxkey_less_t<record_t>{});
+		hxdetail_::hxmake_heap_(m_tasks_.begin(), m_tasks_.end(), hxkey_less_t<record_t>{});
 	}
 	return erased_;
 }
@@ -66,7 +70,7 @@ void hxtask_queue::for_each(callable_t_&& fn_) {
 	hxtask_queue_lock_;
 	m_tasks_.for_each(hxforward<callable_t_>(fn_));
 
-	hxmake_heap_(m_tasks_.begin(), m_tasks_.end(), hxkey_less_t<record_t>{});
+	hxdetail_::hxmake_heap_(m_tasks_.begin(), m_tasks_.end(), hxkey_less_t<record_t>{});
 }
 
 inline bool hxtask_queue::full(void) const {
@@ -83,3 +87,5 @@ inline size_t hxtask_queue::size(void) const {
 	hxtask_queue_lock_;
 	return m_tasks_.size();
 }
+
+HX_END_INL_

@@ -3,7 +3,9 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-static_assert(LIBHATCHET_VER, "Internal. Do not include this file directly.");
+#ifndef LIBHATCHET_VER
+#error Internal. Do not include this file directly.
+#endif
 
 template<typename iterator_t_, typename less_t_> hxattr_hot hxconstexpr
 void hxinsertion_sort(iterator_t_ begin_, iterator_t_ end_, const less_t_& less_);
@@ -183,4 +185,3 @@ void hxintro_sort_(iterator_t_ begin_, iterator_t_ end_, const less_t_& less_, i
 }
 
 } // namespace hxdetail_ {
-using namespace hxdetail_;

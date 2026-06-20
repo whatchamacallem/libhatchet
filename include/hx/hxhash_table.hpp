@@ -3,8 +3,15 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file hx/hxhash_table.hpp A fixed-size hash table with embedded
-/// singly-linked list buckets.
+/// \file hxhash_table.hpp A fixed-size hash table with embedded singly-linked
+/// list buckets.
+
+#include "libhatchet.h"
+
+// HX_USE_MODULE allows including macros in addition to the hx module.
+#if HX_USE_MODULE
+#error Header does not provide macros only.
+#endif
 
 #include "hxkey.hpp"
 #include "hxptr.hpp"
@@ -160,7 +167,7 @@ private:
 /// ```
 ///
 /// `hx/hxhash_table_nodes.hpp` also provides specializations of the
-/// `hxhash_table` `node_t` template parameter for integers and strings.
+/// `hxhash_table::node_t` template parameter for integers and strings.
 ///
 /// `node_t` must implement the interface/concept described above. If non-zero,
 /// `table_size_bits` configures the hash table size to `2^table_size_bits`.
@@ -303,10 +310,10 @@ public:
 	/// The table must have `multi_t` set to `true`.
 	/// - `allocator` : The memory manager ID to use for allocation. Defaults to
 	///   `hxsystem_allocator_current`.
-	/// - `align` : A mask of low bits to be zeroed out when allocating new
-	///   pointers. Defaults to `HX_ALIGNMENT`.
+	/// - `align` : Alignment to use when allocating new pointers. Defaults to
+	///   `hxalignment`.
 	/// - `args` : Arguments forwarded to the node constructor.
-	template<hxsystem_allocator_t allocator_=hxsystem_allocator_current, hxalignment_t align_=HX_ALIGNMENT,
+	template<hxsystem_allocator_t allocator_=hxsystem_allocator_current, hxalignment_t align_=hxalignment,
 		bool multi_=multi_t_, class... args_t_>
 	hxenable_if_t<multi_, iterator> emplace(args_t_&&... args_);
 
@@ -394,11 +401,11 @@ public:
 	/// The table must have `multi_t` set to `false`.
 	/// - `allocator` : The memory manager ID to use for allocation. Defaults to
 	///   `hxsystem_allocator_current`.
-	/// - `align` : A mask of low bits to be zeroed out when allocating new
-	///   pointers. Defaults to `HX_ALIGNMENT`.
+	/// - `align` : Alignment to use when allocating new pointers. Defaults to
+	///   `hxalignment`.
 	/// - `key` : The key the node will have once constructed.
 	/// - `args` : Arguments forwarded to the node constructor.
-	template<hxsystem_allocator_t allocator_=hxsystem_allocator_current, hxalignment_t align_=HX_ALIGNMENT,
+	template<hxsystem_allocator_t allocator_=hxsystem_allocator_current, hxalignment_t align_=hxalignment,
 		bool multi_=multi_t_, class... args_t_>
 	hxenable_if_t<!multi_, iterator> try_emplace(const typename node_t_::key_t& key_, args_t_&&... args_);
 
@@ -414,7 +421,7 @@ private:
 	const node_t_*const* get_bucket_head_(hxhash_t hash_) const;
 
 	size_t m_size_;
-	hxhash_table_internal_allocator_<node_t_, table_size_bits_> m_table_;
+	hxdetail_::hxhash_table_internal_allocator_<node_t_, table_size_bits_> m_table_;
 };
 
 #include "detail/hxhash_table.inl"

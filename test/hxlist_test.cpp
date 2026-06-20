@@ -16,20 +16,20 @@ struct hxtest_list_node_t : hxlist_node {
 };
 
 // A node type that tracks destructor calls to verify deleter behavior.
-int s_hxlist_test_destructor_count = 0;
+int hxs_list_test_destructor_count = 0;
 
 struct hxtest_list_counted_node_t : hxlist_node {
 	explicit hxtest_list_counted_node_t(int v) : value(v) { }
-	~hxtest_list_counted_node_t(void) { ++s_hxlist_test_destructor_count; }
+	~hxtest_list_counted_node_t(void) { ++hxs_list_test_destructor_count; }
 	int value;
 };
 
 // A custom deleter that tracks how many times it is called.
-int s_hxtest_custom_deleter_count = 0;
+int hxs_test_custom_deleter_count = 0;
 
 struct hxtest_list_custom_deleter_t {
 	void operator()(hxtest_list_counted_node_t* ptr) const {
-		++s_hxtest_custom_deleter_count;
+		++hxs_test_custom_deleter_count;
 		hxdelete(ptr);
 	}
 	operator bool(void) const { return true; }
@@ -218,40 +218,40 @@ TEST(hxlist_test, extract_and_erase) {
 // erase with hxdefault_delete calls destructor on the erased node and on clear.
 TEST(hxlist_test, erase_with_default_deleter_calls_destructor) {
 	const hxsystem_allocator_scope scope(hxsystem_allocator_temporary_stack);
-	s_hxlist_test_destructor_count = 0;
+	hxs_list_test_destructor_count = 0;
 	hxlist<hxtest_list_counted_node_t> list;
 	for(int i = 1; i <= 3; ++i) {
 		hxptr<hxtest_list_counted_node_t> p(hxnew<hxtest_list_counted_node_t>(i));
 		list.push_back(p.release());
 	}
 	list.erase(list.begin());
-	EXPECT_EQ(s_hxlist_test_destructor_count, 1);
+	EXPECT_EQ(hxs_list_test_destructor_count, 1);
 	EXPECT_EQ(list.size(), 2u);
 	EXPECT_EQ(list.front().value, 2);
 	list.clear();
-	EXPECT_EQ(s_hxlist_test_destructor_count, 3);
+	EXPECT_EQ(hxs_list_test_destructor_count, 3);
 }
 
 // erase with hxdo_not_delete override does not call destructor.
 TEST(hxlist_test, erase_with_do_not_delete_override) {
-	s_hxlist_test_destructor_count = 0;
+	hxs_list_test_destructor_count = 0;
 	hxtest_list_counted_node_t a(1);
 	hxlist<hxtest_list_counted_node_t, hxdo_not_delete> list;
 	list.push_back(&a);
 	list.erase(&a);
-	EXPECT_EQ(s_hxlist_test_destructor_count, 0);
+	EXPECT_EQ(hxs_list_test_destructor_count, 0);
 	EXPECT_TRUE(list.empty());
 }
 
 // erase with a custom deleter override is called exactly once per node.
 TEST(hxlist_test, erase_with_custom_deleter_override) {
 	const hxsystem_allocator_scope scope(hxsystem_allocator_temporary_stack);
-	s_hxtest_custom_deleter_count = 0;
+	hxs_test_custom_deleter_count = 0;
 	hxptr<hxtest_list_counted_node_t> n(hxnew<hxtest_list_counted_node_t>(42));
 	hxlist<hxtest_list_counted_node_t, hxdo_not_delete> list;
 	list.push_back(n.release());
 	list.erase(&list.front(), hxtest_list_custom_deleter_t());
-	EXPECT_EQ(s_hxtest_custom_deleter_count, 1);
+	EXPECT_EQ(hxs_test_custom_deleter_count, 1);
 	EXPECT_TRUE(list.empty());
 }
 
@@ -265,13 +265,13 @@ TEST(hxlist_test, clear_empty_list) {
 
 // clear with hxdo_not_delete override unlinks nodes without calling destructor.
 TEST(hxlist_test, clear_with_do_not_delete_override) {
-	s_hxlist_test_destructor_count = 0;
+	hxs_list_test_destructor_count = 0;
 	hxtest_list_counted_node_t a(1), b(2);
 	hxlist<hxtest_list_counted_node_t, hxdo_not_delete> list;
 	list.push_back(&a);
 	list.push_back(&b);
 	list.clear(hxdo_not_delete());
-	EXPECT_EQ(s_hxlist_test_destructor_count, 0);
+	EXPECT_EQ(hxs_list_test_destructor_count, 0);
 	EXPECT_TRUE(list.empty());
 	EXPECT_EQ(list.size(), 0u);
 }
@@ -279,14 +279,14 @@ TEST(hxlist_test, clear_with_do_not_delete_override) {
 // clear with custom deleter override is called for each node.
 TEST(hxlist_test, clear_with_custom_deleter_override) {
 	const hxsystem_allocator_scope scope(hxsystem_allocator_temporary_stack);
-	s_hxtest_custom_deleter_count = 0;
+	hxs_test_custom_deleter_count = 0;
 	hxlist<hxtest_list_counted_node_t, hxdo_not_delete> list;
 	for(int i = 1; i <= 2; ++i) {
 		hxptr<hxtest_list_counted_node_t> p(hxnew<hxtest_list_counted_node_t>(i));
 		list.push_back(p.release());
 	}
 	list.clear(hxtest_list_custom_deleter_t());
-	EXPECT_EQ(s_hxtest_custom_deleter_count, 2);
+	EXPECT_EQ(hxs_test_custom_deleter_count, 2);
 	EXPECT_TRUE(list.empty());
 }
 
@@ -318,7 +318,7 @@ TEST(hxlist_test, reuse_after_release_all) {
 // Destructor calls clear() which invokes deleter on remaining nodes.
 TEST(hxlist_test, destructor_calls_clear) {
 	const hxsystem_allocator_scope scope(hxsystem_allocator_temporary_stack);
-	s_hxlist_test_destructor_count = 0;
+	hxs_list_test_destructor_count = 0;
 	{
 		hxlist<hxtest_list_counted_node_t> list;
 		for(int i = 1; i <= 2; ++i) {
@@ -326,7 +326,7 @@ TEST(hxlist_test, destructor_calls_clear) {
 			list.push_back(p.release());
 		}
 	}
-	EXPECT_EQ(s_hxlist_test_destructor_count, 2);
+	EXPECT_EQ(hxs_list_test_destructor_count, 2);
 }
 
 // Pre-increment steps through all nodes and reaches end() exactly.
@@ -461,7 +461,7 @@ TEST(hxlist_node_test, copy_move_construct_and_assign) {
 // is called for each removed node.
 TEST(hxlist_test, remove_if) {
 	const hxsystem_allocator_scope scope(hxsystem_allocator_temporary_stack);
-	s_hxlist_test_destructor_count = 0;
+	hxs_list_test_destructor_count = 0;
 	// Empty list: loop body never entered, returns 0.
 	{
 		hxlist<hxtest_list_counted_node_t> list;
@@ -476,7 +476,7 @@ TEST(hxlist_test, remove_if) {
 		EXPECT_EQ(list.size(), 2u);
 		list.clear();
 	}
-	s_hxlist_test_destructor_count = 0;
+	hxs_list_test_destructor_count = 0;
 	// Remove front and back (off-by-one), keep middle; deleter called twice.
 	{
 		hxlist<hxtest_list_counted_node_t> list;
@@ -487,12 +487,12 @@ TEST(hxlist_test, remove_if) {
 			return n.value != 2;
 		});
 		EXPECT_EQ(count, 2u);
-		EXPECT_EQ(s_hxlist_test_destructor_count, 2);
+		EXPECT_EQ(hxs_list_test_destructor_count, 2);
 		EXPECT_EQ(list.size(), 1u);
 		EXPECT_EQ(list.front().value, 2);
 		list.clear();
 	}
-	s_hxlist_test_destructor_count = 0;
+	hxs_list_test_destructor_count = 0;
 	// Remove middle, keep front and back; correct neighbors relinked.
 	{
 		hxlist<hxtest_list_counted_node_t> list;
@@ -503,7 +503,7 @@ TEST(hxlist_test, remove_if) {
 			return n.value == 2;
 		});
 		EXPECT_EQ(count, 1u);
-		EXPECT_EQ(s_hxlist_test_destructor_count, 1);
+		EXPECT_EQ(hxs_list_test_destructor_count, 1);
 		EXPECT_EQ(list.front().value, 1);
 		EXPECT_EQ(list.back().value, 3);
 		list.clear();

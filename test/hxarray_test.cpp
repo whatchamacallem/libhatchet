@@ -8,7 +8,7 @@
 
 #include <limits.h>
 
-#if (HX_USE_LIBCXX)
+#if HX_USE_LIBCXX
 #include <utility>
 #endif
 
@@ -16,7 +16,7 @@ hxattr_noinline static void hxtest_gdb_break_hxarray(void) {}
 
 namespace {
 
-class hxarray_test_f* s_hxtest_current = hxnull;
+class hxarray_test_f* hxs_test_current = hxnull;
 
 class hxarray_test_f :
 	public testing::Test
@@ -25,31 +25,31 @@ public:
 	class hxtest_object {
 	public:
 		hxtest_object(void) {
-			++s_hxtest_current->m_constructed;
-			id = s_hxtest_current->m_next_id--;
+			++hxs_test_current->m_constructed;
+			id = hxs_test_current->m_next_id--;
 			moved_from = false;
 		}
 
 		hxtest_object(const hxtest_object& x) {
-			++s_hxtest_current->m_constructed;
+			++hxs_test_current->m_constructed;
 			id = x.id;
 			moved_from = false;
 		}
 		explicit hxtest_object(int32_t x) {
 			EXPECT_GE(x, 0); // User supplied IDs are positive.
-			++s_hxtest_current->m_constructed;
+			++hxs_test_current->m_constructed;
 			id = x;
 			moved_from = false;
 		}
 		hxtest_object(hxtest_object&& x) {
-			++s_hxtest_current->m_constructed;
+			++hxs_test_current->m_constructed;
 			id = x.id;
 			moved_from = false;
 			x.id = 0xefef; // Poison value;
 			x.moved_from = true;
 		}
 		~hxtest_object(void) {
-			++s_hxtest_current->m_destructed;
+			++hxs_test_current->m_destructed;
 			id = 0xefef; // Poison value;
 			moved_from = true;
 		}
@@ -76,15 +76,15 @@ public:
 	};
 
 	hxarray_test_f(void) {
-		hxassert(s_hxtest_current == hxnull);
+		hxassert(hxs_test_current == hxnull);
 		m_constructed = 0;
 		m_destructed = 0;
 		m_next_id = -1;
-		s_hxtest_current = this;
+		hxs_test_current = this;
 	}
-	~hxarray_test_f(void) override {
+	~hxarray_test_f(void) {
 		hxassert_always(m_constructed == m_destructed, "hxarray_test_f Test object lifecycle error.");
-		s_hxtest_current = 0;
+		hxs_test_current = 0;
 	}
 
 	bool check_totals(size_t total) const {

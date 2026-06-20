@@ -10,7 +10,7 @@ hxattr_noinline static void hxtest_gdb_break_hxhash_table(void) {}
 
 namespace {
 
-class hxhash_table_test_f* s_hxtest_current = 0;
+class hxhash_table_test_f* hxs_test_current = 0;
 
 class hxhash_table_test_f :
 	public testing::Test
@@ -19,11 +19,11 @@ public:
 	class hxtest_object {
 	public:
 		hxtest_object(void) {
-			++s_hxtest_current->m_constructed;
-			id = s_hxtest_current->m_next_id++;
+			++hxs_test_current->m_constructed;
+			id = hxs_test_current->m_next_id++;
 		}
 		~hxtest_object(void) {
-			++s_hxtest_current->m_destructed;
+			++hxs_test_current->m_destructed;
 			id = -1;
 		}
 
@@ -74,14 +74,14 @@ public:
 	};
 
 	hxhash_table_test_f(void) {
-		hxassert(s_hxtest_current == hxnull);
+		hxassert(hxs_test_current == hxnull);
 		m_constructed = 0;
 		m_destructed = 0;
 		m_next_id = 0;
-		s_hxtest_current = this;
+		hxs_test_current = this;
 	}
-	~hxhash_table_test_f(void) override {
-		s_hxtest_current = 0;
+	~hxhash_table_test_f(void) {
+		hxs_test_current = 0;
 	}
 
 	int32_t m_constructed;

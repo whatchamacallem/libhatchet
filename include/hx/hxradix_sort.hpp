@@ -3,9 +3,14 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file hx/hxradix_sort.hpp Θ(n) radix sort for 32-bit-or-smaller scalar keys.
+/// \file hxradix_sort.hpp Θ(n) radix sort for 32-bit-or-smaller scalar keys.
 
 #include "libhatchet.h"
+
+// HX_USE_MODULE allows including macros in addition to the hx module.
+#if HX_USE_MODULE
+#error Header does not provide macros only.
+#endif
 
 /// A key-value pair used with `hxradix_sort`. Only 32-bit or smaller fixed size
 /// types from `<stdint.h>` are supported for `key_t`. Stores a pointer to

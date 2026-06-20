@@ -5,20 +5,29 @@
 //
 // hxprofiler_internal_ internals. See hxprofiler.hpp instead.
 
-static_assert(LIBHATCHET_VER, "Internal. Do not include this file directly.");
-
-#if !defined HX_USE_PROFILER
-#error #include <hx/hxprofiler.h> instead.
+#if !defined LIBHATCHET_VER
+#error Internal. Do not include this file directly.
 #endif
 
-#if defined _MSC_VER
-#include <intrin.h>
+#if !(HX_USE_PROFILER)
+#define HX_PROFILE_ONLY_(x_) ((void)0)
+#if !(HX_USE_MODULE)
+inline hxcycles_t hxtime_sample_cycles(void) { return 0; }
 #endif
-
-#if (HX_USE_THREADS)
-#define HX_PROFILER_LOCK_() const hxunique_lock hxprofiler_mutex_lock_(g_hxprofiler_.m_mutex_)
 #else
-#define HX_PROFILER_LOCK_() (void)0
+#define HX_PROFILE_ONLY_(x_) x_
+
+#if !(HX_USE_MODULE)
+
+#if defined __wasm__
+// from "emscripten/emscripten.h"
+extern "C" double emscripten_get_now(void);
+#elif defined __x86_64__ || defined __i386__
+#ifdef _MSC_VER
+#include <intrin.h>
+#else
+#include <x86intrin.h>
+#endif
 #endif
 
 inline hxcycles_t hxtime_sample_cycles(void) {
@@ -28,7 +37,7 @@ inline hxcycles_t hxtime_sample_cycles(void) {
 	cycles_ = (uint64_t)t_;
 #elif defined __x86_64__ || defined __i386__
 	cycles_ = __rdtsc();
-#elif defined(_MSC_VER) && (defined(_M_X64) || defined(_M_IX86))
+#elif defined _MSC_VER && (defined _M_X64 || defined _M_IX86)
 	cycles_ = __rdtsc();
 #else
 static_assert(0, "Implement hxtime_sample_cycles.");
@@ -39,7 +48,7 @@ static_assert(0, "Implement hxtime_sample_cycles.");
 namespace hxdetail_ {
 
 // Use direct access to an object with static linkage for speed.
-extern class hxprofiler_internal_ g_hxprofiler_;
+extern class hxprofiler_internal_ hxg_profiler_;
 
 // hxprofiler_internal_ - Manager object for internal use.
 class hxprofiler_internal_ {
@@ -70,7 +79,7 @@ private:
 	template<hxcycles_t min_cycles_> friend class hxprofiler_scope_internal_;
 
 	bool m_is_started_;
-#if (HX_USE_THREADS)
+#if HX_USE_THREADS
 	hxmutex m_mutex_;
 #endif
 	hxarray<hxprofiler_record_, HX_PROFILER_MAX_RECORDS> m_records;
@@ -92,12 +101,15 @@ public:
 		// Avoid overhead in leaf samples.
 		const hxcycles_t t1_ = hxtime_sample_cycles();
 
-		HX_PROFILER_LOCK_();
+		// TODO: Use an atomic increment. Obviously.
+#if HX_USE_THREADS
+		const hxunique_lock hxprofiler_mutex_lock_(hxg_profiler_.m_mutex_);
+#endif
 
-		if(g_hxprofiler_.m_is_started_) {
+		if(hxg_profiler_.m_is_started_) {
 			if((t1_ - m_t0_) >= min_cycles_) {
-				if(!g_hxprofiler_.m_records.full()) {
-					g_hxprofiler_.m_records.emplace_back(
+				if(!hxg_profiler_.m_records.full()) {
+					hxg_profiler_.m_records.emplace_back(
 						m_t0_, t1_, m_label_, static_cast<uint32_t>(hxthread_id()));
 				}
 			}
@@ -113,4 +125,6 @@ private:
 };
 
 } // hxdetail_
-using namespace hxdetail_;
+
+#endif // !(HX_USE_MODULE)
+#endif // HX_USE_PROFILER

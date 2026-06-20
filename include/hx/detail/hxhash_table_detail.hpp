@@ -3,7 +3,9 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-static_assert(LIBHATCHET_VER, "Internal. Do not include this file directly.");
+#ifndef LIBHATCHET_VER
+#error Internal. Do not include this file directly.
+#endif
 
 // hxhash_table internals. See hxhash_table.hpp instead. This is an
 // hxhash_table-specific subclass of hxallocator. C++98 requires it to be
@@ -50,4 +52,3 @@ private:
 };
 
 } // hxdetail_
-using namespace hxdetail_;

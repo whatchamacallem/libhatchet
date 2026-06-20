@@ -3,10 +3,15 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file hxbitset - A fixed-size bitset stored as an array of `size_t` words
+/// \file hxbitset.hpp - A fixed-size bitset stored as an array of `size_t` words
 /// with no heap allocation.
 
 #include "libhatchet.h"
+
+// HX_USE_MODULE allows including macros in addition to the hx module.
+#if HX_USE_MODULE
+#error Header does not provide macros only.
+#endif
 
 /// hxbitset - A fixed-size bitset stored as an array of `size_t` words with no
 /// heap allocation.
@@ -124,10 +129,10 @@ public:
 
 private:
 	static_assert(bit_count_ > 0u, "hxbitset requires bit_count_ > 0.");
-	static constexpr size_t s_bits_per_word_ = sizeof(size_t) * 8u;
-	static constexpr size_t s_words_ = (bit_count_ + s_bits_per_word_ - 1u) / s_bits_per_word_;
-	static constexpr size_t s_trailing_bits_ = bit_count_ % s_bits_per_word_;
-	static constexpr size_t s_trailing_mask_ = s_trailing_bits_ != 0u
+	static hxinline_constexpr size_t s_bits_per_word_ = sizeof(size_t) * 8u;
+	static hxinline_constexpr size_t s_words_ = (bit_count_ + s_bits_per_word_ - 1u) / s_bits_per_word_;
+	static hxinline_constexpr size_t s_trailing_bits_ = bit_count_ % s_bits_per_word_;
+	static hxinline_constexpr size_t s_trailing_mask_ = s_trailing_bits_ != 0u
 		? (static_cast<size_t>(1u) << s_trailing_bits_) - 1u
 		: ~static_cast<size_t>(0u);
 

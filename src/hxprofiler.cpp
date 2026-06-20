@@ -6,7 +6,7 @@
 #include "../include/hx/hxconsole.hpp"
 #include "../include/hx/hxfile.hpp"
 
-#if (HX_USE_PROFILER)
+#if HX_USE_PROFILER
 
 namespace {
 
@@ -38,24 +38,24 @@ hxconsole_command_named(hxprofiler_write_to_chrome_tracing_command_, profilewrit
 
 namespace hxdetail_ {
 
-hxprofiler_internal_ g_hxprofiler_;
+hxprofiler_internal_ hxg_profiler_;
 
 // ----------------------------------------------------------------------------
 // hxprofiler_internal_
 
 void hxprofiler_internal_::start_(void) {
-	HX_PROFILER_LOCK_();
+	const hxunique_lock hxprofiler_mutex_lock_(hxg_profiler_.m_mutex_);
 	m_records.clear();
 	m_is_started_ = true;
 }
 
 void hxprofiler_internal_::stop_(void) {
-	HX_PROFILER_LOCK_();
+	const hxunique_lock hxprofiler_mutex_lock_(hxg_profiler_.m_mutex_);
 	m_is_started_ = false;
 }
 
 void hxprofiler_internal_::log_(void) {
-	HX_PROFILER_LOCK_();
+	const hxunique_lock hxprofiler_mutex_lock_(hxg_profiler_.m_mutex_);
 	m_is_started_ = false;
 
 	hxlog_console("[ ");
@@ -76,7 +76,7 @@ void hxprofiler_internal_::log_(void) {
 // ### WARNING: Only https://ui.perfetto.dev/ is working at the moment.
 // ###
 void hxprofiler_internal_::write_to_chrome_tracing_(const char* filename) {
-	HX_PROFILER_LOCK_();
+	const hxunique_lock hxprofiler_mutex_lock_(hxg_profiler_.m_mutex_);
 	m_is_started_ = false;
 
 	hxfile f(hxfile::out, "%s", filename);

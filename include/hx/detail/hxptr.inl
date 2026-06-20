@@ -3,7 +3,11 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-static_assert(LIBHATCHET_VER, "Internal. Do not include this file directly.");
+#ifndef LIBHATCHET_VER
+#error Internal. Do not include this file directly.
+#endif
+
+HX_BEGIN_INL_
 
 template<typename T_, typename deleter_t_>
 hxconstexpr hxptr<T_, deleter_t_>::hxptr(hxptr&& other_) : m_ptr_(other_.m_ptr_) {
@@ -95,3 +99,5 @@ hxconstexpr void hxptr<T_, deleter_t_>::swap(hxptr& other_) {
 	m_ptr_ = other_.m_ptr_;
 	other_.m_ptr_ = tmp_;
 }
+
+HX_END_INL_

@@ -14,8 +14,6 @@ public:
 		max_tasks = 20
 	};
 
-	~hxtask_queue_test_f(void) override {
-	}
 	class hxtask_test_t : public hxtask {
 	public:
 		hxtask_test_t() : m_exec_count(0), m_reenqueue_count(0) { }

@@ -8,6 +8,9 @@
 # to use NOLINT was made as it is clearer what is happening.
 #
 # Audit the NOLINT markers if low-level memory manipulation is a concern.
+#
+# Using cppcoreguidelines-virtual-class-destructor is not possible because
+# virtual destructors cause link errors when ::delete is not implemented.
 
 Checks: >
   -*,
@@ -24,13 +27,11 @@ Checks: >
   clang-analyzer-security.*,
   clang-analyzer-unix.*,
   clang-analyzer-valist.*,
-  cppcoreguidelines-explicit-virtual-functions,
   cppcoreguidelines-init-variables,
   cppcoreguidelines-interfaces-global-init,
   cppcoreguidelines-narrowing-conversions,
   cppcoreguidelines-pro-type-cstyle-cast,
   cppcoreguidelines-slicing,
-  cppcoreguidelines-virtual-class-destructor,
   google-readability-casting,
   misc-confusable-identifiers,
   misc-const-correctness,
@@ -61,6 +62,8 @@ Checks: >
   -bugprone-implicit-widening-of-multiplication-result,
   -bugprone-multi-level-implicit-pointer-conversion,
   -bugprone-sizeof-expression,
+  -bugprone-undefined-memory-manipulation,
+  -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
   -performance-enum-size,
   -performance-no-int-to-ptr
 FormatStyle: none

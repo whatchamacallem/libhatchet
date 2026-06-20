@@ -3,8 +3,9 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-static_assert(LIBHATCHET_VER, "Internal. Do not include this file directly.");
-static_assert(!HX_USE_GOOGLE_TEST, "Internal. Do not include this file directly.");
+#if !defined LIBHATCHET_VER || (HX_USE_GOOGLE_TEST)
+#error Internal. Do not include this file directly.
+#endif
 
 namespace hxdetail_ {
 
@@ -78,4 +79,3 @@ private:
 };
 
 } // hxdetail_
-using namespace hxdetail_;

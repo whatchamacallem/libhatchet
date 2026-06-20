@@ -8,16 +8,16 @@
 namespace {
 
 // Tracks construction and destruction for lifetime tests.
-int s_hxtest_ctor_count = 0;
-int s_hxtest_dtor_count = 0;
+int hxs_test_ctor_count = 0;
+int hxs_test_dtor_count = 0;
 
 struct hxtest_optional_counted_t {
-	explicit hxtest_optional_counted_t(int v) : value(v) { ++s_hxtest_ctor_count; }
+	explicit hxtest_optional_counted_t(int v) : value(v) { ++hxs_test_ctor_count; }
 	hxtest_optional_counted_t(const hxtest_optional_counted_t& o)
-		: value(o.value) { ++s_hxtest_ctor_count; }
+		: value(o.value) { ++hxs_test_ctor_count; }
 	hxtest_optional_counted_t(hxtest_optional_counted_t&& o)
-		: value(o.value) { ++s_hxtest_ctor_count; }
-	~hxtest_optional_counted_t(void) { ++s_hxtest_dtor_count; }
+		: value(o.value) { ++hxs_test_ctor_count; }
+	~hxtest_optional_counted_t(void) { ++hxs_test_dtor_count; }
 	hxtest_optional_counted_t& operator=(const hxtest_optional_counted_t& o) {
 		value = o.value; return *this;
 	}
@@ -89,23 +89,23 @@ TEST(hxoptional_test, move_construction_from_engaged) {
 
 // Destructor destroys the contained object exactly once.
 TEST(hxoptional_test, destructor_destroys_value) {
-	s_hxtest_ctor_count = 0;
-	s_hxtest_dtor_count = 0;
+	hxs_test_ctor_count = 0;
+	hxs_test_dtor_count = 0;
 	{
 		const hxoptional<hxtest_optional_counted_t> o = hxtest_make_counted(true, 1);
 	}
 	// hxtest_optional_counted_t(v) may be moved into optional storage.
-	EXPECT_TRUE(s_hxtest_ctor_count == 1 || s_hxtest_ctor_count == 2);
-	EXPECT_EQ(s_hxtest_dtor_count, s_hxtest_ctor_count);
+	EXPECT_TRUE(hxs_test_ctor_count == 1 || hxs_test_ctor_count == 2);
+	EXPECT_EQ(hxs_test_dtor_count, hxs_test_ctor_count);
 }
 
 // Destructor on a disengaged optional does not destroy anything.
 TEST(hxoptional_test, destructor_disengaged_no_destroy) {
-	s_hxtest_dtor_count = 0;
+	hxs_test_dtor_count = 0;
 	{
 		const hxoptional<hxtest_optional_counted_t> o = hxtest_make_counted(false);
 	}
-	EXPECT_EQ(s_hxtest_dtor_count, 0);
+	EXPECT_EQ(hxs_test_dtor_count, 0);
 }
 
 // operator* returns a mutable reference to the contained value.
@@ -254,19 +254,19 @@ TEST(hxoptional_test, eq_nullopt_and_value) {
 // reset on an engaged optional destroys the value and disengages.
 TEST(hxoptional_test, reset_engaged_disengages) {
 	hxoptional<hxtest_optional_counted_t> o = hxtest_make_counted(true, 1);
-	s_hxtest_dtor_count = 0;
+	hxs_test_dtor_count = 0;
 	o.reset();
 	EXPECT_FALSE((bool)o);
-	EXPECT_EQ(s_hxtest_dtor_count, 1);
+	EXPECT_EQ(hxs_test_dtor_count, 1);
 }
 
 // reset on a disengaged optional is a no-op.
 TEST(hxoptional_test, reset_disengaged_noop) {
-	s_hxtest_dtor_count = 0;
+	hxs_test_dtor_count = 0;
 	hxoptional<hxtest_optional_counted_t> o = hxtest_make_counted(false);
 	o.reset();
 	EXPECT_FALSE((bool)o);
-	EXPECT_EQ(s_hxtest_dtor_count, 0);
+	EXPECT_EQ(hxs_test_dtor_count, 0);
 }
 
 // swap: both engaged exchanges values; engaged with disengaged transfers value.
@@ -339,9 +339,9 @@ TEST(hxoptional_test, emplace) {
 	o.emplace(42);
 	EXPECT_TRUE((bool)o);
 	EXPECT_EQ(o->value, 42);
-	s_hxtest_dtor_count = 0;
+	hxs_test_dtor_count = 0;
 	o.emplace(2);
-	EXPECT_EQ(s_hxtest_dtor_count, 1);
+	EXPECT_EQ(hxs_test_dtor_count, 1);
 	EXPECT_EQ(o->value, 2);
 	hxoptional<int> n = hxtest_make_int(false);
 	int& ref = n.emplace(55);

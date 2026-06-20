@@ -19,13 +19,13 @@ set -eu
 
 export POSIXLY_CORRECT=1
 
-# Should detect no C++ standard library.
 BUILD="-DHX_USE_LIBCXX=0 -DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG -DHX_USE_THREADS=11"
 
 ERRORS="-Wall -Wextra -pedantic-errors -Werror -Wfatal-errors -Wcast-qual \
-	-Wdisabled-optimization -Wshadow -Wundef -Wconversion -Wdate-time \
+	-Wdisabled-optimization -Wshadow -Wundef -Wconversion -Wdate-time     \
 	-Wmissing-declarations -Wno-assume"
 
+# 32-bit MUSL is not tested as it is unsupported on Ubuntu.
 FLAGS="-Os -static -g -ffunction-sections -fdata-sections -ffast-math"
 
 HX_DIR=`pwd`
@@ -36,15 +36,15 @@ rm -rf ./build; mkdir ./build && cd ./build
 set -o xtrace
 
 musl-gcc $BUILD $ERRORS $FLAGS -I$HX_DIR/include \
-	-std=c17 -c $HX_DIR/src/*.c $HX_DIR/test/*.c
+	-std=c17 -c $HX_DIR/test/*.c
 
 # Test every supported version of the standard without libc++.
 for VERSION in 11 14 17 20; do
 
-# Includes lld specific instruction to dead-strip. musl is the only library.
-musl-gcc $BUILD $ERRORS $FLAGS -I$HX_DIR/include \
-	-std=c++$VERSION -Wl,--gc-sections -fno-exceptions -fno-rtti \
-	$HX_DIR/src/*.cpp $HX_DIR/test/*.cpp *.o -o hxtest
+# -Wl,--gc-sections and -flto=12 should reduce size.
+musl-gcc $BUILD $ERRORS $FLAGS -I$HX_DIR/include -std=c++$VERSION -nostdinc++ \
+    -fno-exceptions -fno-rtti -Wl,--gc-sections -nodefaultlibs -flto=12 \
+	$HX_DIR/src/*.cpp $HX_DIR/test/*.cpp *.o -lc -lpthread -lm -o hxtest
 
 done
 
@@ -59,7 +59,7 @@ strip -o hxtest-strip --strip-unneeded hxtest
 
 cd ..
 
-echo "=========================================================================="
+echo -e "\n\n=========================================================================="
 echo "= Largest elf symbols..."
 echo "=========================================================================="
 ./listsymbols.sh

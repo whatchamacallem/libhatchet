@@ -3,7 +3,14 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file hx/hxoptional.hpp An optional value type.
+/// \file hxoptional.hpp An optional value type.
+
+#include "libhatchet.h"
+
+// HX_USE_MODULE allows including macros in addition to the hx module.
+#if HX_USE_MODULE
+#error Header does not provide macros only.
+#endif
 
 #include "hxutility.h"
 
@@ -161,7 +168,7 @@ public:
 	hxattr_nodiscard T_ value_or(const T_& default_value_) const;
 
 private:
-	alignas(T_) unsigned char m_storage_[sizeof(T_)];
+	alignas(T_) char m_storage_[sizeof(T_)];
 	bool m_engaged_;
 };
 

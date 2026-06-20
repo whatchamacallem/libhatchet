@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file hx/hxsettings.h Compiler detection and target specific C++11/C++14
+/// \file hxsettings.h Compiler detection and target specific C++11/C++14
 /// polyfill. Use `#if (HX_...)` instead of `#ifdef(HX_...)` for all `HX_`* macros.
 
 #if !LIBHATCHET_VER
@@ -24,23 +24,26 @@
 #elif defined __cplusplus
 #define HX_CPLUSPLUS __cplusplus
 #else
+// This is C. Using 0 here avoids warnings.
 #define HX_CPLUSPLUS 0
 #endif
 
-#if HX_CPLUSPLUS
-extern "C" {
-#endif
-
 /// \cond HIDDEN
-/// Rename the hxdetail_ namespace using the version number to something like
-/// `hx31700_`. Also create an identifier that can be used to cause link errors
-/// containing the expected version when linking against old code. This is done
-/// to force updates in a binary release channel. This will not
+// Rename the hxdetail_ namespace using the version number to something like
+// `hx31700_`. Also create an identifier that can be used to cause link errors
+// containing the expected version when linking against old code. This is done
+// to force updates in a binary release channel. This will not
 // evaluate the macro `_`.
 #define hxversion__(prefix_, x_) prefix_ ## x_ ## _
 #define hxversion_(prefix_, x_) hxversion__(prefix_, x_)
-#define g_hxinit_ver_ hxversion_(g_hxinit_ver, LIBHATCHET_VER)
+#define hxg_init_ver_ hxversion_(hxg_init_ver, LIBHATCHET_VER)
 #define hxdetail_ hxversion_(hx, LIBHATCHET_VER)
+
+// These allow excluding .inl files from the modules export block.
+#if !defined HX_BEGIN_INL_
+#define HX_BEGIN_INL_
+#define HX_END_INL_
+#endif
 /// \endcond
 
 // ----------------------------------------------------------------------------
@@ -55,10 +58,6 @@ extern "C" {
 /// `-DHX_USE_LIBCXX=0` to signal the C++ standard library is not in use. The
 /// C++ standard library is not detected automatically because that depends on
 /// header include order.
-#define HX_USE_LIBCXX 1
-
-/// Indicates whether the implementation is incompatible with the standard C++
-/// library and may not have a complete C library or an operating system.
 #define HX_USE_LIBCXX 1
 
 /// `hxbreakpoint` - Can be conditionally evaluated with the `&&` and `||`
@@ -118,7 +117,7 @@ extern "C" {
 #elif defined _MSC_VER
 
 #if defined __clang__
-#error "clang detected masquerading as MSVC - not supported due to intrinsic use"
+#error Clang detected masquerading as MSVC - not supported due to intrinsic use.
 #endif
 
 #if !defined __cpp_exceptions && !defined _HAS_EXCEPTIONS
@@ -129,7 +128,10 @@ extern "C" {
 #define HX_USE_THREADS 11
 #endif
 
+#if !defined HX_USE_LIBCXX
 #define HX_USE_LIBCXX 1
+#endif
+
 #define hxbreakpoint() (__debugbreak(),true)
 #define hxrestrict __restrict
 
@@ -169,6 +171,11 @@ extern "C" {
 // header include order.
 #if !defined HX_USE_LIBCXX
 #define HX_USE_LIBCXX 1
+#endif
+
+// Provide new/delete when the std libray is absent unless overriden.
+#if !defined HX_PROVIDE_NEW_DELETE
+#define HX_PROVIDE_NEW_DELETE !(HX_USE_LIBCXX)
 #endif
 
 #if !defined HX_USE_SIGTRAP && defined __has_builtin && __has_builtin(__builtin_debugtrap)
@@ -211,6 +218,14 @@ extern "C" {
 // ----------------------------------------------------------------------------
 // Target independent.
 
+/// Setting `-DHX_USE_MODULE=1` when using modules (e.g. `import hx;`) will
+/// allow the macros in `<hx/libhatchet.h>`, `<hx/hxconsole.hpp>`,
+/// `<hx/hxprofiler.hpp>` and `<hx/hxtest.hpp>` to be textually included
+/// alongside `import hx;`. See `src/hxmodule.cppm`.
+#if !defined HX_USE_MODULE
+#define HX_USE_MODULE 0
+#endif
+
 #if !defined HX_USE_GOOGLE_TEST
 /// `HX_USE_GOOGLE_TEST` - In case you need to use Google Test. Defaults to `0`.
 #define HX_USE_GOOGLE_TEST 0
@@ -225,7 +240,7 @@ extern "C" {
 /// `HX_USE_PROFILER` - Enable this to use the profiler.
 /// - `0` Disables code for capturing profiling data.
 /// - `1` Compiles in code. See `hxprofile_scope`.
-#define HX_USE_PROFILER (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
+#define HX_USE_PROFILER 0
 #endif
 
 #if !defined HX_PROFILER_MAX_RECORDS
@@ -289,6 +304,11 @@ extern "C" {
 #endif
 /// \endcond
 
+#if !(HX_USE_MODULE)
+#if HX_CPLUSPLUS
+extern "C" {
+#endif
+
 /// `hxsettings` - Constructed by first call to `hxinit` which happens when or
 /// before the system memory allocators construct.
 struct hxsettings {
@@ -304,8 +324,8 @@ struct hxsettings {
 #endif
 };
 
-/// `g_hxsettings` - Global class constructed by `hxinit`.
-extern struct hxsettings g_hxsettings;
+/// `hxg_settings` - Global class constructed by `hxinit`.
+extern struct hxsettings hxg_settings;
 
 /// Internal. Used to reset settings at startup.
 void hxsettings_construct(void);
@@ -313,3 +333,4 @@ void hxsettings_construct(void);
 #if HX_CPLUSPLUS
 } // extern "C"
 #endif
+#endif // HX_USE_MODULE

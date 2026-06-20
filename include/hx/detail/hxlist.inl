@@ -3,7 +3,11 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-static_assert(LIBHATCHET_VER, "Internal. Do not include this file directly.");
+#ifndef LIBHATCHET_VER
+#error Internal. Do not include this file directly.
+#endif
+
+HX_BEGIN_INL_
 
 template<typename node_t_, typename deleter_t_>
 inline hxconstexpr auto hxlist<node_t_, deleter_t_>::const_iterator::operator++(void)
@@ -294,3 +298,5 @@ inline hxconstexpr void hxlist<node_t_, deleter_t_>::extract_(hxlist_node* ptr_)
 	ptr_->m_list_next_->m_list_prev_ = ptr_->m_list_prev_;
 	--m_size_;
 }
+
+HX_END_INL_

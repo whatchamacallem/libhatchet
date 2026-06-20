@@ -3,7 +3,11 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-static_assert(LIBHATCHET_VER, "Internal. Do not include this file directly.");
+#ifndef LIBHATCHET_VER
+#error Internal. Do not include this file directly.
+#endif
+
+HX_BEGIN_INL_
 
 template<size_t bit_count_>
 inline hxconstexpr hxbitset<bit_count_>::hxbitset(size_t val_) {
@@ -169,7 +173,7 @@ inline hxconstexpr hxbitset<bit_count_>& hxbitset<bit_count_>::flip(size_t pos_)
 template<size_t bit_count_>
 inline void hxbitset<bit_count_>::load(const char* src_, size_t len_) {
 	hxassert_hard(len_ <= bytes(), "overflow_load %zu", len_);
-	::memcpy(m_data_, src_, len_); // NOLINT
+	::memcpy(m_data_, src_, len_);
 	m_data_[s_words_ - 1u] &= s_trailing_mask_;
 }
 
@@ -220,3 +224,5 @@ template<size_t bit_count_>
 inline hxconstexpr void hxbitset<bit_count_>::assert_no_trailing_bits_(void) const {
 	hxassertmsg((m_data_[s_words_ - 1u] & ~s_trailing_mask_) == 0u, "trailing_bits_set");
 }
+
+HX_END_INL_

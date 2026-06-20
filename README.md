@@ -19,22 +19,11 @@ unnecessary to step through in the debugger.
 
 <img src="libhatchet.jpg" alt="banner" width="200" height="200" align="right" hspace="20">
 
-Compile times are shockingly fast when using `ccache` without precompiled
-headers. Here is a comparison of the include cost of libhatchet vs. the
-equivalent headers in the standard library. libhatchet intentionally implements
-only a subset of the standard leaving the remaining functionality as an exercise
-for the user. This does not include a comparison between the lightweight
-`<hx/hxtest.hpp>` and Google Test. Comments and blank lines are not included in
-this count as `ccache` prevents the compiler from ever seeing them.
-
-| Library                        |    LOC | LOC mult |     ms |  ms mult |
-|:-------------------------------|-------:|---------:|-------:|---------:|
-| libhatchet  (clang)            |  12685 |        - |     21 |        - |
-| libstdc++   (g++/libstdc++)    | 100382 |     7.9x |     88 |     4.2x |
-| libc++      (clang++/libc++)   | 101535 |     8.0x |    108 |     5.1x |
+Compile times are shockingly fast when using `ninja`+`ccache` without needing
+precompiled headers. A C++20 module is also available in the src directory.
 
 The implementation maintains compatibility with every sensible warning flag and
-with sanitizers for both gcc and clang. Of course, asserts are also widely used.
+with sanitizers for both GCC and Clang. Of course, asserts are also widely used.
 The implementation also avoids dynamic allocations except when initializing
 system allocators.
 
@@ -148,6 +137,7 @@ That said, some functionality of the C++ standard library is not worth
 reimplementing here. If you need these things you are advised to use the
 standard library shipped with your compiler.
 
+- Atomics. The C version of `<stdatomic.h>` is incompatible with gcc++.
 - Iterators Library. This codebase intentionally deemphasizes iterators.
 - Ranges Library. This would be a large and pointless rewrite.
 - Strings Library. These are allocation intensive. See the `{fmt}` project.
@@ -161,8 +151,8 @@ standard library shipped with your compiler.
 
 ## Tested Environments
 
-Almost every reasonable gcc and clang warning flag should be safe to enable.
-clang-tidy is also in use. The tested environment is glibc and musl on Ubuntu
+Almost every reasonable GCC and Clang warning flag should be safe to enable.
+Clang-tidy is also in use. The tested environment is glibc and musl on Ubuntu
 24.04 LTS. See `ubuntu_packages.sh` for a list of required packages for all the
 scripts. The latest MSVC 2022 should be working with most warnings enabled as
 well. Although the MSVC static analyzer is not being tested.

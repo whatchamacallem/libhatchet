@@ -3,7 +3,11 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-static_assert(LIBHATCHET_VER, "Internal. Do not include this file directly.");
+#ifndef LIBHATCHET_VER
+#error Internal. Do not include this file directly.
+#endif
+
+HX_BEGIN_INL_
 
 template<hxarray_concept_ T_, size_t capacity_>
 hxarray<T_, capacity_>::hxarray(void) : m_end_(this->data()) { }
@@ -259,7 +263,7 @@ void hxarray<T_, capacity_>::erase(T_* pos_) {
 		*pos_ = hxmove(*(pos_ + 1));
 		++pos_;
 	}
-	(--m_end_)->~T_();
+	(--m_end_)->T_::~T_();
 }
 
 template<hxarray_concept_ T_, size_t capacity_>
@@ -296,7 +300,7 @@ size_t hxarray<T_, capacity_>::erase_if_heap(callable_t_&& fn_) {
 			++dst_;
 		}
 		else {
-			src_->~T_(); // Removed: destroy without freeing storage.
+			src_->T_::~T_(); // Removed: destroy without freeing storage.
 		}
 	}
 	const size_t removed_ = static_cast<size_t>(m_end_ - dst_);
@@ -314,7 +318,7 @@ void hxarray<T_, capacity_>::erase_unordered(const T_* pos_) {
 		// Having a non-const this pointer provides valid write access.
 		*const_cast<T_*>(pos_) = hxmove(*m_end_);
 	}
-	m_end_->~T_();
+	m_end_->T_::~T_();
 }
 
 template<hxarray_concept_ T_, size_t capacity_>
@@ -469,18 +473,18 @@ template<hxarray_concept_ T_, size_t capacity_>
 template<size_t capacity_x_>
 void hxarray<T_, capacity_>::memcpy(const hxarray<T_, capacity_x_>& x_) {
 	this->resize(x_.size());
-	::memcpy(static_cast<void*>(this->data()), x_.data(), x_.size_bytes()); // NOLINT
+	::memcpy(static_cast<void*>(this->data()), x_.data(), x_.size_bytes());
 }
 
 template<hxarray_concept_ T_, size_t capacity_>
 void hxarray<T_, capacity_>::memset(int byte_) {
-	::memset(static_cast<void*>(this->data()), byte_, this->size_bytes()); // NOLINT
+	::memset(static_cast<void*>(this->data()), byte_, this->size_bytes());
 }
 
 template<hxarray_concept_ T_, size_t capacity_>
 void hxarray<T_, capacity_>::pop_back(void) {
 	hxassert_hard(!this->empty(), "stack_underflow");
-	(--m_end_)->~T_();
+	(--m_end_)->T_::~T_();
 }
 
 template<hxarray_concept_ T_, size_t capacity_>
@@ -489,11 +493,11 @@ void hxarray<T_, capacity_>::pop_heap(void) {
 	T_* hxrestrict begin_ = this->data();
 	--m_end_;
 	if(begin_ == m_end_) {
-		begin_->~T_();
+		begin_->T_::~T_();
 		return;
 	}
 	*begin_ = hxmove(*m_end_);
-	m_end_->~T_();
+	m_end_->T_::~T_();
 	hxdetail_::hxheapsort_heapify_(this->data(), begin_, m_end_, hxkey_less_t<T_>{});
 }
 
@@ -517,7 +521,7 @@ T_& hxarray<T_, capacity_>::push_heap(ref_t_&& arg_) {
 		}
 		// Shifts unconstructed element (the hole) into position.
 		::new(node_) T_(hxmove(*parent_));
-		parent_->~T_();
+		parent_->T_::~T_();
 		node_ = parent_;
 	}
 	// Construct new element.
@@ -591,6 +595,8 @@ void* hxarray<T_, capacity_>::push_back_unconstructed_(void) {
 template<hxarray_concept_ T_, size_t capacity_>
 void hxarray<T_, capacity_>::destruct_(T_* begin_, T_* end_) {
 	while(begin_ != end_) {
-		begin_++->~T_();
+		begin_++->T_::~T_();
 	}
 }
+
+HX_END_INL_

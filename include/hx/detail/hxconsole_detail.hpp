@@ -4,7 +4,9 @@
 // This file is licensed under the MIT license found in the LICENSE.md file.
 // hxconsole inline header and internals. See hxconsole.hpp.
 
-static_assert(LIBHATCHET_VER, "Internal. Do not include this file directly.");
+#ifndef LIBHATCHET_VER
+#error Internal. Do not include this file directly.
+#endif
 
 namespace hxdetail_ {
 
@@ -138,7 +140,6 @@ inline bool hxconsole_is_end_of_line_(const char* str_) {
 
 class hxconsole_command_ {
 public:
-	virtual ~hxconsole_command_() = default;
 	virtual bool execute_(const char* str_) = 0; // Return false for parse errors.
 	virtual void usage_(const char* id_=hxnull) = 0; // Expects command name.
 };
@@ -320,7 +321,7 @@ public:
 	hxconsole_constructor_(command_t_ fn_, const char* id_)
 			: m_node_(hxconsole_hash_table_key_(id_)) {
 		static_assert(sizeof(command_t_) <= sizeof(m_storage_), "command_storage_overflow");
-		::new(m_storage_ + 0) command_t_(fn_);
+		::new(m_storage_ + 0) command_t_(hxmove(fn_));
 		m_node_.set_command_(reinterpret_cast<command_t_*>(m_storage_ + 0));
 		hxconsole_register_(&m_node_);
 	}
@@ -335,4 +336,3 @@ private:
 };
 
 } // hxdetail_
-using namespace hxdetail_;

@@ -3,19 +3,19 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file hx/libhatchet.h
-/// libhatchet. Requires C99 for C. C++11 is minimum for C++. Utilizes
-/// language features up to C++20. Inclusion on the compiler search path is not
-/// required. However, the headers are intended to be included as follows:
-/// `#include <hx/libhatchet.h>`
+/// \file libhatchet.h libhatchet. Requires C99 for C. C++11 is minimum for
+/// C++. Utilizes language features up to C++20. Inclusion on the compiler
+/// search path is not required. However, the headers are intended to be
+/// included as follows: `#include <hx/libhatchet.h>`
 ///
 /// Defines logging macros `hxlog`, `hxlog_release`, `hxlog_console`,
-/// `hxlog_warning` which vary by `HX_HARDENING_MODE` level (0–3) and defines log
-/// verbosity { log, console, warning, assert }.
+/// `hxlog_warning` which vary by `HX_HARDENING_MODE` level (0–3) and defines
+/// log verbosity { log, console, warning, assert }.
 ///
-/// Assertion macros `hxassert`, `hxassertmsg`, `hxassert_hard` are provided
-/// for debugging, active when `HX_HARDENING_MODE != HX_HARDENING_MODE_NONE`. `hxinit` initializes the
-/// platform and `hxshutdown` releases resources when `HX_HARDENING_MODE != HX_HARDENING_MODE_NONE`.
+/// Assertion macros `hxassert`, `hxassertmsg`, `hxassert_hard` are provided for
+/// debugging, active when `HX_HARDENING_MODE != HX_HARDENING_MODE_NONE`.
+/// `hxinit` initializes the platform and `hxshutdown` releases resources when
+/// `HX_HARDENING_MODE != HX_HARDENING_MODE_NONE`.
 
 // Use minimal C style headers. The std:: namespace may not exist. "You can't
 // get there from here."
@@ -27,87 +27,62 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if  !defined __STDC_VERSION__ || __STDC_VERSION__ < 202311l
+#if defined __STDC_VERSION__ && __STDC_VERSION__ < 202311l
 #include <stdbool.h>
 #endif
 
 /// `int LIBHATCHET_VER` - One digit major, and two digit minor and patch
 /// versions. Odd numbered minor versions are development branches.
-#define LIBHATCHET_VER 13400
+#define LIBHATCHET_VER 13604
 
 /// `LIBHATCHET_TAG` - Major, minor and patch version tag name. Odd numbered
 /// minor versions are development branches and their tags end in `-dev`.
-#define LIBHATCHET_TAG "v1.34.0"
+#define LIBHATCHET_TAG "v1.36.4"
 
 #if !defined HX_HARDENING_MODE
-#if defined NDEBUG
-#define HX_HARDENING_MODE HX_HARDENING_MODE_NONE
-#else
 /// `HX_HARDENING_MODE` - Library hardening level. See the README.md for levels.
 #define HX_HARDENING_MODE HX_HARDENING_MODE_DEBUG
 #endif
-#endif
 
 /// `HX_HARDENING_MODE_NONE` - Omits library hardening and disables all asserts.
-#define HX_HARDENING_MODE_NONE     0
-/// `HX_HARDENING_MODE_STANDARD` - Provides hardening but saves space by omitting verbose output.
+#define HX_HARDENING_MODE_NONE 0
+/// `HX_HARDENING_MODE_STANDARD` - Provides hardening but saves space by
+/// omitting verbose output.
 #define HX_HARDENING_MODE_STANDARD 1
-/// `HX_HARDENING_MODE_VERBOSE` - Provides verbose messages, suitable for internal release.
-#define HX_HARDENING_MODE_VERBOSE  2
-/// `HX_HARDENING_MODE_DEBUG` - Provides comprehensive asserts and verbose output.
-#define HX_HARDENING_MODE_DEBUG    3
-
-#include "hxsettings.h"
-#include "hxmemory_manager.h"
-
-#if HX_CPLUSPLUS
-extern "C" {
-#endif
+/// `HX_HARDENING_MODE_VERBOSE` - Provides verbose messages, suitable for
+/// internal release.
+#define HX_HARDENING_MODE_VERBOSE 2
+/// `HX_HARDENING_MODE_DEBUG` - Provides comprehensive asserts and verbose
+/// output.
+#define HX_HARDENING_MODE_DEBUG 3
 
 /// Compile-time assertion for `HX_HARDENING_MODE` [0..3] range.
 #if (HX_HARDENING_MODE) < 0 || (HX_HARDENING_MODE) > 3
 #error HX_HARDENING_MODE must be [0..3]. See <hx/hxsettings.h>.
 #endif
 
-// libhatchet C and C++ API. Above headers are C and C++ too.
+#include "hxsettings.h"
+#if !(HX_USE_MODULE)
+#include "hxmemory_manager.h"
+#endif
 
-/// `hxlog_level_t` - Runtime setting for verbosity of log messages.
-/// Independently controls what messages are compiled in. See
-/// `g_hxsettings.log_level`.
-enum hxlog_level_t {
-	/// Written to `hxout`. Structured output. No automatic newline.
-	hxlog_level_log,
-	/// Written to `hxerr`. Unstructured informative output including error
-	/// messages regarding console commands and `hxtest` results. No automatic
-	/// newline. No news is good news.
-	hxlog_level_console,
-	/// Written to `hxerr`. Warnings about serious problems.
-	hxlog_level_warning,
-	/// Written to `hxerr`. Reason for abnormal termination or test failure.
-	hxlog_level_assert
-};
+// libhatchet C and C++ API. Above headers are C and C++ too.
 
 /// `hxnull` - The null pointer value for a given pointer type represented by
 /// the numeric constant `0`. The C/C++ language standards explicitly define the
 /// meaning of `0` in pointer context as a null pointer of the expected type.
 /// However they do not define whether `NULL` is `0` or `((void*)0)`. `hxnull`
-/// fills that gap by having an unambiguous type. See `hxnullptr`/`hxnullptr_t` if
-/// you need a `std::nullptr` replacement.
+/// fills that gap by having an unambiguous type. See `hxnullptr`/`hxnullptr_t`
+/// if you need a `std::nullptr` replacement.
 #define hxnull 0
-
-/// `hxhash_t` - Unsigned 32-bit hash value. Expect collisions.
-typedef uint32_t hxhash_t;
-
-/// `hxhash_bits` - Number of bits in `hxhash_t`.
-#define hxhash_bits 32u
 
 /// `hxinit` - Initializes the platform if needed. Does a quick version check to
 /// determine if the platform is already correctly initialized first. Designed
 /// to trigger a link error when used against previous versions. It uses
-/// `g_hxinit_ver_` which is renamed to encode the current version. See
-/// `g_hxinit_ver_`. As well, `LIBHATCHET_VER` is checked against the value
+/// `hxg_init_ver_` which is renamed to encode the current version. See
+/// `hxg_init_ver_`. As well, `LIBHATCHET_VER` is checked against the value
 /// hxinit_internal was compiled with.
-#define hxinit() (void)(g_hxinit_ver_ == LIBHATCHET_VER || (hxinit_internal(LIBHATCHET_VER), 0))
+#define hxinit() (void)(hxg_init_ver_ == LIBHATCHET_VER || (hxinit_internal(LIBHATCHET_VER), 0))
 
 #if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG // These are debug facilities.
 
@@ -157,11 +132,6 @@ typedef uint32_t hxhash_t;
 	|| (hxlog_handler_(hxlog_level_assert, __VA_ARGS__), hxassert_handler(__FILE__, __LINE__))  \
 	|| hxbreakpoint())
 
-/// Assert handler. Do not call directly, signature changes and then is removed.
-/// WARNING: Compile errors from consteval code calling this function are
-/// intentional and are how you know a compile time assert has been hit.
-bool hxassert_handler(const char* file_, size_t line_) hxattr_noexcept hxattr_nonnull(1) hxattr_cold;
-
 #else // HX_HARDENING_MODE != HX_HARDENING_MODE_DEBUG
 #define hxassertmsg(x_, ...) ((void)0)
 #define hxassert(x_) ((void)0)
@@ -169,9 +139,6 @@ bool hxassert_handler(const char* file_, size_t line_) hxattr_noexcept hxattr_no
 #define hxassert_always(x_, ...) (void)((bool)(x_) \
 	|| (hxassert_handler(), 0)) // THIS IS USED AS A COMPILE TIME ASSERT.
 
-/// WARNING: Compile errors from consteval code calling this function are
-/// intentional and are how you know a compile time assert has been hit.
-void hxassert_handler(void) hxattr_noexcept hxattr_cold;
 #endif // HX_HARDENING_MODE != HX_HARDENING_MODE_DEBUG
 
 #if (HX_HARDENING_MODE) > HX_HARDENING_MODE_STANDARD
@@ -219,14 +186,80 @@ void hxassert_handler(void) hxattr_noexcept hxattr_cold;
 #define hxassert_hard(x_, ...) ((void)0)
 #endif
 
-/// `hxinit_internal` - Internal. Use `hxinit` instead. It checks `g_hxinit_ver_`.
+/// \cond INTERNAL
+// WARNING: gcc version 13 was reporting the wrong __cplusplus for C++23.
+#if HX_CPLUSPLUS >= 202302L
+// hxconstexpr enables C++23 compatable constexpr usage as it has support for
+// destructors.
+#define hxconstexpr constexpr
+// hxconstexpr hxlog_handler_ is defined below.
+#else
+// Fall back to not using hxconstexpr below C++23.
+#define hxconstexpr
+// Disable the compile time version of hxlog_handler_.
+#define hxlog_handler_ hxlog_handler
+#endif // HX_CPLUSPLUS < 202302L
+
+#if HX_CPLUSPLUS >= 201703L
+// hxconstexpr enables C++17 compatable inline constexpr usage for variables so
+// they can be exported from modules.
+#define hxinline_constexpr inline constexpr
+#else
+// Fall back to not using inline constexpr below C++17.
+#define hxinline_constexpr constexpr
+#endif
+/// \endcond
+
+#if !(HX_USE_MODULE)
+#if HX_CPLUSPLUS
+extern "C" {
+#endif
+
+#if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG // These are debug facilities.
+/// Assert handler. Do not call directly, signature changes and then is removed.
+/// WARNING: Compile errors from consteval code calling this function are
+/// intentional and are how you know a compile time assert has been hit.
+bool hxassert_handler(const char* file_, size_t line_) hxattr_noexcept hxattr_nonnull(1) hxattr_cold;
+#else // HX_HARDENING_MODE != HX_HARDENING_MODE_DEBUG
+/// WARNING: Compile errors from consteval code calling this function are
+/// intentional and are how you know a compile time assert has been hit.
+void hxassert_handler(void) hxattr_noexcept hxattr_cold;
+#endif
+
+/// `hxlog_level_t` - Runtime setting for verbosity of log messages.
+/// Independently controls what messages are compiled in. See
+/// `hxg_settings.log_level`.
+enum hxlog_level_t {
+	/// Written to `hxout`. Structured output. No automatic newline.
+	hxlog_level_log,
+	/// Written to `hxerr`. Unstructured informative output including error
+	/// messages regarding console commands and `hxtest` results. No automatic
+	/// newline. No news is good news.
+	hxlog_level_console,
+	/// Written to `hxerr`. Warnings about serious problems.
+	hxlog_level_warning,
+	/// Written to `hxerr`. Reason for abnormal termination or test failure.
+	hxlog_level_assert
+};
+
+/// `hxhash_t` - Unsigned 32-bit hash value. Expect collisions.
+typedef uint32_t hxhash_t;
+
+#if HX_CPLUSPLUS >= 202002L
+/// `hxhash_bits` - Number of bits in `hxhash_t`.
+inline constexpr hxhash_t hxhash_bits = 32u;
+#else
+#define hxhash_bits 32u
+#endif
+
+/// `hxinit_internal` - Internal. Use `hxinit` instead. It checks `hxg_init_ver_`.
 void hxinit_internal(int version_) hxattr_cold;
 
-/// `g_hxinit_ver_` - Internal. Set to current library version by `hxinit`. This
+/// `hxg_init_ver_` - Internal. Set to current library version by `hxinit`. This
 /// is renamed in settings.h to contain the library version in order to cause
 /// meaningful link errors when linked against stale binaries. The linker symbol
-/// should look like `g_hxinit_ver31700_`.
-extern int g_hxinit_ver_;
+/// should look like `hxg_init_ver31700_`.
+extern int hxg_init_ver_;
 
 /// `hxshutdown` - Terminates service. Releases all resources acquired by the
 /// platform and confirms all memory allocations have been released.
@@ -256,10 +289,6 @@ void hxset_assert_handler(bool (*handler_)(void)) hxattr_noexcept;
 /// \cond INTERNAL
 // WARNING: gcc version 13 was reporting the wrong __cplusplus for C++23.
 #if HX_CPLUSPLUS >= 202302L
-// C++11 and C++23 compatable constexpr use are the only ones used. hxconstexpr
-// enables C++23 compatable constexpr usage as it has support for destructors.
-#define hxconstexpr constexpr
-
 // This allows hxassert_handler and hxlog_handler to be used by compile time
 // asserts in C++23.
 hxattr_noexcept constexpr void hxlog_handler_(enum hxlog_level_t level_, const char* format_, ...) {
@@ -270,14 +299,10 @@ hxattr_noexcept constexpr void hxlog_handler_(enum hxlog_level_t level_, const c
 		va_end(args_);
 	}
 }
-#else
-// Fall back to not using hxconstexpr below C++23.
-#define hxconstexpr
-#define hxlog_handler_ hxlog_handler
 #endif // HX_CPLUSPLUS >= 202302L
-
 /// \endcond
 
 #if HX_CPLUSPLUS
 } // extern "C"
 #endif
+#endif // !HX_USE_MODULE

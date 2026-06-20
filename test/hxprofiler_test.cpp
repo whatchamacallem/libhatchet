@@ -10,11 +10,11 @@
 
 #include <hx/hxtest.hpp>
 
-#if (HX_USE_PROFILER)
+#if HX_USE_PROFILER
 
 namespace {
 
-const char* s_hxtest_labels[] = {
+const char* hxs_test_labels[] = {
 	"Alpha",   "Beta",	 "Gamma",
 	"Delta",   "Epsilon",  "Zeta",
 	"Eta",	 "Theta",	"Iota",
@@ -24,7 +24,7 @@ const char* s_hxtest_labels[] = {
 	"Tau",	  "Upsilon", "Phi",
 	"Chi",	  "Psi",	 "Omega"
 };
-const size_t s_hxtest_num_labels = hxsize(s_hxtest_labels);
+const size_t hxs_test_num_labels = hxsize(hxs_test_labels);
 
 class hxprofiler_task_test : public hxtask {
 public:
@@ -52,7 +52,7 @@ public:
 		// Open up a sub-scope if time allows.
 		if(target_ms >= 2.0f) {
 			const float subtarget = target_ms / 2.0f;
-			const char* sub_label = s_hxtest_labels[static_cast<size_t>(subtarget)];
+			const char* sub_label = hxs_test_labels[static_cast<size_t>(subtarget)];
 			hxprofile_scope(sub_label);
 			generate_scopes(subtarget);
 		}
@@ -112,10 +112,10 @@ TEST(hxprofiler_test, write_to_chrome_tracing_command) {
 #endif
 
 	// Create queue sized to labels with 2 worker threads.
-	hxtask_queue q(s_hxtest_num_labels, 2u);
-	hxprofiler_task_test tasks[s_hxtest_num_labels];
-	for(size_t i = s_hxtest_num_labels; i-- != 0u; ) {
-		tasks[i].construct(s_hxtest_labels[i], static_cast<float>(i));
+	hxtask_queue q(hxs_test_num_labels, 2u);
+	hxprofiler_task_test tasks[hxs_test_num_labels];
+	for(size_t i = hxs_test_num_labels; i-- != 0u; ) {
+		tasks[i].construct(hxs_test_labels[i], static_cast<float>(i));
 		q.enqueue(tasks + i);
 	}
 	// "Execute remaining tasks. The thread calling wait_for_all executes tasks as well."

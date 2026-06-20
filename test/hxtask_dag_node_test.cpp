@@ -4,8 +4,6 @@
 
 #include <hx/hxtest.hpp>
 
-#if !HX_USE_THREADS || HX_CPLUSPLUS >= 202302L
-
 #include <hx/hxtask_dag_node.hpp>
 
 namespace {
@@ -203,5 +201,3 @@ TEST(hxtask_dag_node_test, stress_20_node_dag) {
 		EXPECT_FALSE(nodes[i].m_failed || nodes[i].m_cancelled);
 	}
 }
-
-#endif // HX_CPLUSPLUS >= 202302L

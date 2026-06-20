@@ -3,13 +3,18 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file hx/hxallocator.hpp Similar to std::allocator. Supports static or
+/// \file hxallocator.hpp Similar to `std::allocator`. Supports static or
 /// dynamic allocation.
 
 #include "libhatchet.h"
 
+// HX_USE_MODULE allows including macros in addition to the hx module.
+#if HX_USE_MODULE
+#error Header does not provide macros only.
+#endif
+
 /// A capacity value that allows for dynamic allocation.
-#define hxallocator_dynamic_capacity 0u
+hxinline_constexpr size_t hxallocator_dynamic_capacity = 0u;
 
 /// `hxallocator<1+>` - Provides static allocation when capacity is greater than
 /// zero.
@@ -49,7 +54,7 @@ protected:
 	/// - `alignment` : The alignment of the allocator is checked against this.
 	void reserve_storage_(size_t size_,
 			hxsystem_allocator_t allocator_=hxsystem_allocator_current,
-			hxalignment_t alignment_=HX_ALIGNMENT) {
+			hxalignment_t alignment_=hxalignment) {
 		(void)size_; (void)allocator_; (void)alignment_;
 		hxassertmsg(size_ <= fixed_capacity_, "overflowing_fixed_capacity Buffer overflow.");
 		hxassertmsg(((alignment_ - 1u) & (uintptr_t)this) == 0u,
@@ -98,10 +103,10 @@ protected:
 	/// Capacity is set by first call to reserve_storage and may not be extended.
 	/// - `size` : The number of elements of type `T` to allocate space for.
 	/// - `allocator` : The memory manager ID to use for allocation (default: `hxsystem_allocator_current`)
-	/// - `alignment` : The alignment to use for the allocation. (default: `HX_ALIGNMENT`)
+	/// - `alignment` : The alignment to use for the allocation. (default: `hxalignment`)
 	void reserve_storage_(size_t size_,
 			hxsystem_allocator_t allocator_=hxsystem_allocator_current,
-			hxalignment_t alignment_=HX_ALIGNMENT) {
+			hxalignment_t alignment_=hxalignment) {
 		if(size_ <= m_capacity_) { return; }
 		hxassert_always(m_capacity_ == 0, "reallocation_disallowed");
 		m_data_ = static_cast<T_*>(hxmalloc_ext(sizeof(T_) * size_, allocator_, alignment_));

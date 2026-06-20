@@ -3,7 +3,11 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-static_assert(LIBHATCHET_VER, "Internal. Do not include this file directly.");
+#ifndef LIBHATCHET_VER
+#error Internal. Do not include this file directly.
+#endif
+
+HX_BEGIN_INL_
 
 template<hxhash_table_concept_ node_t_, hxhash_t table_size_bits_, bool multi_t_, typename deleter_t_>
 inline const node_t_&
@@ -343,3 +347,5 @@ inline const node_t_*const* hxhash_table<node_t_, table_size_bits_, multi_t_, de
 	hxassertmsg(index_ < m_table_.capacity(), "internal_error");
 	return m_table_.data() + index_;
 }
+
+HX_END_INL_

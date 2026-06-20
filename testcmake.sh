@@ -58,6 +58,6 @@ cd ..
 # Depends on -DCMAKE_EXPORT_COMPILE_COMMANDS=ON above. These two have to happen
 # together.
 echo 'run-clang-tidy... The "x warnings generated" messages are from system headers.'
-run-clang-tidy -quiet -j 0 -p build src/*.cpp src/*.c test/*.cpp
+run-clang-tidy -quiet -j 0 -p build src/*.cpp test/*.cpp
 
 echo "🪓🪓🪓"

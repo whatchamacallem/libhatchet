@@ -3,11 +3,17 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file hx/hxsort.hpp Sorting utilities: `hxbinary_search`, `hxinsertion_sort`,
-/// `hxheapsort`, and `hxsort`. For scalar key sorting see `hxradix_sort.hpp`.
+/// \file hxsort.hpp Standard sorting utilities. For scalar key sorting see
+/// `hxradix_sort.hpp`.
+
+#include "libhatchet.h"
+
+// HX_USE_MODULE allows including macros in addition to the hx module.
+#if HX_USE_MODULE
+#error Header does not provide macros only.
+#endif
 
 #include "hxkey.hpp"
-
 #include "detail/hxsort_detail.hpp"
 
 /// `hxbinary_search` - Performs a binary search in the range `[first, last)`.
@@ -105,13 +111,13 @@ template<typename iterator_t_, typename less_t_> hxattr_hot hxconstexpr
 void hxheapsort(iterator_t_ begin_, iterator_t_ end_, const less_t_& less_) {
 
 	// This is std::make_heap with __restrict added to pointers.
-	hxmake_heap_<iterator_t_>(begin_, end_, less_);
+	hxdetail_::hxmake_heap_<iterator_t_>(begin_, end_, less_);
 
 	// Swaps the largest values to the end of the array. These two implement
 	// std::pop_heap with __restrict added as well.
 	for(iterator_t_ it_ = end_ - ptrdiff_t{1}; it_ > begin_; --it_) {
 		hxswap(*begin_, *it_);
-		hxheapsort_heapify_<iterator_t_>(begin_, begin_, it_, less_);
+		hxdetail_::hxheapsort_heapify_<iterator_t_>(begin_, begin_, it_, less_);
 	}
 }
 
@@ -134,7 +140,7 @@ void hxheapsort(iterator_t_ begin_, iterator_t_ end_) {
 template<typename iterator_t_, typename less_t_> hxattr_hot hxconstexpr
 void hxsort(iterator_t_ begin_, iterator_t_ end_, const less_t_& less_) {
 	// hxlog2i(0) is undefined but unused in this case.
-	hxintro_sort_<iterator_t_>(begin_, end_, less_, 2 * hxlog2i(static_cast<uint32_t>(end_ - begin_)));
+	hxdetail_::hxintro_sort_<iterator_t_>(begin_, end_, less_, 2 * hxlog2i(static_cast<uint32_t>(end_ - begin_)));
 }
 
 /// `hxsort` (specialization) - An overload of `hxsort` that uses `hxkey_less`.
@@ -144,6 +150,6 @@ void hxsort(iterator_t_ begin_, iterator_t_ end_, const less_t_& less_) {
 template<typename iterator_t_> hxattr_hot hxconstexpr
 void hxsort(iterator_t_ begin_, iterator_t_ end_) {
 	// hxlog2i(0) is undefined but unused in this case.
-	hxintro_sort_<iterator_t_>(begin_, end_, hxkey_less_t<decltype(*begin_)>{},
+	hxdetail_::hxintro_sort_<iterator_t_>(begin_, end_, hxkey_less_t<decltype(*begin_)>{},
 		2 * hxlog2i(static_cast<uint32_t>(end_ - begin_)));
 }

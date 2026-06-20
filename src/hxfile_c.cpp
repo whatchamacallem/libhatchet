@@ -51,8 +51,8 @@ hxfile::hxfile(uint8_t mode, const char* filename, ...) : hxfile() {
 }
 
 hxfile::hxfile(hxfile&& file) {
-	::memcpy((void*)this, &file, sizeof file); // NOLINT
-	::memset((void*)&file, 0x00, sizeof file); // NOLINT
+	::memcpy(static_cast<void*>(this), static_cast<const void*>(&file), sizeof file);
+	::memset(static_cast<void*>(&file), 0x00, sizeof file);
 }
 
 hxfile::~hxfile(void) {
@@ -61,8 +61,8 @@ hxfile::~hxfile(void) {
 
 void hxfile::operator=(hxfile&& file) {
 	close();
-	::memcpy((void*)this, &file, sizeof file); // NOLINT
-	::memset((void*)&file, 0x00, sizeof file); // NOLINT
+	::memcpy(static_cast<void*>(this), static_cast<const void*>(&file), sizeof file);
+	::memset(static_cast<void*>(&file), 0x00, sizeof file);
 }
 
 hxfile::operator bool(void) const {

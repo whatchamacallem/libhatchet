@@ -3,10 +3,15 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file `hxtask` - Pure virtual base class for operations to be performed on a
-/// different thread or at a later time.
+/// \file hxtask.hpp Pure virtual base class for operations to be performed on
+/// a different thread or at a later time.
 
 #include "libhatchet.h"
+
+// HX_USE_MODULE allows including macros in addition to the hx module.
+#if HX_USE_MODULE
+#error Header does not provide macros only.
+#endif
 
 class hxtask_queue;
 
@@ -14,9 +19,6 @@ class hxtask_queue;
 /// different thread or at a later time.
 class hxtask {
 public:
-	/// A virtual destructor.
-	virtual ~hxtask( ) { }
-
 	/// Executes the task. This is the main function to implement in derived
 	/// classes. It is also wrapped in a `hxprofiler` scope when called.
 	/// Returns `true` on success or `false` on failure.

@@ -3,12 +3,18 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file A few utility functions and most standard C++ meta programming functionsb.
+/// \file hxutility.h A few utility functions and most standard C++ meta
+/// programming functions.
 
 #include "libhatchet.h"
 
 #if HX_CPLUSPLUS
 extern "C" {
+
+// HX_USE_MODULE allows including macros in addition to the hx module.
+#if HX_USE_MODULE
+#error Header does not provide macros only.
+#endif
 #endif
 
 // ----------------------------------------------------------------------------
@@ -79,7 +85,7 @@ private:
 /// pointer. Useful when an integer constant arg would be ambiguous or otherwise
 /// break template code. `hxnullptr` is a `hxnullptr_t`. Use plain `hxnull` for
 /// `==` and `!=` comparisons.
-#define hxnullptr hxnullptr_t()
+hxinline_constexpr hxnullptr_t hxnullptr{};
 
 // ----------------------------------------------------------------------------
 // C++ Type Modifiers
@@ -334,9 +340,9 @@ template<typename T_>
 void hxswap_memcpy(T_& x_, T_& y_) {
 	hxassertmsg(&x_ != &y_, "hxswap_memcpy No swapping with self.");
 	char t_[sizeof x_];
-	::memcpy(t_, &y_, sizeof x_); // NOLINT
-	::memcpy(static_cast<void*>(&y_), &x_, sizeof x_); // NOLINT
-	::memcpy(static_cast<void*>(&x_), t_, sizeof x_); // NOLINT
+	::memcpy(t_, &y_, sizeof x_);
+	::memcpy(static_cast<void*>(&y_), &x_, sizeof x_);
+	::memcpy(static_cast<void*>(&x_), t_, sizeof x_);
 }
 
 #else // !HX_CPLUSPLUS

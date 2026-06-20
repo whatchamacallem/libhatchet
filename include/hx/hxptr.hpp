@@ -3,7 +3,15 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file hx/hxptr.hpp A unique owning pointer.
+/// \file hxptr.hpp A unique owning pointer.
+
+#include "libhatchet.h"
+
+// HX_USE_MODULE allows including macros in addition to the hx module.
+#if HX_USE_MODULE
+#error Header does not provide macros only.
+#endif
+
 #include "hxutility.h"
 
 /// `hxptr<T, deleter_t>` - A unique owning pointer. Owns a single dynamically
@@ -111,9 +119,8 @@ public:
 /// failure.
 /// - `allocator` : The memory manager ID to use for allocation. Defaults to
 ///    `hxsystem_allocator_current`.
-/// - `align` : A mask of low bits to be zeroed out when allocating. Defaults
-///    to `HX_ALIGNMENT`.
-template <typename T_, hxsystem_allocator_t allocator_=hxsystem_allocator_current, hxalignment_t align_=HX_ALIGNMENT, typename... args_t_>
+/// - `align` : Alignment to use when allocating. Defaults to `hxalignment`.
+template <typename T_, hxsystem_allocator_t allocator_=hxsystem_allocator_current, hxalignment_t align_=hxalignment, typename... args_t_>
 hxattr_nodiscard hxptr<T_> hxmake_ptr(args_t_&&... args_) {
 	return hxptr<T_>(::new(hxmalloc_ext(sizeof(T_), allocator_, align_)) T_(static_cast<args_t_&&>(args_)...));
 }

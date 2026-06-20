@@ -11,36 +11,36 @@ namespace {
 
 // Lifecycle tracking helper reused across fixture-based tests.
 
-class hxdeque_test_f* s_hxdeque_current = hxnull;
+class hxdeque_test_f* hxs_deque_current = hxnull;
 
 class hxdeque_test_f : public testing::Test {
 public:
 	class hxtest_object {
 	public:
 		hxtest_object(void) {
-			++s_hxdeque_current->m_constructed;
-			id = s_hxdeque_current->m_next_id--;
+			++hxs_deque_current->m_constructed;
+			id = hxs_deque_current->m_next_id--;
 			moved_from = false;
 		}
 		explicit hxtest_object(int32_t x) {
-			++s_hxdeque_current->m_constructed;
+			++hxs_deque_current->m_constructed;
 			id = x;
 			moved_from = false;
 		}
 		hxtest_object(const hxtest_object& x) {
-			++s_hxdeque_current->m_constructed;
+			++hxs_deque_current->m_constructed;
 			id = x.id;
 			moved_from = false;
 		}
 		hxtest_object(hxtest_object&& x) {
-			++s_hxdeque_current->m_constructed;
+			++hxs_deque_current->m_constructed;
 			id = x.id;
 			moved_from = false;
 			x.id = 0xefef;
 			x.moved_from = true;
 		}
 		~hxtest_object(void) {
-			++s_hxdeque_current->m_destructed;
+			++hxs_deque_current->m_destructed;
 			id = 0xefef;
 			moved_from = true;
 		}
@@ -61,16 +61,16 @@ public:
 	};
 
 	hxdeque_test_f(void) {
-		hxassert(s_hxdeque_current == hxnull);
+		hxassert(hxs_deque_current == hxnull);
 		m_constructed = 0u;
 		m_destructed = 0u;
 		m_next_id = -1;
-		s_hxdeque_current = this;
+		hxs_deque_current = this;
 	}
-	~hxdeque_test_f(void) override {
+	~hxdeque_test_f(void) {
 		hxassert_always(m_constructed == m_destructed,
 			"hxdeque_test_f lifecycle mismatch");
-		s_hxdeque_current = hxnull;
+		hxs_deque_current = hxnull;
 	}
 
 	size_t m_constructed;

@@ -42,11 +42,16 @@ separator() {
 
 separator ---------------------------------------------------------------------
 
-CMD=$(echo "sudo apt install -y                                       \
-	ccache        clang         clang-tidy    cmake       doxygen     \
-	g++           g++-multilib  gcc-multilib  gcovr       gdb         \
-	gdb-multiarch libc++-dev    llvm          llvm-dev    musl        \
-	musl-dev      musl-tools    ninja-build   universal-ctags         \
+read -ep "This will install packages. Do you want to proceed? [y/n] " -n 1 answer
+if [ "$answer" != "y" ] && [ "$answer" != "Y" ]; then
+    exit 1
+fi
+
+CMD=$(echo "sudo apt install -y                                        \
+	ccache        clang         clang-tidy    cmake    doxygen         \
+	g++           g++-multilib  gcc-multilib  gcovr    gdb             \
+	gdb-multiarch libc++-dev    llvm          llvm-dev musl            \
+	musl-dev      musl-tools    ninja-build   procps   universal-ctags \
 " | tr -s '[:space:]' ' ')
 echo "\$ $CMD"
 eval "$CMD"
@@ -55,7 +60,7 @@ separator ---------------------------------------------------------------------
 
 set +o errexit
 
-for CMD in clang cmake doxygen emcc gcc gcovr musl-gcc python3 ninja universal-ctags
+for CMD in clang cmake ctags doxygen emcc gcc gcovr musl-gcc ninja pgrep python3
 do
 	echo "\$ $CMD --version"
     eval "$CMD --version"

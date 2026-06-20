@@ -44,7 +44,10 @@ writing simple one line helper functions. Except prefer delegating constructors
 to repeating member initializers. Never implement hypothetical safety guarantees.
 The best code is no code.
 
-Use `hxassertmsg` to document preconditions and not null checks.
+Do not use defensive programming or guard against mistakes. Unintended use cases
+need to be identified and fixed instead of guarded against. Compile errors are
+cheaper than debugging. Asserts are cheaper than debugging. Use `hxassertmsg` to
+document preconditions and post conditions instead of null checks.
 
 Wrap C-style implementation details in C++ classes with normal operators so that
 C++ object models are used for interfaces. However, use hxarray with a static
@@ -58,10 +61,12 @@ would never be null. Use tabs instead of spaces. Use K&R style.
 Make any function or operator implementation that will not fit on one line in
 100 chars an out of line implementation that goes after the class body.
 Alphabetize all the functions, keep operators first. Place the opening brace of
-a function body on the same line as the function signature.
+a function body on the same line as the function signature. When creating a new
+class do not use global operators and use member functions instead.
 
-When creating a new class do not use global operators and use member functions
-instead.
+Use C-style headers and not the C++ wrappers around them. E.g. use `<math.h>`
+not `<cmath>`. The goal is to be able to compile against libc alone without
+using the C++ standard library at all.
 
 ## Naming
 
@@ -71,8 +76,8 @@ All symbols are `snake_case`. Except feature test macros and constants are
 Classes, structs and functions begin with `hx` and not `hx_`. Template
 parameters are `snake_case` and end with `_t_`. Use `struct` only in C code.
 Function parameters and private fields do not begin with `hx` and end with an
-underscore. Private fields begin with `m_`. Global variables start with `g_hx`
-and static or anonymous namespace variables start with `s_hx`. Prefix calls to
+underscore. Private fields begin with `m_`. Global variables start with `hxg_`
+and static or anonymous namespace variables start with `hxs_`. Prefix calls to
 the C standard library with `::` to indicate they are in the global namespace.
 Use `src_` and `dst_` for source and destination iterators.
 
@@ -95,8 +100,9 @@ as the current directory. Consider all `.sh` files in the project except
 Code CMake win32 debug task.
 
 Compiling tests with a C++11 compiler against C99 libraries is required. Support
-for `ILP32`, `LP64` and `LLP64` are required to pass tests. All HX_HARDENING_MODE
-levels are required to pass tests.
+for `ILP32`, `LP64` and `LLP64` are required to pass tests. All
+`HX_HARDENING_MODE` levels are required to pass tests. Do not use compiler
+builtins as this code is intended to compile on any C++ compiler.
 
 Do not write test suites until requested as the design may not be finalized.
 Every branch needs to be tested both ways with off by one tests and also do
@@ -176,6 +182,8 @@ All tests go in the `test` directory. Symbols in the `test` and `example`
 directory never end with an `_` and this rule overrides the rules above in order
 to show that internal symbols are not used when testing the APIs. This applies
 to all symbols including local variables and function parameters.
+
+Use file globs to discover files in the src directory instead of listing them.
 
 ## File Index
 

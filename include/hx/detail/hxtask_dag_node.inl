@@ -3,44 +3,67 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-static_assert(LIBHATCHET_VER, "Internal. Do not include this file directly.");
+#ifndef LIBHATCHET_VER
+#error Internal. Do not include this file directly.
+#endif
+
+HX_BEGIN_INL_
 
 template<size_t max_successors_>
 hxtask_dag_node<max_successors_>::hxtask_dag_node(void) {
+	m_predecessor_count_ = 0;
 	m_successor_count_ = 0u;
-	m_pending_ = 0;
-	m_is_cancelled_ = false;
 }
 
 template<size_t max_successors_>
 void hxtask_dag_node<max_successors_>::add_successor(hxtask_dag_node* successor_, int priority_) {
 	hxassert_always(m_successor_count_ < max_successors_, "max_successors");
-	m_successors_[m_successor_count_++] = { successor_, priority_ };
-	++successor_->m_pending_;
+	edge_t_& edge_ = m_successors_[m_successor_count_++];
+	edge_.node_ = successor_;
+	edge_.priority_ = priority_;
+	++successor_->m_predecessor_count_;
 }
 
 template<size_t max_successors_>
 void hxtask_dag_node<max_successors_>::dag_node_completed_(hxtask_queue* q_, bool is_cancelled_) {
-	for(size_t i_ = 0u; i_ < m_successor_count_; ++i_) {
-		hxtask_dag_node* const successor_ = m_successors_[i_].node_;
-
-		if(is_cancelled_) {
-#if (HX_USE_THREADS)
-			atomic_store_explicit(&successor_->m_is_cancelled_, true, memory_order_relaxed);
-		}
-		if(atomic_fetch_sub_explicit(&successor_->m_pending_, 1, memory_order_acq_rel) == 1) {
-			if(!atomic_load_explicit(&successor_->m_is_cancelled_, memory_order_acquire)) {
-#else
-			successor_->m_is_cancelled_ = true;
-		}
-		if(--successor_->m_pending_ == 0) {
-			if(!successor_->m_is_cancelled_) {
+	bool last_predecessor_[max_successors_];
+	{
+#if HX_USE_THREADS
+		const hxunique_lock lock_(q_->m_mutex_);
 #endif
-				q_->enqueue(successor_, m_successors_[i_].priority_);
+
+		for(size_t i_ = 0u; i_ < m_successor_count_; ++i_) {
+			const edge_t_& successor_ = m_successors_[i_];
+
+			if(successor_.node_->m_predecessor_count_ > 0) {
+				if(is_cancelled_) {
+					successor_.node_->m_predecessor_count_ = 0;
+					last_predecessor_[i_] = true;
+				} else if(successor_.node_->m_predecessor_count_ > 0) {
+					last_predecessor_[i_] = --successor_.node_->m_predecessor_count_ == 0;
+				}
 			} else {
-				successor_->on_cancel(q_);
+				last_predecessor_[i_] = false;
 			}
 		}
 	}
+
+	// q_->m_mutex_ cannot be held for these calls.
+	if(is_cancelled_) {
+		for(size_t i_ = 0u; i_ < m_successor_count_; ++i_) {
+			if(last_predecessor_[i_]) {
+				m_successors_[i_].node_->on_cancel(q_);
+			}
+		}
+	} else {
+		for(size_t i_ = 0u; i_ < m_successor_count_; ++i_) {
+			if(last_predecessor_[i_]) {
+				q_->enqueue(m_successors_[i_].node_, m_successors_[i_].priority_);
+			}
+		}
+	}
+
 	m_successor_count_ = 0u;
 }
+
+HX_END_INL_

@@ -70,8 +70,7 @@ run_clang_build() {
 
 	# compile C17
 	clang -I../include -DHX_HARDENING_MODE=3-$1 -O$1 $FLAGS $ERRORS \
-		-fdiagnostics-absolute-paths -pthread -std=c17 \
-		-c ../src/*.c ../test/*.c
+		-fdiagnostics-absolute-paths -pthread -std=c17 -c ../test/*.c
 
 	# generate C++20 pch. clang does this automatically when a c++ header file
 	# is the target. This is just a test.
@@ -112,7 +111,7 @@ for I in 0 1 2 3; do
 echo "gcc c99/c++11 -O$I $@ ..."
 
 gcc -I$HX_DIR/include -DHX_HARDENING_MODE=3-$I -O$I $FLAGS $ERRORS \
-	-pthread -std=c99 -m32 "$@" -c $HX_DIR/src/*.c $HX_DIR/test/*.c
+	-pthread -std=c99 -m32 "$@" -c $HX_DIR/test/*.c
 
 gcc -I$HX_DIR/include -DHX_HARDENING_MODE=3-$I -O$I $FLAGS $ERRORS \
 	-pthread -std=c++11 -fno-exceptions -fno-rtti "$@" $HX_DIR/src/*.cpp \

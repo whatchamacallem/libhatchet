@@ -3,8 +3,15 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file hx/hxlist.hpp An embedded doubly linked list with intrusive node
+/// \file hxlist.hpp An embedded doubly linked list with intrusive node
 /// linkage.
+
+#include "libhatchet.h"
+
+// HX_USE_MODULE allows including macros in addition to the hx module.
+#if HX_USE_MODULE
+#error Header does not provide macros only.
+#endif
 
 #include "hxkey.hpp"
 #include "hxptr.hpp"

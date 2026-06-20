@@ -11,15 +11,15 @@
 
 #include <stdio.h> // vsnprintf only.
 
-// g_hxinit_ver_ should not be explicitly zero-initialized. MSVC handles that
+// hxg_init_ver_ should not be explicitly zero-initialized. MSVC handles that
 // differently.
 extern "C" {
 	// If non-zero the platform has been initialized without being shut down.
-	// See `#define g_hxinit_ver_` in hxsettings.h for rationale.
-	int g_hxinit_ver_; // Static initialize to 0.
+	// See `#define hxg_init_ver_` in hxsettings.h for rationale.
+	int hxg_init_ver_; // Static initialize to 0.
 
 	// Allows observation of asserts. Return true to ignore.
-	bool (*g_hxassert_handler)(void);
+	bool (*hxg_assert_handler)(void);
 }
 
 // HX_FLOATING_POINT_TRAPS - Traps (FE_DIVBYZERO|FE_INVALID|FE_OVERFLOW) in
@@ -28,9 +28,9 @@ extern "C" {
 // standard-conforming way to disable floating point error checking. That
 // requires a gcc/clang extension. Using -fno-math-errno and -fno-trapping-math
 // will work if you require C++ conforming accuracy without the overhead of
-// error checking. -ffast-math includes both of those switches. You need the math
-// library -lm. Triggering or explicitly checking for floating point exceptions
-// is not recommended.
+// error checking. -ffast-math includes both of those switches. You need the
+// math library -lm. Triggering or explicitly checking for floating point
+// exceptions is not recommended.
 #if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG && defined __GLIBC__ && !defined __FAST_MATH__
 #include <fenv.h>
 #if !defined HX_FLOATING_POINT_TRAPS
@@ -120,10 +120,10 @@ void hxinit_internal(int version) {
 	// Check if compiled in expected_version matches callers.
 	const long expected_version = LIBHATCHET_VER;
 	hxassert_hard(expected_version == version, "LIBHATCHET_VER mismatch.");
-	hxassert_hard((g_hxinit_ver_ == 0) || (g_hxinit_ver_ == version), "LIBHATCHET_VER mismatch.");
+	hxassert_hard((hxg_init_ver_ == 0) || (hxg_init_ver_ == version), "LIBHATCHET_VER mismatch.");
 	(void)version; (void)expected_version;
 
-	if(g_hxinit_ver_ == 0) {
+	if(hxg_init_ver_ == 0) {
 		hxsettings_construct();
 
 #if HX_FLOATING_POINT_TRAPS
@@ -131,8 +131,8 @@ void hxinit_internal(int version) {
 		::feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 #endif
 
-		hxmemory_manager_init();
-		g_hxinit_ver_ = LIBHATCHET_VER;
+		hxmemory_manager_init_();
+		hxg_init_ver_ = LIBHATCHET_VER;
 	}
 }
 
@@ -146,7 +146,7 @@ hxattr_noexcept void hxlog_handler(hxlog_level_t level, const char* format, ...)
 
 extern "C"
 hxattr_noexcept void hxlog_handler_v(hxlog_level_t level, const char* format, va_list args) {
-	if((g_hxinit_ver_ != 0) && g_hxsettings.log_level > level) {
+	if((hxg_init_ver_ != 0) && hxg_settings.log_level > level) {
 		return;
 	}
 
@@ -173,31 +173,31 @@ hxattr_noexcept void hxlog_handler_v(hxlog_level_t level, const char* format, va
 // teardown. Just call _Exit() otherwise.
 extern "C"
 void hxshutdown(void) {
-	if(g_hxinit_ver_ != 0) {
+	if(hxg_init_ver_ != 0) {
 #if (HX_HARDENING_MODE) != HX_HARDENING_MODE_NONE
-		hxmemory_manager_shut_down();
+		hxmemory_manager_shut_down_();
 		// Try to trap further activity. This breaks global destructors that call
 		// hxfree. There is no easier way to track leaks.
 #endif
-		g_hxinit_ver_ = 0;
+		hxg_init_ver_ = 0;
 	}
 }
 
 extern "C"
 hxattr_noexcept void hxset_assert_handler(bool (*handler)(void)) {
-	g_hxassert_handler = handler;
+	hxg_assert_handler = handler;
 }
 
 #if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
 extern "C"
 hxattr_noexcept bool hxassert_handler(const char* file, size_t line) {
 	const char* f = hxbasename(file);
-	if((g_hxinit_ver_ != 0) && g_hxsettings.asserts_to_be_skipped > 0) {
-		--g_hxsettings.asserts_to_be_skipped;
+	if((hxg_init_ver_ != 0) && hxg_settings.asserts_to_be_skipped > 0) {
+		--hxg_settings.asserts_to_be_skipped;
 		hxlog_handler(hxlog_level_assert, "skipped %s(%zu)", f, line);
 		return true;
 	}
-	if(g_hxassert_handler != hxnull && g_hxassert_handler()) {
+	if(hxg_assert_handler != hxnull && hxg_assert_handler()) {
 		return true;
 	}
 	hxlog_handler(hxlog_level_assert, "breakpoint %s(%zu)\n", f, line);
@@ -207,7 +207,7 @@ hxattr_noexcept bool hxassert_handler(const char* file, size_t line) {
 #else
 extern "C"
 hxattr_noexcept void hxassert_handler(void) {
-	if(g_hxassert_handler != hxnull && g_hxassert_handler()) {
+	if(hxg_assert_handler != hxnull && hxg_assert_handler()) {
 		return;
 	}
 	hxlog_handler(hxlog_level_assert, "assert_fail\n");

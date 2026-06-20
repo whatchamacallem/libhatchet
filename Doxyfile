@@ -1,10 +1,10 @@
-BRIEF_MEMBER_DESC      = NO
+BRIEF_MEMBER_DESC      = YES
 CLASS_GRAPH            = NO
 COLLABORATION_GRAPH    = NO
 DISABLE_INDEX          = NO
 EXPAND_ONLY_PREDEF     = FALSE
 EXTRACT_ALL            = YES
-FILE_PATTERNS          = *.h *.hpp
+FILE_PATTERNS          = *.h *.hpp *.cppm
 FULL_SIDEBAR           = NO
 GENERATE_LATEX         = NO
 GENERATE_TREEVIEW      = YES
@@ -13,7 +13,7 @@ HTML_COLORSTYLE        = LIGHT
 HTML_EXTRA_STYLESHEET  = doxygen-awesome.css
 HTML_EXTRA_FILES       = doxygen-awesome.css
 IMAGE_PATH             = .
-INPUT                  = include/hx/ README.md
+INPUT                  = include/hx/ src/hxmodule.cppm README.md
 MACRO_EXPANSION        = YES
 OUTPUT_DIRECTORY       = docs/
 PREDEFINED             = HX_DOXYGEN_PARSER=1

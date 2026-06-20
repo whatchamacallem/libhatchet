@@ -3,12 +3,19 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file hx/hxalgorithm.hpp Searching and set utilities for libhatchet.
+/// \file hxalgorithm.hpp Searching and set utilities for libhatchet.
 /// Includes support for callables when defining custom key operations.
 /// Otherwise `T::operator<(const T&)` and `T::operator==(const T&)` are used.
 ///
 /// See `hxsort.hpp` for sorting algorithms including `hxinsertion_sort`,
 /// `hxheapsort` and `hxsort`. `hxbinary_search` is also over there.
+
+#include "libhatchet.h"
+
+// HX_USE_MODULE allows including macros in addition to the hx module.
+#if HX_USE_MODULE
+#error Header does not provide macros only.
+#endif
 
 #include "hxkey.hpp"
 

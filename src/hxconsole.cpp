@@ -66,14 +66,14 @@ namespace {
 
 class hxconsole_less_ {
 public:
-	bool operator()(const hxconsole_hash_table_node_* a,
-			const hxconsole_hash_table_node_* b) const {
+	bool operator()(const hxdetail_::hxconsole_hash_table_node_* a,
+			const hxdetail_::hxconsole_hash_table_node_* b) const {
 		return hxkey_less(a->hash_key().str_, b->hash_key().str_);
 	}
 };
 
 class hxconsole_command_table_
-	: public hxhash_table<hxconsole_hash_table_node_, 2, false, hxdo_not_delete> {
+	: public hxhash_table<hxdetail_::hxconsole_hash_table_node_, 2, false, hxdo_not_delete> {
 };
 
 // Wrapped to enforce a construction-order dependency. Modification of the table
@@ -98,7 +98,7 @@ void hxdetail_::hxconsole_register_(hxconsole_hash_table_node_* node) {
 
 // Nodes are statically allocated. Do not delete.
 void hxconsole_deregister(const char* id) {
-	hxconsole_commands_().release_key(hxconsole_hash_table_key_(id));
+	hxconsole_commands_().release_key(hxdetail_::hxconsole_hash_table_key_(id));
 }
 
 bool hxconsole_exec_line(const char* command) {
@@ -109,11 +109,11 @@ bool hxconsole_exec_line(const char* command) {
 	}
 
 	// Skip comments and blank lines.
-	if(hxconsole_is_end_of_line_(pos)) {
+	if(hxdetail_::hxconsole_is_end_of_line_(pos)) {
 		return true;
 	}
 
-	const hxconsole_hash_table_node_* node = hxconsole_commands_().find(hxconsole_hash_table_key_(pos));
+	const hxdetail_::hxconsole_hash_table_node_* node = hxconsole_commands_().find(hxdetail_::hxconsole_hash_table_key_(pos));
 	if(node == hxnull) {
 		hxwarn_msg(0, "unknown_command %s", command);
 		return false;
@@ -169,20 +169,20 @@ bool hxconsole_help(void) {
 #if (HX_HARDENING_MODE) > HX_HARDENING_MODE_STANDARD
 	hxinit();
 	const hxsystem_allocator_scope temporary_stack(hxsystem_allocator_temporary_stack);
-	hxarray<const hxconsole_hash_table_node_*> cmds;
+	hxarray<const hxdetail_::hxconsole_hash_table_node_*> cmds;
 	cmds.reserve(hxconsole_commands_().size());
 	for(hxconsole_command_table_::const_iterator it = hxconsole_commands_().cbegin();
 			it != hxconsole_commands_().cend(); ++it) {
 		if(::strncmp(it->hash_key().str_, "hxconsole_test", 13) == 0 ||
-				::strncmp(it->hash_key().str_, "s_hxconsole_test", 15) == 0) {
+				::strncmp(it->hash_key().str_, "hxs_console_test", 15) == 0) {
 			continue;
 		}
 		cmds.push_back(&*it);
 	}
 
-	hxinsertion_sort<const hxconsole_hash_table_node_**, hxconsole_less_>(cmds.begin(), cmds.end(), hxconsole_less_());
+	hxinsertion_sort<const hxdetail_::hxconsole_hash_table_node_**, hxconsole_less_>(cmds.begin(), cmds.end(), hxconsole_less_());
 
-	for(hxarray<const hxconsole_hash_table_node_*>::iterator it = cmds.begin();
+	for(hxarray<const hxdetail_::hxconsole_hash_table_node_*>::iterator it = cmds.begin();
 			it != cmds.end(); ++it) {
 		(*it)->command_()->usage_((*it)->hash_key().str_);
 	}

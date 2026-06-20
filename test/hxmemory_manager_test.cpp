@@ -82,7 +82,7 @@ const hxsystem_allocator_scope temp(hxsystem_allocator_temporary_stack);
 	hxfree(p);
 }
 
-#if (HX_USE_MEMORY_MANAGER)
+#if HX_USE_MEMORY_MANAGER
 
 // This test case documents a contract between the system allocators and the
 // rest of the program.
@@ -126,15 +126,15 @@ public:
 					ASSERT_NEAR(
 						static_cast<double>(allocator_scope.get_current_bytes_allocated()),
 						static_cast<double>(start_bytes + 300u),
-						static_cast<double>(2u * HX_ALIGNMENT));
+						static_cast<double>(2u * hxalignment));
 				}
 			}
 
 			// Allows quiet deletion of a permanent resource.
-			g_hxsettings.deallocate_permanent = true;
+			hxg_settings.deallocate_permanent = true;
 			hxfree(ptr1);
 			hxfree(ptr2);
-			g_hxsettings.deallocate_permanent = false;
+			hxg_settings.deallocate_permanent = false;
 		}
 
 		// hxsystem_allocator_permanent does not free.
@@ -151,7 +151,7 @@ public:
 	static void test_memory_allocator_leak(void) {
 #if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
 		void* ptr2 = hxnull;
-		const int asserts_allowed = g_hxsettings.asserts_to_be_skipped;
+		const int asserts_allowed = hxg_settings.asserts_to_be_skipped;
 
 		{
 			const hxsystem_allocator_scope allocator_scope(hxsystem_allocator_temporary_stack);
@@ -170,9 +170,9 @@ public:
 			hxfree(ptr1); // Only free one allocation.
 
 			// Prepare to trigger an assert when the scope closes.
-			g_hxsettings.asserts_to_be_skipped = 1;
+			hxg_settings.asserts_to_be_skipped = 1;
 		}
-		ASSERT_EQ(g_hxsettings.asserts_to_be_skipped, 0); // hxassert was hit; the leak occurred in the scope.
+		ASSERT_EQ(hxg_settings.asserts_to_be_skipped, 0); // hxassert was hit; the leak occurred in the scope.
 
 		{
 			const hxsystem_allocator_scope allocator_scope(hxsystem_allocator_temporary_stack);
@@ -184,14 +184,14 @@ public:
 			ASSERT_EQ(allocator_scope.get_initial_bytes_allocated(), 0);
 
 			// Trigger the assert that catches late deletes.
-			g_hxsettings.asserts_to_be_skipped = 1;
+			hxg_settings.asserts_to_be_skipped = 1;
 			hxfree(ptr2);
 		}
 
 		// hxassert was hit. The free happened after the scope closed.
-		ASSERT_EQ(g_hxsettings.asserts_to_be_skipped, 0);
+		ASSERT_EQ(hxg_settings.asserts_to_be_skipped, 0);
 
-		g_hxsettings.asserts_to_be_skipped = asserts_allowed;
+		hxg_settings.asserts_to_be_skipped = asserts_allowed;
 #endif
 	}
 };

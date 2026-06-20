@@ -3,6 +3,7 @@
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
 #include "../include/hx/hxtest.hpp"
+#include "../include/hx/hxsort.hpp"
 
 #include <math.h>
 
@@ -71,8 +72,8 @@ hxtest_::hxtest_(void) {
 }
 
 hxtest_& hxtest_::dispatcher_(void) {
-	static hxtest_ s_hxtest_static_alloc;
-	return s_hxtest_static_alloc;
+	static hxtest_ hxs_test_static_alloc;
+	return hxs_test_static_alloc;
 }
 
 void hxtest_::add_test_(hxtest_case_interface_* fn_) {

@@ -10,79 +10,80 @@
 // formally defined as the set of all complex numbers C for which the sequence
 // Z(n+1) = Z(n)² + C, with Z(0) = 0, remains bounded as n tends to infinity.
 
-#include <hx/libhatchet.h>
-#include <hx/hxarray.hpp>
-#include <hx/hxconsole.hpp>
-#include <hx/hxfile.hpp>
-#include <hx/hxprofiler.hpp>
-#include <hx/hxthread.hpp>
-#include <hx/hxtask_queue.hpp>
-
 #include <signal.h>
 #include <stdio.h>
 #include <math.h>
 
+#if defined HX_USE_MODULE && (HX_USE_MODULE)
+import hx;
+#else
+#include <hx/hxfile.hpp>
+#include <hx/hxtask_queue.hpp>
+#endif
+
+// These provide macros when HX_USE_MODULE=1.
+#include <hx/hxconsole.hpp>
+#include <hx/hxprofiler.hpp>
+
 namespace {
 
-// ASCII art palette ordered by visual density, lightest to darkest.
-const char s_hxexample_palette[] =
-	" `.-':,^=;><+!rc*/z?sLTv)J7(|Fi{C}fI31tlu[neoZ5Yxjya]2ESwqkP6h9d4VpOGbUAKXHm8RD#$Bg0MNWQ%&@";
+// Smooth coloring constants for fractional escape iteration count and
+// true-color RGB sine gradient.
+const double s_example_inv_log2       = 1.4426950408889634;    // 1/log(2)
+const double s_example_log_log2       = -0.36651292058166435;  // log(log(2))
+const double s_example_angle_freq     = 6.28318530717958647692 / 16.0;
+const double s_example_two_pi_over_3  = 2.09439510239319552;
+const double s_example_four_pi_over_3 = 4.18879020478639098;
+const double s_example_amplitude      = 127.5;
 
-// ----------------------------------------------------------------------------
-// Handle exiting. Example of a hxmutex. Of course a C atomic would be simpler.
+// Handle exiting on SIGINT or by console command.
+hxmutex s_example_exit_mutex;
+bool s_example_exit = false;
 
-hxmutex g_hxexample_exit_mutex;
-bool g_hxexample_exit = false;
-
-// Sets g_hxexample_exit under lock. Without SA_RESTART, SIGINT also interrupts
+// Sets s_example_exit under lock. Without SA_RESTART, SIGINT also interrupts
 // blocking fgets, causing it to return null and break the main loop.
-void hxexample_notify_sigint(int) {
-	const hxunique_lock lock_(g_hxexample_exit_mutex);
-	g_hxexample_exit = true;
+void example_notify_sigint(int) {
+	const hxunique_lock lock_(s_example_exit_mutex);
+	s_example_exit = true;
 }
 
-// ----------------------------------------------------------------------------
-// Console variables and functions. Console utilization is intended to be local
-// to each translation unit.
-
-double s_hxexample_center_x = 0.0;
-double s_hxexample_center_y = 0.0;
-double s_hxexample_zoom = 3.0;
-
-// Sets g_hxexample_exit, causing the main loop to break after the current render.
-bool hxexample_exit(void) {
-	const hxunique_lock lock_(g_hxexample_exit_mutex);
-	g_hxexample_exit = true;
+// Sets s_example_exit, causing the main loop to break after the current render.
+bool example_exit(void) {
+	const hxunique_lock lock_(s_example_exit_mutex);
+	s_example_exit = true;
 	return true;
 }
 
+// Console variables and functions. Console utilization is intended to be local
+// to each translation unit.
+
+double s_example_center_x = 0.0;
+double s_example_center_y = 0.0;
+double s_example_zoom = 3.0;
+
 // Pan and zoom commands scale movement by the current zoom level.
-bool hxexample_left(double amount)  { s_hxexample_center_x -= amount * s_hxexample_zoom;  return true; }
-bool hxexample_right(double amount) { s_hxexample_center_x += amount * s_hxexample_zoom;  return true; }
-bool hxexample_up(double amount)	{ s_hxexample_center_y -= amount * s_hxexample_zoom;  return true; }
-bool hxexample_down(double amount)  { s_hxexample_center_y += amount * s_hxexample_zoom;  return true; }
-bool hxexample_in(double factor)	{ s_hxexample_zoom /= factor;						  return true; }
-bool hxexample_out(double factor)   { s_hxexample_zoom *= factor;						  return true; }
+bool example_left(double amount)  { s_example_center_x -= amount * s_example_zoom;  return true; }
+bool example_right(double amount) { s_example_center_x += amount * s_example_zoom;  return true; }
+bool example_up(double amount)	  { s_example_center_y -= amount * s_example_zoom;  return true; }
+bool example_down(double amount)  { s_example_center_y += amount * s_example_zoom;  return true; }
+bool example_in(double factor)	  { s_example_zoom /= factor;						return true; }
+bool example_out(double factor)   { s_example_zoom *= factor;						return true; }
 
-hxconsole_variable_named(s_hxexample_center_x, center_x);
-hxconsole_variable_named(s_hxexample_center_y, center_y);
-hxconsole_variable_named(s_hxexample_zoom, zoom);
+hxconsole_variable_named(s_example_center_x, center_x);
+hxconsole_variable_named(s_example_center_y, center_y);
+hxconsole_variable_named(s_example_zoom, zoom);
 
-hxconsole_command_named(hxexample_exit, exit);
-hxconsole_command_named(hxexample_left, left);
-hxconsole_command_named(hxexample_right, right);
-hxconsole_command_named(hxexample_up, up);
-hxconsole_command_named(hxexample_down, down);
-hxconsole_command_named(hxexample_in, in);
-hxconsole_command_named(hxexample_out, out);
-
-} // namespace
-
-// ----------------------------------------------------------------------------
+hxconsole_command_named(example_exit, exit);
+hxconsole_command_named(example_left, left);
+hxconsole_command_named(example_right, right);
+hxconsole_command_named(example_up, up);
+hxconsole_command_named(example_down, down);
+hxconsole_command_named(example_in, in);
+hxconsole_command_named(example_out, out);
 
 // hxtask computing one row of the Mandelbrot image. Rows are dispatched in
-// parallel by hxexample_render via hxtask_queue.
-class hxexample_row_task : public hxtask {
+// parallel by example_render via hxtask_queue.
+class example_row_task : public hxtask {
 public:
 	void set(size_t row, double center_x, double center_y, double zoom, size_t max_iter, char* row_buffer) {
 		m_row		 = row;
@@ -98,7 +99,8 @@ public:
 
 		const double col_scale = m_zoom / 80.0;
 
-		// Terminal chars are ~2x taller than wide; halve the y-step for square pixels.
+		// Terminal chars are ~2x taller than wide; halve the y-step for square
+		// pixels.
 		const double row_scale = col_scale * 0.5;
 		const double imaginary_origin = m_center_y + (static_cast<double>(m_row) - 19.5) * row_scale;
 		char* dst = m_row_buffer;
@@ -118,12 +120,25 @@ public:
 				real = real_squared - imaginary_squared + real_origin;
 				++iter;
 			}
-			const size_t palette_size = sizeof s_hxexample_palette - 1u;
-			const size_t palette_index = hxmin(iter * 91 / (m_max_iter != 0u ? m_max_iter : 1u), palette_size - 1u);
-			dst[col] = (iter == m_max_iter) ? '@' : s_hxexample_palette[palette_index];
+			if(iter == m_max_iter) {
+				dst += ::sprintf(dst, "\033[48;2;0;0;0m ");
+			} else {
+				const double mod_squared = real * real + imaginary * imaginary;
+				const double log_zn = ::log(mod_squared) * 0.5;
+				const double mu = static_cast<double>(iter) + 1.0
+					- (::log(log_zn) - s_example_log_log2) * s_example_inv_log2;
+				const double angle = mu * s_example_angle_freq;
+				const unsigned r = static_cast<unsigned>(s_example_amplitude
+					+ s_example_amplitude * ::sin(angle));
+				const unsigned g = static_cast<unsigned>(s_example_amplitude
+					+ s_example_amplitude * ::sin(angle + s_example_two_pi_over_3));
+				const unsigned b = static_cast<unsigned>(s_example_amplitude
+					+ s_example_amplitude * ::sin(angle + s_example_four_pi_over_3));
+				dst += ::sprintf(dst, "\033[48;2;%u;%u;%um ", r, g, b);
+			}
 		}
-		dst[80] = '\n';
-		dst[81] = '\0';
+		dst[0] = '\033'; dst[1] = '['; dst[2] = '0'; dst[3] = 'm';
+		dst[4] = '\n'; dst[5] = '\0';
 		return true;
 	}
 
@@ -138,25 +153,19 @@ private:
 	char*  m_row_buffer;
 };
 
-bool hxexample_render(hxtask_queue& queue, hxarray<hxexample_row_task, 40u>& tasks,
-		hxarray<hxarray<char, 82u>, 40u>& row_storage);
-void hxexample_usage(void);
-
-// ----------------------------------------------------------------------------
-
 // Enqueues all 40 row tasks, waits for completion, then prints the frame.
-// max_iter is scaled with zoom so detail increases as the view narrows.
-// Writes a Chrome tracing profile to profile.json after each render.
-bool hxexample_render(hxtask_queue& queue, hxarray<hxexample_row_task, 40u>& tasks,
-		hxarray<hxarray<char, 82u>, 40u>& row_storage) {
-	size_t max_iter = static_cast<size_t>(50.0 * ::sqrt(::sqrt(1.0 / s_hxexample_zoom))) + 20;
+// max_iter is scaled with zoom so detail increases as the view narrows. Writes
+// a Chrome tracing profile to profile.json after each render.
+bool example_render(hxtask_queue& queue, hxarray<example_row_task, 40u>& tasks,
+		hxarray<hxarray<char, 2048u>, 40u>& row_storage) {
+	size_t max_iter = static_cast<size_t>(50.0 * ::sqrt(::sqrt(1.0 / s_example_zoom))) + 20;
 	if(max_iter < 64)   { max_iter = 64; }
 	if(max_iter > 4096) { max_iter = 4096; }
 
 	hxprofiler_start();
 
 	for(size_t row = 0u; row < 40u; ++row) {
-		tasks[row].set(row, s_hxexample_center_x, s_hxexample_center_y, s_hxexample_zoom,
+		tasks[row].set(row, s_example_center_x, s_example_center_y, s_example_zoom,
 			max_iter, row_storage[row].data());
 		queue.enqueue(&tasks[row]);
 	}
@@ -170,11 +179,11 @@ bool hxexample_render(hxtask_queue& queue, hxarray<hxexample_row_task, 40u>& tas
 	}
 
 	hxout.print("center (%.6g, %.6g) zoom %.6g\n",
-		s_hxexample_center_x, s_hxexample_center_y, s_hxexample_zoom);
+		s_example_center_x, s_example_center_y, s_example_zoom);
 	return true;
 }
 
-void hxexample_usage(void) {
+void example_usage(void) {
 	puts("Commands are:\n"
 		"\tcenter_x <optional-f64>\n"
 		"\tcenter_y <optional-f64>\n"
@@ -189,54 +198,60 @@ void hxexample_usage(void) {
 }
 
 // Loads example.cfg, renders the initial frame, then loops reading hxconsole
-// commands from stdin. Ctrl-C sets g_hxexample_exit and interrupts fgets.
-int main(void) {
+// commands from stdin. Ctrl-C sets s_example_exit and interrupts fgets.
+int example_main(void) {
 	hxinit();
 
 	struct ::sigaction sa;
-	sa.sa_handler = hxexample_notify_sigint;
+	sa.sa_handler = example_notify_sigint;
 	::sigemptyset(&sa.sa_mask);
 	sa.sa_flags = 0; // No SA_RESTART: SIGINT interrupts blocking fgets
 	::sigaction(SIGINT, &sa, hxnull);
 
 	int exit_code = EXIT_SUCCESS;
-	{
-		hxarray<hxarray<char, 82u>, 40u> row_storage(40u);
-		for(auto& row : row_storage) {
-			row.resize(82u);
+	if(!hxconsole_exec_filename("example.cfg")) {
+		hxout << "error: example.cfg not found or failed to execute\n";
+		exit_code = EXIT_FAILURE;
+	} else {
+		hxarray<hxarray<char, 2048u>, 40u>* row_storage =
+			hxnew<hxarray<hxarray<char, 2048u>, 40u>>(40u);
+		for(auto& row : *row_storage) {
+			row.resize(2048u);
 		}
 
 		hxtask_queue queue(40u, 8u);
-		hxarray<hxexample_row_task, 40u> tasks(40u);
+		hxarray<example_row_task, 40u> tasks(40u);
 
-		if(!hxconsole_exec_filename("example.cfg")) {
-			hxout << "error: example.cfg not found or failed to execute\n";
-			exit_code = EXIT_FAILURE;
-		} else {
-			hxexample_render(queue, tasks, row_storage);
-			hxexample_usage();
+		example_render(queue, tasks, *row_storage);
+		example_usage();
 
-			char line[256];
-			for(;;) {
-				hxout << "> ";
-				if(::fgets(line, static_cast<int>(sizeof line), stdin) == hxnull) {
-					break;
+		char line[256];
+		for(;;) {
+			hxout << "> ";
+			if(::fgets(line, static_cast<int>(sizeof line), stdin) == hxnull) {
+				break;
+			}
+			if(hxconsole_exec_line(line)) {
+				{
+					const hxunique_lock lock_(s_example_exit_mutex);
+					if(s_example_exit) { break; }
 				}
-				if(hxconsole_exec_line(line)) {
-					{
-						const hxunique_lock lock_(g_hxexample_exit_mutex);
-						if(g_hxexample_exit) { break; }
-					}
 
-					hxexample_render(queue, tasks, row_storage);
-				}
-				else {
-					hxexample_usage();
-				}
+				example_render(queue, tasks, *row_storage);
+			}
+			else {
+				example_usage();
 			}
 		}
+		hxdelete(row_storage);
 	}
 
 	hxshutdown();
 	return exit_code;
+}
+
+} // namespace
+
+int main(void) {
+	return example_main();
 }

@@ -3,7 +3,14 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file hxdeque - A fixed-capacity deque backed by a power-of-two ring buffer
+/// \file hxdeque.hpp - A fixed-capacity deque backed by a power-of-two ring buffer
+
+#include "libhatchet.h"
+
+// HX_USE_MODULE allows including macros in addition to the hx module.
+#if HX_USE_MODULE
+#error Header does not provide macros only.
+#endif
 
 #include "hxallocator.hpp"
 #include "hxutility.h"

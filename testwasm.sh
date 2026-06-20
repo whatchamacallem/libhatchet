@@ -25,7 +25,7 @@ export POSIXLY_CORRECT=1
 # Build artifacts are not retained.
 rm -rf ./build; mkdir ./build && cd ./build
 
-emcc -I../include -O2 -pthread -fdiagnostics-absolute-paths -c ../src/*.c ../test/*.c
+emcc -I../include -O2 -pthread -fdiagnostics-absolute-paths -c ../test/*.c
 
 # Dump the memory manager because a web browser doesn't need that.
 # -pthread requires SharedArrayBuffer which needs COOP/COEP headers from the server.

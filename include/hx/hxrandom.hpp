@@ -3,10 +3,15 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file hx/hxrandom.hpp A 64-bit LCG random number generator useful for test
+/// \file hxrandom.hpp A 64-bit LCG random number generator useful for test
 /// data.
 
 #include "libhatchet.h"
+
+// HX_USE_MODULE allows including macros in addition to the hx module.
+#if HX_USE_MODULE
+#error Header does not provide macros only.
+#endif
 
 /// `hxrandom` - 64-bit MMIX LCG. Knuth, D. 2002. (Modified to perturb the return
 /// value so that all bits are of equal quality.) Uses a floating point multiply

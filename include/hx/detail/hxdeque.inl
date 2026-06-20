@@ -3,7 +3,11 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-static_assert(LIBHATCHET_VER, "Internal. Do not include this file directly.");
+#ifndef LIBHATCHET_VER
+#error Internal. Do not include this file directly.
+#endif
+
+HX_BEGIN_INL_
 
 template<typename T_, size_t capacity_>
 hxdeque<T_, capacity_>::hxdeque(size_t dynamic_capacity_)
@@ -66,7 +70,7 @@ template<typename T_, size_t capacity_>
 void hxdeque<T_, capacity_>::clear(void) {
 	T_* const data_ = this->data();
 	for(size_t i_ = 0u; i_ < m_count_; ++i_) {
-		data_[(m_head_ + i_) & m_mask_].~T_();
+		data_[(m_head_ + i_) & m_mask_].T_::~T_();
 	}
 	m_head_ = 0u;
 	m_tail_ = 0u;
@@ -113,7 +117,7 @@ void hxdeque<T_, capacity_>::pop_back(void) {
 	hxassert_hard(m_count_ != 0u, "empty_deque");
 	m_tail_ = (m_tail_ + m_mask_) & m_mask_;
 	T_* slot_ = this->data() + m_tail_;
-	slot_->~T_();
+	slot_->T_::~T_();
 	--m_count_;
 }
 
@@ -123,7 +127,7 @@ void hxdeque<T_, capacity_>::pop_front(void) {
 	hxassert_hard(m_count_ != 0u, "empty_deque");
 	T_* slot_ = this->data() + m_head_;
 	m_head_ = (m_head_ + 1u) & m_mask_;
-	slot_->~T_();
+	slot_->T_::~T_();
 	--m_count_;
 }
 
@@ -156,3 +160,5 @@ void hxdeque<T_, capacity_>::reserve(size_t dynamic_capacity_) {
 
 template<typename T_, size_t capacity_>
 size_t hxdeque<T_, capacity_>::size(void) const { return m_count_; }
+
+HX_END_INL_

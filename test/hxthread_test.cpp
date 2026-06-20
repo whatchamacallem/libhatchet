@@ -5,7 +5,7 @@
 #include <hx/hxthread.hpp>
 #include <hx/hxtest.hpp>
 
-#if (HX_USE_THREADS)
+#if HX_USE_THREADS
 
 namespace {
 
@@ -71,31 +71,6 @@ hxthread::return_t hxthread_test_func_wait_notify_sequence(hxthread_test_paramet
 		const bool wait_result = parameters->condition_variable->wait(lock);
 		hxassert_always(wait_result, "wait"); (void)wait_result;
 	}
-	return 0;
-}
-
-hxmutex hxthread_test_local_destructor_mutex;
-int hxthread_test_local_destructor_count = 0;
-
-class hxthread_test_thread_local_destructor {
-public:
-	hxthread_test_thread_local_destructor(bool x=false) : track(x) { }
-
-	~hxthread_test_thread_local_destructor() {
-		if(track) {
-			const hxunique_lock lock(hxthread_test_local_destructor_mutex);
-			++hxthread_test_local_destructor_count;
-		}
-	}
-
-	bool track;
-};
-
-hxthread_local<hxthread_test_thread_local_destructor> hxthread_test_local_destructor_tls;
-
-hxthread::return_t hxthread_local_destructor_thread(int*) {
-	hxthread_test_thread_local_destructor& tracker = hxthread_test_local_destructor_tls;
-	tracker.track = true;
 	return 0;
 }
 
@@ -309,22 +284,6 @@ TEST(hxthread_test_thread, multiple_thread_start_join) {
 		hxdelete(threads[i]);
 	}
 	EXPECT_EQ(shared, reps);
-}
-
-TEST(hxthread_test_thread_local, destroy_local_runs_on_thread_exit) {
-	{
-		const hxunique_lock lock(hxthread_test_local_destructor_mutex);
-		hxthread_test_local_destructor_count = 0;
-	}
-
-	int dummy=0;
-	// "Provides a C++ template for thread-local storage" — destructor should
-	// fire when thread exits.
-	hxthread thread(&hxthread_local_destructor_thread, &dummy);
-	thread.join();
-
-	const hxunique_lock lock(hxthread_test_local_destructor_mutex);
-	EXPECT_EQ(hxthread_test_local_destructor_count, 1);
 }
 
 #endif // HX_USE_THREADS

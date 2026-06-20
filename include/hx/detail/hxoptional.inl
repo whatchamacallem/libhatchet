@@ -3,7 +3,11 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-static_assert(LIBHATCHET_VER, "Internal. Do not include this file directly.");
+#ifndef LIBHATCHET_VER
+#error Internal. Do not include this file directly.
+#endif
+
+HX_BEGIN_INL_
 
 template<typename T_>
 hxoptional<T_>::hxoptional(const hxoptional& other_) : m_engaged_(false) {
@@ -139,7 +143,7 @@ T_& hxoptional<T_>::emplace(args_t_&&... args_) {
 template<typename T_>
 void hxoptional<T_>::reset(void) {
 	if (m_engaged_) {
-		reinterpret_cast<T_*>(&m_storage_)->~T_();
+		reinterpret_cast<T_*>(&m_storage_)->T_::~T_();
 		m_engaged_ = false;
 	}
 }
@@ -173,3 +177,5 @@ template<typename T_>
 T_ hxoptional<T_>::value_or(const T_& default_value_) const {
 	return m_engaged_ ? *reinterpret_cast<const T_*>(&m_storage_) : default_value_;
 }
+
+HX_END_INL_

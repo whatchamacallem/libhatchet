@@ -3,10 +3,15 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file `hxfile` - Single-ownership C++ RAII abstraction for file I/O. Both
+/// \file hxfile.hpp - Single-ownership C++ RAII abstraction for file I/O. Both
 /// POSIX and libc implementations are available.
 
 #include "libhatchet.h"
+
+// HX_USE_MODULE allows including macros in addition to the hx module.
+#if HX_USE_MODULE
+#error Header does not provide macros only.
+#endif
 
 class hxfile;
 

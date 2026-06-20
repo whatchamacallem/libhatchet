@@ -3,8 +3,15 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file hx/hxhash_table_nodes.hpp These are versions of the `hxhash_table`
-/// `node_t` template parameter for integers and strings.
+/// \file hxhash_table_nodes.hpp These are versions of the
+/// `hxhash_table::node_t` template parameter for integers and strings.
+
+#include "libhatchet.h"
+
+// HX_USE_MODULE allows including macros in addition to the hx module.
+#if HX_USE_MODULE
+#error Header does not provide macros only.
+#endif
 
 #include "hxhash_table.hpp"
 

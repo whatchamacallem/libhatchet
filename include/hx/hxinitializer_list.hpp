@@ -3,11 +3,17 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file - Implements or includes std::initializer_list depending on HX_USE_LIBCXX.
+/// \file hxinitializer_list.hpp Implements or includes std::initializer_list
+/// depending on HX_USE_LIBCXX.
 
 #include "libhatchet.h"
 
-#if (HX_USE_LIBCXX)
+// HX_USE_MODULE allows including macros in addition to the hx module.
+#if HX_USE_MODULE
+#error Header does not provide macros only.
+#endif
+
+#if HX_USE_LIBCXX
 #include <initializer_list>
 #else // !HX_USE_LIBCXX
 

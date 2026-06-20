@@ -3,8 +3,15 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file `hxarray` - Implements `std::vector`, `std::inplace_vector` and
+/// \file hxarray.hpp Implements `std::vector`, `std::inplace_vector` and
 /// `std::back_insert_iterator` with a chunk added a few things unimplemented.
+
+#include "libhatchet.h"
+
+// HX_USE_MODULE allows including macros in addition to the hx module.
+#if HX_USE_MODULE
+#error Header does not provide macros only.
+#endif
 
 #include "hxallocator.hpp"
 #include "hxsort.hpp"
@@ -19,7 +26,7 @@
 template<typename T_>
 concept hxarray_concept_ = requires(T_& x_) {
 	sizeof(T_);
-	{ x_.~T_() };
+	{ x_.T_::~T_() };
 };
 #else
 #define hxarray_concept_ typename
@@ -63,8 +70,9 @@ private:
 /// however `operator+=` does not support C strings.
 ///
 /// Please run both a memory sanitizer and an undefined behavior sanitizer. Use
-/// a C array for now if you need `constexpr` support. The excessive number of
-/// operators is due to the rules about default operators.
+/// a C array for now if you need `constexpr` support. The C++ standard made
+/// special provisions for `std::vector` that were  not made for this class. The
+/// excessive number of operators is due to the rules about default operators.
 /// - `T` : Element type stored by the array.
 /// - `capacity` : Maximum element count or `hxallocator_dynamic_capacity` for dynamic storage.
 template<hxarray_concept_ T_, size_t capacity_=hxallocator_dynamic_capacity>
@@ -502,10 +510,10 @@ public:
 	/// Reserves storage for at least the specified number of elements.
 	/// - `size` : The number of elements to reserve storage for.
 	/// - `allocator` : The memory manager ID to use for allocation (default: `hxsystem_allocator_current`)
-	/// - `alignment` : The alignment for the allocation. (default: `HX_ALIGNMENT`)
+	/// - `alignment` : The alignment for the allocation. (default: `hxalignment`)
 	void reserve(size_t size_,
 			hxsystem_allocator_t allocator_=hxsystem_allocator_current,
-			hxalignment_t alignment_=HX_ALIGNMENT);
+			hxalignment_t alignment_=hxalignment);
 
 	/// Resizes the array to the specified size, constructing or destroying
 	/// elements as needed. Requires a default constructor. Integers and floats

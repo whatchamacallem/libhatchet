@@ -3,15 +3,22 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file hx/hxkey.hpp User-overloadable key-equal, key-less, and key-hash
+/// \file hxkey.hpp User-overloadable key-equal, key-less, and key-hash
 /// functions. By default this code uses only the `==` and `<` operators, which
 /// works with either the default or a custom `<=>` operator. Alternatively,
 /// these functions can be overloaded to resolve key operations without global
 /// operator overloads. This code uses C++20 concepts when available and
 /// provides no fallbacks for SFINAE otherwise. Partial specialization does not
-/// work before C++20. As an alternative, callables are recommended and supported
-/// for complex use cases because they are relatively easy to debug. See
-/// `hxkey_equal_t` and `hxkey_less_t` for generating default callables.
+/// work before C++20. As an alternative, callables are recommended and
+/// supported for complex use cases because they are relatively easy to debug.
+/// See `hxkey_equal_t` and `hxkey_less_t` for generating default callables.
+
+#include "libhatchet.h"
+
+// HX_USE_MODULE allows including macros in addition to the hx module.
+#if HX_USE_MODULE
+#error Header does not provide macros only.
+#endif
 
 #include "hxutility.h"
 
@@ -118,11 +125,11 @@ public:
 
 // xxhash32 prime constants and avalanche mixing. Useful when hashing sequential
 // data. These are used by hxkey_hash overloads below.
-constexpr hxhash_t hxhash_prime1_ = hxhash_t{0x9E3779B1u};
-constexpr hxhash_t hxhash_prime2_ = hxhash_t{0x85EBCA77u};
-constexpr hxhash_t hxhash_prime3_ = hxhash_t{0xC2B2AE3Du};
-constexpr hxhash_t hxhash_prime4_ = hxhash_t{0x27D4EB2Fu};
-constexpr hxhash_t hxhash_prime5_ = hxhash_t{0x165667B1u};
+hxinline_constexpr hxhash_t hxhash_prime1_ = hxhash_t{0x9E3779B1u};
+hxinline_constexpr hxhash_t hxhash_prime2_ = hxhash_t{0x85EBCA77u};
+hxinline_constexpr hxhash_t hxhash_prime3_ = hxhash_t{0xC2B2AE3Du};
+hxinline_constexpr hxhash_t hxhash_prime4_ = hxhash_t{0x27D4EB2Fu};
+hxinline_constexpr hxhash_t hxhash_prime5_ = hxhash_t{0x165667B1u};
 
 // xxhash32 avalanche: x ^= x >> 15, x *= prime2, x ^= x >> 13, x *= prime3, x ^= x >> 16.
 hxattr_nodiscard inline hxhash_t hxhash_avalanche_(hxhash_t x_) {

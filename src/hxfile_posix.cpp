@@ -7,13 +7,14 @@
 
 #include "../include/hx/hxfile.hpp"
 
-#if (HX_USE_POSIX_FILE_IO)
+#if HX_USE_POSIX_FILE_IO
 
 // These are only dependencies of the POSIX implementation. This is to allow
 // easy reimplementation.
 #include <fcntl.h>
-#include <stdio.h>
 #include <unistd.h>
+
+#include <stdio.h> // ::vsnprintf
 
 // In this version the file is a POSIX fd stored directly as intptr_t. -1
 // represents closed or hxdev_null; valid fds are >= 0.
@@ -47,8 +48,8 @@ hxfile::hxfile(uint8_t mode, const char* filename, ...) : hxfile() {
 }
 
 hxfile::hxfile(hxfile&& file) {
-	::memcpy(static_cast<void*>(this), static_cast<const void*>(&file), sizeof file); // NOLINT
-	::memset(static_cast<void*>(&file), 0x00, sizeof file); // NOLINT
+	::memcpy(static_cast<void*>(this), static_cast<const void*>(&file), sizeof file);
+	::memset(static_cast<void*>(&file), 0x00, sizeof file);
 	file.m_file_pimpl_ = static_cast<intptr_t>(-1);
 }
 
@@ -58,8 +59,8 @@ hxfile::~hxfile(void) {
 
 void hxfile::operator=(hxfile&& file) {
 	close();
-	::memcpy(static_cast<void*>(this), static_cast<const void*>(&file), sizeof file); // NOLINT
-	::memset(static_cast<void*>(&file), 0x00, sizeof file); // NOLINT
+	::memcpy(static_cast<void*>(this), static_cast<const void*>(&file), sizeof file);
+	::memset(static_cast<void*>(&file), 0x00, sizeof file);
 	file.m_file_pimpl_ = static_cast<intptr_t>(-1);
 }
 
@@ -248,10 +249,10 @@ bool hxfile::print(const char* format, ...) { // NOLINT
 		return true;
 	}
 
-	char buf[HX_MAX_LINE];
+	char buf[HX_MAX_LINE + 1u];
 	va_list args;
 	va_start(args, format);
-	const int len = ::vsnprintf(buf, HX_MAX_LINE, format, args);
+	const int len = ::vsnprintf(buf, HX_MAX_LINE + 1u, format, args);
 	va_end(args);
 
 	hxassert_always(len >= 0, "vsnprintf %s", ::strerror(errno));
@@ -260,8 +261,8 @@ bool hxfile::print(const char* format, ...) { // NOLINT
 		return false;
 	}
 
-	const size_t to_write = (static_cast<size_t>(len) < HX_MAX_LINE) ?
-		static_cast<size_t>(len) : HX_MAX_LINE - 1u;
+	const size_t to_write = (static_cast<size_t>(len) <= HX_MAX_LINE) ?
+		static_cast<size_t>(len) : static_cast<size_t>(HX_MAX_LINE);
 	size_t written = 0u;
 	while(written < to_write) {
 		const ssize_t n = ::write(static_cast<int>(m_file_pimpl_), buf + written, to_write - written);

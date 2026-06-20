@@ -3,8 +3,15 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file `hxtask_queue` - Provides a priority queue of tasks and a worker
+/// \file hxtask_queue.hpp Provides a priority queue of tasks and a worker
 /// thread pool.
+
+#include "libhatchet.h"
+
+// HX_USE_MODULE allows including macros in addition to the hx module.
+#if HX_USE_MODULE
+#error Header does not provide macros only.
+#endif
 
 #include "hxarray.hpp"
 #include "hxtask.hpp"
@@ -29,7 +36,7 @@ public:
 
 #if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
 		const char* label;
-		~record_t() { ::memset((void*)this, 0xefu, sizeof *this); } // NOLINT
+		~record_t() { ::memset(reinterpret_cast<void*>(this), 0xefu, sizeof *this); }
 #endif
 	};
 
@@ -120,10 +127,11 @@ public:
 private:
 	hxtask_queue(const hxtask_queue&) = delete;
 	void operator=(const hxtask_queue&) = delete;
+	template<size_t max_successors_> friend class hxtask_dag_node;
 
 	hxarray<record_t> m_tasks_;
 
-#if (HX_USE_THREADS)
+#if HX_USE_THREADS
 #define hxtask_queue_lock_ const hxunique_lock lock_(m_mutex_)
 
 	friend class hxtask_wait_for_tasks_;

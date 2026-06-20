@@ -23,7 +23,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "Enable compile database generation")
 
-file(GLOB SOURCES "src/*.c" "src/*.cpp")
+file(GLOB SOURCES "src/*.cpp")
 file(GLOB TEST_SOURCES "test/*.c" "test/*.cpp")
 
 # Add the executable for tests

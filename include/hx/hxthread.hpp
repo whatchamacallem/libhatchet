@@ -3,37 +3,49 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file hx/hxthread.hpp C++ wrappers for POSIX pthreads or C11 `threads.h`.
+/// \file hxthread.hpp C++ wrappers for POSIX pthreads or C11 `threads.h`.
 /// Provides `hxthread_local`, `hxmutex`, `hxunique_lock`,
 /// `hxcondition_variable`, and `hxthread`. For atomics consider
 /// `<stdatomic.h>`.
 
-#include "hxutility.h"
+#include "libhatchet.h"
 
-static_assert((HX_USE_THREADS) == 0 || (HX_USE_THREADS) == 1 || (HX_USE_THREADS) == 11,
-	"HX_USE_THREADS must be 0, 1 or 11. 11 is for using <threads.h>");
+// HX_USE_MODULE allows including macros in addition to the hx module.
+#if HX_USE_MODULE
+#error Header does not provide macros only.
+#endif
+#if (HX_USE_THREADS) != 0 && (HX_USE_THREADS) != 1 && (HX_USE_THREADS) != 11
+#error HX_USE_THREADS must be 0, 1 or 11. 11 is for using <threads.h>.
+#endif
+
+#include "hxutility.h"
 
 #if (HX_USE_THREADS) == 11
 #include <threads.h>
-#elif (HX_USE_THREADS)
+#elif HX_USE_THREADS
 #include <pthread.h>
 #endif
 
-/// `hxthread_local<T>` - Provides a C++ template for thread-local storage, allowing
-/// each thread to maintain its own instance of a specified type T. This class is
-/// available for compatibility when threading is off.
+/// `hxthread_local` - Provides thread-local storage for an integer or a
+/// pointer. The default value must be zero or null. This class is available for
+/// compatibility when threading is off. The design has been simplified to avoid
+/// heap allocations and callbacks into the memory manager after the main thread
+/// exits.
 template<typename T_>
 class hxthread_local {
+	static_assert(sizeof(T_) <= sizeof(void*), "hxthread_local: sizeof(T) must be <= sizeof(void*)");
+
 public:
-	/// Constructs with a default value for each thread.
-	explicit hxthread_local(const T_& default_value_ = T_())
-			: m_default_value_(default_value_) {
+	/// Construct to 0 or null.
+	explicit hxthread_local(void) {
 #if (HX_USE_THREADS) == 11
-		const int code_ = ::tss_create(&m_key_, destroy_local_);
+		const int code_ = ::tss_create(&m_key_, 0);
 		hxassert_always(code_ == thrd_success, "tss_create %d", code_); (void)code_;
-#elif (HX_USE_THREADS)
-		const int code_ = ::pthread_key_create(&m_key_, destroy_local_);
+#elif HX_USE_THREADS
+		const int code_ = ::pthread_key_create(&m_key_, 0);
 		hxassert_always(code_ == 0, "pthread_key_create %s", ::strerror(code_)); (void)code_;
+#else
+		m_value_ = (T_)0; // NOLINT
 #endif
 	}
 
@@ -41,76 +53,62 @@ public:
 	~hxthread_local() {
 #if (HX_USE_THREADS) == 11
 		::tss_delete(m_key_);
-#elif (HX_USE_THREADS)
+#elif HX_USE_THREADS
 		::pthread_key_delete(m_key_);
 #endif
 	}
 
-	/// Sets the thread-local value from `T`.
-	template<class U_>
-	void operator=(U_&& local_) { *(this->get_local_()) = hxforward<U_>(local_); }
+	/// Returns the thread-local value.
+	operator T_(void) {
+#if (HX_USE_THREADS) == 11
+		return (T_)(intptr_t)::tss_get(m_key_); // NOLINT
+#elif HX_USE_THREADS
+		return (T_)(intptr_t)::pthread_getspecific(m_key_); // NOLINT
+#else
+		return m_value_;
+#endif
+	}
 
-	/// Casts the thread-local value to `T&`.
-	operator const T_&() const { return *(this->get_local_()); }
-	operator T_&() { return *(this->get_local_()); }
-
-	/// The "address of" operator returns `T*`.
-	const T_* operator&() const { return this->get_local_(); }
-	T_* operator&() { return this->get_local_(); }
+	/// Sets the thread-local value. This is a form of "mutable when const."
+	void operator=(T_ local_) {
+#if (HX_USE_THREADS) == 11
+		const int code_ = ::tss_set(m_key_, (void*)(intptr_t)local_); // NOLINT
+		hxassert_always(code_ == thrd_success, "tss_set %d", code_); (void)code_;
+#elif HX_USE_THREADS
+		const int code_ = ::pthread_setspecific(m_key_, (void*)(intptr_t)local_); // NOLINT
+		hxassert_always(code_ == 0, "pthread_setspecific %s", ::strerror(code_)); (void)code_;
+#else
+		m_value_ = local_;
+#endif
+	}
 
 private:
-	// This is a form of "mutable when const." A thread should not
-	// know or care when storage is allocated for it.
-#if (HX_USE_THREADS)
-	T_* get_local_() const {
-#if (HX_USE_THREADS) == 11
-		T_* local_ = static_cast<T_*>(::tss_get(m_key_));
-		if(local_ == hxnull) {
-			local_ = new T_(m_default_value_);
-			hxassert_always(local_, "new T");
-			const int code_ = ::tss_set(m_key_, local_);
-			hxassert_always(code_ == thrd_success, "tss_set %d", code_); (void)code_;
-		}
-		return local_;
-#else
-		T_* local_ = static_cast<T_*>(::pthread_getspecific(m_key_));
-		if(local_ == hxnull) {
-			local_ = new T_(m_default_value_);
-			hxassert_always(local_, "new T");
-			const int code_ = ::pthread_setspecific(m_key_, local_);
-			hxassert_always(code_ == 0, "pthread_setspecific %s", ::strerror(code_)); (void)code_;
-		}
-		return local_;
-#endif
-	}
-#else
-	const T_* get_local_() const { return &m_default_value_; }
-	T_* get_local_() { return &m_default_value_; }
-#endif
-
-	static void destroy_local_(void* ptr_) noexcept {
-		hxassertmsg(ptr_, "destroy_local_");
-		delete static_cast<T_*>(ptr_);
-	}
-
 	explicit hxthread_local(const hxthread_local&) = delete;
 	hxthread_local& operator=(const hxthread_local&) = delete;
 
+	// No allocation is being made with which to return a pointer to.
+	void operator&(void) const = delete;
+	void operator&(void) = delete;
+
 #if (HX_USE_THREADS) == 11
 	::tss_t m_key_;
-#elif (HX_USE_THREADS)
+#elif HX_USE_THREADS
 	::pthread_key_t m_key_;
+#else
+	T_ m_value_;
 #endif
-	T_ m_default_value_;
 };
 
 /// Returns the current thread ID. Returns `0` when threads are disabled. This
 /// is used by the profiler and so it tries to be efficient.
-inline size_t hxthread_id() {
+inline size_t hxthread_id(void) {
 #if (HX_USE_THREADS) == 11
-    static hxthread_local<size_t> tid_;
-    return reinterpret_cast<uintptr_t>(&tid_);
-#elif (HX_USE_THREADS)
+#if defined(_WIN32)
+	return static_cast<size_t>(::thrd_current()._Tid);
+#else
+	return static_cast<size_t>(::thrd_current());
+#endif
+#elif HX_USE_THREADS
 	return static_cast<size_t>(::pthread_self());
 #else
 	return 0; // Single threaded.
@@ -119,7 +117,7 @@ inline size_t hxthread_id() {
 
 // The remaining classes are only available when threading is enabled. Emulating
 // pthreads is a little too nutty because it has a range of valid implementations.
-#if (HX_USE_THREADS)
+#if HX_USE_THREADS
 
 /// `hxmutex` - `std::mutex` style wrapper for the configured thread backend.
 /// Asserts on unexpected failure by the native API. Currently default behavior

@@ -10,7 +10,7 @@
 # Do not use a .pch with ccache. It won't work as expected.
 
 # Should detect threading and the standard library.
-BUILD="-DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG -O0"
+BUILD="-DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG -DHX_USE_PROFILER=1 -O0"
 
 # -Wdate-time is for ccache. -Wno-unused-variable is only for debugging.
 ERRORS="-Wall -Wextra -pedantic-errors -Werror -Wfatal-errors -Wcast-qual \
@@ -43,7 +43,7 @@ set -eu
 rm -rf ./build; mkdir ./build && cd ./build
 
 PIDS=""
-for FILE in ../src/*.c ../test/*.c; do
+for FILE in ../test/*.c; do
 	ccache clang $BUILD $ERRORS $FLAGS -I../include -std=c17 -c $FILE & PIDS="$PIDS $!"
 done
 

@@ -5,7 +5,7 @@
 #include "../include/hx/hxtask_queue.hpp"
 #include "../include/hx/hxprofiler.hpp"
 
-#if (HX_USE_THREADS)
+#if HX_USE_THREADS
 // hxtask_wait_for_tasks_ keeps worker threads waiting for tasks or shutdown.
 class hxtask_wait_for_tasks_ {
 public:
@@ -34,7 +34,7 @@ public:
 
 // Should abort if exceptions are enabled and the thread pool cannot be created.
 hxtask_queue::hxtask_queue(size_t task_queue_size_, size_t thread_pool_size_)
-#if (HX_USE_THREADS)
+#if HX_USE_THREADS
 	: m_queue_run_level_(run_level_running_)
 	, m_thread_pool_size_(thread_pool_size_)
 	, m_threads_(hxnull)
@@ -44,7 +44,7 @@ hxtask_queue::hxtask_queue(size_t task_queue_size_, size_t thread_pool_size_)
 	m_tasks_.reserve(task_queue_size_);
 
 	(void)thread_pool_size_;
-#if (HX_USE_THREADS)
+#if HX_USE_THREADS
 	if(m_thread_pool_size_ > 0) {
 		m_threads_ = reinterpret_cast<hxthread*>(hxmalloc(m_thread_pool_size_ * sizeof(hxthread)));
 		for(size_t i_ = m_thread_pool_size_; i_-- != 0u;) {
@@ -55,7 +55,7 @@ hxtask_queue::hxtask_queue(size_t task_queue_size_, size_t thread_pool_size_)
 }
 
 hxtask_queue::~hxtask_queue(void) {
-#if (HX_USE_THREADS)
+#if HX_USE_THREADS
 	if(m_thread_pool_size_ > 0) {
 		thread_task_loop_(this, thread_mode_stopping_);
 		hxassertmsg(m_queue_run_level_ == run_level_stopped_, "threading_error");
@@ -81,7 +81,7 @@ void hxtask_queue::enqueue(hxtask* task, int priority) {
 #endif
 	};
 
-#if (HX_USE_THREADS)
+#if HX_USE_THREADS
 	const hxunique_lock lock_(m_mutex_);
 	if(m_thread_pool_size_ > 0) {
 		hxassert_hard(m_queue_run_level_ == run_level_running_, "stopped_queue");
@@ -96,7 +96,7 @@ void hxtask_queue::enqueue(hxtask* task, int priority) {
 }
 
 void hxtask_queue::wait_for_all(void) {
-#if (HX_USE_THREADS)
+#if HX_USE_THREADS
 	if(m_thread_pool_size_ > 0) {
 		// Contribute current thread and request waiting until completion.
 		thread_task_loop_(this, thread_mode_waiting_);
@@ -116,7 +116,7 @@ void hxtask_queue::wait_for_all(void) {
 	}
 }
 
-#if (HX_USE_THREADS)
+#if HX_USE_THREADS
 hxthread::return_t hxtask_queue::thread_task_loop_entry_(hxtask_queue* q_) {
 	thread_task_loop_(q_, thread_mode_pool_);
 	return hxnull;

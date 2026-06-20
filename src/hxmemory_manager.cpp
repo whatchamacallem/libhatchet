@@ -13,7 +13,7 @@
 #define HX_USE_STD_ALIGNED_ALLOC (HX_CPLUSPLUS >= 201703L && (HX_HARDENING_MODE) != HX_HARDENING_MODE_DEBUG)
 #endif
 
-#if !(HX_USE_LIBCXX)
+#if HX_PROVIDE_NEW_DELETE
 // Forward declare for C++11.
 hxattr_hot void operator delete(void* ptr, size_t) noexcept;
 hxattr_hot void operator delete[](void* ptr, size_t) noexcept;
@@ -65,18 +65,24 @@ hxattr_allocator(free) hxattr_hot hxattr_noexcept static void* hxmalloc_checked_
 }
 
 // HX_USE_MEMORY_MANAGER. See hxsettings.h.
-#if (HX_USE_MEMORY_MANAGER)
+#if HX_USE_MEMORY_MANAGER
+
+// Clang emits anonymous namespace constructors in module consumers, making
+// internal vtables unreachable. A named namespace gives vtables external weak
+// linkage so the linker can resolve them across TUs.
+namespace hxdetail_ {
 
 // All pathways are thread-safe by default. In theory locking could be removed
 // if threads avoided sharing allocators, but I do not want to scare anyone.
-#if (HX_USE_THREADS)
-static hxmutex s_hxmemory_manager_mutex;
-#define HX_MEMORY_MANAGER_LOCK_() const hxunique_lock memory_manager_lock_(s_hxmemory_manager_mutex)
+#if HX_USE_THREADS
+static hxmutex hxs_memory_manager_mutex;
+#define HX_MEMORY_MANAGER_LOCK_() const hxunique_lock memory_manager_lock_(hxdetail_::hxs_memory_manager_mutex)
 #else
 #define HX_MEMORY_MANAGER_LOCK_() (void)0
 #endif
 
-namespace {
+// The current allocator is a thread-local attribute.
+static hxthread_local<hxsystem_allocator_t> hxs_current_memory_allocator;
 
 // ----------------------------------------------------------------------------
 // hxmemory_allocation_header - Used until C++17.
@@ -94,13 +100,15 @@ public:
 #endif
 };
 #endif
+
 // ----------------------------------------------------------------------------
 // hxmemory_allocator_base
-
+//
+// Clang emits inline constructors of anonymous namespace types into module
+// consumers. Out-of-line constructors prevent this.
 class hxmemory_allocator_base {
 public:
-	hxmemory_allocator_base() : m_label_(hxnull) { }
-	virtual ~hxmemory_allocator_base() = default;
+	hxmemory_allocator_base();
 	hxattr_hot void* allocate(size_t size, hxalignment_t alignment) {
 		return on_alloc(size, alignment);
 	}
@@ -121,6 +129,8 @@ private:
 	void operator=(const hxmemory_allocator_base&) = delete;
 };
 
+hxmemory_allocator_base::hxmemory_allocator_base() : m_label_(hxnull) { }
+
 // ----------------------------------------------------------------------------
 // hxmemory_allocator_os_heap
 //
@@ -130,6 +140,7 @@ private:
 // allows tracking bytes allocated in debug.
 class hxmemory_allocator_os_heap : public hxmemory_allocator_base {
 public:
+	hxmemory_allocator_os_heap();
 	hxattr_cold void construct(const char* label) {
 		m_label_ = label;
 		m_allocation_count = 0u;
@@ -155,7 +166,7 @@ public:
 	}
 
 	hxattr_hot void* on_alloc(size_t size, hxalignment_t alignment) override {
-#if (HX_USE_STD_ALIGNED_ALLOC)
+#if HX_USE_STD_ALIGNED_ALLOC
 		++m_allocation_count;
 
 		// Round up the size to be a multiple of the alignment so aligned_alloc
@@ -168,8 +179,8 @@ public:
 		hxassert_always(t, "aligned_alloc %zu %zu", static_cast<size_t>(alignment), size);
 		return t;
 #else
-		// hxmemory_allocation_header has an HX_ALIGNMENT alignment requirement as well.
-		alignment = hxmax(alignment, HX_ALIGNMENT);
+		// hxmemory_allocation_header has an hxalignment alignment requirement as well.
+		alignment = hxmax(alignment, hxalignment);
 		const uintptr_t alignment_mask = static_cast<uintptr_t>(alignment - 1u);
 
 		// Place header immediately before aligned allocation.
@@ -191,7 +202,7 @@ public:
 	}
 
 	hxattr_hot void on_free_non_virtual(void* ptr) {
-#if (HX_USE_STD_ALIGNED_ALLOC)
+#if HX_USE_STD_ALIGNED_ALLOC
 		--m_allocation_count;
 		::free(ptr);
 #else
@@ -221,11 +232,14 @@ private:
 	size_t m_high_water;
 };
 
+hxmemory_allocator_os_heap::hxmemory_allocator_os_heap() = default;
+
 // ----------------------------------------------------------------------------
 // hxmemory_allocator_stack: Nothing can be freed.
 
 class hxmemory_allocator_stack : public hxmemory_allocator_base {
 public:
+	hxmemory_allocator_stack();
 	hxattr_cold void construct(void* ptr, size_t size, const char* label) {
 		m_label_ = label;
 
@@ -296,11 +310,14 @@ protected:
 	size_t m_allocation_count;
 };
 
+hxmemory_allocator_stack::hxmemory_allocator_stack() = default;
+
 // ----------------------------------------------------------------------------
 // hxmemory_allocator_temp_stack: Resets after a scope closes.
 
 class hxmemory_allocator_temp_stack : public hxmemory_allocator_stack {
 public:
+	hxmemory_allocator_temp_stack();
 	hxattr_cold void construct(void* ptr, size_t size, const char* label) {
 		hxmemory_allocator_stack::construct(ptr, size, label);
 		m_high_water = 0u;
@@ -336,14 +353,17 @@ protected:
 	uintptr_t m_high_water;
 };
 
+hxmemory_allocator_temp_stack::hxmemory_allocator_temp_stack() = default;
+
 // ----------------------------------------------------------------------------
 // hxmemory_manager
 
 class hxmemory_manager {
 public:
-	hxattr_cold void construct();
-	hxattr_cold void destruct();
-	hxattr_cold size_t leak_count();
+	hxmemory_manager();
+	hxattr_cold void construct(void);
+	hxattr_cold void destruct(void);
+	hxattr_cold size_t leak_count(void);
 
 	hxattr_hot hxsystem_allocator_t begin_allocation_scope(hxsystem_allocator_scope* scope,
 		hxsystem_allocator_t new_id);
@@ -361,24 +381,18 @@ public:
 private:
 	friend class hxsystem_allocator_scope;
 
-	// WARNING:  The current allocator is a thread-local attribute.
-	static hxthread_local<hxsystem_allocator_t> s_hxcurrent_memory_allocator;
-
-	hxmemory_allocator_base* m_memory_allocators[hxsystem_allocator_current];
+	hxmemory_allocator_base*      m_memory_allocators[hxsystem_allocator_current];
 
 	hxmemory_allocator_os_heap	  m_memory_allocator_heap;
 	hxmemory_allocator_stack	  m_memory_allocator_permanent;
 	hxmemory_allocator_temp_stack m_memory_allocator_temporary_stack;
 };
 
-hxthread_local<hxsystem_allocator_t>
-hxmemory_manager::s_hxcurrent_memory_allocator(hxsystem_allocator_heap);
+hxmemory_manager::hxmemory_manager() = default;
 
-static hxmemory_manager s_hxmemory_manager;
+static hxmemory_manager hxs_memory_manager;
 
 void hxmemory_manager::construct(void) {
-	s_hxcurrent_memory_allocator = hxsystem_allocator_heap;
-
 	m_memory_allocators[hxsystem_allocator_heap] = &m_memory_allocator_heap;
 	m_memory_allocators[hxsystem_allocator_permanent] = &m_memory_allocator_permanent;
 	m_memory_allocators[hxsystem_allocator_temporary_stack] = &m_memory_allocator_temporary_stack;
@@ -392,6 +406,9 @@ void hxmemory_manager::construct(void) {
 		(HX_MEMORY_BUDGET_PERMANENT), "perm");
 	m_memory_allocator_temporary_stack.construct(hxmalloc_checked_(HX_MEMORY_BUDGET_TEMPORARY_STACK),
 		(HX_MEMORY_BUDGET_TEMPORARY_STACK), "temp");
+
+	// Safe default.
+	hxs_current_memory_allocator = hxsystem_allocator_heap;
 }
 
 void hxmemory_manager::destruct(void) {
@@ -420,21 +437,20 @@ size_t hxmemory_manager::leak_count(void) {
 
 hxsystem_allocator_t hxmemory_manager::begin_allocation_scope(
 		hxsystem_allocator_scope* scope, hxsystem_allocator_t new_id) {
-
 	HX_MEMORY_MANAGER_LOCK_();
-	const hxsystem_allocator_t previous_id = s_hxcurrent_memory_allocator;
-	s_hxcurrent_memory_allocator = new_id;
-	get_allocator(s_hxcurrent_memory_allocator).begin_allocation_scope(
-		scope, s_hxcurrent_memory_allocator);
+	const hxsystem_allocator_t previous_id = hxs_current_memory_allocator;
+	hxs_current_memory_allocator = new_id;
+	get_allocator(hxs_current_memory_allocator).begin_allocation_scope(
+		scope, hxs_current_memory_allocator);
 	return previous_id;
 }
 
 void hxmemory_manager::end_allocation_scope(
 		hxsystem_allocator_scope* scope, hxsystem_allocator_t previous_id) {
 	HX_MEMORY_MANAGER_LOCK_();
-	get_allocator(s_hxcurrent_memory_allocator).end_allocation_scope(
-		scope, s_hxcurrent_memory_allocator);
-	s_hxcurrent_memory_allocator = previous_id;
+	get_allocator(hxs_current_memory_allocator).end_allocation_scope(
+		scope, hxs_current_memory_allocator);
+	hxs_current_memory_allocator = previous_id;
 }
 
 // WARNING: It is undefined behavior to compare pointers to different
@@ -443,7 +459,7 @@ void hxmemory_manager::end_allocation_scope(
 void* hxmemory_manager::allocate(size_t size, hxsystem_allocator_t id, hxalignment_t alignment) {
 	if(id == hxsystem_allocator_current) {
 		// This currently involves a call to pthreads.
-		id = s_hxcurrent_memory_allocator;
+		id = hxs_current_memory_allocator;
 	}
 
 	// Size 0 allocations are only logged as a warning. Size zero is tested and
@@ -487,7 +503,7 @@ void hxmemory_manager::free(void* ptr) {
 	}
 
 	if(m_memory_allocator_permanent.contains(ptr)) {
-		hxwarn_msg(g_hxsettings.deallocate_permanent, "ERROR: free from permanent");
+		hxwarn_msg(hxg_settings.deallocate_permanent, "ERROR: free from permanent");
 		m_memory_allocator_permanent.on_free_non_virtual(ptr);
 		return;
 	}
@@ -495,7 +511,7 @@ void hxmemory_manager::free(void* ptr) {
 	m_memory_allocator_heap.on_free_non_virtual(ptr);
 }
 
-} // namespace {
+} // hxdetail_
 
 // ----------------------------------------------------------------------------
 // hxsystem_allocator_scope
@@ -504,21 +520,21 @@ hxattr_noexcept hxsystem_allocator_scope::hxsystem_allocator_scope(hxsystem_allo
 {
 	hxinit();
 	m_this_allocator_ = id;
-	m_initial_allocator_ = s_hxmemory_manager.begin_allocation_scope(this, id);
+	m_initial_allocator_ = hxdetail_::hxs_memory_manager.begin_allocation_scope(this, id);
 }
 
 hxattr_noexcept hxsystem_allocator_scope::~hxsystem_allocator_scope(void) {
-	s_hxmemory_manager.end_allocation_scope(this, m_initial_allocator_);
+	hxdetail_::hxs_memory_manager.end_allocation_scope(this, m_initial_allocator_);
 }
 
 size_t hxsystem_allocator_scope::get_current_allocation_count(void) const {
 	hxinit();
-	return s_hxmemory_manager.get_allocator(m_this_allocator_).get_allocation_count(m_this_allocator_);
+	return hxdetail_::hxs_memory_manager.get_allocator(m_this_allocator_).get_allocation_count(m_this_allocator_);
 }
 
 size_t hxsystem_allocator_scope::get_current_bytes_allocated(void) const {
 	hxinit();
-	return s_hxmemory_manager.get_allocator(m_this_allocator_).get_bytes_allocated(m_this_allocator_);
+	return hxdetail_::hxs_memory_manager.get_allocator(m_this_allocator_).get_bytes_allocated(m_this_allocator_);
 }
 
 // ----------------------------------------------------------------------------
@@ -527,7 +543,7 @@ size_t hxsystem_allocator_scope::get_current_bytes_allocated(void) const {
 extern "C"
 hxattr_noexcept void* hxmalloc(size_t size) {
 	hxinit();
-	void* ptr = s_hxmemory_manager.allocate(size, hxsystem_allocator_current, HX_ALIGNMENT);
+	void* ptr = hxdetail_::hxs_memory_manager.allocate(size, hxsystem_allocator_current, hxalignment);
 #if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
 		::memset(ptr, 0xcd, size);
 #endif
@@ -537,7 +553,7 @@ hxattr_noexcept void* hxmalloc(size_t size) {
 extern "C"
 hxattr_noexcept void* hxmalloc_ext(size_t size, hxsystem_allocator_t id, hxalignment_t alignment) {
 	hxinit();
-	void* ptr = s_hxmemory_manager.allocate(size, id, alignment);
+	void* ptr = hxdetail_::hxs_memory_manager.allocate(size, id, alignment);
 #if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
 		::memset(ptr, 0xcd, size);
 #endif
@@ -550,30 +566,26 @@ hxattr_noexcept void hxfree(void *ptr) {
 
 	// Nothing allocated from the OS memory manager can be freed here unless it is
 	// wrapped with hxmemory_allocator_os_heap.
-	s_hxmemory_manager.free(ptr);
+	hxdetail_::hxs_memory_manager.free(ptr);
 }
 
-void hxmemory_manager_init(void) {
-	hxassert_hard(!g_hxinit_ver_, "hxmemory_manager_init Reinit.");
-
-	s_hxmemory_manager.construct();
+void hxmemory_manager_init_(void) {
+	hxassert_hard(!hxg_init_ver_, "hxmemory_manager_init Reinitialized.");
+	hxdetail_::hxs_memory_manager.construct();
 }
 
-void hxmemory_manager_shut_down(void) {
-	hxassert_hard(g_hxinit_ver_, "hxmemory_manager_shut_down Not init.");
-
+void hxmemory_manager_shut_down_(void) {
 	// Any allocations made while active will crash when freed. If these are not
 	// fixed you will hit a leak sanitizer elsewhere.
-	const size_t leak_count = s_hxmemory_manager.leak_count();
-	hxassert_hard(leak_count == 0, "memory_leak at shutdown %zu", leak_count); (void)leak_count;
+	hxassert_hard(hxdetail_::hxs_memory_manager.leak_count() == 0, "memory_leak at shutdown %zu", hxdetail_::hxs_memory_manager.leak_count());
 
 	// Return everything to the system allocator.
-	s_hxmemory_manager.destruct();
+	hxdetail_::hxs_memory_manager.destruct();
 }
 
 size_t hxmemory_manager_leak_count(void) {
 	hxinit();
-	return s_hxmemory_manager.leak_count();
+	return hxdetail_::hxs_memory_manager.leak_count();
 }
 
 // ----------------------------------------------------------------------------
@@ -588,7 +600,7 @@ hxattr_noexcept void* hxmalloc(size_t size) {
 extern "C"
 hxattr_noexcept void* hxmalloc_ext(size_t size, hxsystem_allocator_t id, hxalignment_t alignment) {
 	(void)id; (void)alignment;
-	hxassertmsg(alignment <= HX_ALIGNMENT, "alignment_error Memory manager disabled: %zu",
+	hxassertmsg(alignment <= hxalignment, "alignment_error Memory manager disabled: %zu",
 		static_cast<size_t>(alignment));
 	return hxmalloc_checked_(size);
 }
@@ -598,9 +610,9 @@ hxattr_noexcept void hxfree(void *ptr) {
 	::free(ptr);
 }
 
-void hxmemory_manager_init(void) { }
+void hxmemory_manager_init_(void) { }
 
-void hxmemory_manager_shut_down(void) { }
+void hxmemory_manager_shut_down_(void) { }
 
 size_t hxmemory_manager_leak_count(void) { return 0; }
 
