@@ -1,0 +1,3 @@
+# Auto detect text files and perform LF normalization. Linux and Windows are LF
+# not CRLF.
+* text=auto eol=lf

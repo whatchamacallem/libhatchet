@@ -1,0 +1,57 @@
+// SPDX-FileCopyrightText: © 2017-2026 Adrian Johnston.
+// SPDX-License-Identifier: MIT
+// This file is licensed under the MIT license found in the LICENSE.md file.
+{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "(gdb) Launch",
+			"type": "cppdbg",
+			"request": "launch",
+			"program": "${workspaceFolder}/build/hxtest",
+			"args": ["help", "runtests"],
+			"stopAtEntry": false,
+			"cwd": "${workspaceFolder}/build",
+			"environment": [],
+			"externalConsole": false,
+			"MIMode": "gdb",
+			"setupCommands": [
+				{
+					"description": "Enable pretty printing",
+					"text": "-enable-pretty-printing",
+					"ignoreFailures": false
+				},
+				{
+					"description": "Load hxarray printer",
+					"text": "source ${workspaceFolder}/gdb/hxarray_printer.py",
+					"ignoreFailures": false
+				},
+				{
+					"description": "Load hxbitset printer",
+					"text": "source ${workspaceFolder}/gdb/hxbitset_printer.py",
+					"ignoreFailures": false
+				},
+				{
+					"description": "Load hxdeque printer",
+					"text": "source ${workspaceFolder}/gdb/hxdeque_printer.py",
+					"ignoreFailures": false
+				},
+				{
+					"description": "Load hxhash_table printer",
+					"text": "source ${workspaceFolder}/gdb/hxhash_table_printer.py",
+					"ignoreFailures": false
+				},
+				{
+					"description": "Load hxlist printer",
+					"text": "source ${workspaceFolder}/gdb/hxlist_printer.py",
+					"ignoreFailures": false
+				},
+				{
+					"description": "Set Disassembly Flavor to Intel",
+					"text": "-gdb-set disassembly-flavor intel",
+					"ignoreFailures": true
+				}
+			]
+		}
+	]
+}

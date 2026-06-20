@@ -1,0 +1,199 @@
+// SPDX-FileCopyrightText: © 2017-2026 Adrian Johnston.
+// SPDX-License-Identifier: MIT
+// This file is licensed under the MIT license found in the LICENSE.md file.
+{
+	"tasks": [
+		{
+			"type": "shell",
+			"label": "generate msvc x64 debug",
+			"command": "for /f \"usebackq tokens=*\" %i in (`\"%ProgramFiles(x86)%\\Microsoft Visual Studio\\Installer\\vswhere.exe\" -latest -property installationPath`) do call \"%i\\Common7\\Tools\\VsDevCmd.bat\" && cmake -S . -B build/x64-debug -A x64 && cmake --build build/x64-debug --config Debug",
+			"options": {
+				"cwd": "${workspaceFolder}",
+				"shell": {
+					"executable": "C:\\Windows\\System32\\cmd.exe",
+					"args": [
+						"/c"
+					]
+				}
+			},
+			"problemMatcher": [
+				"$msCompile"
+			],
+			"group": {
+				"kind": "build"
+			}
+		},
+		{
+			"type": "shell",
+			"label": "generate msvc x64 release",
+			"command": "for /f \"usebackq tokens=*\" %i in (`\"%ProgramFiles(x86)%\\Microsoft Visual Studio\\Installer\\vswhere.exe\" -latest -property installationPath`) do call \"%i\\Common7\\Tools\\VsDevCmd.bat\" && cmake -S . -B build/x64-release -A x64 && cmake --build build/x64-release --config Release",
+			"options": {
+				"cwd": "${workspaceFolder}",
+				"shell": {
+					"executable": "C:\\Windows\\System32\\cmd.exe",
+					"args": [
+						"/c"
+					]
+				}
+			},
+			"problemMatcher": [
+				"$msCompile"
+			],
+			"group": {
+				"kind": "build"
+			}
+		},
+		{
+			"type": "shell",
+			"label": "generate msvc win32 debug",
+			"command": "for /f \"usebackq tokens=*\" %i in (`\"%ProgramFiles(x86)%\\Microsoft Visual Studio\\Installer\\vswhere.exe\" -latest -property installationPath`) do call \"%i\\Common7\\Tools\\VsDevCmd.bat\" && cmake -S . -B build/win32-debug -A Win32 && cmake --build build/win32-debug --config Debug",
+			"options": {
+				"cwd": "${workspaceFolder}",
+				"shell": {
+					"executable": "C:\\Windows\\System32\\cmd.exe",
+					"args": [
+						"/c"
+					]
+				}
+			},
+			"problemMatcher": [
+				"$msCompile"
+			],
+			"group": {
+				"kind": "build"
+			}
+		},
+		{
+			"type": "shell",
+			"label": "generate msvc win32 release",
+			"command": "for /f \"usebackq tokens=*\" %i in (`\"%ProgramFiles(x86)%\\Microsoft Visual Studio\\Installer\\vswhere.exe\" -latest -property installationPath`) do call \"%i\\Common7\\Tools\\VsDevCmd.bat\" && cmake -S . -B build/win32-release -A Win32 && cmake --build build/win32-release --config Release",
+			"options": {
+				"cwd": "${workspaceFolder}",
+				"shell": {
+					"executable": "C:\\Windows\\System32\\cmd.exe",
+					"args": [
+						"/c"
+					]
+				}
+			},
+			"problemMatcher": [
+				"$msCompile"
+			],
+			"group": {
+				"kind": "build"
+			}
+		},
+		{
+			"type": "cppbuild",
+			"label": "clang debug build",
+			"command": "./debugbuild.sh",
+			"args": [],
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"problemMatcher": [
+				"$gcc"
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
+		},
+		{
+			"type": "shell",
+			"label": "clean",
+			"command": "./clean.sh",
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"problemMatcher": []
+		},
+		{
+			"type": "shell",
+			"label": "list symbols",
+			"command": "./listsymbols.sh",
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"problemMatcher": []
+		},
+		{
+			"type": "shell",
+			"label": "test all",
+			"command": "./testall.sh",
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"problemMatcher": [
+				"$gcc"
+			]
+		},
+		{
+			"type": "shell",
+			"label": "test cmake",
+			"command": "./testcmake.sh",
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"problemMatcher": [
+				"$gcc"
+			]
+		},
+		{
+			"type": "shell",
+			"label": "test coverage",
+			"command": "./testcoverage.sh",
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"problemMatcher": [
+				"$gcc"
+			]
+		},
+		{
+			"type": "shell",
+			"label": "test error handling",
+			"command": "./testerrorhandling.sh",
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"problemMatcher": [
+				"$gcc"
+			]
+		},
+		{
+			"type": "shell",
+			"label": "test matrix",
+			"command": "./testmatrix.sh",
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"problemMatcher": [
+				"$gcc"
+			]
+		},
+		{
+			"type": "shell",
+			"label": "test strip",
+			"command": "./teststrip.sh",
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"problemMatcher": [
+				"$gcc"
+			]
+		},
+		{
+			"type": "shell",
+			"label": "test wasm",
+			"command": "./testwasm.sh",
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"problemMatcher": [
+				"$gcc"
+			]
+		}
+	],
+	"version": "2.0.0"
+}

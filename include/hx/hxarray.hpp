@@ -1,0 +1,1165 @@
+#pragma once
+// SPDX-FileCopyrightText: © 2017-2026 Adrian Johnston.
+// SPDX-License-Identifier: MIT
+// This file is licensed under the MIT license found in the LICENSE.md file.
+
+#include "hxallocator.hpp"
+#include "hxsort.hpp"
+#include "hxinitializer_list.hpp"
+
+#if HX_CPLUSPLUS >= 202002L
+
+/// Concept smoke testing the `hxarray` element. Any kind of constructor or
+/// assignment operator may or may not be required depending on use. All
+/// operator usage should be reasonably predictable. Only the destructor is
+/// explicitly required.
+template<typename T_>
+concept hxarray_concept_ = requires(T_& x_) {
+	sizeof(T_);
+	{ x_.~T_() };
+};
+#else
+#define hxarray_concept_ typename
+#endif
+
+/// \cond HIDDEN
+// Internal. Extends the array using placement new when assigned to.
+template<typename array_t_>
+class hxarray_back_inserter_ {
+public:
+	// Internal. Extends the array using placement new when assigned to.
+	template<typename arg_t_>
+	typename array_t_::value_type& operator=(arg_t_&& arg_) {
+		return m_x_.push_back(hxforward<arg_t_>(arg_));
+	}
+private:
+	friend array_t_;
+	// Internal use only.
+	hxarray_back_inserter_(array_t_& x_) : m_x_(x_) { }
+#if HX_CPLUSPLUS >= 201703L
+	// Use `operator=` to add an element and return a reference. Copy elision
+	// is C++17.
+	hxarray_back_inserter_(const hxarray_back_inserter_& x_) = delete;
+#endif
+	// No address-of operator. It wouldn't be what was expected.
+	void operator&(void) const = delete;
+	array_t_& m_x_;
+};
+/// \endcond
+
+/// `hxarray` - Implements `std::vector`, `std::inplace_vector` and
+/// `std::back_insert_iterator` with a chunk added a few things unimplemented.
+/// Uses raw pointers as an iterator type so that you get compile errors and
+/// debug symbols that use plain C++ pointers instead. There are exhaustive
+/// asserts. `hxarray` uses the `hxkey_less` and `hxkey_equal` overloads. They
+/// default to using operators `<` and `==`. See `hxalgorithm.hpp` for callable
+/// versions of the algorithms here.
+///
+/// `hxarray` can be constructed from C string literals as follows:
+///   `hxarray<char, HX_MAX_LINE> string_buffer("example C string");`
+/// however `operator+=` does not support C strings.
+///
+/// Please run both a memory sanitizer and an undefined behavior sanitizer. Use
+/// a C array for now if you need `constexpr` support. The excessive number of
+/// operators is due to the rules about default operators.
+/// - `T` : Element type stored by the array.
+/// - `capacity` : Maximum element count or `hxallocator_dynamic_capacity` for dynamic storage.
+template<hxarray_concept_ T_, size_t capacity_=hxallocator_dynamic_capacity>
+class hxarray : public hxallocator<T_, capacity_> {
+public:
+	/// Random access iterator.
+	using iterator = T_*;
+
+	/// Const random access iterator.
+	using const_iterator = const T_*;
+
+	/// Publishes the value type. Doesn't end with `_t` because of the standard.
+	using value_type = T_;
+
+	/// Constructs an empty array with a capacity of `capacity`. `m_end_` will be 0
+	/// if `capacity` is 0.
+	explicit hxarray(void);
+
+	/// Constructs an array of a given size using `T`'s default constructor.
+	/// - `size` : Sets array size as if `resize(size)` were called.
+	explicit hxarray(size_t size_);
+
+	/// Constructs an array of a given size by making copies of `x`.
+	/// - `size` : Sets array size as if `resize(size, x)` were called.
+	/// - `x` : The `const T&` to be duplicated.
+	explicit hxarray(size_t size_, const T_& x_);
+
+	/// Copy constructs an array. Non-explicit to allow assignment constructor.
+	/// - `x` : An `Array<T>`.
+	hxarray(const hxarray& x_);
+
+	/// Copy constructs an array. Non-explicit to allow assignment constructor.
+	/// - `x` : A non-temporary `Array<T>`.
+	template <size_t capacity_x_>
+	hxarray(const hxarray<T_, capacity_x_>& x_);
+
+	/// Copy construct from a temporary. Refuses to copy construct from a
+	/// statically allocated temporary for efficiency. Only works with
+	/// `hxallocator_dynamic_capacity`.
+	/// - `x` : A temporary `Array<T>`.
+	hxarray(hxarray&& x_) noexcept;
+
+	/// Constructs from a C-style array. Usable as an `initializer_list` when the
+	/// `std` namespace is not available. e.g.,
+	/// ```cpp
+	/// static const int initial_values[] = { 5, 4, 3 };
+	/// hxarray<int, 32u> current_values(initial_values);
+	/// ```
+	/// - `array` : A const array of `array_length_` `value_type`.
+	template<typename other_value_t_, size_t array_length_>
+	hxarray(const other_value_t_(&array_)[array_length_]);
+
+	/// Pass values of `std::initializer_list` as initializers to an array of `T`.
+	/// WARNING: This constructor will override the other constructors when
+	/// uniform initialization is used. e.g., `hxarray<int> x{1, 2}` is an array
+	/// containing `{1, 2}` and `hxarray<int> x(1, 2)` is the array containing
+	/// `{2}`.
+	/// - `x` : A `std::initializer_list<other_value_t>`.
+	template <typename other_value_t_>
+	hxarray(std::initializer_list<other_value_t_> x_);
+
+	/// Destructs the array and destroys all elements.
+	~hxarray(void);
+
+	/// Assigns the contents of another `hxarray` to this array. Standard except
+	/// reallocation is disallowed.
+	/// - `x` : A non-temporary Array<T>.
+	void operator=(const hxarray& x_);
+
+	/// Assigns the contents of another `hxarray` to this array. Standard except
+	/// reallocation is disallowed.
+	/// - `x` : A non-temporary Array<T>.
+	template <size_t capacity_x_>
+	void operator=(const hxarray<T_, capacity_x_>& x_);
+
+	/// Swap contents with a temporary array using `swap`. Only works with
+	/// `hxallocator_dynamic_capacity`. Dynamically allocated arrays are swapped
+	/// with very little overhead.
+	/// - `x` : A temporary Array<T>.
+	void operator=(hxarray&& x_) noexcept;
+
+	/// Assign from a C-style array. Usable as an `initializer_list` when the
+	/// `std` namespace is not available. e.g.,
+	/// ```cpp
+	/// static const int initial_values[] = { 5, 4, 3 };
+	/// hxarray<int, 32u> current_values(initial_values);
+	/// ```
+	/// - `array` : A const array of `array_length` `value_t`.
+	template<typename other_value_t_, size_t array_length_>
+	void operator=(const other_value_t_(&array_)[array_length_]);
+
+	/// Returns a const reference to the element at the specified index.
+	/// - `index` : The 0-based offset of the element.
+	const T_& operator[](size_t index_) const;
+
+	/// Returns a reference to the element at the specified index.
+	/// - `index` : The 0-based offset of the element.
+	T_& operator[](size_t index_);
+
+	/// Appends an element. (Non-standard.) Vector math is not a goal so this
+	/// should not end up overloaded. Perfect argument forwarding would be too
+	/// ambiguous.
+	/// - `x` : An object to append. Not a temporary.
+	void operator+=(const T_& x_);
+
+	/// Appends an element. (Non-standard.) Vector math is not a goal so this
+	/// should not end up overloaded. Perfect argument forwarding would be too
+	/// ambiguous.
+	/// - `x` : An object to append. Passed as a temporary.
+	void operator+=(T_&& x_);
+
+	/// Appends the contents of another array. (Non-standard, from Python.)
+	/// Vector math is not a goal so this should not end up overloaded.
+	/// - `x` : Another array. Not a temporary.
+	template <size_t capacity_x_>
+	void operator+=(const hxarray<T_, capacity_x_>& x_);
+
+	/// Appends the contents of another array. (Non-standard, from Python.)
+	/// Vector math is not a goal so this should not end up overloaded.
+	/// - `x` : Another array passed as a temporary.
+	template <size_t capacity_x_>
+	void operator+=(hxarray<T_, capacity_x_>&& x_);
+
+	/// Used to write code with pointer semantics that writes to either a
+	/// pointer or a hxarray. Allows an array to be passed as a reference and
+	/// then used as an output iterator similar to `std::back_insert_iterator`.
+	/// This operator is used to grow the array while `operator++` is ignored.
+	/// Uses a single call to placement new when copying.
+	hxarray_back_inserter_<hxarray<T_, capacity_>> operator*(void);
+
+	/// Allows an array to be passed as a reference and then used as an output
+	/// iterator similar to `std::back_insert_iterator`. This operator doesn't
+	/// do anything but allow the container to be used with pointer sematics.
+	/// See `hxalgorithm.hpp` for usage.
+	hxarray& operator++(void) { return *this; }
+
+	/// Postfix version.
+	hxarray& operator++(int) { return *this; }
+
+	/// Returns true if the predicate returns true for every element and false
+	/// otherwise. Will stop iterating when the predicate returns false. e.g.,
+	/// ```cpp
+	/// // Assert an array of ints contains all 10s.
+	/// EXPECT_TRUE(ints.all_of([&](const int& value) -> bool {
+	///   return value == 10;
+	/// }));
+	/// ```
+	/// - `fn` : A callable returning boolean. `!all_of(x)` -> `any_not(x)`.
+	template<typename callable_t_>
+	hxattr_nodiscard bool all_of(callable_t_&& fn_) const;
+
+	/// A non-const version of `all_of`.
+	template<typename callable_t_>
+	bool all_of(callable_t_&& fn_);
+
+	/// Returns true if the predicate returns true for any element and false
+	/// otherwise. Will stop iterating when the predicate returns true. e.g.,
+	/// ```cpp
+	/// // Assert an array of ints contains at least one 10.
+	/// EXPECT_TRUE(ints.any_of([&](const int& value) -> bool {
+	///   return value == 10;
+	/// }));
+	/// ```
+	/// - `fn` : A callable returning boolean. `!any_of(x)` -> `none_of(x)`.
+	template<typename callable_t_>
+	hxattr_nodiscard bool any_of(callable_t_&& fn_) const;
+
+	/// A non-const version of `any_of`.
+	template<typename callable_t_>
+	bool any_of(callable_t_&& fn_);
+
+	/// Assigns elements from a range defined by random access iterators.
+	/// `iter_t::operator-` is required.
+	/// - `begin` : The beginning iterator.
+	/// - `end` : The end iterator.
+	template <typename iter_t_>
+	void assign(iter_t_ begin_, iter_t_ end_);
+
+#if HX_CPLUSPLUS >= 202002L
+	/// Assigns elements from a range referenced by an lvalue. `range_t::begin`
+	/// and `range_t::end` are required as `std::begin` and `std::end` may not
+	/// exist. Use `operator=` to assign from a C-style array.
+	/// - `range` : The range to copy elements from.
+	template <typename range_t_>
+	void assign_range(range_t_& range_);
+
+	/// Assigns elements from a temporary range. This overload enables moving the
+	/// range elements into the array when forwarding rvalues.
+	/// - `range` : The range to move elements from.
+	template <typename range_t_>
+	requires(!hxis_lvalue_reference<range_t_>::value)
+	void assign_range(range_t_&& range_);
+#endif
+
+	/// Returns a const reference to the last element in the array.
+	const T_& back(void) const;
+
+	/// Returns a reference to the last element in the array.
+	T_& back(void);
+
+	/// Returns a `const T*` to the beginning of the array.
+	const T_* begin(void) const { return this->data(); }
+
+	/// Returns a `T*` to the beginning of the array.
+	T_* begin(void) { return this->data(); }
+
+	/// Performs a binary search using `hxkey_less`. Returns `end()` when not
+	/// found.
+	/// - `value` : The value to locate.
+	hxattr_nodiscard const T_* binary_search(const T_& value_) const;
+
+	/// Non-const version. Performs a binary search using `hxkey_less`. Returns
+	/// `end` when not found.
+	/// - `value` : The value to locate.
+	hxattr_nodiscard T_* binary_search(const T_& value_);
+
+	/// Returns a `const T*` to the beginning of the array (alias for
+	/// `begin`).
+	const T_* cbegin(void) const { return this->data(); }
+
+	/// Returns a `const T*` to the end of the array.
+	const T_* cend(void) const { return m_end_; }
+
+	/// Clears the array, destroying all elements.
+	void clear(void);
+
+	/// Emplaces an element at the end of the array using forwarded arguments.
+	/// Returns a reference to the new element. Exactly the same as `push_back`.
+	/// - `args` : Arguments forwarded to `T`'s constructor.
+	template<typename... args_t_>
+	T_& emplace_back(args_t_&&... args_);
+
+	/// Returns true if the arrays compare equivalent using `hxkey_equal`.
+	/// Callers must check the return value to detect mismatches.
+	/// - `x` : The other array.
+	template<size_t capacity_x_>
+	hxattr_nodiscard bool equal(const hxarray<T_, capacity_x_>& x_) const;
+
+	/// Returns true if the array is empty.
+	/// Callers must check the return value instead of discarding it.
+	hxattr_nodiscard bool empty(void) const { return m_end_ == this->data(); }
+
+	/// Returns a `const T*` to the end of the array.
+	const T_* end(void) const { return m_end_; }
+
+	/// Returns a `T*` to the end of the array.
+	T_* end(void) { return m_end_; }
+
+	/// Erases the element indicated. Should not compile with hxnull. Support
+	/// for erasing ranges has not been added yet.
+	/// - `pos` : Non-null pointer to an element currently stored in the array.
+	void erase(T_* pos_) hxattr_nonnull(2);
+
+	/// Erases the element indicated. Use `(size_t)0` to write the integer
+	/// literal 0.
+	/// - `index` : Index of the element to erase.
+	void erase(size_t index_);
+
+	/// Removes elements for which the predicate returns true. (Non-standard.)
+	/// Equivalent to calling `erase_unordered` inside a reverse loop. Returns
+	/// the number of erased elements. e.g.,
+	/// ```cpp
+	/// // Erase all the 10s in an array.
+	/// ints.erase_if([](const int& value) -> bool { return value == 10; });
+	/// ```
+	/// - `fn` : A callable returning boolean.
+	template<typename callable_t_>
+	size_t erase_if(callable_t_&& fn_);
+
+	/// Removes elements for which the predicate returns true while preserving
+	/// the max-heap property maintained by `push_heap`/`pop_heap`. Returns the
+	/// number of erased elements. e.g.,
+	/// ```cpp
+	/// // Erase all the 10s in a heap.
+	/// ints.erase_if_heap([](const int& value) -> bool { return value == 10; });
+	/// ```
+	/// - `fn` : A callable returning boolean.
+	template<typename callable_t_>
+	size_t erase_if_heap(callable_t_&& fn_);
+
+	/// Variant of `erase` that moves the end element down to replace the erased
+	/// element. Should not compile with hxnull. (Non-standard.) Can be used to
+	/// erase elements of an array as it is traversed as follows:
+	/// ```cpp
+	/// for(size_t i = a.size(); i--; ) {
+	/// 	if(should_erase(a[i])) {
+	/// 		a.erase_unordered(i);
+	/// 	}
+	/// }
+	/// ```
+	/// - `pos` : Non-null pointer to an element currently stored in the array.
+	void erase_unordered(const T_* pos_) hxattr_nonnull(2);
+
+	/// Variant of `erase` that moves the end element down to replace the erased
+	/// element. Use `(size_t)0` to write the integer literal 0. (Non-standard.)
+	/// - `index` : The index of the element to erase.
+	void erase_unordered(size_t index_);
+
+	/// Finds the first occurrence of `value` using `hxkey_equal`.
+	/// Returns `end` if no element matches.
+	/// - `value` : The value to locate.
+	hxattr_nodiscard const T_* find(const T_& value_) const;
+
+	/// Non-const version of `find` using `hxkey_equal`.
+	/// - `value` : The value to locate.
+	hxattr_nodiscard T_* find(const T_& value_);
+
+	/// Finds the first element for which the predicate returns true. Returns
+	/// `end` if no element matches. e.g.,
+	/// ```cpp
+	/// // Search for a 10 and check if it was found.
+	/// if(int* t = ints.find_if([](int& x) { return x == 10; }); t != ints.end()) {
+	///   // ... Process the 10.
+	/// }
+	/// ```
+	/// - `fn` : A callable returning boolean.
+	template<typename callable_t_>
+	hxattr_nodiscard const T_* find_if(callable_t_&& fn_) const;
+
+	/// Non-const version of `find_if`.
+	template<typename callable_t_>
+	hxattr_nodiscard T_* find_if(callable_t_&& fn_);
+
+	/// Calls a function, lambda, or `std::function` on each element.
+	/// (Non-standard.) Lambdas and `std::function` instances can be provided as
+	/// temporaries, so that has to be allowed. The `&&` variant of
+	/// `callable_t::operator()` may be selected using `hxmove`. This is the
+	/// standard way to signal to the callable that it is a temporary. e.g.,
+	/// ```cpp
+	/// hxarray<int> a(3, 0);
+	/// a.for_each([](int& x) { ++x; }); // Produces { 1, 1, 1 }.
+	/// ```
+	/// - `fn` : A callable.
+	template<typename callable_t_>
+	void for_each(callable_t_&& fn_) const;
+
+	/// Non-const version of `for_each`.
+	template<typename callable_t_>
+	void for_each(callable_t_&& fn_);
+
+	/// Returns a const reference to the first element in the array.
+	const T_& front(void) const;
+
+	/// Returns a reference to the first element in the array.
+	T_& front(void);
+
+	/// Returns true when the array is full (size equals capacity).
+	/// (Non-standard.)
+	/// Callers must check the return value before adding more elements.
+	hxattr_nodiscard bool full(void) const { return m_end_ == this->data() + this->capacity(); }
+
+	/// Appends `size` elements generated by invoking `fn` repeatedly.
+	/// - `size` : Number of elements to append.
+	/// - `fn` : callable returning the elements to append.
+	template<typename callable_t_>
+	void generate_n(size_t size_, callable_t_&& fn_);
+
+	/// Returns a `const T*` to the element at `index` or `hxnull` otherwise.
+	/// - `index` : The 0-based offset of the element.
+	hxattr_nodiscard const T_* get(size_t index_) const;
+
+	/// Returns a `T*` to the element at `index` or `hxnull` otherwise.
+	/// - `index` : The 0-based offset of the element.
+	hxattr_nodiscard T_* get(size_t index_);
+
+	/// Inserts the element at the offset indicated. Should not compile with
+	/// `hxnull`. `insert(begin(), x)` and `insert(end(), x)` will work as long as
+	/// the array is allocated. Not intended for objects that are expensive to
+	/// move. Support for inserting ranges has not been added yet. Consider using
+	/// `emplace_back` for storing large objects.
+	/// - `pos` : Non-null pointer to the location where the new element will be
+	///   inserted. Must point inside or one past the current range.
+	/// - `x` : The new element.
+	template<typename ref_t_>
+	void insert(const T_* pos_, ref_t_&& x_) hxattr_nonnull(2);
+
+	/// Inserts the element at the offset indicated. Use `(size_t)0` to write
+	/// the integer literal 0. `insert(begin(), x)` and `insert(end(), x)` will
+	/// work as long as the array is allocated.
+	/// - `index` : Index of the location where the new element will be inserted.
+	/// - `x` : The new element.
+	template<typename ref_t_>
+	void insert(size_t index_, ref_t_&& x_);
+
+	/// Sorts the array with insertion sort using `hxkey_less`. (Non-standard.)
+	/// - `less` : A key comparison callable defining a less-than ordering relationship.
+	void insertion_sort(void);
+
+	/// Returns true if this array compares less than `x` using `hxkey_equal`
+	/// and `hxkey_less`. Sorts `[1]` before `[1, 2]`.
+	/// Callers must check the return value to observe the ordering result.
+	/// - `x` : The other array.
+	template<size_t capacity_x_>
+	hxattr_nodiscard bool less(const hxarray<T_, capacity_x_>& x_) const;
+
+	/// Converts the array into a max-heap using `hxkey_less`. (Non-standard.)
+	/// - `less` : A key comparison callable defining a less-than ordering relationship.
+	void make_heap(void);
+
+	/// Returns the capacity of the array or 0 if unallocated. This is the
+	/// standard way to report that reallocation is not allowed.
+	hxattr_nodiscard size_t max_size(void) const { return this->capacity(); }
+
+	/// Copies another `hxarray` using `memcpy`.
+	/// - `x` : The other array.
+	template <size_t capacity_x_>
+	void memcpy(const hxarray<T_, capacity_x_>& x_);
+
+	/// Calls `memset` on the array. The default fill byte is `0x00`.
+	/// - `byte` : The byte that is repeated. May be a negative char value.
+	void memset(int byte_=0x00);
+
+	/// Removes the end element from the array.
+	void pop_back(void);
+
+	/// Removes the first (maximum) element from a max-heap. This implements
+	/// `std::pop_heap` and `std::priority_queue` using `hxless` for ordering. See
+	/// `push_heap`.
+	void pop_heap(void);
+
+	/// Appends an element to the end of the array. `args_t` may be any types
+	/// that can be used to construct `T`. Returns a reference to the new
+	/// element. Exactly the same as `emplace_back`.
+	/// - `args` : Arguments forwarded to `T`'s constructor.
+	template<typename... args_t_>
+	T_& push_back(args_t_&&... args_);
+
+	/// Inserts an element into a max-heap. This implements `std::push_heap` and
+	/// `std::priority_queue` using `hxless` for ordering. See `pop_heap`.
+	/// Returns a reference to the element added.
+	/// - `arg` : The element to add.
+	template<typename ref_t_>
+	T_& push_heap(ref_t_&& arg_);
+
+	/// Reserves storage for at least the specified number of elements.
+	/// - `size` : The number of elements to reserve storage for.
+	/// - `allocator` : The memory manager ID to use for allocation (default: `hxsystem_allocator_current`)
+	/// - `alignment` : The alignment for the allocation. (default: `HX_ALIGNMENT`)
+	void reserve(size_t size_,
+			hxsystem_allocator_t allocator_=hxsystem_allocator_current,
+			hxalignment_t alignment_=HX_ALIGNMENT);
+
+	/// Resizes the array to the specified size, constructing or destroying
+	/// elements as needed. Requires a default constructor. Integers and floats
+	/// will be value-initialized to zero as per the standard.
+	/// - `size` : The new size of the array.
+	void resize(size_t size_);
+
+	/// An overload with an initial value for new elements. Resizes the array to
+	/// the specified size, copy constructing or destroying elements as needed.
+	/// - `size` : The new size of the array.
+	/// - `x` : Initial value for new elements.
+	void resize(size_t size_, const T_& x_);
+
+	/// Returns the number of elements in the array.
+	hxattr_nodiscard size_t size(void) const { return static_cast<size_t>(m_end_ - this->data()); }
+
+	/// Returns the number of bytes in the array. (Non-standard.)
+	hxattr_nodiscard size_t size_bytes(void) const { return sizeof(T_) * this->size(); }
+
+	/// Sorts the array using `hxkey_less`. (Non-standard.)
+	void sort(void);
+
+	/// Swap contents with a temporary array. Only works with
+	/// `hxallocator_dynamic_capacity`. Dynamically allocated arrays are swapped
+	/// with very little overhead.
+	/// - `x` : The array to swap with.
+	void swap(hxarray& x_) noexcept;
+
+private:
+	// Returns a pointer for use with placement new.
+	void* push_back_unconstructed_(void);
+
+	// Destroys elements in the range [begin, end).
+	void destruct_(T_* begin_, T_* end_);
+
+	// 1 past the last element.
+	T_* m_end_;
+};
+
+// The array overloads of hxkey_equal, hxkey_less and hxswap are C++20 only.
+// Without the "requires" keyword these end up being ambiguous. Use
+// hxarray::equal, hxarray::less and hxarray::swap. Use C++20 if you want to use
+// arrays as generic keys.
+#if HX_CPLUSPLUS >= 202002L
+
+/// `bool hxequal(hxarray<T>& x, hxarray<T>& y)` - Compares the contents of `x`
+/// and `y` for equivalence.
+template<typename T_, size_t capacity_x_, size_t capacity_y_>
+bool hxkey_equal(const hxarray<T_, capacity_x_>& x_, const hxarray<T_, capacity_y_>& y_) {
+    return x_.equal(y_);
+}
+
+/// `bool hxkey_less(hxarray<T>& x, hxarray<T>& y)` - Compares the contents of
+/// `x` and `y` lexicographically using `hxkey_equal` and `hxkey_less` on each
+/// element.
+template<typename T_, size_t capacity_x_, size_t capacity_y_>
+bool hxkey_less(const hxarray<T_, capacity_x_>& x_, const hxarray<T_, capacity_y_>& y_) {
+	return x_.less(y_);
+}
+
+/// `void hxswap(hxarray<T>& x, hxarray<T>& y)` - Exchanges the contents of x
+/// and y. Only works with `hxallocator_dynamic_capacity`. Dynamically allocated
+/// arrays are swapped with very little overhead.
+template<typename T_>
+void hxswap(hxarray<T_, hxallocator_dynamic_capacity>& x_,
+			hxarray<T_, hxallocator_dynamic_capacity>& y_) noexcept {
+	x_.swap(y_);
+}
+
+#endif // HX_CPLUSPLUS >= 202002L
+
+template<hxarray_concept_ T_, size_t capacity_>
+hxarray<T_, capacity_>::hxarray(void) : m_end_(this->data()) { }
+
+template<hxarray_concept_ T_, size_t capacity_>
+hxarray<T_, capacity_>::hxarray(size_t size_) : hxarray() {
+	this->resize(size_);
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+hxarray<T_, capacity_>::hxarray(size_t size_, const T_& x_) : hxarray() {
+	this->resize(size_, x_);
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+hxarray<T_, capacity_>::hxarray(const hxarray& x_) : hxarray() {
+	this->assign<const T_*>(x_.data(), x_.m_end_);
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+template<size_t capacity_x_>
+hxarray<T_, capacity_>::hxarray(const hxarray<T_, capacity_x_>& x_) : hxarray() {
+	this->assign<const T_*>(x_.data(), x_.end());
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+hxarray<T_, capacity_>::hxarray(hxarray&& x_) noexcept {
+	static_assert(capacity_ == hxallocator_dynamic_capacity,
+		"Capacity hxallocator_dynamic_capacity required for temporaries.");
+	::memcpy((void*)this, &x_, sizeof x_); // NOLINT
+	::memset((void*)&x_, 0x00, sizeof x_); // NOLINT
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+template<typename other_value_t_, size_t array_length_>
+hxarray<T_, capacity_>::hxarray(const other_value_t_(&array_)[array_length_]) : hxarray() {
+	this->assign(array_ + 0, array_ + array_length_);
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+template<typename other_value_t_>
+hxarray<T_, capacity_>::hxarray(std::initializer_list<other_value_t_> x_) : hxarray() {
+	this->assign(x_.begin(), x_.end());
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+hxarray<T_, capacity_>::~hxarray(void) {
+	this->destruct_(this->data(), m_end_);
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+void hxarray<T_, capacity_>::operator=(const hxarray& x_) {
+	hxassertmsg((const void*)this != (const void*)&x_, "invalid_reference Assignment to self.");
+	this->assign<const T_*>(x_.data(), x_.m_end_);
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+template<size_t capacity_x_>
+void hxarray<T_, capacity_>::operator=(const hxarray<T_, capacity_x_>& x_) {
+	hxassertmsg((const void*)this != (const void*)&x_, "invalid_reference Assignment to self.");
+	this->assign<const T_*>(x_.data(), x_.end());
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+void hxarray<T_, capacity_>::operator=(hxarray&& x_) noexcept {
+	hxassertmsg((const void*)this != (const void*)&x_, "invalid_reference Assignment to self.");
+	this->swap(x_);
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+template<typename other_value_t_, size_t array_length_>
+void hxarray<T_, capacity_>::operator=(const other_value_t_(&array_)[array_length_]) {
+	this->assign(array_ + 0, array_ + array_length_);
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+const T_& hxarray<T_, capacity_>::operator[](size_t index_) const {
+	hxassertmsg(index_ < this->size(), "invalid_index %zu", index_);
+	return this->data()[index_];
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+T_& hxarray<T_, capacity_>::operator[](size_t index_) {
+	hxassertmsg(index_ < this->size(), "invalid_index %zu", index_);
+	return this->data()[index_];
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+void hxarray<T_, capacity_>::operator+=(const T_& x_) {
+	::new(this->push_back_unconstructed_()) T_(x_);
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+void hxarray<T_, capacity_>::operator+=(T_&& x_) {
+	::new(this->push_back_unconstructed_()) T_(hxmove(x_));
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+template<size_t capacity_x_>
+void hxarray<T_, capacity_>::operator+=(const hxarray<T_, capacity_x_>& x_) {
+	hxassertmsg((const void*)this != (const void*)&x_, "invalid_reference Assignment to self.");
+	for(const T_* hxrestrict it_ = x_.data(), *end_ = x_.end(); it_ != end_; ++it_) {
+		::new(this->push_back_unconstructed_()) T_(*it_);
+	}
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+template<size_t capacity_x_>
+void hxarray<T_, capacity_>::operator+=(hxarray<T_, capacity_x_>&& x_) {
+	hxassertmsg((const void*)this != (const void*)&x_, "invalid_reference Assignment to self.");
+	// Non-const mutable operation.
+	for(T_* hxrestrict it_ = x_.data(), *end_ = x_.end(); it_ != end_; ++it_) {
+		::new(this->push_back_unconstructed_()) T_(hxmove(*it_));
+	}
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+hxarray_back_inserter_<hxarray<T_, capacity_>> hxarray<T_, capacity_>::operator*(void) {
+	return hxarray_back_inserter_<hxarray<T_, capacity_>>(*this);
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+template<typename callable_t_>
+bool hxarray<T_, capacity_>::all_of(callable_t_&& fn_) const {
+	for(const T_* it_ = this->data(), *end_ = m_end_; it_ != end_; ++it_) {
+		if(!hxforward<callable_t_>(fn_)(*it_)) {
+			return false;
+		}
+	}
+	return true;
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+template<typename callable_t_>
+bool hxarray<T_, capacity_>::all_of(callable_t_&& fn_) {
+	for(T_* it_ = this->data(), *end_ = m_end_; it_ != end_; ++it_) {
+		if(!hxforward<callable_t_>(fn_)(*it_)) {
+			return false;
+		}
+	}
+	return true;
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+template<typename callable_t_>
+bool hxarray<T_, capacity_>::any_of(callable_t_&& fn_) const {
+	for(const T_* it_ = this->data(), *end_ = m_end_; it_ != end_; ++it_) {
+		if(hxforward<callable_t_>(fn_)(*it_)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+template<typename callable_t_>
+bool hxarray<T_, capacity_>::any_of(callable_t_&& fn_) {
+	for(T_* it_ = this->data(), *end_ = m_end_; it_ != end_; ++it_) {
+		if(hxforward<callable_t_>(fn_)(*it_)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+template<typename iter_t_>
+void hxarray<T_, capacity_>::assign(iter_t_ begin_, iter_t_ end_) {
+	hxassertmsg((end_ - begin_) >= 0, "invalid_iterator");
+	this->reserve(static_cast<size_t>(end_ - begin_));
+	T_* hxrestrict it0_ = this->data();
+	this->destruct_(it0_, m_end_);
+	iter_t_ it1_(begin_); // begin_ may be a reference.
+	while(it1_ != end_) {
+		::new(it0_++) T_(*it1_++);
+	}
+	m_end_ = it0_;
+}
+
+#if HX_CPLUSPLUS >= 202002L
+template<hxarray_concept_ T_, size_t capacity_>
+template<typename range_t_>
+void hxarray<T_, capacity_>::assign_range(range_t_& range_) {
+	this->assign(range_.begin(), range_.end());
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+template<typename range_t_>
+requires(!hxis_lvalue_reference<range_t_>::value)
+void hxarray<T_, capacity_>::assign_range(range_t_&& range_) {
+	this->clear();
+	// Sorry, std::begin and std::end may not exist.
+	for(auto it_ = range_.begin(), end_ = range_.end(); it_ != end_; ++it_) {
+		::new(this->push_back_unconstructed_()) T_(hxmove(*it_));
+	}
+}
+#endif
+
+template<hxarray_concept_ T_, size_t capacity_>
+const T_& hxarray<T_, capacity_>::back(void) const {
+	hxassertmsg(!this->empty(), "invalid_reference");
+	return m_end_[-1];
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+T_& hxarray<T_, capacity_>::back(void) {
+	hxassertmsg(!this->empty(), "invalid_reference");
+	return m_end_[-1];
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+const T_* hxarray<T_, capacity_>::binary_search(const T_& value_) const {
+	return hxbinary_search<const T_*>(this->data(), m_end_, value_, hxkey_less_t<const T_&>{});
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+T_* hxarray<T_, capacity_>::binary_search(const T_& value_) {
+	return hxbinary_search<T_*>(this->data(), m_end_, value_, hxkey_less_t<const T_&>{});
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+void hxarray<T_, capacity_>::clear(void) {
+	this->destruct_(this->data(), m_end_);
+	m_end_ = this->data();
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+template<typename... args_t_>
+T_& hxarray<T_, capacity_>::emplace_back(args_t_&&... args_) {
+	hxassertmsg(!this->full(), "stack_overflow");
+	return *::new(m_end_++) T_(hxforward<args_t_>(args_)...);
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+template<size_t capacity_x_>
+bool hxarray<T_, capacity_>::equal(const hxarray<T_, capacity_x_>& x_) const {
+	if(this->size() != x_.size()) {
+		return false;
+	}
+	for(const T_* it0_ = this->data(), *it1_ = x_.data(), *end_ = m_end_;
+			it0_ != end_; ++it0_, ++it1_) {
+		if(!hxkey_equal(*it0_, *it1_)) {
+			return false;
+		}
+	}
+	return true;
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+void hxarray<T_, capacity_>::erase(T_* pos_) {
+	hxassertmsg(pos_ >= this->data() && pos_ < m_end_, "invalid_iterator");
+	while((pos_ + 1) != m_end_) {
+		*pos_ = hxmove(*(pos_ + 1));
+		++pos_;
+	}
+	(--m_end_)->~T_();
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+void hxarray<T_, capacity_>::erase(size_t index_) {
+	hxassertmsg(index_ < this->size(), "invalid_index %zu", index_);
+	this->erase(this->data() + index_);
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+template<typename callable_t_>
+size_t hxarray<T_, capacity_>::erase_if(callable_t_&& fn_) {
+	size_t removed_ = 0u;
+	T_* data_ = this->data();
+	for(size_t index_ = this->size(); index_--;) {
+		if(hxforward<callable_t_>(fn_)(data_[index_])) {
+			this->erase_unordered(index_);
+			++removed_;
+		}
+	}
+	return removed_;
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+template<typename callable_t_>
+size_t hxarray<T_, capacity_>::erase_if_heap(callable_t_&& fn_) {
+	T_* hxrestrict src_ = this->data();
+	T_* hxrestrict dst_ = src_;
+	for(T_* end_ = m_end_; src_ != end_; ++src_) {
+		if(!hxforward<callable_t_>(fn_)(*src_)) {
+			// Survivor: move into the next free slot, or leave in place.
+			if(src_ != dst_) {
+				*dst_ = hxmove(*src_);
+			}
+			++dst_;
+		}
+		else {
+			src_->~T_(); // Removed: destroy without freeing storage.
+		}
+	}
+	const size_t removed_ = static_cast<size_t>(m_end_ - dst_);
+	m_end_ = dst_;
+	if(removed_) {
+		hxdetail_::hxmake_heap_<T_*>(this->data(), m_end_, hxkey_less_t<T_>{});
+	}
+	return removed_;
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+void hxarray<T_, capacity_>::erase_unordered(const T_* pos_) {
+	hxassertmsg(pos_ >= this->data() && pos_ < m_end_, "invalid_iterator");
+	if(pos_ != --m_end_) {
+		// Having a non-const this pointer provides valid write access.
+		*const_cast<T_*>(pos_) = hxmove(*m_end_);
+	}
+	m_end_->~T_();
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+void hxarray<T_, capacity_>::erase_unordered(size_t index_) {
+	hxassertmsg(index_ < this->size(), "invalid_index %zu", index_);
+	this->erase_unordered(this->data() + index_);
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+const T_* hxarray<T_, capacity_>::find(const T_& value_) const {
+	for(const T_* it_ = this->data(), *end_ = m_end_; it_ != end_; ++it_) {
+		if(hxkey_equal(*it_, value_)) {
+			return it_;
+		}
+	}
+	return m_end_;
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+T_* hxarray<T_, capacity_>::find(const T_& value_) {
+	for(T_* it_ = this->data(), *end_ = m_end_; it_ != end_; ++it_) {
+		if(hxkey_equal(*it_, value_)) {
+			return it_;
+		}
+	}
+	return m_end_;
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+template<typename callable_t_>
+const T_* hxarray<T_, capacity_>::find_if(callable_t_&& fn_) const {
+	for(const T_* it_ = this->data(), *end_ = m_end_; it_ != end_; ++it_) {
+		if(hxforward<callable_t_>(fn_)(*it_)) {
+			return it_;
+		}
+	}
+	return m_end_;
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+template<typename callable_t_>
+T_* hxarray<T_, capacity_>::find_if(callable_t_&& fn_) {
+	for(T_* it_ = this->data(), *end_ = m_end_; it_ != end_; ++it_) {
+		if(hxforward<callable_t_>(fn_)(*it_)) {
+			return it_;
+		}
+	}
+	return m_end_;
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+template<typename callable_t_>
+void hxarray<T_, capacity_>::for_each(callable_t_&& fn_) const {
+	for(const T_* it_ = this->data(), *end_ = m_end_; it_ != end_; ++it_) {
+		hxforward<callable_t_>(fn_)(*it_);
+	}
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+template<typename callable_t_>
+void hxarray<T_, capacity_>::for_each(callable_t_&& fn_) {
+	for(T_* it_ = this->data(), *end_ = m_end_; it_ != end_; ++it_) {
+		hxforward<callable_t_>(fn_)(*it_);
+	}
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+const T_& hxarray<T_, capacity_>::front(void) const {
+	hxassertmsg(!this->empty(), "invalid_reference");
+	return *this->data();
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+T_& hxarray<T_, capacity_>::front(void) {
+	hxassertmsg(!this->empty(), "invalid_reference");
+	return *this->data();
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+template<typename callable_t_>
+void hxarray<T_, capacity_>::generate_n(size_t size_, callable_t_&& fn_) {
+	while(size_--) {
+		::new(this->push_back_unconstructed_()) T_(hxforward<callable_t_>(fn_)());
+	}
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+const T_* hxarray<T_, capacity_>::get(size_t index_) const {
+	// Casting a signed index is well defined. Comparing pointers would be undefined.
+	return index_ < this->size() ? this->data() + index_ : hxnull;
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+T_* hxarray<T_, capacity_>::get(size_t index_) {
+	// Casting a signed index is well defined. Comparing pointers would be undefined.
+	return index_ < this->size() ? this->data() + index_ : hxnull;
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+template<typename ref_t_>
+void hxarray<T_, capacity_>::insert(const T_* pos_, ref_t_&& x_) {
+	hxassertmsg(pos_ >= this->data() && pos_ <= m_end_, "invalid_insert");
+	if(pos_ == m_end_) {
+		// Single constructor call for last element.
+		::new(this->push_back_unconstructed_()) T_(hxforward<ref_t_>(x_));
+	}
+	else {
+		// A move constructor for a new end element followed by a series of
+		// assignment operations.
+		T_* it_ = static_cast<T_*>(this->push_back_unconstructed_());
+		::new(it_) T_(hxmove(it_[-1]));
+		while(pos_ < --it_) {
+			*it_ = it_[-1];
+		}
+		*it_ = hxforward<ref_t_>(x_);
+	}
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+template<typename ref_t_>
+void hxarray<T_, capacity_>::insert(size_t index_, ref_t_&& x_) {
+	hxassertmsg(index_ <= this->size(), "invalid_index %zu", index_);
+	this->insert(this->data() + index_, hxforward<ref_t_>(x_));
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+void hxarray<T_, capacity_>::insertion_sort(void) {
+	hxinsertion_sort<T_*>(this->data(), m_end_, hxkey_less_t<T_>{});
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+template<size_t capacity_x_>
+bool hxarray<T_, capacity_>::less(const hxarray<T_, capacity_x_>& x_) const {
+	const size_t size_ = hxmin(this->size(), x_.size());
+	for(const T_* it0_ = this->data(), *it1_ = x_.data(), *end_ = it0_ + size_;
+			it0_ != end_; ++it0_, ++it1_) {
+		// Use `a == b` instead of `a < b && b < a` for performance.
+		if(!hxkey_equal(*it0_, *it1_)) {
+			return hxkey_less(*it0_, *it1_);
+		}
+	}
+	// Order the prefix before the other.
+	return this->size() < x_.size();
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+void hxarray<T_, capacity_>::make_heap(void) {
+	hxdetail_::hxmake_heap_<T_*>(this->data(), m_end_, hxkey_less_t<T_>{});
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+template<size_t capacity_x_>
+void hxarray<T_, capacity_>::memcpy(const hxarray<T_, capacity_x_>& x_) {
+	this->resize(x_.size());
+	::memcpy(static_cast<void*>(this->data()), x_.data(), x_.size_bytes()); // NOLINT
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+void hxarray<T_, capacity_>::memset(int byte_) {
+	::memset(static_cast<void*>(this->data()), byte_, this->size_bytes()); // NOLINT
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+void hxarray<T_, capacity_>::pop_back(void) {
+	hxassertmsg(!this->empty(), "stack_underflow");
+	(--m_end_)->~T_();
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+void hxarray<T_, capacity_>::pop_heap(void) {
+	hxassertmsg(!this->empty(), "stack_underflow");
+	T_* hxrestrict begin_ = this->data();
+	--m_end_;
+	if(begin_ == m_end_) {
+		begin_->~T_();
+		return;
+	}
+	*begin_ = hxmove(*m_end_);
+	m_end_->~T_();
+	hxdetail_::hxheapsort_heapify_(this->data(), begin_, m_end_, hxkey_less_t<T_>{});
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+template<typename... args_t_>
+T_& hxarray<T_, capacity_>::push_back(args_t_&&... args_) {
+	hxassertmsg(!this->full(), "stack_overflow");
+	return *::new(m_end_++) T_(hxforward<args_t_>(args_)...);
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+template<typename ref_t_>
+T_& hxarray<T_, capacity_>::push_heap(ref_t_&& arg_) {
+	T_* begin_ = this->data();
+	T_* node_ = static_cast<T_*>(this->push_back_unconstructed_());
+	while(node_ != begin_) {
+		T_* parent_ = begin_ + ((node_ - begin_ - 1) >> 1);
+		// arg_ has to be comparable to T_.
+		if(!hxkey_less(*parent_, arg_)) {
+			break;
+		}
+		// Shifts unconstructed element (the hole) into position.
+		::new(node_) T_(hxmove(*parent_));
+		parent_->~T_();
+		node_ = parent_;
+	}
+	// Construct new element.
+	::new(node_) T_(hxmove(arg_));
+	return *node_;
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+void hxarray<T_, capacity_>::reserve(size_t size_,
+		hxsystem_allocator_t allocator_,
+		hxalignment_t alignment_) {
+	this->reserve_storage_(size_, allocator_, alignment_);
+	if(m_end_ == hxnull) {
+		m_end_ = this->data();
+	}
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+void hxarray<T_, capacity_>::resize(size_t size_) {
+	this->reserve(size_);
+	T_* end_ = this->data() + size_;
+	if(size_ >= this->size()) {
+		while(m_end_ != end_) {
+			// This version uses a default constructor. Note "T_()" is not being
+			// called. That would default initialize arrays of integers to zero.
+			::new(this->push_back_unconstructed_()) T_;
+		}
+	}
+	else {
+		this->destruct_(end_, m_end_);
+	}
+	m_end_ = end_;
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+void hxarray<T_, capacity_>::resize(size_t size_, const T_& x_) {
+	this->reserve(size_);
+	T_* end_ = this->data() + size_;
+	if(size_ >= this->size()) {
+		while(m_end_ != end_) {
+			// This version uses a copy constructor.
+			::new(this->push_back_unconstructed_()) T_(x_);
+		}
+	}
+	else {
+		this->destruct_(end_, m_end_);
+	}
+	m_end_ = end_;
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+void hxarray<T_, capacity_>::sort(void) {
+	hxsort<T_*>(this->data(), m_end_, hxkey_less_t<T_>{});
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+void hxarray<T_, capacity_>::swap(hxarray& x_) noexcept {
+	static_assert(capacity_ == hxallocator_dynamic_capacity,
+		"Dynamic capacity required for hxarray::swap");
+
+	// hxarray has a dynamic allocator that allows memcpy.
+	hxswap_memcpy(*this, x_);
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+void* hxarray<T_, capacity_>::push_back_unconstructed_(void) {
+	hxassertmsg(!this->full(), "stack_overflow");
+	return static_cast<void*>(m_end_++);
+}
+
+template<hxarray_concept_ T_, size_t capacity_>
+void hxarray<T_, capacity_>::destruct_(T_* begin_, T_* end_) {
+	while(begin_ != end_) {
+		begin_++->~T_();
+	}
+}

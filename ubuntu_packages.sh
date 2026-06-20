@@ -1,0 +1,63 @@
+#!/bin/bash
+# SPDX-FileCopyrightText: © 2017-2026 Adrian Johnston.
+# SPDX-License-Identifier: MIT
+# This file is licensed under the terms of the LICENSE.md file.
+#
+# Building and running all the tests on Ubuntu 24.04 LTS requires these packages.
+#
+# It should be safe to just run this script on Ubuntu. gdb-multiarch recently
+# became required for vscode to set 32-bit breakpoints reliably. vscode is
+# recommended because it is already configured but is not required or installed
+# here. google-chrome will also be launched when a web page is generated if it
+# is available but is not required or installed here.
+#
+# Please open a PR if anything is missing or has changed.
+
+# Prevent leaking background tasks.
+trap '{ set +o xtrace; } 2> /dev/null
+    trap - 1 2 3 6 15
+    for pid in $(pgrep -g "$$" 2>/dev/null); do
+        [ "$pid" = "$$" ] && continue
+        kill "$pid" 2>/dev/null
+    done
+    exit 1
+' 1 2 3 6 15
+
+set -o errexit
+
+# bash only line art.
+colors=(208 214 220 226 190 154 118 82 83 84 85 86 87 45 39 33
+		27 33 39 45 87 86 85 84 83 82 118 154 190 226 220 214)
+total_colors=${#colors[@]}
+color_offset=0
+
+separator() {
+	for((i=40; i--;)); do
+		local color_index=$(((color_offset + i) % total_colors))
+		echo -ne "\033[38;5;${colors[color_index]}m──"
+	done
+	echo -e "\033[0m"
+	((color_offset += 3))
+}
+
+separator ---------------------------------------------------------------------
+
+CMD=$(echo "sudo apt install -y                                       \
+	ccache        clang         clang-tidy    cmake       doxygen     \
+	g++           g++-multilib  gcc-multilib  gcovr       gdb         \
+	gdb-multiarch libc++-dev    llvm          llvm-dev    musl        \
+	musl-dev      musl-tools    ninja-build   universal-ctags         \
+" | tr -s '[:space:]' ' ')
+echo "\$ $CMD"
+eval "$CMD"
+
+separator ---------------------------------------------------------------------
+
+set +o errexit
+
+for CMD in clang cmake doxygen emcc gcc gcovr musl-gcc python3 ninja universal-ctags
+do
+	echo "\$ $CMD --version"
+    eval "$CMD --version"
+	separator -----------------------------------------------------------------
+done

@@ -1,0 +1,101 @@
+#pragma once
+// SPDX-FileCopyrightText: © 2017-2026 Adrian Johnston.
+// SPDX-License-Identifier: MIT
+// This file is licensed under the MIT license found in the LICENSE.md file.
+
+/// \file hx/hxprofiler.hpp Provides macros for RAII-style profiling
+/// (`hxprofile_scope`, `hxprofile_scope_min` with optional cycle cutoffs).
+/// Allows exporting to Chrome's tracing format
+/// (`hxprofiler_write_to_chrome_tracing`). Profiling is enabled only if
+/// `HX_PROFILE` is defined.
+///
+/// | Macro | Purpose |
+/// | --- | --- |
+/// | `hxprofile_scope` | Records scoped samples keyed by a string literal. |
+/// | `hxprofile_scope_min` | Records scoped samples when the cycle cutoff is met. |
+/// | `hxprofiler_start` | Clears existing samples then starts recording. |
+/// | `hxprofiler_stop` | Stops recording while retaining samples. |
+/// | `hxprofiler_log` | Logs captured samples to the system log. |
+/// | `hxprofiler_write_to_chrome_tracing` | Writes captured samples to Chrome tracing JSON. |
+
+#include "libhatchet.h"
+
+#if defined __wasm__
+// from "emscripten/emscripten.h"
+extern "C" double emscripten_get_now(void);
+#elif defined __x86_64__ || defined __i386__
+#ifdef _MSC_VER
+#include <intrin.h>
+#else
+#include <x86intrin.h>
+#endif
+#endif
+
+/// `hxcycles_t` - Stores approximately three seconds to 300 years worth of
+/// processor cycles starting from an unspecified origin and wrapping using
+/// unsigned rules. This is intended for profiling, not calendaring. Used by the
+/// following include.
+using hxcycles_t = size_t;
+
+#if HX_PROFILE
+#include "detail/hxprofiler_detail.hpp"
+/// \cond HIDDEN
+#define HX_PROFILE_ONLY_(x_) x_
+/// \endcond
+#else
+#define HX_PROFILE_ONLY_(x_) ((void)0)
+#endif
+
+/// `hxcycles_per_second` - Customize for your processor speed. This assumes
+/// 2.8 GHz. These constants are primarily used with `printf`, which promotes
+/// everything to double anyway.
+static const double hxcycles_per_second = 2.8e+9;
+static const double hxmilliseconds_per_cycle = 1.0e+3 / hxcycles_per_second;
+static const double hxmicroseconds_per_cycle = 1.0e+6 / hxcycles_per_second;
+static const hxcycles_t hxdefault_cycles_cutoff = 1000;
+
+/// `hxtime_sample_cycles(void)` - Set up the processor cycle counter for your
+/// architecture. This is callable without enabling `HX_PROFILE`.
+inline hxcycles_t hxtime_sample_cycles(void);
+
+/// `hxprofile_scope(const char* label_string_literal)` - Declares an RAII-style
+/// profiling sample. WARNING: A pointer to `label_string_literal` is kept.
+/// Compiles to a NOP when not in use.
+/// - `label_string_literal` : A string literal label for the sample.
+#define hxprofile_scope(label_string_literal_) \
+	HX_PROFILE_ONLY_(const hxprofiler_scope_internal_<> \
+		HX_APPEND_COUNTER(hxprofile_scope_)(label_string_literal_))
+
+/// `hxprofile_scope_min(const char* label_string_literal, hxcycles_t min_cycles)` -
+/// Declares an RAII-style profiling sample with a minimum cycle cutoff. Compiles
+/// to a NOP when not in use.
+/// - `label_string_literal` : A string literal label for the sample.
+/// - `min_cycles` : A minimum number of cycles required for a sample to be recorded.
+///   Must be a compile-time constant.
+#define hxprofile_scope_min(label_string_literal_, min_cycles_) \
+	HX_PROFILE_ONLY_(const hxprofiler_scope_internal_<min_cycles_> \
+		HX_APPEND_COUNTER(hxprofile_scope_)(label_string_literal_))
+
+/// `hxprofiler_start(void)` - Clears samples and begins sampling. Compiles to a
+/// NOP when not in use.
+#define hxprofiler_start() HX_PROFILE_ONLY_(g_hxprofiler_.start_())
+
+/// `hxprofiler_stop(void)` - Ends sampling. Does not clear samples. Compiles to
+/// a NOP when not in use.
+#define hxprofiler_stop() HX_PROFILE_ONLY_(g_hxprofiler_.stop_())
+
+/// `hxprofiler_log(void)` - Stops sampling and writes samples to the system
+/// log. Compiles to a NOP when not in use.
+#define hxprofiler_log() HX_PROFILE_ONLY_(g_hxprofiler_.log_())
+
+/// ###
+/// ### NOTA BENE: Only https://ui.perfetto.dev/ is working at the moment.
+/// ###
+///
+/// `hxprofiler_write_to_chrome_tracing(const char* filename)` - Stops sampling
+/// and writes samples to the provided file. Writes profiling data in a format
+/// usable by Chrome's `chrome://tracing` view. Usage: In Chrome go to
+/// `chrome://tracing/`. Load the generated `.json` file. Use the W, A, S, and D
+/// keys. Compiles to a NOP when not in use.
+#define hxprofiler_write_to_chrome_tracing(filename_) \
+	HX_PROFILE_ONLY_( g_hxprofiler_.write_to_chrome_tracing_(filename_) )

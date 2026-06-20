@@ -1,0 +1,23 @@
+BRIEF_MEMBER_DESC      = NO
+CLASS_GRAPH            = NO
+COLLABORATION_GRAPH    = NO
+DISABLE_INDEX          = NO
+EXPAND_ONLY_PREDEF     = FALSE
+EXTRACT_ALL            = YES
+FILE_PATTERNS          = *.h *.hpp
+FULL_SIDEBAR           = NO
+GENERATE_LATEX         = NO
+GENERATE_TREEVIEW      = YES
+HAVE_DOT               = NO
+HTML_COLORSTYLE        = LIGHT
+HTML_EXTRA_STYLESHEET  = doxygen-awesome.css
+HTML_EXTRA_FILES       = doxygen-awesome.css
+IMAGE_PATH             = .
+INPUT                  = include/hx/ README.md
+MACRO_EXPANSION        = YES
+OUTPUT_DIRECTORY       = docs/
+PREDEFINED             = HX_DOXYGEN_PARSER=1
+PROJECT_NAME           = "libhatchet"
+SHOW_INCLUDE_FILES     = NO
+USE_MDFILE_AS_MAINPAGE = README.md
+WARN_AS_ERROR          = FAIL_ON_WARNINGS

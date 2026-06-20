@@ -1,0 +1,195 @@
+#pragma once
+// SPDX-FileCopyrightText: © 2017-2026 Adrian Johnston.
+// SPDX-License-Identifier: MIT
+// This file is licensed under the MIT license found in the LICENSE.md file.
+
+/// \file hx/hxptr.hpp A unique owning pointer.
+#include "libhatchet.h"
+#include "hxutility.h"
+
+/// `hxptr<T, deleter_t>` - A unique owning pointer. Owns a single dynamically
+/// allocated object of type `T` and invokes `deleter_t` on destruction or
+/// `reset`. Only one `hxptr` may own a given object at a time. Move
+/// construction and move assignment transfer ownership. Copy construction and
+/// copy assignment are deleted. NOTA BENE: This class does not call `delete[]`
+/// on owned arrays. Use hxarray.
+/// - `T` : The pointed-to type.
+/// - `deleter_t` : A callable that frees the owned pointer. Defaults to
+///    `hxdefault_delete`. Use `hxconsteval_delete` for `consteval` work.
+template<typename T_, typename deleter_t_=hxdefault_delete>
+class hxptr {
+public:
+	using element_t = T_;
+
+	/// Constructs a null `hxptr` that owns nothing.
+	hxconstexpr hxptr(void) : m_ptr_(hxnull) { }
+
+	/// Constructs an `hxptr` that takes ownership of `ptr`.
+	/// - `ptr` : The pointer to take ownership of. May be null.
+	hxconstexpr explicit hxptr(T_* ptr_) : m_ptr_(ptr_) { }
+
+	/// Move constructor. Transfers ownership from `other` to this. `other` is
+	/// left null.
+	/// - `other` : The `hxptr` to transfer ownership from.
+	hxconstexpr hxptr(hxptr&& other_);
+
+	/// Destroys the owned object using `deleter_t` if non-null.
+	hxconstexpr ~hxptr(void);
+
+	/// Move assignment. Destroys the currently owned object, then transfers
+	/// ownership from `other`. `other` is left null. Self-assignment is not
+	/// supported.
+	/// - `other` : The `hxptr` to transfer ownership from.
+	hxconstexpr hxptr& operator=(hxptr&& other_);
+
+	/// Returns a reference to the owned object. The pointer must not be null.
+	hxattr_nodiscard hxconstexpr T_& operator*(void) const;
+
+	/// Returns the owned pointer. The pointer must not be null.
+	hxattr_nodiscard hxconstexpr T_* operator->(void) const;
+
+	/// Returns a reference to the element at index `n` relative to the owned
+	/// pointer. The pointer must not be null. NOTA BENE: This class does not
+	/// call `delete[]` on owned arrays. Use hxarray.
+	/// - `n` : The index of the element to return.
+	hxattr_nodiscard hxconstexpr T_& operator[](size_t n_) const;
+
+	/// Returns `true` if the owned pointer is non-null.
+	hxattr_nodiscard hxconstexpr operator bool(void) const;
+
+	/// Returns `true` if this and `other` point to the same object.
+	/// - `other` : The `hxptr` to compare against.
+	hxattr_nodiscard hxconstexpr bool operator==(const hxptr& other_) const;
+
+	/// Returns `true` if this and `other` point to different objects.
+	/// - `other` : The `hxptr` to compare against.
+	hxattr_nodiscard hxconstexpr bool operator!=(const hxptr& other_) const;
+
+	/// Returns `true` if the owned pointer is null.
+	hxattr_nodiscard hxconstexpr bool operator==(hxnullptr_t) const;
+
+	/// Returns `true` if the owned pointer is non-null.
+	hxattr_nodiscard hxconstexpr bool operator!=(hxnullptr_t) const;
+
+	/// Returns the owned pointer without releasing ownership.
+	hxattr_nodiscard hxconstexpr T_* get(void) const { return m_ptr_; }
+
+	/// Releases ownership and returns the previously owned pointer without
+	/// invoking the deleter. The caller takes responsibility for freeing it.
+	hxattr_nodiscard hxconstexpr T_* release(void);
+
+	/// Destroys the currently owned object using `deleter_t` if non-null, then
+	/// takes ownership of `ptr`.
+	/// - `ptr` : The new pointer to own. May be null.
+	hxconstexpr void reset(T_* ptr_=hxnull);
+
+	/// Exchanges ownership with `other`. Neither pointer is deleted.
+	/// - `other` : The `hxptr` to swap with.
+	hxconstexpr void swap(hxptr& other_);
+
+private:
+	hxptr(const hxptr&) = delete;
+	hxptr& operator=(const hxptr&) = delete;
+
+	T_* m_ptr_;
+};
+
+/// `hxmake_ptr<T, allocator, align>(args...)` - Allocates and constructs an
+/// object of type `T` and returns it wrapped in an `hxptr`. Equivalent to
+/// `hxptr<T>(hxnew<T, allocator, align>(args...))`. Will not return on
+/// failure.
+/// - `allocator` : The memory manager ID to use for allocation. Defaults to
+///    `hxsystem_allocator_current`.
+/// - `align` : A mask of low bits to be zeroed out when allocating. Defaults
+///    to `HX_ALIGNMENT`.
+template <typename T_, hxsystem_allocator_t allocator_=hxsystem_allocator_current, hxalignment_t align_=HX_ALIGNMENT, typename... args_t_>
+hxattr_nodiscard hxptr<T_> hxmake_ptr(args_t_&&... args_) {
+	return hxptr<T_>(::new(hxmalloc_ext(sizeof(T_), allocator_, align_)) T_(static_cast<args_t_&&>(args_)...));
+}
+
+template<typename T_, typename deleter_t_>
+hxconstexpr hxptr<T_, deleter_t_>::hxptr(hxptr&& other_) : m_ptr_(other_.m_ptr_) {
+	other_.m_ptr_ = hxnull;
+}
+
+template<typename T_, typename deleter_t_>
+hxconstexpr hxptr<T_, deleter_t_>::~hxptr(void) {
+	if(m_ptr_) {
+		deleter_t_()(m_ptr_);
+	}
+}
+
+template<typename T_, typename deleter_t_>
+hxconstexpr hxptr<T_, deleter_t_>& hxptr<T_, deleter_t_>::operator=(hxptr&& other_) {
+	hxassertmsg(this != &other_, "self_assignment");
+	if(m_ptr_) {
+		deleter_t_()(m_ptr_);
+	}
+	m_ptr_ = other_.m_ptr_;
+	other_.m_ptr_ = hxnull;
+	return *this;
+}
+
+template<typename T_, typename deleter_t_>
+hxconstexpr T_& hxptr<T_, deleter_t_>::operator*(void) const {
+	hxassertmsg(m_ptr_ != hxnull, "null_ptr");
+	return *m_ptr_;
+}
+
+template<typename T_, typename deleter_t_>
+hxconstexpr T_* hxptr<T_, deleter_t_>::operator->(void) const {
+	hxassertmsg(m_ptr_ != hxnull, "null_ptr");
+	return m_ptr_;
+}
+
+template<typename T_, typename deleter_t_>
+hxconstexpr T_& hxptr<T_, deleter_t_>::operator[](size_t n_) const {
+	hxassertmsg(m_ptr_ != hxnull, "null_ptr");
+	return m_ptr_[n_];
+}
+
+template<typename T_, typename deleter_t_>
+hxconstexpr hxptr<T_, deleter_t_>::operator bool(void) const { return m_ptr_ != hxnull; }
+
+template<typename T_, typename deleter_t_>
+hxconstexpr bool hxptr<T_, deleter_t_>::operator==(const hxptr& other_) const {
+	return m_ptr_ == other_.m_ptr_;
+}
+
+template<typename T_, typename deleter_t_>
+hxconstexpr bool hxptr<T_, deleter_t_>::operator!=(const hxptr& other_) const {
+	return m_ptr_ != other_.m_ptr_;
+}
+
+template<typename T_, typename deleter_t_>
+hxconstexpr bool hxptr<T_, deleter_t_>::operator==(hxnullptr_t) const {
+	return m_ptr_ == hxnull;
+}
+
+template<typename T_, typename deleter_t_>
+hxconstexpr bool hxptr<T_, deleter_t_>::operator!=(hxnullptr_t) const {
+	return m_ptr_ != hxnull;
+}
+
+template<typename T_, typename deleter_t_>
+hxconstexpr T_* hxptr<T_, deleter_t_>::release(void) {
+	T_* ptr_ = m_ptr_;
+	m_ptr_ = hxnull;
+	return ptr_;
+}
+
+template<typename T_, typename deleter_t_>
+hxconstexpr void hxptr<T_, deleter_t_>::reset(T_* ptr_) {
+	hxassertmsg(ptr_ != m_ptr_ || m_ptr_ == hxnull, "self_reset");
+	if(m_ptr_) {
+		deleter_t_()(m_ptr_);
+	}
+	m_ptr_ = ptr_;
+}
+
+template<typename T_, typename deleter_t_>
+hxconstexpr void hxptr<T_, deleter_t_>::swap(hxptr& other_) {
+	T_* tmp_ = m_ptr_;
+	m_ptr_ = other_.m_ptr_;
+	other_.m_ptr_ = tmp_;
+}

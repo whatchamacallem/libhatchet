@@ -1,0 +1,246 @@
+#pragma once
+// SPDX-FileCopyrightText: © 2017-2026 Adrian Johnston.
+// SPDX-License-Identifier: MIT
+// This file is licensed under the MIT license found in the LICENSE.md file.
+
+#include "libhatchet.h"
+
+class hxfile;
+
+/// Global reference to stdin or equivalent.
+extern hxfile hxin;
+
+/// Global reference to stdout or equivalent.
+extern hxfile hxout;
+
+/// Global reference to stderr or equivalent.
+extern hxfile hxerr;
+
+/// Global equivalent to `/dev/null`. May be written to but not read from.
+extern hxfile hxdev_null;
+
+/// Equivalent to `std::endl` without the flush. Does not vary by platform.
+/// Non-empty POSIX text files must end with `\n`.
+#define hxendl "\n"
+
+/// `hxfile` - Single-ownership C++ RAII abstraction for C-style `FILE*` I/O.
+/// Provides a mixture of unformatted binary stream operations and formatted
+/// `printf`/`scanf` style I/O, along with optional error handling. `gcc` is
+/// useful for validating `printf`/`scanf` style arguments. However,
+/// memory-imaged data structures are still recommended. `hxfile` uses binary
+/// I/O only for portability. It implements the equivalent of the standard
+/// `eofbit` and `failbit` but not the `badbit`. The `failbit` should always be
+/// set when the `eofbit` is set.
+///
+/// Here is the syntax to make a block of code conditional on opening a file.
+/// The filename is also formatted printf style. This is equivalent to Python's
+/// `with open(filename, mode) as f:`.
+///
+/// ```cpp
+/// if(hxfile f=hxfile(hxfile::in|hxfile::skip_asserts, "pkg%d.bin", i)) {
+///   f => manifest; // binary read.
+///   // ...
+/// }
+/// ```
+///
+/// To switch to a different implementation, use an alternate `.cpp` file for
+/// your target. Allows `hxerr` to be a serial port while file I/O uses a DMA
+/// controller.
+///
+/// NOTA BENE: `get_position`/`set_position` over 4 GiB is not supported on
+/// Windows. As well, `size_t` is limited to 4 GiB on all 32-bit platforms.
+class hxfile {
+public:
+	/// `open_mode` - Flags indicating how the file is to be used. Modifying or
+	/// appending to an existing file is not implemented.
+	enum open_mode : uint8_t {
+		/// No flags.
+		none = 0u,
+		/// Open for binary reading. e.g., `"rb"`.
+		in = 1u,
+		/// Open for binary writing. Replaces any existing file with an empty
+		/// one even if `in` is used at the same time. e.g., `"wb"`.
+		out = 2u,
+		/// By default, any unexpected failure results in an assert. To allow
+		/// reasonably unforeseen asserts to be skipped, set skip_asserts. Bad
+		/// parameters (e.g., writing to a file that is not open, was not opened
+		/// to be written to, or providing a null buffer) will still result in
+		/// assertions. e.g., `"w+b"`.
+		skip_asserts = 4u
+	};
+
+	/// Default-constructs as a closed file.
+	hxfile(void) {
+		::memset(static_cast<void*>(this), 0x00, sizeof *this);
+	}
+
+	/// Constructs and opens a file with a formatted filename. Uses a
+	/// non-standard argument order.
+	/// - `mode` : Combination of `open_mode` flags describing how to open the file.
+	/// - `filename` : Non-null `printf`-style format string naming the file.
+	/// - `...` : Additional arguments matching the `filename` format specifiers.
+	hxfile(uint8_t mode_, const char* filename_, ...) hxattr_printf(3, 4);
+
+	/// Constructs the file object with an unowned implementation object and a
+	/// specific mode. Performs no checks. Use `hxin`, `hxout`, `hxerr`, and
+	/// `hxdev_null` instead.
+	hxfile(void* file_, uint8_t mode_);
+
+	/// Disallow usage where the filename comes first, like with `fopen`.
+	hxfile(const char* file_, uint8_t mode_=0) = delete;
+
+	// Move constructor. No copy constructor is provided.
+	hxfile(hxfile&& file_);
+
+	/// Destroys the file and ensures it is closed when the object goes out of
+	/// scope.
+	~hxfile();
+
+	/// Move assignment. No copy assignment operator is provided.
+	void operator=(hxfile&& file_);
+
+	/// Checks if the file is open, `EOF` has not been reached, and no error has
+	/// been encountered. See usage example in the class documentation.
+	operator bool(void) const { return (m_file_pimpl_ != hxnull) && !m_fail_; }
+
+	/// Opens a file with the specified mode and formatted filename.
+	/// - `mode` : Combination of `open_mode` flags describing how to open the file.
+	/// - `filename` : Non-null `printf`-style format string naming the file.
+	/// - `...` : Additional arguments matching the `filename` format specifiers.
+	bool open(uint8_t mode_, const char* filename_, ...) hxattr_printf(3, 4);
+
+	/// Closes the currently open file.
+	void close(void);
+
+	/// Checks if the file is open.
+	hxattr_nodiscard bool is_open(void) const { return m_file_pimpl_ != hxnull; }
+
+	/// Checks if an error has been encountered, EOF set or `set_fail` called.
+	hxattr_nodiscard bool fail(void) const { return m_fail_; }
+
+	/// Marks the file as having encountered a failure. Allows the user to
+	/// report additional errors without having to track them. Non-standard.
+	void set_fail(void) { m_fail_ = true; }
+
+	/// Checks if `EOF` has been reached.
+	hxattr_nodiscard bool eof(void) const { return m_eof_; }
+
+	/// Resets the failure and `EOF` flags. This is required to clear `EOF`
+	/// after `EOF` is encountered.
+	void clear(void);
+
+	/// Returns the current open mode of the file.
+	hxattr_nodiscard uint8_t mode(void) const { return m_open_mode_; }
+
+	/// Returns the current position in the file if open, 0 otherwise. FILE*
+	/// implementation requires a 64-bit long to support 64-bit files.
+	hxattr_nodiscard size_t get_pos(void) const;
+
+	/// Sets the current position in the file. Returns true on success. FILE*
+	/// implementation requires a 64-bit long to support 64-bit files. Resets
+	/// the failure flag to false on success.
+	bool set_pos(size_t position_);
+
+	/// Reads a specified number of bytes from the file into the provided
+	/// buffer. Asserts that `count` does not exceed `buffer_size`. Does not
+	/// reset the failure flag to false on success.
+	/// - `bytes` : Non-null pointer to a buffer of at least `buffer_size` bytes.
+	/// - `buffer_size` : Capacity of the buffer in bytes.
+	/// - `count` : Number of bytes to read from the file. Must not exceed `buffer_size`.
+	size_t read(void* bytes_, size_t buffer_size_, size_t count_) hxattr_nonnull(2) hxattr_hot;
+
+	/// Writes a specified number of bytes from the provided buffer to the file.
+	/// Writing will be skipped when using `hxdev_null`. Resets the failure flag
+	/// to false on success.
+	/// - `bytes` : Non-null pointer to a buffer that provides at least `count`
+	///   bytes.
+	/// - `count` : Number of bytes to write to the file.
+	size_t write(const void* bytes_, size_t count_) hxattr_nonnull(2) hxattr_hot;
+
+	/// Flushes buffered output to the underlying file. Safe to call on
+	/// `hxdev_null`. Does not reset the failure flag to false on success.
+	bool flush(void) hxattr_hot;
+
+	/// Reads a `\n` or `EOF` terminated character sequence. Allowed to fail on
+	/// `EOF` without needing to be `hxfile::skip_asserts`. Encountering `EOF`
+	/// also sets the failure flag. Automatically determines the size of the
+	/// provided char array.
+	/// - `buffer` : Reference to a char array where the line will be stored.
+	template<size_t buffer_size_>
+	bool getline(char(&buffer_)[buffer_size_]) {
+		return this->getline(buffer_, buffer_size_);
+	}
+
+	/// Reads a `\n` or `EOF` terminated character sequence. Allowed to fail on
+	/// `EOF` without needing to be `hxfile::skip_asserts`. Encountering `EOF`
+	/// also sets the failure flag.
+	/// - `buffer` : Non-null pointer to a char array where the line will be
+	///   stored.
+	/// - `buffer_size` : Size of the buffer array.
+	bool getline(char* buffer_, int buffer_size_) hxattr_nonnull(2) hxattr_hot;
+
+	/// Writes a formatted UTF-8 string to the file. Uses `printf` conventions.
+	/// Formatting and writing will be skipped when using `hxdev_null`. Does not
+	/// modify the failure flag because it is not clear from `vfprintf`.
+	/// - `format` : Non-null `printf`-style format string.
+	/// - `...` : Additional arguments that satisfy the format string.
+	bool print(const char* format_, ...) hxattr_printf(2, 3) hxattr_hot;
+
+	/// Reads a formatted UTF-8 string from the file. Uses `scanf` conventions.
+	/// Returns the same value as `scanf`. Use `hxfile::skip_asserts` to read until `EOF`.
+	/// Parse errors will set `fail` to true. Will set the failure flag and check `EOF`
+	/// on a return value of `EOF` from `vfscanf`. Returns a negative value on `EOF`.
+	/// - `format` : Non-null `scanf`-style format string.
+	/// - `...` : Additional arguments that satisfy the format string.
+	int scan(const char* format_, ...) hxattr_scanf(2, 3) hxattr_hot;
+
+	/// Reads a single unformatted native-endian object from the file.
+	/// - `t` : Reference to the object where the data will be stored.
+	template<typename T_>
+	bool read1(T_& t_) { return this->read(&t_, sizeof t_, sizeof t_) == sizeof t_; }
+
+	/// Writes a single unformatted native-endian object to the file.
+	/// - `t` : Reference to the object containing the data to write.
+	template<typename T_>
+	bool write1(const T_& t_) { return this->write(&t_, sizeof t_) == sizeof t_; }
+
+	/// Reads a single unformatted native-endian object from a stream.
+	/// - `t` : Reference to the object where the data will be stored.
+	template<typename T_>
+	hxfile& operator>>(T_& t_) {
+		this->read(&t_, sizeof t_, sizeof t_);
+		return *this;
+	}
+
+	/// Writes a single unformatted native-endian object to a stream.
+	/// - `t` : Reference to the object containing the data to write.
+	template<typename T_>
+	hxfile& operator<<(const T_& t_) {
+		this->write(&t_, sizeof t_);
+		return *this;
+	}
+
+	/// Writes a string literal to the file. Supports Google Test style
+	/// diagnostic messages in `hxtest`.
+	/// - `str` : Reference to a string literal to write to the file.
+	template<size_t string_length_>
+	hxfile& operator<<(const char(&str_)[string_length_]) {
+		this->write(str_, string_length_-1);
+		return *this;
+	}
+
+private:
+	hxfile(const hxfile&) = delete;
+	void operator=(const hxfile&) = delete;
+	template<typename T_> hxfile& operator>>(const T_* t_) = delete; // Use >=.
+
+	// Internal function to open a file with a formatted filename and variable
+	// arguments.
+	bool openv_(uint8_t mode_, const char* format_, va_list args_);
+
+	void* m_file_pimpl_;   // FILE* file pointer.
+	uint8_t m_open_mode_;  // Current open_mode flags.
+	bool m_owns_;  		   // Indicates if the FILE* is owned.
+	bool m_fail_; 		   // Indicates EOF, file errors and user errors.
+	bool m_eof_;  		   // Indicates EOF.
+};

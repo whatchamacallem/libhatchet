@@ -1,0 +1,68 @@
+# SPDX-FileCopyrightText: © 2017-2026 Adrian Johnston.
+# SPDX-License-Identifier: MIT
+# This file is licensed under the terms of the LICENSE.md file.
+#
+# The source code contains NOLINT markers in places where low-level C-style
+# memory manipulation is being performed. Annex K of the C11 standard was never
+# widely implemented and this library has very low-level work to do. The choice
+# to use NOLINT was made as it is clearer what is happening.
+#
+# Audit the NOLINT markers if low-level memory manipulation is a concern.
+
+Checks: >
+  -*,
+  bugprone-*,
+  clang-analyzer-apiModeling.*,
+  clang-analyzer-core.*,
+  clang-analyzer-cplusplus.*,
+  clang-analyzer-deadcode.*,
+  clang-analyzer-nullability.*,
+  clang-analyzer-optin.core.*,
+  clang-analyzer-optin.cplusplus.*,
+  clang-analyzer-optin.performance.*,
+  clang-analyzer-optin.portability.*,
+  clang-analyzer-security.*,
+  clang-analyzer-unix.*,
+  clang-analyzer-valist.*,
+  cppcoreguidelines-explicit-virtual-functions,
+  cppcoreguidelines-init-variables,
+  cppcoreguidelines-interfaces-global-init,
+  cppcoreguidelines-narrowing-conversions,
+  cppcoreguidelines-pro-type-cstyle-cast,
+  cppcoreguidelines-slicing,
+  cppcoreguidelines-virtual-class-destructor,
+  google-readability-casting,
+  misc-confusable-identifiers,
+  misc-const-correctness,
+  misc-header-include-cycle,
+  misc-new-delete-overloads,
+  misc-non-copyable-objects,
+  misc-redundant-expression,
+  misc-static-assert,
+  misc-unused-using-decls,
+  performance-*,
+  portability-*,
+  readability-avoid-const-params-in-decls,
+  readability-braces-around-statements,
+  readability-const-return-type,
+  readability-convert-member-functions-to-static,
+  readability-delete-null-pointer,
+  readability-implicit-bool-conversion,
+  readability-make-member-function-const,
+  readability-misleading-indentation,
+  readability-qualified-auto,
+  readability-redundant-casting,
+  readability-redundant-control-flow,
+  readability-redundant-member-init,
+  readability-simplify-boolean-expr,
+  readability-use-anyofallof,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-forwarding-reference-overload,
+  -bugprone-implicit-widening-of-multiplication-result,
+  -bugprone-multi-level-implicit-pointer-conversion,
+  -bugprone-sizeof-expression,
+  -performance-enum-size,
+  -performance-no-int-to-ptr
+FormatStyle: none
+HeaderFilterRegex: '(^|.*/)(include|src|test)/'
+WarningsAsErrors: '*'

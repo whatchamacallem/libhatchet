@@ -1,0 +1,204 @@
+# libhatchet
+
+Please use the most recent tagged release.
+
+## Overview
+
+> People say that you should not micro-optimize. But if what you love is
+> micro-optimization... that's what you should do. — Linus Torvalds
+
+libhatchet is a lightweight, bespoke C17/C++23 alternative to the C++ standard
+library designed for cross-compilation to resource-constrained targets like
+DSPs, FPGAs, ASICs or WebAssembly. It also falls back to requiring only C99
+libraries and a C++11 compiler, and deliberately avoids dependencies on the C++
+standard library. For those with a low-level mindset, the developer experience
+is better than with the C++ standard library. For example, the template
+instantiation errors are easier to read, and `hxassertmsg` will format your
+assert messages before setting a breakpoint for you. There is nothing
+unnecessary to step through in the debugger. Compile times are shockingly fast
+when using `ccache` without precompiled headers. The compiler's budget for
+optimization isn't blown out by layers you don't normally need. Although
+intrinsics are available for that problem.
+
+A key property of this codebase is its embrace of clang's Undefined Behavior
+Sanitizer (UBSan), which enables developers to write pointer-centric C++ code
+while enjoying runtime checks comparable to managed languages. The
+implementation maintains compatibility with all possible warning flags and
+sanitizers for both gcc and clang. Of course, asserts are also widely used. The
+implementation also avoids dynamic allocations except when initializing system
+allocators.
+
+<img src="libhatchet.jpg" alt="banner" width="400" height="400" align="right" hspace="20">
+
+Build configurations are controlled via `HX_RELEASE`, which defines optimization
+levels while allowing separate compiler optimization settings for debugging
+purposes:
+
+- **0**: Debug build with comprehensive asserts using verbose strings. Use this
+  if you need a "hardened implementation" for testing. Minor surgery would be
+  required to enable all asserts in a release build without adding debug
+  strings.
+- **1**: Release build with critical asserts and warnings (suitable for internal
+  `RelWithDebInfo` builds).
+- **2**: Optimized release build with minimal strings and critical asserts only.
+- **3**: Maximum optimization with no runtime checks. NOTA BENE: All asserts are
+  converted into statements that cause the compiler to optimize as if they were
+  true.
+
+## Key Features
+
+- **Portability**: libhatchet can easily be made to run on top of any old
+  embedded C99 library. musl libc is recommended for embedded Linux and is
+  widely packaged: <https://musl.libc.org/>. No other C++ runtime or C++ code is
+  required. pthreads or C99's `<thread.h>` may be used for threading, which are
+  widely implemented standards.
+
+- **Profiling System**: Uses processor cycle sampling to create a hierarchical
+  timeline capture compatible with Chrome's `about://tracing` viewer (navigation
+  uses W, A, S, and D keys). One line of assembly may be needed for uncommon
+  hardware.
+
+- **Memory Management**: RAII-based abstraction layer supporting various
+  allocation strategies, particularly valuable for applications where crashing
+  from memory fragmentation is unacceptable. If you have a lot of temporary
+  allocations, this system reasonably offers 30% memory and 30% performance
+  improvements with minor modifications to your code.
+
+- **Console**: Provides an embedded command processor with automatic C++
+  function binding using templates. Useful for interactive target debugging
+  without recompilation and also provides support for config files or
+  configuration via the command-line. Syntax is just `verb [arg ...]`.
+
+- **Testing Framework**: Safer, lighter, debuggable reimplementation of core
+  Google Test functionality.
+
+- **Task Queue**: An unopinionated task queue with a worker pool.
+
+- **Containers**: Provides a set of containers designed for environments where
+  reallocation is not used. `hxarray` provides a statically or dynamically
+  allocated array. This class was written with an exhaustive feature set because
+  arrays are cache-coherent and memory efficient. E.g. it implements a priority
+  queue as well. `hxhash_table` provides unordered sets and maps without
+  requiring nodes to be subclasses or using copies and allocations. `hxlist`
+  similarly operates without requiring copies or allocations. `hxdeque` provides
+  a highly optimized deque compared to the standard. `hxbitset` is available for
+  bit manipulation. That said, this codebase is intended for low-level work
+  where complex container libraries cause code bloat, memory fragmentation, and
+  poor cache coherence. If those are not your concerns, consider using
+  additional libraries. No Red-Black Tree has been provided.
+
+- **Pretty Printers** Implements GDB-compatible pretty printers, enabling
+  debuggers and most code editors to display container contents in a
+  human-readable format.
+
+- **Algorithms**: `hxradix_sort` is provided for Θ(n) sorting. See
+  `<hx/hxalgorithm.h>` for standard algorithms and comparison based sorting and
+  lookup.
+
+- **Performance Focus**: This is systems code. Everything has to be well
+  optimized and cache-coherent without causing code bloat. This codebase avoids
+  exceptions and RTTI for efficiency. Exceptions will be caught by the test
+  driver and the console if they are enabled.
+
+- **C99 Compatibility**: Logging, asserts, and memory management are available
+  in plain C99 via `<hx/libhatchet.h>`.
+
+- **64-bit Ready**: Designed for both 32-bit and 64-bit targets.
+
+- **Fast builds**: Blazing fast builds when used with `ccache` and no `.pch`.
+  `ninja` + `ccache` is recommended when using `cmake`. Precompiled headers have
+  surprisingly long load times and break `ccache`'s optimizations. One warning
+  though, this is also accomplished by skipping less commonly used features.
+
+- **AI Friendly**: Things with the same name as the standard generally work the
+  same way as the standard. This means that AI is easily able to apply its
+  existing knowledge of standard C++. It also already knows how to use the test
+  macros when writing tests. Using tabs instead of spaces reduces token use.
+
+- **constexpr ready**: C++11 `constexpr` are used where possible. Asserts,
+  algorithms, `hxlist`, `hxbitset` and `hxrandom` support `consteval` in C++23.
+
+## Memory Management
+
+An optional memory manager is provided that allows for stack based allocators.
+This removes overhead from permanent and temporary allocations. In complex
+applications additional stacks would be required for streaming different
+resources. Different allocation strategies can also be added.
+
+Fancy tools like heaptrack can be used by disabling the memory manager with
+`-DHX_MEMORY_MANAGER_DISABLE`. Leak tracking is also built in.
+
+`hxptr` is provided just in case you want a `std::unique_ptr` replacement.
+
+## Documentation
+
+Running the command `doxygen` with no arguments will generate
+`docs/html/index.html`. The markdown source for the documentation is in the
+header files at `include/hx/` and is readable as-is. A modern editor should also
+show the docs in a mouseover box.
+
+## Not Provided
+
+This project was started for the author's own personal use, and it tries to be
+complete enough for ordinary C++ programmers. However, if you find something
+missing, odds are your favorite AI already knows how add it, or it was omitted
+because the C library was deemed sufficient.
+
+That said, some functionality of the C++ standard library is not worth
+reimplementing here. If you need these things you are advised to use the
+standard library shipped with your compiler.
+
+- Execution control library. This is server architecture.
+- Iterators Library. This codebase intentionally deemphasizes iterators.
+- Ranges Library. This would be a large and pointless rewrite.
+- Strings Library. These are allocation intensive. See the `{fmt}` project.
+
+## Other Projects
+
+- **[musl libc](https://musl.libc.org/)** - This is the recommended C library
+  for use with libhatchet in a freestanding environment.
+- **[{fmt}](https://fmt.dev)** - Has a micro-optimized version of `std::format`.
+  Also has nice features like console colors and a fast `printf` too.
+
+## Tested Environments
+
+Almost every reasonable gcc and clang warning flag should be safe to enable.
+clang-tidy is also in use. The tested environment is glibc and musl on Ubuntu
+24.04 LTS. See `ubuntu_packages.sh` for a list of required packages for all the
+scripts. The latest MSVC 2022 should be working with most warnings enabled as
+well. Although the MSVC static analyzer is not being tested.
+
+The scripted builds exercise the following toolchains, language modes, and
+`HX_RELEASE` combinations:
+
+| Script | Toolchain | Language Modes | `HX_RELEASE` | Notes |
+| --- | --- | --- | --- | --- |
+| `debugbuild.sh` | `clang`/`clang++` | C17, C++23 | 0 | 32-bit debug build with ccache and no exceptions/RTTI. |
+| `testcmake.sh` | `cmake` + default compiler | C17, C++23 | 0 (default) | Uses the real Google Test and runs `hxtest` and clang-tidy. |
+| `testcoverage.sh` | `gcc`, `g++` + `--coverage` | C99, C++23 | 0 | Enables `HX_TEST_ERROR_HANDLING=1` and emits `coverage.html`. |
+| `testmatrix.sh` | `gcc`, `clang` (ASan/UBSan) | C99, C17, C++11, C++23 | 0-3 | Sweeps optimization levels and sets `HX_USE_THREADS=0/1/11`. |
+| `teststrip.sh` | `musl-gcc` (static) | C17, C++11/14/17/20 | 3 | Size-focused static build with allocator/library stripping. |
+| `testwasm.sh` | `emcc` | Emscripten defaults (Clang-based C/C++) | 0 (default) | WebAssembly build with allocator disabled and single-thread mode. |
+
+`testall.sh` runs all of the above and also enforces certain naming conventions.
+
+Use `Terminal->Run Task...` in VS Code to build Windows using `cmake`. Your
+version of MSVC should be automatically discovered.
+
+## Project Structure
+
+```text
+├─ 📁 .vscode           # The vscode configuration files.
+├─ 📁 include           # This is the directory to add to your include path.
+│   └─ 📁 hx            # These are all the <hx/hx*> header files.
+│       └─ 📁 detail    # These are internal header files.
+├─ 📁 src               # C/C++ files that have to be added to your build.
+└─ 📁 test              # An optional test suite.
+```
+
+## License
+
+© 2017-2026 Adrian Johnston. This project is licensed under the terms of the MIT
+license found in the `LICENSE.md` file.
+
+🪓🪓🪓

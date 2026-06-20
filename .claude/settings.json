@@ -1,0 +1,21 @@
+{
+  "env": {
+    "CLAUDE_CODE": "1"
+  },
+  "permissions": {
+    "allow": [
+      "Bash(*)",
+      "Edit",
+      "Write",
+      "WebSearch",
+      "WebFetch",
+      "Skill(update-config)",
+      "Skill(update-config:*)"
+    ],
+    "deny": [
+      "Edit(/mnt/**)",
+      "Write(/mnt/**)"
+    ]
+  },
+  "autoMemoryEnabled": false
+}
