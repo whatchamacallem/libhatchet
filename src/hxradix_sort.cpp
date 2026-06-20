@@ -11,7 +11,8 @@ HX_NS_BEGIN_
 // reasonable choice here.
 using hxhistogram_t = uint32_t;
 
-hxattr_hot void hxradix_sort_void(hxradix_sort_key_void* begin, hxradix_sort_key_void* end) {
+hxattr_hot void hxradix_sort_void(hxradix_sort_key_void* begin, hxradix_sort_key_void* end,
+		hxsystem_allocator_t allocator) {
 	hxassertmsg(end >= begin, "radix_sort end < begin");
 	// Check for size overflowing hxhistogram_t.
 	hxassertmsg(static_cast<size_t>(end - begin) < ~static_cast<hxhistogram_t>(0), "radix_sort Too big");
@@ -22,7 +23,7 @@ hxattr_hot void hxradix_sort_void(hxradix_sort_key_void* begin, hxradix_sort_key
 		return;
 	}
 
-	const hxsystem_allocator_scope allocator_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope allocator_scope(allocator);
 
 	// Two working buffers.
 	hxradix_sort_key_void* hxrestrict buf0 = begin;
@@ -78,7 +79,8 @@ hxattr_hot void hxradix_sort_void(hxradix_sort_key_void* begin, hxradix_sort_key
 	hxfree(buf1);
 }
 
-hxattr_hot void hxradix_sort_void11(hxradix_sort_key_void* begin, hxradix_sort_key_void* end) {
+hxattr_hot void hxradix_sort_void11(hxradix_sort_key_void* begin, hxradix_sort_key_void* end,
+		hxsystem_allocator_t allocator) {
 	hxassertmsg(end >= begin, "radix_sort end < begin");
 	// Check for size overflowing hxhistogram_t.
 	hxassertmsg(static_cast<size_t>(end - begin) < ~static_cast<hxhistogram_t>(0), "radix_sort Too big");
@@ -89,7 +91,7 @@ hxattr_hot void hxradix_sort_void11(hxradix_sort_key_void* begin, hxradix_sort_k
 		return;
 	}
 
-	const hxsystem_allocator_scope allocator_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope allocator_scope(allocator);
 
 	// Three working buffers for extremely large data sets.
 	hxradix_sort_key_void* hxrestrict buf0 = begin;

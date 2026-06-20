@@ -21,12 +21,20 @@ export POSIXLY_CORRECT=1
 
 if [ ! -f build/build.ninja ]; then
 	rm -rf build
-	cmake -S . -B build -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+	if [ "${1:-}" != "--headless" ]; then
+		cmake -S . -B build -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+	else
+		cmake -S . -B build -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON >/dev/null
+	fi
 else
 	echo "Found build/build.ninja..."
 fi
 
-ninja -C build
+if [ "${1:-}" != "--headless" ]; then
+	ninja -C build
+else
+	ninja -C build >/dev/null
+fi
 
 echo "Run build/hxtest with GDB..."
 cd build
@@ -43,15 +51,18 @@ fi
 
 grep -E '\[  PASSED  \]|\[  FAILED  \]|FAILED TESTS' testcmake.sh.txt
 
-echo "Listing GDB output:"
-cat gdb_printer_output.txt
+if [ "${1:-}" != "--headless" ]; then
+	echo "Listing GDB output:"
+	cat gdb_printer_output.txt
+fi
 
 cd ..
 
 # Depends on -DCMAKE_EXPORT_COMPILE_COMMANDS=ON above. These two have to happen
 # together.
 echo "Run clang-tidy..."
-run-clang-tidy -quiet -j 0 -p build src/*.cpp test/*.cpp 2>&1 \
-	| grep -vE '^[0-9]+ warnings generated\.$|^$'
+run-clang-tidy -quiet -j 0 -p build src/*.cpp test/*.c test/*.cpp 2>&1 \
+	| grep -vE '^Running clang-tidy for|^[0-9]+ warnings generated\.$|^\[|^$' \
+	&& { echo "clang-tidy errors."; exit 1; }
 
 echo "🪓🪓🪓"

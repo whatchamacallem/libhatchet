@@ -201,7 +201,7 @@ bool hxconsole_exec_line(const char* command) {
 // Lists variables and commands in order.
 bool hxconsole_help(void) {
 	hxinit();
-	const hxsystem_allocator_scope temporary_stack(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temp_mem(hxsystem_allocator_heap);
 	hxvector<const hxdetail_::hxconsole_hash_table_node_*> cmds;
 	cmds.reserve(hxconsole_commands_().size());
 	for(hxconsole_command_table::const_iterator it = hxconsole_commands_().cbegin();

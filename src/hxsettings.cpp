@@ -12,7 +12,7 @@ extern "C" {
 
 struct hxsettings hxg_settings;
 
-void hxsettings_construct(void) {
+void hxsettings_construct_(void) {
 	hxg_settings.log_level = hxlog_level_log;
 	hxg_settings.deallocate_permanent = false;
 

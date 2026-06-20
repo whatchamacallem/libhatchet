@@ -30,6 +30,10 @@ if [ "$(command ls)" = "archive.sh" ]; then
 	exit 0
 fi
 
+# Trim the reflog to 24 hours and repack .git...
+git reflog expire --expire=24.hours.ago --expire-unreachable=24.hours.ago --all
+git gc --prune=now --aggressive
+
 if [ -n "$1" ]; then
 	DESTINATION="$1"
 elif [ -d "$HOME/Backups" ]; then

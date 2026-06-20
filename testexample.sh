@@ -17,6 +17,11 @@ set -eu
 
 export POSIXLY_CORRECT=1
 
+HEADLESS=0
+if [ "${1:-}" = "--headless" ]; then
+	HEADLESS=1
+fi
+
 # Builds a module that uses MUSL lic headers only.
 C_FLAGS="-DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG -m32 -ggdb3"
 CPP_FLAGS="$C_FLAGS -DHX_USE_LIBCXX=0 -DHX_USE_NAMESPACE=hx -DHX_PROVIDE_NEW_DELETE=0 \
@@ -28,10 +33,15 @@ CORRECT="example/example_correct.txt"
 run_example() {
 	# Build artifacts are not retained.
 	rm -rf ./build
-	meson setup build --buildtype=debug -Dc_args="$C_FLAGS" -Dcpp_args="$CPP_FLAGS" \
-		-Dcpp_link_args="$LINK_FLAGS" -Dbuild_example=true "$@"
-
-	ninja -v -C build
+	if [ "$HEADLESS" = 1 ]; then
+		meson setup build --buildtype=debug -Dc_args="$C_FLAGS" -Dcpp_args="$CPP_FLAGS" \
+			-Dcpp_link_args="$LINK_FLAGS" -Dbuild_example=true "$@" >/dev/null
+		ninja -C build >/dev/null
+	else
+		meson setup build --buildtype=debug -Dc_args="$C_FLAGS" -Dcpp_args="$CPP_FLAGS" \
+			-Dcpp_link_args="$LINK_FLAGS" -Dbuild_example=true "$@"
+		ninja -v -C build
+	fi
 
 	cp "example/example.cfg" ./build/example
 
@@ -61,7 +71,7 @@ run_example
 echo "$CXX meson+ninja with named module..."
 run_example -Dbuild_module=true
 
-
-printf "\nOutput matches\nRun hxexample from the build/example directory to test interactively."
+echo "Output matches"
+echo "Run hxexample from the build/example directory to test interactively."
 
 echo "🪓🪓🪓"

@@ -32,10 +32,10 @@
 
 /// `int LIBHATCHET_VER` - One digit major, and two digit minor and patch
 /// versions.
-#define LIBHATCHET_VER 14203
+#define LIBHATCHET_VER 14308
 
 /// `LIBHATCHET_TAG` - Major, minor and patch version tag name.
-#define LIBHATCHET_TAG "v1.42.3"
+#define LIBHATCHET_TAG "v1.43.8"
 
 #if !defined HX_HARDENING_MODE
 /// `HX_HARDENING_MODE` - Library hardening level. See the README.md for levels.

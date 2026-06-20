@@ -222,7 +222,7 @@ TEST(hxlist_test, extract_and_erase) {
 }
 
 TEST(hxlist_test, erase_with_default_deleter_calls_destructor) {
-	const hxsystem_allocator_scope scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
 	hxs_list_test_destructor_count = 0;
 	hxlist<hxtest_list_counted_node_t> list;
 	for(int i = 1; i <= 3; ++i) {
@@ -248,7 +248,7 @@ TEST(hxlist_test, erase_with_do_not_delete_override) {
 }
 
 TEST(hxlist_test, erase_with_custom_deleter_override) {
-	const hxsystem_allocator_scope scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
 	hxs_test_custom_deleter_count = 0;
 	hxptr<hxtest_list_counted_node_t> n(hxnew<hxtest_list_counted_node_t>(42));
 	hxlist<hxtest_list_counted_node_t, hxdo_not_delete> list;
@@ -278,7 +278,7 @@ TEST(hxlist_test, clear_with_do_not_delete_override) {
 }
 
 TEST(hxlist_test, clear_with_custom_deleter_override) {
-	const hxsystem_allocator_scope scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
 	hxs_test_custom_deleter_count = 0;
 	hxlist<hxtest_list_counted_node_t, hxdo_not_delete> list;
 	for(int i = 1; i <= 2; ++i) {
@@ -314,7 +314,7 @@ TEST(hxlist_test, reuse_after_release_all) {
 }
 
 TEST(hxlist_test, destructor_calls_clear) {
-	const hxsystem_allocator_scope scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
 	hxs_list_test_destructor_count = 0;
 	{
 		hxlist<hxtest_list_counted_node_t> list;
@@ -441,7 +441,7 @@ TEST(hxlist_node_test, copy_move_construct_and_assign) {
 }
 
 TEST(hxlist_test, remove_if) {
-	const hxsystem_allocator_scope scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
 	hxs_list_test_destructor_count = 0;
 	{
 		hxlist<hxtest_list_counted_node_t> list;

@@ -36,7 +36,7 @@ bool hxvector_test_is_max_heap(const array_t& heap) {
 } // namespace
 
 TEST_F(hxvector_test_f, empty_full) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	hxvector<hxtest_object, hxallocator_dynamic_capacity> a;
 	EXPECT_TRUE(a.empty());
 	EXPECT_TRUE(a.full());
@@ -144,7 +144,7 @@ TEST(hxvector_test, get_boundary_last_valid_and_past_end) {
 }
 
 TEST_F(hxvector_test_f, modification) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	{
 		hxvector<hxtest_object> objs { 91, 92, 93, 94, 95 };
 		EXPECT_FALSE(objs.empty());
@@ -258,7 +258,7 @@ TEST(hxvector_test, pop_heap_two_elements_correct_order) {
 }
 
 TEST(hxvector_test, erase_if_heap_removes_matching_values) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	static const int values[] = { 14, 3, 7, 2, 9, 5, 8, 1, 6 };
 	const hxsize_t value_count = hxsize(values);
 	hxvector<int, 16> heap;
@@ -376,7 +376,7 @@ TEST(hxvector_test, sort_orders_elements) {
 }
 
 TEST_F(hxvector_test_f, emplace_back) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	{
 		hxvector<hxtest_object> objs;
 		objs.reserve(3);
@@ -411,7 +411,7 @@ TEST(hxvector_test, emplace_back_returns_correct_address) {
 }
 
 TEST(hxvector_test, for_each_invokes_callables) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	hxvector<int> objs { 91, 92, 93, 94, 95 };
 	objs.for_each([](int& x) { x -= 90; });
 	hxvector<int>& objs_ref = objs;
@@ -451,7 +451,7 @@ TEST(hxvector_test, for_each_visits_first_element) {
 }
 
 TEST(hxvector_test, generate_n_appends_callable_results) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	hxvector<int> values;
 	values.reserve(6);
 	values.push_back(42);
@@ -491,7 +491,7 @@ TEST(hxvector_test, generate_n_one_invocation) {
 }
 
 TEST(hxvector_test, all_of_any_of) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	hxvector<int> objs { 91, 92, 93, 94, 95 };
 	EXPECT_TRUE(objs.all_of([](const int& x) { return x > 0; }));
 	EXPECT_FALSE(objs.all_of([](const int& x) { return x < 95; }));
@@ -638,7 +638,7 @@ TEST(hxvector_test, find_if_returns_first_match_at_boundary) {
 }
 
 TEST(hxvector_test, erase_if_unordered) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	hxvector<int, 5> objs { 1, 2, 3, 4, 5 };
 	int remove_calls = 0;
 	auto remove_even = [&](int& value) -> bool {
@@ -710,7 +710,7 @@ TEST(hxvector_test, erase_if_unordered_scans_all_elements) {
 }
 
 TEST_F(hxvector_test_f, resizing) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	{
 		static const int32_t nums[5] = { 51, 52, 53, 54, 55 };
 		hxvector<hxtest_object> objs(12);
@@ -746,7 +746,7 @@ TEST_F(hxvector_test_f, resizing) {
 }
 
 TEST_F(hxvector_test_f, resize_shrink_boundary) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	{
 		hxvector<hxtest_object> objs;
 		objs.reserve(4);
@@ -761,7 +761,7 @@ TEST_F(hxvector_test_f, resize_shrink_boundary) {
 }
 
 TEST_F(hxvector_test_f, resize_grow_boundary) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	{
 		hxvector<hxtest_object> objs;
 		objs.reserve(3);
@@ -774,7 +774,7 @@ TEST_F(hxvector_test_f, resize_grow_boundary) {
 }
 
 TEST_F(hxvector_test_f, assignment) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	{
 		hxvector<hxtest_object> objs;
 		objs.reserve(1);
@@ -800,7 +800,7 @@ TEST_F(hxvector_test_f, assignment) {
 }
 
 TEST_F(hxvector_test_f, assign_copies_all_elements_including_last) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	{
 		hxvector<hxtest_object> dst;
 		dst.reserve(3);
@@ -814,7 +814,7 @@ TEST_F(hxvector_test_f, assign_copies_all_elements_including_last) {
 
 #if HX_CPLUSPLUS >= 202002L
 TEST_F(hxvector_test_f, assign_range_from_rvalue) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	hxtest_object source_elements[] = {
 		hxtest_object(5),
 		hxtest_object(9),
@@ -836,7 +836,7 @@ TEST_F(hxvector_test_f, assign_range_from_rvalue) {
 }
 
 TEST_F(hxvector_test_f, assign_range_from_const) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	const int32_t assigned_element_ints[] = { 4, 7, 11, 18 };
 	const hxvector<hxtest_object> assigned_elements = assigned_element_ints;
 	const hxsize_t assigned_count = hxsize(assigned_element_ints);
@@ -858,7 +858,7 @@ TEST_F(hxvector_test_f, assign_range_from_const) {
 }
 
 TEST_F(hxvector_test_f, assign_range_from_mutable_range) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	hxtest_object source_elements[] = {
 		hxtest_object(2),
 		hxtest_object(3),
@@ -882,7 +882,7 @@ TEST_F(hxvector_test_f, assign_range_from_mutable_range) {
 #endif
 
 TEST_F(hxvector_test_f, push_back_move_tracker) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	hxtest_object source(42);
 	hxvector<hxtest_object> elements;
 	elements.reserve(3);
@@ -901,7 +901,7 @@ TEST_F(hxvector_test_f, push_back_move_tracker) {
 }
 
 TEST_F(hxvector_test_f, plus_equals_move_tracker_element) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	hxtest_object source(5);
 	hxvector<hxtest_object> elements;
 	elements.reserve(3);
@@ -920,7 +920,7 @@ TEST_F(hxvector_test_f, plus_equals_move_tracker_element) {
 }
 
 TEST_F(hxvector_test_f, plus_equals_move_tracker_array) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	hxtest_object initial(1);
 	static const int32_t appended_values[] = { 3, 5, 7 };
 	hxvector<hxtest_object> move_target;
@@ -963,7 +963,7 @@ TEST_F(hxvector_test_f, plus_equals_move_tracker_array) {
 }
 
 TEST_F(hxvector_test_f, plus_equals_array_copies_last_element) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	{
 		hxvector<hxtest_object> dst;
 		dst.reserve(4);
@@ -981,7 +981,7 @@ TEST_F(hxvector_test_f, plus_equals_array_copies_last_element) {
 }
 
 TEST_F(hxvector_test_f, insert_move_tracker_move_and_copy) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	hxvector<hxtest_object> elements;
 	elements.reserve(4);
 	hxtest_object initial(10);
@@ -1008,7 +1008,7 @@ TEST_F(hxvector_test_f, insert_move_tracker_move_and_copy) {
 }
 
 TEST_F(hxvector_test_f, insert_at_end_is_push_back) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	{
 		hxvector<hxtest_object> v;
 		v.reserve(3);
@@ -1024,7 +1024,7 @@ TEST_F(hxvector_test_f, insert_at_end_is_push_back) {
 }
 
 TEST_F(hxvector_test_f, insert_at_begin_shifts_all_elements) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	{
 		hxvector<hxtest_object> v;
 		v.reserve(4);
@@ -1042,7 +1042,7 @@ TEST_F(hxvector_test_f, insert_at_begin_shifts_all_elements) {
 }
 
 TEST_F(hxvector_test_f, insert_at_middle_preserves_neighbors) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	{
 		hxvector<hxtest_object> v;
 		v.reserve(4);
@@ -1060,7 +1060,7 @@ TEST_F(hxvector_test_f, insert_at_middle_preserves_neighbors) {
 }
 
 TEST_F(hxvector_test_f, emplace_back_move_tracker_forwarding) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	hxvector<hxtest_object> elements;
 	elements.reserve(3);
 	hxtest_object copy_source(40);
@@ -1108,7 +1108,7 @@ TEST(hxvector_test, cend_points_past_last_element) {
 
 #if HX_CPLUSPLUS >= 202002L
 TEST_F(hxvector_test_f, plus_equals) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	{
 		hxvector<hxtest_object> objs;
 		objs.reserve(10);
@@ -1131,7 +1131,7 @@ TEST_F(hxvector_test_f, plus_equals) {
 }
 
 TEST_F(hxvector_test_f, erase) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	{
 		hxvector<hxtest_object> objs { 1, 2, 3, 4, 5 };
 		objs.erase(1);
@@ -1148,7 +1148,7 @@ TEST_F(hxvector_test_f, erase) {
 }
 
 TEST_F(hxvector_test_f, insert) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	{
 		hxvector<hxtest_object> objs; objs.reserve(5);
 		objs.push_back(hxtest_object(3));
@@ -1172,7 +1172,7 @@ TEST_F(hxvector_test_f, insert) {
 #endif
 
 TEST_F(hxvector_test_f, erase_last_element_by_pointer) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	{
 		hxvector<hxtest_object> v;
 		v.reserve(3);
@@ -1187,7 +1187,7 @@ TEST_F(hxvector_test_f, erase_last_element_by_pointer) {
 }
 
 TEST_F(hxvector_test_f, erase_first_element_shifts_remainder) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	{
 		hxvector<hxtest_object> v;
 		v.reserve(4);
@@ -1203,7 +1203,7 @@ TEST_F(hxvector_test_f, erase_first_element_shifts_remainder) {
 }
 
 TEST_F(hxvector_test_f, erase_unordered_non_last_moves_end) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	{
 		hxvector<hxtest_object> v;
 		v.reserve(3);
@@ -1219,7 +1219,7 @@ TEST_F(hxvector_test_f, erase_unordered_non_last_moves_end) {
 }
 
 TEST_F(hxvector_test_f, erase_unordered_last_element_no_swap) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	{
 		hxvector<hxtest_object> v;
 		v.reserve(2);
@@ -1234,8 +1234,8 @@ TEST_F(hxvector_test_f, erase_unordered_last_element_no_swap) {
 
 TEST(hxvector_test, less_equal_vectors_not_less) {
 	static const int vals[] = { 1, 2, 3 };
-	hxvector<int, 3> a(vals);
-	hxvector<int, 3> b(vals);
+	const hxvector<int, 3> a(vals);
+	const hxvector<int, 3> b(vals);
 	EXPECT_FALSE(a.less(b));
 	EXPECT_FALSE(b.less(a));
 }
@@ -1243,8 +1243,8 @@ TEST(hxvector_test, less_equal_vectors_not_less) {
 TEST(hxvector_test, less_shorter_prefix_is_less) {
 	static const int short_vals[] = { 1, 2 };
 	static const int long_vals[] = { 1, 2, 3 };
-	hxvector<int, 2> a(short_vals);
-	hxvector<int, 3> b(long_vals);
+	const hxvector<int, 2> a(short_vals);
+	const hxvector<int, 3> b(long_vals);
 	EXPECT_TRUE(a.less(b));
 	EXPECT_FALSE(b.less(a));
 }
@@ -1261,15 +1261,15 @@ TEST(hxvector_test, equal_different_sizes_not_equal) {
 TEST(hxvector_test, equal_differs_at_last_element) {
 	static const int vals_a[] = { 1, 2, 3 };
 	static const int vals_b[] = { 1, 2, 4 };
-	hxvector<int, 3> a(vals_a);
-	hxvector<int, 3> b(vals_b);
+	const hxvector<int, 3> a(vals_a);
+	const hxvector<int, 3> b(vals_b);
 	EXPECT_FALSE(a.equal(b));
 }
 
 TEST(hxvector_test, equal_same_content_returns_true) {
 	static const int vals[] = { 5, 10, 15 };
-	hxvector<int, 3> a(vals);
-	hxvector<int, 3> b(vals);
+	const hxvector<int, 3> a(vals);
+	const hxvector<int, 3> b(vals);
 	EXPECT_TRUE(a.equal(b));
 }
 
@@ -1356,7 +1356,7 @@ TEST(hxvector_test, c_strings) {
 }
 
 TEST(hxvector_test, initializer_list_brace_support) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	hxvector<int, 2> x = { 2, 7 };
 	EXPECT_EQ(x[1], 7);
 	hxvector<int> y { 12, 17 };
@@ -1370,7 +1370,7 @@ TEST(hxvector_test, initializer_list_first_element) {
 }
 
 TEST(hxvector_test, swaps) {
-	const hxsystem_allocator_scope allocator_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope allocator_scope(hxsystem_allocator_stack_0);
 	hxvector<int> x(hxvector<int>({ 2, 7 }));
 	hxvector<int> y = hxmove(x);
 	hxvector<int> z;

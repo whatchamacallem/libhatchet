@@ -4,6 +4,7 @@
 
 #include <hx/hxtask_queue.hpp>
 #include <hx/hxtest.hpp>
+#include <hx/hxarray.hpp>
 
 HX_NS_USE
 
@@ -38,7 +39,7 @@ public:
 } // namespace {
 
 TEST_F(hxtask_queue_test_f, nop) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	for(hxsize_t i = 0; i <= max_pool; ++i) {
 		{
 				const hxtask_queue q(1, i);
@@ -52,7 +53,7 @@ TEST_F(hxtask_queue_test_f, nop) {
 }
 
 TEST_F(hxtask_queue_test_f, multiple) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	for(hxsize_t i = 0; i <= max_pool; ++i) {
 		for(hxsize_t j = 1; j < max_tasks; ++j) {
 			hxtask_test_t tasks0[max_tasks];
@@ -87,7 +88,7 @@ TEST_F(hxtask_queue_test_f, multiple) {
 }
 
 TEST_F(hxtask_queue_test_f, multiple_reenqueuing) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	for(hxsize_t i = 0; i <= max_pool; ++i) {
 		for(hxsize_t j = 1; j < max_tasks; ++j) {
 			hxtask_test_t tasks0[max_tasks];
@@ -124,7 +125,7 @@ TEST_F(hxtask_queue_test_f, multiple_reenqueuing) {
 }
 
 TEST(hxtask_queue_test, priority_ordering_single_threaded) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	class hxtask_queue_test_task_t : public hxtask {
 	public:
 		void configure(int* o, hxsize_t* i, int p) {
@@ -163,7 +164,7 @@ TEST(hxtask_queue_test, priority_ordering_single_threaded) {
 }
 
 TEST(hxtask_queue_test, predicates_cover_all_any_erase) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	class hxtask_queue_test_predicate_task_t : public hxtask {
 	public:
 		void configure(bool* f, bool* c) { executed_flag = f; cancelled_flag = c; }
@@ -240,7 +241,7 @@ TEST(hxtask_queue_test, predicates_cover_all_any_erase) {
 }
 
 TEST(hxtask_queue_test, for_each_reschedules_queue) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	class hxtask_queue_test_reschedule_task_t : public hxtask {
 	public:
 		void configure(hxsize_t i, int* e, hxsize_t* w) {
@@ -298,8 +299,60 @@ TEST(hxtask_queue_test, for_each_reschedules_queue) {
 }
 
 #if HX_USE_THREADS
+TEST(hxtask_queue_test, three_threads_three_stacks_stress) {
+	class hxtask_queue_test_stack_stress_task_t : public hxtask {
+	public:
+		void configure(hxsystem_allocator_t a, hxsize_t r) {
+			allocator = a;
+			reenqueue_count = r;
+		}
+		bool execute(hxtask_queue* q) override {
+			{
+				const hxsystem_allocator_scope stack_scope(allocator);
+				const hxsize_t allocation_count = 8;
+				const size_t bytes = 16u;
+				hxarray<void*> allocations;
+				allocations.reserve(allocation_count, allocator);
+				for(hxsize_t i = 0; i < allocation_count; ++i) {
+					void* p = hxmalloc(bytes);
+					hxassertmsg(p, "stress_alloc");
+					::memset(p, 0x5a, bytes);
+					allocations[i] = p;
+				}
+				for(hxsize_t i = 0; i < allocation_count; ++i) {
+					hxfree(allocations[i]);
+				}
+			}
+			++total_exec_count;
+			if(reenqueue_count > 0) {
+				--reenqueue_count;
+				q->enqueue(this);
+			}
+			return true;
+		}
+		hxsize_t get_total_exec_count(void) const { return total_exec_count; }
+	private:
+		hxsystem_allocator_t allocator = hxsystem_allocator_stack_0;
+		hxsize_t reenqueue_count = 0;
+		hxsize_t total_exec_count = 0;
+	};
+	const hxsize_t thread_count = 3;
+	const hxsize_t reenqueue_count = 5;
+	hxtask_queue_test_stack_stress_task_t tasks[thread_count];
+	hxtask_queue q(thread_count, thread_count);
+	for(hxsize_t i = 0; i < thread_count; ++i) {
+		tasks[i].configure(static_cast<hxsystem_allocator_t>(
+			hxsystem_allocator_stack_0 + i), reenqueue_count);
+		q.enqueue(&tasks[i]);
+	}
+	q.wait_for_all();
+	for(hxsize_t i = 0; i < thread_count; ++i) {
+		EXPECT_EQ(tasks[i].get_total_exec_count(), reenqueue_count + 1);
+	}
+}
+
 TEST(hxtask_queue_test, wait_for_all_with_thread_pool) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	class hxtask_queue_test_counter_task_t : public hxtask {
 	public:
 		bool execute(hxtask_queue*) override { ++count; return true; }
@@ -319,7 +372,7 @@ TEST(hxtask_queue_test, wait_for_all_with_thread_pool) {
 #endif
 
 TEST(hxtask_queue_test, size_boundaries) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	class hxtask_queue_test_nop_task_t : public hxtask {
 	public:
 		bool execute(hxtask_queue*) override { return true; }
@@ -347,7 +400,7 @@ TEST(hxtask_queue_test, size_boundaries) {
 }
 
 TEST(hxtask_queue_test, erase_if_count_boundaries) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	class hxtask_queue_test_nop_task_t : public hxtask {
 	public:
 		bool execute(hxtask_queue*) override { return true; }
@@ -383,7 +436,7 @@ TEST(hxtask_queue_test, erase_if_count_boundaries) {
 }
 
 TEST(hxtask_queue_test, canceling) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	class hxtask_queue_test_cancel_tracker_t : public hxtask {
 	public:
 		bool execute(hxtask_queue*) override { executed = true; return true; }

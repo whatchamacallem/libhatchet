@@ -594,7 +594,7 @@ void hxvector<T_, capacity_>::sort(void) noexcept {
 }
 
 template<hxarray_concept_ T_, hxsize_t capacity_>
-void hxvector<T_, capacity_>::swap(hxvector& x_) {
+void hxvector<T_, capacity_>::swap(hxvector& x_) noexcept {
 	static_assert(capacity_ == hxallocator_dynamic_capacity,
 		"Dynamic capacity required for hxvector::swap");
 

@@ -133,7 +133,7 @@ hxconsole_command_named(hxconsole_test_file_fn, hxconsole_test_file_fn_name);
 hxconsole_command_named(hxconsole_test_failing_command, hxconsole_test_failing_command);
 
 TEST(hxconsole_test, register_command) {
-	hxlog_warning("EXPECTING_TEST_WARNINGS\n");
+	hxlog_warning("EXPECTING_TEST_WARNINGS");
 	hxs_console_test_result_hook = 0.0f;
 	EXPECT_TRUE(hxconsole_exec_line("hxconsole_test_register0 77 ..."));
 	EXPECT_EQ(80.0f, hxs_console_test_result_hook);
@@ -220,7 +220,7 @@ TEST(hxconsole_test, variable_query) {
 }
 
 TEST(hxconsole_test, variable_overflow) {
-	hxlog_warning("EXPECTING_TEST_WARNINGS\n");
+	hxlog_warning("EXPECTING_TEST_WARNINGS");
 	hxs_console_test_i8 = 0;
 	EXPECT_TRUE(hxconsole_exec_line("hxs_console_test_i8 127"));
 	EXPECT_EQ(hxs_console_test_i8, static_cast<int8_t>(127));
@@ -285,7 +285,7 @@ TEST(hxconsole_test, variable_overflow) {
 }
 
 TEST(hxconsole_test, float_overflow) {
-	hxlog_warning("EXPECTING_TEST_WARNINGS\n");
+	hxlog_warning("EXPECTING_TEST_WARNINGS");
 	hxs_console_test_f32 = 1.0f;
 	EXPECT_FALSE(hxconsole_exec_line("hxs_console_test_f32 1e40"));
 	EXPECT_EQ(hxs_console_test_f32, 1.0f);
@@ -301,7 +301,7 @@ TEST(hxconsole_test, float_overflow) {
 }
 
 TEST(hxconsole_test, hex_overflow) {
-	hxlog_warning("EXPECTING_TEST_WARNINGS\n");
+	hxlog_warning("EXPECTING_TEST_WARNINGS");
 	hxs_console_test_u8 = 9;
 	EXPECT_FALSE(hxconsole_exec_line("hxs_console_test_u8 0x100"));
 	EXPECT_EQ(hxs_console_test_u8, static_cast<uint8_t>(9));
@@ -347,7 +347,7 @@ TEST(hxconsole_test, signed_plus_prefix) {
 }
 
 TEST(hxconsole_test, variable_parse_error) {
-	hxlog_warning("EXPECTING_TEST_WARNINGS\n");
+	hxlog_warning("EXPECTING_TEST_WARNINGS");
 	hxs_console_test_i32 = 10;
 	EXPECT_FALSE(hxconsole_exec_line("hxs_console_test_i32 42 garbage"));
 	EXPECT_EQ(hxs_console_test_i32, static_cast<int32_t>(10));
@@ -425,7 +425,7 @@ TEST(hxconsole_test, function_types) {
 }
 
 TEST(hxconsole_test, function_overflow) {
-	hxlog_warning("EXPECTING_TEST_WARNINGS\n");
+	hxlog_warning("EXPECTING_TEST_WARNINGS");
 	hxs_console_test_fn_i8 = 0;
 	EXPECT_TRUE(hxconsole_exec_line("hxconsole_test_fn_i8 127"));
 	EXPECT_EQ(hxs_console_test_fn_i8, static_cast<int8_t>(127));
@@ -510,7 +510,7 @@ TEST(hxconsole_test, function_multi_arg) {
 }
 
 TEST(hxconsole_test, function_arity) {
-	hxlog_warning("EXPECTING_TEST_WARNINGS\n");
+	hxlog_warning("EXPECTING_TEST_WARNINGS");
 	hxs_console_test_fn_mixed_i32 = -1; hxs_console_test_fn_mixed_f32 = -1.0f;
 	EXPECT_FALSE(hxconsole_exec_line("hxconsole_test_fn_mixed 1"));
 	EXPECT_EQ(hxs_console_test_fn_mixed_i32, static_cast<int32_t>(-1));
@@ -539,7 +539,7 @@ TEST(hxconsole_test, comment_lines) {
 }
 
 TEST(hxconsole_test, unsigned_negative) {
-	hxlog_warning("EXPECTING_TEST_WARNINGS\n");
+	hxlog_warning("EXPECTING_TEST_WARNINGS");
 	hxs_console_test_u8 = 7;
 	EXPECT_FALSE(hxconsole_exec_line("hxs_console_test_u8 -1"));
 	EXPECT_EQ(hxs_console_test_u8, static_cast<uint8_t>(7));
@@ -616,7 +616,7 @@ TEST(hxconsole_test, file_test) {
 }
 
 TEST(hxconsole_test, file_fail) {
-	hxlog_warning("EXPECTING_TEST_WARNINGS\n");
+	hxlog_warning("EXPECTING_TEST_WARNINGS");
 	{
 		hxfile(hxfile::out, "hxconsole_test_file_test.txt") << "<unknown symbols>\n";
 	}

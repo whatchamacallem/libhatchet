@@ -5,9 +5,10 @@
 
 /// \file hxmemory_manager.h Memory Manager C/C++ API. Memory allocators are
 /// selected using an ID. These are the large system-wide allocators, not the
-/// per-container `hxallocator` which allocates from here. A complex streaming
-/// design would require this code to be modified to add more instances of the
-/// temporary allocators than the single one provided here.
+/// per-container `hxallocator` which allocates from here. Temporary stacks are
+/// allocated at runtime with `hxmemory_manager_allocate_stacks` and a
+/// sophisticated streaming design can select between them using
+/// `hxsystem_allocator_stack_0` + index.
 ///
 /// General purpose memory allocators are inefficient and unsafe to use. The
 /// problem is that long running code requires a lot of extra space to make sure
@@ -16,7 +17,7 @@
 /// that requires processor support and even more expensive system call
 /// overhead.) For code that uses a lot of temporary intermediate allocations
 /// 1/3 of your memory and 1/3 or your processor time could get eaten by the
-/// heap allocator. The `hxsystem_allocator_temporary_stack` is provided as a
+/// heap allocator. The `hxsystem_allocator_stack_0` is provided as a
 /// replacement for that use case.
 ///
 /// There are also a category of allocations that are expected to last for the
@@ -44,7 +45,8 @@
 /// `hxdelete` are available as recommended substitutes.
 ///
 /// It should be possible to implement a triple buffered streaming strategy
-/// for DMA by adding a two more temp stacks.
+/// for DMA by allocating three temp stacks and selecting between them with
+/// `hxsystem_allocator_stack_0 + index`.
 
 #if !LIBHATCHET_VER
 #error #include <hx/libhatchet.h> instead.
@@ -71,21 +73,19 @@ inline constexpr hxalignment_t hxalignment = static_cast<hxalignment_t>(alignof(
 #define hxalignment (hxalignment_t)_Alignof(size_t)
 #endif
 
-/// `hxsystem_allocator_t` - This is intended to be extendable by the application.
-/// See `hxmemory_manager.cpp`.
-enum hxsystem_allocator_t {
-	/// OS heap with alignment and stats. Allocations made directly to `new`,
-	/// `delete`, `malloc` and `free` are not tracked by hxsystem_allocator_heap.
-	/// Those need to be overriden to use `hxnew`, `hxdelete`, `hxmalloc` and
-	/// `hxfree` as desired.
+/// `hxsystem_allocator_t` - This is extendable by the application.
+typedef int hxsystem_allocator_t;
+
+enum {
+	/// Use current allocation scope. Not a real allocator slot.
+	hxsystem_allocator_current = -1,
+	/// OS heap with alignment.
 	hxsystem_allocator_heap,
 	/// Contigious allocations that must not be freed.
 	hxsystem_allocator_permanent,
-	/// Resets to previous depth at scope closure
-	hxsystem_allocator_temporary_stack,
-	// ** hxsystem_allocator_current must be last in enum. **
-	/// Use current allocation scope.
-	hxsystem_allocator_current
+	/// Temporary stacks. Reset to previous depth at scope closure. Stack index
+	/// n is `hxsystem_allocator_stack_0 + n`.
+	hxsystem_allocator_stack_0
 };
 
 /// `hxfree` - Frees memory previously allocated with `hxmalloc` or
@@ -113,7 +113,7 @@ void* hxmalloc(size_t size_) hxattr_allocator(hxfree) hxattr_noexcept hxattr_hot
 /// - `size` : The size of the memory to allocate.
 /// - `allocator` : The memory manager ID to use for allocation. (Default is `hxsystem_allocator_current`.)
 /// - `alignment` : The alignment for the allocation. (Default is `hxalignment`.)
-void* hxmalloc_ext(size_t size_, enum hxsystem_allocator_t allocator_,
+void* hxmalloc_ext(size_t size_, hxsystem_allocator_t allocator_,
 	hxalignment_t alignment_/*=hxalignment*/) hxattr_noexcept hxattr_allocator(hxfree) hxattr_hot;
 
 /// `hxstring_duplicate` - Allocates a copy of a string using the specified
@@ -123,7 +123,7 @@ void* hxmalloc_ext(size_t size_, enum hxsystem_allocator_t allocator_,
 /// - `allocator` : The memory manager ID to use for allocation. Defaults to
 ///   `hxsystem_allocator_current` in C++.
 char* hxstring_duplicate(const char* string_,
-	enum hxsystem_allocator_t allocator_ /*=hxsystem_allocator_current*/)
+	hxsystem_allocator_t allocator_ /*=hxsystem_allocator_current*/)
 		 hxattr_noexcept hxattr_allocator(hxfree) hxattr_nonnull(1) hxattr_hot;
 
 #if HX_CPLUSPLUS
@@ -132,7 +132,7 @@ char* hxstring_duplicate(const char* string_,
 /// `hxmalloc` - Add `hxmalloc_ext` args to `hxmalloc` C interface. Allocates
 /// memory with a specific memory manager and alignment. NOTE: This is not in
 /// the libhatchet namespace.
-inline void* hxmalloc( size_t size_, enum hxsystem_allocator_t allocator_, hxalignment_t alignment_=hxalignment) {
+inline void* hxmalloc( size_t size_, hxsystem_allocator_t allocator_, hxalignment_t alignment_=hxalignment) {
 	return hxmalloc_ext(size_, allocator_, alignment_);
 }
 
@@ -277,8 +277,8 @@ public:
 	constexpr operator bool(void) const { return true; }
 };
 #endif
-
 /// \cond HIDDEN
+
 // `hxmemory_manager_init_` - WARNING: Not intended for direct use. This is
 // called by hxinit(). Initializes the memory manager. Must be called before
 // using any memory manager functions.
@@ -289,10 +289,34 @@ void hxmemory_manager_init_(void) hxattr_cold;
 void hxmemory_manager_shut_down_(void) hxattr_cold;
 /// \endcond
 
-// `hxmemory_manager_leak_count` - Returns the total number of allocations
-// outstanding made by the memory manager.
-hxattr_nodiscard size_t hxmemory_manager_leak_count(void) hxattr_cold;
+/// `hxmemory_manager_allocate_stacks` - Allocates the runtime temporary stacks.
+/// Stack n is addressed as `hxsystem_allocator_stack_0 + n`. The memory
+/// manager does not allocate any temporary stacks at init. Do not call twice.
+/// - `stack_count` : The number of temporary stacks to allocate. Must not
+///   exceed `HX_MEMORY_MAX_STACKS`.
+/// - `sizes` : An array of `stack_count` byte budgets, one per stack.
+void hxmemory_manager_allocate_stacks(const size_t* sizes_, size_t stack_count_) hxattr_cold;
+
+/// A safer `hxmemory_manager_allocate_stacks`.
+template<size_t stack_count_>
+void hxmemory_manager_allocate_stacks(const size_t(&list_)[stack_count_]) {
+	hxmemory_manager_allocate_stacks(list_, stack_count_);
+}
+
+/// `hxmemory_manager_stats` - The utilization statistics reported by
+/// `hxmemory_manager_utilization`.
+class hxmemory_manager_stats {
+public:
+	size_t allocations_outstanding;
+	size_t bytes_outstanding;
+	size_t allocator_overflows;
+};
+
+/// `hxmemory_manager_utilization` - Returns the utilization statistics of the
+/// memory manager.
+/// - `stacks_only` : Only report temporary stack utilization.
+/// - `log` : Log stats when logging is enabled.
+hxmemory_manager_stats hxmemory_manager_utilization(bool stacks_only_, bool log_) hxattr_cold;
 
 HX_NS_END_
-
 #endif // HX_CPLUSPLUS

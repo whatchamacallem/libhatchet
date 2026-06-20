@@ -46,10 +46,10 @@ concept hxarray_element_concept_ = requires(T_& x_) {
 /// Unlike `hxvector`, `hxarray` always has a fixed size equal to its capacity.
 /// Size-changing operations are not provided. Use `hxvector` when dynamic
 /// sizing is needed. When `capacity` is `hxallocator_dynamic_capacity`, storage
-/// must be allocated by calling `set_size` before use.
+/// must be allocated by calling `reserve` before use.
 /// - `T` : Element type stored by the array.
 /// - `capacity` : Fixed element count or `hxallocator_dynamic_capacity` for
-///   heap-allocated storage set once by `set_size`.
+///   heap-allocated storage set once by `reserve`.
 template<hxarray_element_concept_ T_, hxsize_t capacity_=hxallocator_dynamic_capacity>
 class hxarray : public hxallocator<T_, capacity_> {
 public:
@@ -257,18 +257,22 @@ public:
 	/// - `byte` : The byte that is repeated. May be a negative char value.
 	void memset(int byte_=0x00);
 
-	/// Returns the number of elements in the array.
-	hxattr_nodiscard hxsize_t size(void) const { return this->capacity(); }
-
-	/// Returns the number of bytes in the array. (Non-standard.)
-	hxattr_nodiscard hxsize_t size_bytes(void) const { return hxsizeof<T_>() * this->capacity(); }
-
 	/// Allocates storage for `size` elements and default constructs them when
 	/// `capacity` is `hxallocator_dynamic_capacity`. The current capacity
 	/// becomes `size` elements. Reallocation is not allowed. When `capacity` is
 	/// fixed, `size` must equal `capacity`.
 	/// - `size` : The number of elements to allocate and construct.
-	void set_size(hxsize_t size_) noexcept;
+	/// - `allocator` : The memory manager ID to use for allocation.
+	/// - `alignment` : The alignment to use for the allocation.
+	void reserve(hxsize_t size_,
+			hxsystem_allocator_t allocator_=hxsystem_allocator_current,
+			hxalignment_t alignment_=hxalignment) noexcept;
+
+			/// Returns the number of elements in the array.
+	hxattr_nodiscard hxsize_t size(void) const { return this->capacity(); }
+
+	/// Returns the number of bytes in the array. (Non-standard.)
+	hxattr_nodiscard hxsize_t size_bytes(void) const { return hxsizeof<T_>() * this->capacity(); }
 
 	/// Sorts the array using `hxkey_less`.
 	void sort(void) noexcept;

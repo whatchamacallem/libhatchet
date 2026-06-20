@@ -171,7 +171,7 @@ TEST_F(hxflat_set_test_f, gdb_static) {
 }
 
 TEST_F(hxflat_set_test_f, gdb_dynamic) {
-	const hxsystem_allocator_scope temp_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temp_scope(hxsystem_allocator_stack_0);
 	hxflat_set<hxtest_object> s;
 	s.reserve(8);
 	s.insert(hxtest_object(10));
@@ -190,7 +190,7 @@ TEST_F(hxflat_set_test_f, construct_static_empty) {
 }
 
 TEST_F(hxflat_set_test_f, construct_dynamic_empty) {
-	const hxsystem_allocator_scope temp_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temp_scope(hxsystem_allocator_stack_0);
 	hxflat_set<hxtest_object> s;
 	EXPECT_TRUE(s.empty());
 	EXPECT_EQ(s.size(), 0);
@@ -289,7 +289,7 @@ TEST_F(hxflat_set_test_f, insert_at_middle_shifts_elements) {
 }
 
 TEST_F(hxflat_set_test_f, insert_dynamic_unique) {
-	const hxsystem_allocator_scope temp_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temp_scope(hxsystem_allocator_stack_0);
 	hxflat_set<hxtest_object> s;
 	s.reserve(1);
 	const hxtest_object v(7);
@@ -596,7 +596,7 @@ TEST_F(hxflat_set_test_f, full_static) {
 }
 
 TEST_F(hxflat_set_test_f, dynamic_multiset_insert_erase) {
-	const hxsystem_allocator_scope temp_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temp_scope(hxsystem_allocator_stack_0);
 	hxflat_set<hxtest_object> s;
 	s.reserve(5);
 	const hxtest_object v10a(10), v10b(10), v20(20), v30a(30), v30b(30);
@@ -707,7 +707,7 @@ TEST_F(hxflat_set_test_f, copy_assign_different_capacity) {
 }
 
 TEST_F(hxflat_set_test_f, move_assign_transfers_elements) {
-	const hxsystem_allocator_scope temp_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temp_scope(hxsystem_allocator_stack_0);
 	{
 		hxflat_set<hxtest_object> a;
 		a.reserve(3);
@@ -722,14 +722,14 @@ TEST_F(hxflat_set_test_f, move_assign_transfers_elements) {
 		EXPECT_TRUE(b.find(hxtest_object(10)) != hxnull);
 		EXPECT_TRUE(b.find(hxtest_object(20)) != hxnull);
 		EXPECT_TRUE(b.find(hxtest_object(30)) != hxnull);
-		EXPECT_EQ(a.size(), 0);
-		EXPECT_EQ(a.capacity(), 1);
+		EXPECT_EQ(a.size(), 0); // NOLINT(clang-analyzer-cplusplus.Move)
+		EXPECT_EQ(a.capacity(), 1); // NOLINT(clang-analyzer-cplusplus.Move)
 	}
 	EXPECT_EQ(m_constructed, m_destructed);
 }
 
 TEST_F(hxflat_set_test_f, move_constructor_transfers_elements) {
-	const hxsystem_allocator_scope temp_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temp_scope(hxsystem_allocator_stack_0);
 	{
 		hxflat_set<hxtest_object> src;
 		src.reserve(3);
@@ -742,8 +742,8 @@ TEST_F(hxflat_set_test_f, move_constructor_transfers_elements) {
 		EXPECT_EQ(dst.find(hxtest_object(10))->id, 10);
 		EXPECT_EQ(dst.find(hxtest_object(20))->id, 20);
 		EXPECT_EQ(dst.find(hxtest_object(30))->id, 30);
-		EXPECT_EQ(src.size(), 0);
-		EXPECT_EQ(src.capacity(), 0);
+		EXPECT_EQ(src.size(), 0); // NOLINT(clang-analyzer-cplusplus.Move)
+		EXPECT_EQ(src.capacity(), 0); // NOLINT(clang-analyzer-cplusplus.Move)
 	}
 	EXPECT_EQ(m_constructed, m_destructed);
 }
@@ -764,7 +764,7 @@ TEST_F(hxflat_set_test_f, copy_constructor_static) {
 
 TEST_F(hxflat_set_test_f, copy_constructor_empty) {
 	const hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, false, 4> src;
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, false, 4> dst(src);
+	const hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, false, 4> dst(src); // NOLINT(performance-unnecessary-copy-initialization)
 	EXPECT_TRUE(dst.empty());
 	EXPECT_EQ(dst.size(), 0);
 }
@@ -786,7 +786,7 @@ TEST_F(hxflat_set_test_f, copy_constructor_lifecycle) {
 		src.insert(v10);
 		src.insert(v20);
 		{
-			hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, false, 3> dst(src);
+			const hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, false, 3> dst(src); // NOLINT(performance-unnecessary-copy-initialization)
 			EXPECT_EQ(dst.size(), 2);
 		}
 	}
@@ -852,7 +852,7 @@ TEST_F(hxflat_set_test_f, hxkey_less_different_capacities) {
 }
 
 TEST_F(hxflat_set_test_f, hxswap_exchanges_contents) {
-	const hxsystem_allocator_scope temp_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temp_scope(hxsystem_allocator_stack_0);
 	{
 		hxflat_set<hxtest_object> a;
 		a.reserve(2);
@@ -871,7 +871,7 @@ TEST_F(hxflat_set_test_f, hxswap_exchanges_contents) {
 }
 
 TEST_F(hxflat_set_test_f, hxswap_empty_and_nonempty) {
-	const hxsystem_allocator_scope temp_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temp_scope(hxsystem_allocator_stack_0);
 	{
 		hxflat_set<hxtest_object> a;
 		a.reserve(2);

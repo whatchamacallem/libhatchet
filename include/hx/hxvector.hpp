@@ -542,7 +542,7 @@ public:
 	/// `hxallocator_dynamic_capacity`. Dynamically allocated arrays are swapped
 	/// with very little overhead.
 	/// - `x` : The array to swap with.
-	void swap(hxvector& x_);
+	void swap(hxvector& x_) noexcept;
 
 private:
 	// Returns a pointer for use with placement new.

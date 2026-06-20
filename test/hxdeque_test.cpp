@@ -86,7 +86,7 @@ TEST(hxdeque_test, static_ctor_empty_state) {
 }
 
 TEST(hxdeque_test, dynamic_ctor_empty_state) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	const hxdeque<int> d(4);
 	EXPECT_EQ(d.size(), 0);
 	EXPECT_EQ(d.capacity(), 4);
@@ -323,7 +323,7 @@ TEST_F(hxdeque_test_f, pop_back_destroys_slot) {
 }
 
 TEST(hxdeque_test, dynamic_capacity_push_pop) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	hxdeque<int> d(4);
 	EXPECT_EQ(d.capacity(), 4);
 	for(int i = 0; i < 4; ++i) {
@@ -339,7 +339,7 @@ TEST(hxdeque_test, dynamic_capacity_push_pop) {
 }
 
 TEST(hxdeque_test, dynamic_capacity_ring_wraparound) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	hxdeque<int> d(8);
 	for(int i = 0; i < 8; ++i) { d.push_back(i); }
 	for(int i = 0; i < 4; ++i) { d.pop_front(); }
@@ -351,7 +351,7 @@ TEST(hxdeque_test, dynamic_capacity_ring_wraparound) {
 }
 
 TEST(hxdeque_test, reserve_sets_capacity_and_mask) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	hxdeque<int> d;
 	EXPECT_EQ(d.capacity(), 0);
 	d.reserve(8);

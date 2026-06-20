@@ -36,7 +36,7 @@ public:
 } // namespace
 
 TEST(hxtask_dag_node_test, linear_chain_success) {
-	const hxsystem_allocator_scope s(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope s(hxsystem_allocator_stack_0);
 	hxtask_dag_node_test_tracker_t a, b, c;
 	a.add_successor(&b);
 	b.add_successor(&c);
@@ -52,7 +52,7 @@ TEST(hxtask_dag_node_test, linear_chain_success) {
 }
 
 TEST(hxtask_dag_node_test, linear_chain_failure_propagates) {
-	const hxsystem_allocator_scope s(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope s(hxsystem_allocator_stack_0);
 	hxtask_dag_node_test_tracker_t a, b, c;
 	a.m_succeed = false;
 	a.add_successor(&b);
@@ -69,7 +69,7 @@ TEST(hxtask_dag_node_test, linear_chain_failure_propagates) {
 }
 
 TEST(hxtask_dag_node_test, linear_chain_cancel_propagates) {
-	const hxsystem_allocator_scope s(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope s(hxsystem_allocator_stack_0);
 	hxtask_dag_node_test_tracker_t a, b, c;
 	a.add_successor(&b);
 	b.add_successor(&c);
@@ -86,7 +86,7 @@ TEST(hxtask_dag_node_test, linear_chain_cancel_propagates) {
 }
 
 TEST(hxtask_dag_node_test, diamond_all_succeed) {
-	const hxsystem_allocator_scope s(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope s(hxsystem_allocator_stack_0);
 	hxtask_dag_node_test_tracker_t a, b, c, d;
 	a.add_successor(&b);
 	a.add_successor(&c);
@@ -103,7 +103,7 @@ TEST(hxtask_dag_node_test, diamond_all_succeed) {
 }
 
 TEST(hxtask_dag_node_test, diamond_one_arm_fails) {
-	const hxsystem_allocator_scope s(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope s(hxsystem_allocator_stack_0);
 	hxtask_dag_node_test_tracker_t a, b, c, d;
 	b.m_succeed = false;
 	a.add_successor(&b);
@@ -121,7 +121,7 @@ TEST(hxtask_dag_node_test, diamond_one_arm_fails) {
 }
 
 TEST(hxtask_dag_node_test, cancel_beats_fail_at_join) {
-	const hxsystem_allocator_scope s(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope s(hxsystem_allocator_stack_0);
 	hxtask_dag_node_test_tracker_t b, c, d;
 	c.m_succeed = false;
 	b.add_successor(&d);
@@ -138,7 +138,7 @@ TEST(hxtask_dag_node_test, cancel_beats_fail_at_join) {
 }
 
 TEST(hxtask_dag_node_test, max_successors_all_complete) {
-	const hxsystem_allocator_scope s(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope s(hxsystem_allocator_stack_0);
 	hxtask_dag_node_test_tracker_t root, s0, s1, s2, s3;
 	root.add_successor(&s0);
 	root.add_successor(&s1);
@@ -156,7 +156,7 @@ TEST(hxtask_dag_node_test, max_successors_all_complete) {
 }
 
 TEST(hxtask_dag_node_test, two_predecessor_cancel_then_succeed) {
-	const hxsystem_allocator_scope s(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope s(hxsystem_allocator_stack_0);
 	hxtask_dag_node_test_tracker_t b, c, d;
 	b.add_successor(&d);
 	c.add_successor(&d);
@@ -171,7 +171,7 @@ TEST(hxtask_dag_node_test, two_predecessor_cancel_then_succeed) {
 }
 
 TEST(hxtask_dag_node_test, single_successor_executes) {
-	const hxsystem_allocator_scope s(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope s(hxsystem_allocator_stack_0);
 	hxtask_dag_node_test_tracker_t a, b;
 	a.add_successor(&b);
 	hxtask_queue q(2, 0);
@@ -182,7 +182,7 @@ TEST(hxtask_dag_node_test, single_successor_executes) {
 }
 
 TEST(hxtask_dag_node_test, stress_20_node_dag) {
-	const hxsystem_allocator_scope s(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope s(hxsystem_allocator_stack_0);
 	hxtask_dag_node_test_tracker_t nodes[20];
 	static const uint8_t edges[][2] = {
 		{0,1},{0,2},{0,3},{0,4},{1,5},{1,6},{2,5},{2,6},{2,7},{3,7},{3,8},

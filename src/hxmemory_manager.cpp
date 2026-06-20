@@ -361,11 +361,14 @@ protected:
 // ----------------------------------------------------------------------------
 // hxmemory_manager
 
+constexpr int hxs_allocator_slot_count_ = hxsystem_allocator_stack_0 + HX_MEMORY_MAX_STACKS;
+
 class hxmemory_manager {
 public:
 	hxattr_cold void construct(void);
+	hxattr_cold void allocate_stacks(const size_t* sizes, size_t stack_count);
 	hxattr_cold void destruct(void);
-	hxattr_cold size_t leak_count(void);
+	hxattr_cold hxmemory_manager_stats utilization(bool stacks_only, bool log);
 
 	hxattr_hot hxsystem_allocator_t begin_allocation_scope(hxsystem_allocator_scope* scope,
 		hxsystem_allocator_t new_id);
@@ -373,7 +376,8 @@ public:
 		hxsystem_allocator_t previous_id);
 
 	hxattr_hot hxmemory_allocator_base& get_allocator(hxsystem_allocator_t id) {
-		hxassertmsg(id >= 0 && id < hxsystem_allocator_current, "invalid_parameter %d", static_cast<int>(id));
+		hxassertmsg(id >= 0 && id < (hxsystem_allocator_stack_0 + static_cast<hxsystem_allocator_t>(m_stack_count)),
+			"invalid_parameter %d", static_cast<int>(id));
 		return *m_memory_allocators[id]; // NOLINT(clang-analyzer-security.ArrayBound)
 	}
 
@@ -383,11 +387,15 @@ public:
 private:
 	friend class hxsystem_allocator_scope;
 
-	hxmemory_allocator_base*      m_memory_allocators[hxsystem_allocator_current];
+	hxmemory_allocator_base*      m_memory_allocators[hxs_allocator_slot_count_];
 
 	hxmemory_allocator_os_heap	  m_memory_allocator_heap;
+#if (HX_MEMORY_BUDGET_PERMANENT) != 0
 	hxmemory_allocator_stack	  m_memory_allocator_permanent;
-	hxmemory_allocator_temp_stack m_memory_allocator_temporary_stack;
+#endif
+	hxmemory_allocator_temp_stack m_memory_allocator_stacks[HX_MEMORY_MAX_STACKS];
+	size_t                        m_stack_count;
+	size_t                        m_allocator_overflows;
 };
 
 // NOTE: Using static instead of an anonymous namespace because of a linker issue.
@@ -395,45 +403,80 @@ static hxmemory_manager hxs_memory_manager;
 
 void hxmemory_manager::construct(void) {
 	m_memory_allocators[hxsystem_allocator_heap] = &m_memory_allocator_heap;
-	m_memory_allocators[hxsystem_allocator_permanent] = &m_memory_allocator_permanent;
-	m_memory_allocators[hxsystem_allocator_temporary_stack] = &m_memory_allocator_temporary_stack;
 
 	::new(&m_memory_allocator_heap) hxmemory_allocator_os_heap(); // Set vtable pointer.
-	::new(&m_memory_allocator_permanent) hxmemory_allocator_stack();
-	::new(&m_memory_allocator_temporary_stack) hxmemory_allocator_temp_stack();
 
 	m_memory_allocator_heap.construct("heap");
+
+#if (HX_MEMORY_BUDGET_PERMANENT) != 0
+	m_memory_allocators[hxsystem_allocator_permanent] = &m_memory_allocator_permanent;
+	::new(&m_memory_allocator_permanent) hxmemory_allocator_stack();
 	m_memory_allocator_permanent.construct(hxmalloc_checked_(HX_MEMORY_BUDGET_PERMANENT),
 		(HX_MEMORY_BUDGET_PERMANENT), "perm");
-	m_memory_allocator_temporary_stack.construct(hxmalloc_checked_(HX_MEMORY_BUDGET_TEMPORARY_STACK),
-		(HX_MEMORY_BUDGET_TEMPORARY_STACK), "temp");
+#else
+	// Without a permanent budget, route permanent allocations to the heap.
+	m_memory_allocators[hxsystem_allocator_permanent] = &m_memory_allocator_heap;
+#endif
+
+	// Temporary stacks are not allocated until hxmemory_manager_allocate_stacks.
+	m_stack_count = 0u;
+	m_allocator_overflows = 0u;
 
 	// Safe default.
 	hxs_current_memory_allocator = hxsystem_allocator_heap;
 }
 
-void hxmemory_manager::destruct(void) {
-	::free(m_memory_allocator_permanent.release());
-	::free(m_memory_allocator_temporary_stack.release());
+void hxmemory_manager::allocate_stacks(const size_t* sizes, size_t stack_count) {
+	hxassert_always(m_stack_count == 0u, "memory_manager stacks reinitialized");
+	hxassert_always(stack_count <= HX_MEMORY_MAX_STACKS,
+		"memory_manager too many stacks %zu", stack_count);
+
+	HX_MEMORY_MANAGER_LOCK_();
+	for(size_t i = 0u; i != stack_count; ++i) {
+		hxmemory_allocator_temp_stack& stack = m_memory_allocator_stacks[i]; // NOLINT(clang-analyzer-security.ArrayBound)
+		::new(&stack) hxmemory_allocator_temp_stack();
+		stack.construct(hxmalloc_checked_(sizes[i]), sizes[i], "temp");
+		m_memory_allocators[hxsystem_allocator_stack_0 + i] = &stack;
+	}
+	m_stack_count = stack_count;
 }
 
-size_t hxmemory_manager::leak_count(void) {
-	size_t leak_count = 0;
+void hxmemory_manager::destruct(void) {
+#if (HX_MEMORY_BUDGET_PERMANENT) != 0
+	::free(m_memory_allocator_permanent.release());
+#endif
+	for(size_t i = 0u; i != m_stack_count; ++i) {
+		::free(m_memory_allocator_stacks[i].release());
+	}
+	m_stack_count = 0u;
+}
+
+hxmemory_manager_stats hxmemory_manager::utilization(bool stacks_only, bool log) {
+	hxmemory_manager_stats stats = { 0u, 0u, m_allocator_overflows };
 	HX_MEMORY_MANAGER_LOCK_();
-	for(size_t i = 0; i != hxsystem_allocator_current; ++i) {
+	const size_t first_slot = stacks_only ? static_cast<size_t>(hxsystem_allocator_stack_0) : 0u;
+	const size_t slot_count = static_cast<size_t>(hxsystem_allocator_stack_0) + m_stack_count;
+	for(size_t i = first_slot; i != slot_count; ++i) {
+#if (HX_MEMORY_BUDGET_PERMANENT) == 0
+		// The permanent slot aliases the heap when there is no permanent budget.
+		if(i == static_cast<size_t>(hxsystem_allocator_permanent)) { continue; }
+#endif
 		hxmemory_allocator_base& allocator = *m_memory_allocators[i];
 		const hxsystem_allocator_t allocator_id = static_cast<hxsystem_allocator_t>(i);
-		if(allocator.get_allocation_count(allocator_id) != 0u) {
-			hxlog_handler(hxlog_level_warning,
-				"memory_leak %s count %zu size %zu high_water %zu",
+		if(log || allocator.get_allocation_count(allocator_id) != 0u) {
+			hxlog("allocator %s count %zu size %zu high_water %zu\n",
 				allocator.label(),
 				allocator.get_allocation_count(allocator_id),
 				allocator.get_bytes_allocated(allocator_id),
 				allocator.get_high_water(allocator_id));
 		}
-		leak_count += allocator.get_allocation_count(allocator_id);
+		stats.allocations_outstanding += allocator.get_allocation_count(allocator_id);
+		stats.bytes_outstanding += allocator.get_bytes_allocated(allocator_id);
 	}
-	return leak_count;
+	if(log) {
+		hxlog("overflows %zu\n", m_allocator_overflows);
+	}
+	return stats;
 }
 
 hxsystem_allocator_t hxmemory_manager::begin_allocation_scope(
@@ -489,6 +532,7 @@ void* hxmemory_manager::allocate(size_t size, hxsystem_allocator_t id, hxalignme
 	if(ptr != hxnull) { return ptr; }
 
 	// Will not return null.
+	++m_allocator_overflows;
 	hxlog_warning("allocation_error overflowing %s size %zu", get_allocator(id).label(), size);
 	return m_memory_allocator_heap.allocate(size, alignment);
 }
@@ -501,16 +545,21 @@ void hxmemory_manager::free(void* ptr) {
 	// This path is hard-coded for efficiency.
 	HX_MEMORY_MANAGER_LOCK_();
 
-	if(m_memory_allocator_temporary_stack.contains(ptr)) {
-		m_memory_allocator_temporary_stack.on_free_non_virtual(ptr);
-		return;
+	for(size_t i = 0u; i != m_stack_count; ++i) {
+		hxmemory_allocator_temp_stack& stack = m_memory_allocator_stacks[i];
+		if(stack.contains(ptr)) {
+			stack.on_free_non_virtual(ptr);
+			return;
+		}
 	}
 
+#if (HX_MEMORY_BUDGET_PERMANENT) != 0
 	if(m_memory_allocator_permanent.contains(ptr)) {
 		hxwarn_msg(hxg_settings.deallocate_permanent, "ERROR: free from permanent");
 		m_memory_allocator_permanent.on_free_non_virtual(ptr);
 		return;
 	}
+#endif
 
 	m_memory_allocator_heap.on_free_non_virtual(ptr);
 }
@@ -547,16 +596,21 @@ void hxmemory_manager_init_(void) {
 void hxmemory_manager_shut_down_(void) {
 	// Any allocations made while active will crash when freed. If these are not
 	// fixed you will hit a leak sanitizer elsewhere.
-	const size_t leaks = hxs_memory_manager.leak_count();
+	const size_t leaks = hxs_memory_manager.utilization(false, false).allocations_outstanding;
 	hxassert_hard(leaks == 0u, "memory_leak at shutdown %zu", leaks); (void)leaks;
 
 	// Return everything to the system allocator.
 	hxs_memory_manager.destruct();
 }
 
-size_t hxmemory_manager_leak_count(void) {
+void hxmemory_manager_allocate_stacks(const size_t* sizes_, size_t stack_count_) {
 	hxinit();
-	return hxs_memory_manager.leak_count();
+	hxs_memory_manager.allocate_stacks(sizes_, stack_count_);
+}
+
+hxmemory_manager_stats hxmemory_manager_utilization(bool stacks_only, bool log) {
+	hxinit();
+	return hxs_memory_manager.utilization(stacks_only, log);
 }
 
 HX_NS_END_
@@ -566,12 +620,7 @@ HX_NS_END_
 
 extern "C"
 hxattr_noexcept void* hxmalloc(size_t size) {
-	hxinit();
-	void* ptr = HX_NS_PREFIX_ hxs_memory_manager.allocate(size, hxsystem_allocator_current, hxalignment);
-#if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
-		::memset(ptr, 0xcd, size);
-#endif
-	return ptr;
+	return  hxmalloc_ext(size, hxsystem_allocator_current, hxalignment);
 }
 
 extern "C"
@@ -598,12 +647,6 @@ hxattr_noexcept void hxfree(void *ptr) {
 
 HX_NS_BEGIN_
 
-void hxmemory_manager_init_(void) { }
-
-void hxmemory_manager_shut_down_(void) { }
-
-size_t hxmemory_manager_leak_count(void) { return 0; }
-
 hxattr_noexcept hxsystem_allocator_scope::hxsystem_allocator_scope(hxsystem_allocator_t) { }
 
 hxattr_noexcept hxsystem_allocator_scope::~hxsystem_allocator_scope(void) { }
@@ -611,6 +654,14 @@ hxattr_noexcept hxsystem_allocator_scope::~hxsystem_allocator_scope(void) { }
 size_t hxsystem_allocator_scope::get_current_allocation_count(void) const { return 0; }
 
 size_t hxsystem_allocator_scope::get_current_bytes_allocated(void) const { return 0; }
+
+void hxmemory_manager_init_(void) { }
+
+void hxmemory_manager_shut_down_(void) { }
+
+void hxmemory_manager_allocate_stacks(const size_t*, size_t) { }
+
+hxmemory_manager_stats hxmemory_manager_utilization(bool, bool) { return { }; }
 
 HX_NS_END_
 
@@ -636,7 +687,7 @@ hxattr_noexcept void hxfree(void *ptr) {
 #endif // !HX_USE_MEMORY_MANAGER
 
 extern "C"
-hxattr_noexcept char* hxstring_duplicate(const char* string, enum hxsystem_allocator_t id) {
+hxattr_noexcept char* hxstring_duplicate(const char* string, hxsystem_allocator_t id) {
 	const size_t len = strlen(string);
 	char* temp = static_cast<char*>(hxmalloc_ext(len + 1, id, 1u));
 	::memcpy(temp, string, len + 1);

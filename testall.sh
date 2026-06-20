@@ -19,15 +19,22 @@ trap '{ set +o xtrace; } 2> /dev/null
 
 set -euo pipefail
 
-clear
+HEADLESS=""
+if [ "${1:-}" = "--headless" ]; then
+	HEADLESS="--headless"
+fi
 
-echo "
+if [ -z "$HEADLESS" ]; then
+	clear
+
+	echo "
   '||   ||  '||      '||                .           '||                .
    ||  ...   || ...   || ..    ....   .||.    ....   || ..     ....  .||.
    ||   ||   ||'  ||  ||' ||  '' .||   ||   .|   ''  ||' ||  .|...||  ||
    ||   ||   ||    |  ||  ||  .|' ||   ||   ||       ||  ||  ||       ||
   .||. .||.  '|...'  .||. ||. '|..'|'  '|.'  '|...' .||. ||.  '|...'  '|.'
 "
+fi
 
 # Delete files matching .gitignore and reset ccache.
 ./clean.sh
@@ -84,12 +91,12 @@ done
 PS4='\e[38;5;208m[${SECONDS}s] ${BASH_SOURCE}:${LINENO}: \e[0m'
 set -o xtrace
 
-./testcmake.sh
-./testcoverage.sh --headless
+./testcmake.sh $HEADLESS
+./testcoverage.sh $HEADLESS
 ./testerrorhandling.sh
-./testexample.sh
+./testexample.sh $HEADLESS
 ./testmatrix.sh
-./teststrip.sh
+./teststrip.sh $HEADLESS
 ./testwasm.sh --headless
 ./debugbuild.sh --grind --run
 doxygen

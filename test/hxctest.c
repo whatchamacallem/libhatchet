@@ -33,7 +33,7 @@ bool hxctest_math(void) {
 bool hxctest_clamp(void) {
 	return hxclamp(0, 1, 5) == 1
 		&& hxclamp(1, 1, 5) == 1
-		&& hxclamp(5, 1, 5) == 5
+		&& hxclamp(5, 1, 5) == 5 /* NOLINT(bugprone-branch-clone) */
 		&& hxclamp(6, 1, 5) == 5;
 }
 
@@ -46,8 +46,8 @@ bool hxctest_swap(void) {
 }
 
 bool hxctest_memory(void) {
-	void* b33 = hxmalloc_ext(33, hxsystem_allocator_temporary_stack, sizeof(size_t));
-	char* t = hxstring_duplicate("_est", hxsystem_allocator_temporary_stack);
+	void* b33 = hxmalloc_ext(33, hxsystem_allocator_stack_0, sizeof(size_t));
+	char* t = hxstring_duplicate("_est", hxsystem_allocator_stack_0);
 	t[0] = 't';
 	void* b32 = hxmalloc(32);
 	memset(b33, 0x33, 33);
@@ -59,7 +59,7 @@ bool hxctest_memory(void) {
 	return result;
 }
 
-#define HX_CTEST_PRINT(x) fwrite(x, (sizeof x) - 1, 1, stderr)
+#define HX_CTEST_PRINT(x) fwrite((x), (sizeof(x)) - 1, 1, stderr)
 #define HX_CTEST_EXEC(fn) (fn() || (HX_CTEST_PRINT("ASSERT_FAIL test_fail " #fn "\n"), false))
 
 bool hxctest_all(void) {

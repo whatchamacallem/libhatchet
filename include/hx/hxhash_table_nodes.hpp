@@ -77,7 +77,8 @@ public:
 
 	/// Returns the next node in the table's embedded linked list.
 	hxhash_table_node_string_literal* hash_next(void) const {
-		return static_cast<hxhash_table_node_string_literal*>(hxhash_table_set_node<const char*>::hash_next());
+		return static_cast<hxhash_table_node_string_literal*>(
+			hxhash_table_set_node<const char*>::hash_next());
 	}
 };
 
@@ -99,7 +100,8 @@ public:
 
 	/// Returns the next node in the table's embedded linked list.
 	hxhash_table_node_string* hash_next(void) const {
-		return static_cast<hxhash_table_node_string*>(hxhash_table_set_node<const char*>::hash_next());
+		return static_cast<hxhash_table_node_string*>(
+			hxhash_table_set_node<const char*>::hash_next());
 	}
 
 private:

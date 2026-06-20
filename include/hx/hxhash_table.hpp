@@ -261,11 +261,13 @@ public:
 		iterator(hxhash_table* table_, node_t_* node_) : const_iterator(table_, node_) { }
 	};
 
-	/// Constructs an empty hash table with a capacity of `2^table_size_bits`.
-	explicit hxhash_table(void);
+	/// Constructs an empty hash table with a capacity of `2^table_size_bits` and
+	/// an optional deleter instance.
+	/// - `deleter` : The deleter to invoke on nodes when erasing or clearing.
+	explicit hxhash_table(deleter_t_ deleter_=deleter_t_());
 
 	/// Destructs the hash table and deletes all resources.
-	~hxhash_table(void) { this->clear(); }
+	~hxhash_table(void) { this->clear(m_deleter_); }
 
 	/// Returns a const iterator pointing to the beginning of the hash table.
 	const_iterator begin(void) const { return const_iterator(this); }
@@ -290,8 +292,8 @@ public:
 	template<typename deleter_override_t_>
 	void clear(const deleter_override_t_& deleter_) noexcept;
 
-	/// Removes all nodes and calls `deleter_t::operator()` on every node.
-	void clear(void) noexcept { this->clear(deleter_t_()); }
+	/// Removes all nodes and calls the stored deleter on every node.
+	void clear(void) noexcept { this->clear(m_deleter_); }
 
 	/// Counts the number of Nodes with the given key.
 	/// - `key` : The key to count occurrences of in the hash table.
@@ -326,10 +328,10 @@ public:
 	template<typename deleter_override_t_>
 	hxsize_t erase(const typename node_t_::key_t& key_, const deleter_override_t_& deleter_) noexcept;
 
-	/// Removes and calls `deleter_t::operator()` on nodes with an equivalent key.
+	/// Removes and calls the stored deleter on nodes with an equivalent key.
 	/// - `key` : The key to search for and remove from the hash table.
 	hxsize_t erase(const typename node_t_::key_t& key_) noexcept {
-		return this->erase(key_, deleter_t_());
+		return this->erase(key_, m_deleter_);
 	}
 
 	/// `extract` - Returns an `hxptr` owning the first `node_t` with the given
@@ -349,7 +351,8 @@ public:
 	/// `const` version of `find`.
 	/// - `key` : The key to search for in the hash table.
 	/// - `previous` : A previously found `node_t` with the same key, or hxnull.
-	hxattr_nodiscard const node_t_* find(const typename node_t_::key_t& key_, const node_t_* previous_=hxnull) const;
+	hxattr_nodiscard const node_t_* find(
+		const typename node_t_::key_t& key_, const node_t_* previous_=hxnull) const;
 
 	/// `insert` - Returns an iterator to the inserted node. When `multi_t` is
 	/// `false` and a node with an equal key already exists, invokes `deleter_t`
@@ -398,7 +401,8 @@ public:
 	/// - `args` : Arguments forwarded to the node constructor.
 	template<hxsystem_allocator_t allocator_=hxsystem_allocator_current, hxalignment_t align_=hxalignment,
 		bool multi_=multi_t_, class... args_t_>
-	hxenable_if_t<!multi_, iterator> try_emplace(const typename node_t_::key_t& key_, args_t_&&... args_) noexcept;
+	hxenable_if_t<!multi_, iterator> try_emplace(
+		const typename node_t_::key_t& key_, args_t_&&... args_) noexcept;
 
 private:
 	static_assert(table_size_bits_ < hxhash_bits, "Hash bits must be [0..hxhash_bits).");
@@ -411,6 +415,7 @@ private:
 
 	const node_t_*const* get_bucket_head_(hxhash_t hash_) const;
 
+	deleter_t_ m_deleter_;
 	hxsize_t m_size_;
 	hxdetail_::hxhash_table_internal_allocator_<node_t_, table_size_bits_> m_table_;
 };

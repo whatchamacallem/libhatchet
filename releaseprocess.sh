@@ -29,7 +29,7 @@ if [ "$answer" != "y" ] && [ "$answer" != "Y" ]; then
     exit 1
 fi
 
-./testall.sh
+./testall.sh --headless
 
 set -o xtrace
 
@@ -40,7 +40,8 @@ fi
 git checkout "$TARGET"
 git merge --squash "$BRANCH"
 git commit -m "$TAG"
-git tag "$TAG"
+SHA=$(git rev-parse "$TARGET^{commit}")
+git tag -a -m "$SHA" "$TAG"
 git push
 git push --tags
 git checkout "$BRANCH"

@@ -179,7 +179,7 @@ public:
 
 	/// Swaps the contents with `x`. Requires `hxallocator_dynamic_capacity`.
 	/// - `x` : The set to swap with.
-	void swap(hxflat_set& x_);
+	void swap(hxflat_set& x_) noexcept;
 
 	/// Returns a const pointer to the first element whose key is ordered after
 	/// `key`. Returns `end` if no such element exists.

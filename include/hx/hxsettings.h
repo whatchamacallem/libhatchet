@@ -176,7 +176,7 @@
 
 #define hxrestrict __restrict
 
-// clang can't handle the malloc attributes args.
+// hxattr_allocator - Collection of attributes for allocators.
 #if defined __clang__
 #define hxattr_allocator(...) \
 	__attribute__((returns_nonnull)) __attribute__((warn_unused_result))
@@ -233,20 +233,19 @@
 #define hxif_constexpr if
 #endif
 
+#if !defined HX_USE_MODULE
 /// Setting `-DHX_USE_MODULE=1` when using modules (e.g. `import hx;`) will
 /// allow the macros in `<hx/libhatchet.h>`, `<hx/hxconsole.hpp>`,
 /// `<hx/hxprofiler.hpp>` and `<hx/hxtest.hpp>` to be textually included
 /// alongside `import hx;`. See `src/hxmodule.cppm`.
-#if !defined HX_USE_MODULE
 #define HX_USE_MODULE 0
 #endif
 
+#if !defined HX_USE_CONSOLE
 /// Control whether the console is included in the build. C++20 is required to
 /// use the console.
-/// `0` - Disables the console.
-/// `1` - Enables the console.
+/// `0` - Disables the console. `1` - Enables the console.
 /// `2` - Enables the debug console. This allows executing files and modifying memory.
-#if !defined HX_USE_CONSOLE
 #define HX_USE_CONSOLE ((HX_CPLUSPLUS >= 202002L) ? 2 : 0)
 #elif (HX_USE_CONSOLE) && HX_CPLUSPLUS && HX_CPLUSPLUS < 202002L
 #error The console requires C++20 or later.
@@ -256,27 +255,20 @@
 #error The debug console is not designed for use with WASM.
 #endif
 
+#if !defined HX_USE_LOGGING
 /// Control whether logging statements are included in the build. Note:
 /// `hxlog_handler` is always available and is used by the asserts.
 /// `0` - Disables the logging macros.
 /// `1` - All logging except `hxlog`.
 /// `2` - All logging including `hxlog`. This is the default.
-#if !defined HX_USE_LOGGING
 #define HX_USE_LOGGING 2
 #endif
 
 #if !defined HX_USE_FILE_IO
 /// `HX_USE_FILE_IO` - Select if `hxfile` exists and if it uses C file I/O or
 /// POSIX I/O. `stdout` is used for logging even when `hxfile` is disabled.
-/// `0` - Disables hxfile.
-/// `1` - C file I/O.
-/// `2` - POSIX file I/O.
+/// `0` - Disables hxfile. `1` - C file I/O. `2` - POSIX file I/O.
 #define HX_USE_FILE_IO 1
-#endif
-
-#if !defined HX_USE_GOOGLE_TEST
-/// `HX_USE_GOOGLE_TEST` - In case you need to use Google Test. Defaults to `0`.
-#define HX_USE_GOOGLE_TEST 0
 #endif
 
 #if !defined HX_USE_PROFILER
@@ -301,43 +293,54 @@
 #define HX_USE_MEMORY_MANAGER 1
 #endif
 
-// Provide new/delete when the std libray is absent unless overriden.
 #if !defined HX_PROVIDE_NEW_DELETE
+/// Provide new/delete when the std libray is absent unless overriden.
 #define HX_PROVIDE_NEW_DELETE !(HX_USE_LIBCXX)
 #endif
 
-/// `HX_KIB` - A KiB is 1024 bytes.
+/// `HX_KIB` - A KiB, 2^10.
 #define HX_KIB (1 << 10)
 
-/// `HX_MIB` - A MiB is 1,048,576 bytes.
+/// `HX_MIB` - A MiB, 2^20.
 #define HX_MIB (1 << 20)
 
-#if !defined HX_MAX_LINE
-/// `HX_MAX_LINE` - Set to 2KiB. Maximum length for formatted messages printed
-/// with this platform. Stack space needs to be available for it.
-#define HX_MAX_LINE (2 * HX_KIB)
-#endif
+/// `HX_GIB` - A GiB, 2^30.
+#define HX_GIB (1 << 30)
 
 #if !defined HX_MEMORY_BUDGET_PERMANENT
-/// `HX_MEMORY_BUDGET_PERMANENT` - Pool sizes. Set to 5 KiB if not defined.
-#define HX_MEMORY_BUDGET_PERMANENT		(5u * HX_KIB)
+/// `HX_MEMORY_BUDGET_PERMANENT` - Pool sizes. Defaults to 4 KiB if not defined.
+/// Set to 0 to disable.
+#define HX_MEMORY_BUDGET_PERMANENT		(4u * HX_KIB)
 #endif
 
-#if !defined HX_MEMORY_BUDGET_TEMPORARY_STACK
-/// `HX_MEMORY_BUDGET_TEMPORARY_STACK` - Set to 1 MiB if not defined.
-#define HX_MEMORY_BUDGET_TEMPORARY_STACK  (1u * HX_MIB)
+#if !defined HX_MEMORY_MAX_STACKS
+/// `HX_MEMORY_MAX_STACKS` - The maximum number of temporary stacks that
+/// `hxmemory_manager_allocate_stacks` may allocate. Set to 3 for triple
+/// buffering if not defined.
+#define HX_MEMORY_MAX_STACKS 3u
 #endif
 
 #if !defined HX_RADIX_SORT_MIN_SIZE
-/// `HX_RADIX_SORT_MIN_SIZE` - Radix sort uses `hxinsertion_sort` below this
-/// size. Set to `32` if not defined.
-#define HX_RADIX_SORT_MIN_SIZE 32u
+/// `HX_RADIX_SORT_MIN_SIZE` - Radix sort switches to `hxinsertion_sort` below
+/// this size. Set to `32` if not defined.
+#define HX_RADIX_SORT_MIN_SIZE 32
 #endif
 
-/// HX_USE_FLOATING_POINT_TRAPS - Traps (FE_DIVBYZERO|FE_INVALID|FE_OVERFLOW) in
-/// glibc debug builds. There are a number of relevant compiler flags.
+#if !defined HX_MAX_LINE
+/// `HX_MAX_LINE` - Set to 2 KiB. Line buffer size for formatted messages printed
+/// with this platform. Only allocated on the stack.
+#define HX_MAX_LINE (2 * HX_KIB)
+#endif
+
+#if !defined HX_USE_GOOGLE_TEST
+/// `HX_USE_GOOGLE_TEST` - Switch to using the real Google Test. Defaults to `0`.
+#define HX_USE_GOOGLE_TEST 0
+#endif
+
 #if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG && defined __GLIBC__ && !defined __FAST_MATH__
 #if !defined HX_USE_FLOATING_POINT_TRAPS
+/// `HX_USE_FLOATING_POINT_TRAPS` - Traps `(FE_DIVBYZERO|FE_INVALID|FE_OVERFLOW)` in
+/// glibc debug builds. There are a number of relevant compiler flags.
 #define HX_USE_FLOATING_POINT_TRAPS 1
 #endif
 #else
@@ -427,7 +430,7 @@ struct hxsettings {
 extern struct hxsettings hxg_settings;
 
 /// Internal. Used to reset settings at startup.
-void hxsettings_construct(void);
+void hxsettings_construct_(void);
 
 #if HX_CPLUSPLUS
 } // extern "C"

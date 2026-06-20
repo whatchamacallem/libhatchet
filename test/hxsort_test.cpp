@@ -64,7 +64,7 @@ TEST(hxbinary_search_test, simple_case) {
 }
 
 TEST(hxbinary_search_test, binary_search_grinder) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	hxrandom rng(4);
 	hxvector<hxtest_ref_tracker_t> sorted; sorted.reserve(100);
 		for(int i=100; i-- != 0; ) {
@@ -80,7 +80,7 @@ TEST(hxbinary_search_test, binary_search_grinder) {
 }
 
 TEST(hxsort_test, sort_grinder) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	hxrandom rng(2);
 	const hxsize_t max_size_mask = 0x7f;
 	hxvector<hxtest_ref_tracker_t> insertion_sorted; insertion_sorted.reserve(max_size_mask);
@@ -110,7 +110,7 @@ TEST(hxsort_test, sort_grinder) {
 }
 
 TEST(hxsort_test, sort_grinder_generic) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	hxrandom rng(3);
 	const hxsize_t max_size_mask = 0xfff;
 	hxvector<hxtest_ref_tracker_t> sorted; sorted.reserve(max_size_mask);

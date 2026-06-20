@@ -41,7 +41,7 @@ public:
 		}
 		hxtest_object value;
 	};
-	class hxtest_string : public hxhash_table_node_string<hxsystem_allocator_temporary_stack> {
+	class hxtest_string : public hxhash_table_node_string<hxsystem_allocator_stack_0> {
 	public:
 		hxtest_string(const char* k) : hxhash_table_node_string(k) { }
 		hxtest_string* hash_next(void) const {
@@ -104,7 +104,7 @@ TEST_F(hxhash_table_test_f, null) {
 }
 
 TEST_F(hxhash_table_test_f, single) {
-const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	static const int k = 77;
 	{
 		using table_t = hxhash_table<hxtest_integer, hxdefault_delete, false, 4>;
@@ -145,7 +145,7 @@ const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporar
 }
 
 TEST_F(hxhash_table_test_f, map_node_usage) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	using map_node_t = hxhash_table_map_node<int32_t, hxtest_object>;
 	using table_t = hxhash_table<map_node_t, hxdefault_delete, false, 4>;
 	{
@@ -181,7 +181,7 @@ TEST_F(hxhash_table_test_f, map_node_usage) {
 TEST_F(hxhash_table_test_f, multiple) {
 	static const int size_i = 78;
 	static const unsigned int size_u = 78u;
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	{
 		using table_t = hxhash_table<hxtest_integer, hxdefault_delete, true>;
 		table_t table;
@@ -283,7 +283,7 @@ TEST_F(hxhash_table_test_f, multiple) {
 }
 
 TEST_F(hxhash_table_test_f, strings) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	static const char* const colors[] = {
 		"Red","Orange","Yellow",
 		"Green","Cyan","Blue",
@@ -305,7 +305,7 @@ TEST_F(hxhash_table_test_f, strings) {
 }
 
 TEST_F(hxhash_table_test_f, string_literal_nodes) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	static const char* const literals[] = {
 		"Crimson", "Teal", "Magenta", "Gold"
 	};
@@ -386,7 +386,7 @@ TEST(hxhash_table_map_node_test, subclass_hash_next_type) {
 }
 
 TEST_F(hxhash_table_test_f, iterator_traverses_all_nodes_exactly_once) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, true, 4>;
 	table_t table;
 	static const int keys[] = { 1, 2, 3, 4, 5 };
@@ -410,7 +410,7 @@ TEST_F(hxhash_table_test_f, iterator_begin_equals_end_on_empty_table) {
 }
 
 TEST_F(hxhash_table_test_f, count_returns_zero_for_absent_key) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, false, 4>;
 	table_t table;
 	table.insert(hxptr<hxtest_integer>(hxnew<hxtest_integer>(10)));
@@ -419,7 +419,7 @@ TEST_F(hxhash_table_test_f, count_returns_zero_for_absent_key) {
 }
 
 TEST_F(hxhash_table_test_f, count_multi_two_same_key) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, true, 4>;
 	table_t table;
 	table.insert(hxptr<hxtest_integer>(hxnew<hxtest_integer>(7)));
@@ -428,7 +428,7 @@ TEST_F(hxhash_table_test_f, count_multi_two_same_key) {
 }
 
 TEST_F(hxhash_table_test_f, find_second_duplicate_via_previous) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, true, 4>;
 	table_t table;
 	hxtest_integer* n1 = hxnew<hxtest_integer>(42);
@@ -445,7 +445,7 @@ TEST_F(hxhash_table_test_f, find_second_duplicate_via_previous) {
 }
 
 TEST_F(hxhash_table_test_f, find_absent_key_in_nonempty_bucket_chain) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, true>;
 	table_t table;
 	table.set_table_size_bits(1);
@@ -457,7 +457,7 @@ TEST_F(hxhash_table_test_f, find_absent_key_in_nonempty_bucket_chain) {
 }
 
 TEST_F(hxhash_table_test_f, insert_two_keys_same_bucket_both_findable) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, true>;
 	table_t table;
 	table.set_table_size_bits(1);
@@ -469,7 +469,7 @@ TEST_F(hxhash_table_test_f, insert_two_keys_same_bucket_both_findable) {
 }
 
 TEST_F(hxhash_table_test_f, erase_head_node_updates_size) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, false, 4>;
 	table_t table;
 	table.insert(hxptr<hxtest_integer>(hxnew<hxtest_integer>(5)));
@@ -481,7 +481,7 @@ TEST_F(hxhash_table_test_f, erase_head_node_updates_size) {
 }
 
 TEST_F(hxhash_table_test_f, erase_interior_node_in_bucket_chain) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, true>;
 	table_t table;
 	table.set_table_size_bits(1);
@@ -497,7 +497,7 @@ TEST_F(hxhash_table_test_f, erase_interior_node_in_bucket_chain) {
 }
 
 TEST_F(hxhash_table_test_f, erase_returns_zero_for_absent_key) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, false, 4>;
 	table_t table;
 	table.insert(hxptr<hxtest_integer>(hxnew<hxtest_integer>(10)));
@@ -506,19 +506,19 @@ TEST_F(hxhash_table_test_f, erase_returns_zero_for_absent_key) {
 }
 
 TEST_F(hxhash_table_test_f, extract_head_node_removes_from_table) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, false, 4>;
 	table_t table;
 	hxtest_integer* node = hxnew<hxtest_integer>(55);
 	table.insert(hxptr<hxtest_integer>(node));
-	hxptr<hxtest_integer> extracted = table.extract(55);
+	const hxptr<hxtest_integer> extracted = table.extract(55);
 	EXPECT_EQ(extracted.get(), node);
 	EXPECT_EQ(table.find(55), hxnullptr);
 	EXPECT_EQ(table.size(), 0u);
 }
 
 TEST_F(hxhash_table_test_f, extract_interior_node_keeps_others) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, true>;
 	table_t table;
 	table.set_table_size_bits(1);
@@ -526,7 +526,7 @@ TEST_F(hxhash_table_test_f, extract_interior_node_keeps_others) {
 	hxtest_integer* mid = hxnew<hxtest_integer>(3);
 	table.insert(hxptr<hxtest_integer>(mid));
 	table.insert(hxptr<hxtest_integer>(hxnew<hxtest_integer>(5)));
-	hxptr<hxtest_integer> extracted = table.extract(3);
+	const hxptr<hxtest_integer> extracted = table.extract(3);
 	EXPECT_EQ(extracted.get(), mid);
 	EXPECT_EQ(table.size(), 2u);
 	EXPECT_NE(table.find(1), hxnullptr);

@@ -86,7 +86,7 @@ TEST(hxprofiler_test, single_scope_runs_for_1ms) {
 
 #if HX_USE_FILE_IO
 TEST(hxprofiler_test, write_to_chrome_tracing_command) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	hxprofiler_stop();
 #if HX_USE_CONSOLE
 	hxconsole_exec_line("profilestart");

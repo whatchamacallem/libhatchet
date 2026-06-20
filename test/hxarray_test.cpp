@@ -351,36 +351,36 @@ TEST(hxarray_test, hxarray_equal_and_less) {
 }
 #endif
 
-TEST_F(hxarray_test_f, hxarray_set_size_dynamic) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+TEST_F(hxarray_test_f, hxarray_reserve_dynamic) {
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	{
 		hxarray<hxtest_object, hxallocator_dynamic_capacity> a;
 		EXPECT_EQ(a.size(), 0);
 		EXPECT_EQ(a.capacity(), 0);
-		a.set_size(3);
+		a.reserve(3);
 		EXPECT_EQ(a.size(), 3);
 		EXPECT_EQ(a.capacity(), 3);
 		for(hxsize_t i = 0; i < a.size(); ++i) {
 			EXPECT_FALSE(a[i].moved_from);
 		}
-		a.set_size(3);
+		a.reserve(3);
 		EXPECT_EQ(a.size(), 3);
 		hxtest_gdb_break_hxarray_dynamic();
 	}
 	EXPECT_TRUE(check_totals(3));
 }
 
-TEST(hxarray_test, hxarray_set_size_static_noop) {
+TEST(hxarray_test, hxarray_reserve_static_noop) {
 	hxarray<int, 4> a;
-	a.set_size(4);
+	a.reserve(4);
 	EXPECT_EQ(a.size(), 4);
 }
 
 TEST_F(hxarray_test_f, hxarray_dynamic_copy_constructor) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	{
 		hxarray<hxtest_object, hxallocator_dynamic_capacity> src;
-		src.set_size(2);
+		src.reserve(2);
 		src[0] = hxtest_object(7);
 		src[1] = hxtest_object(8);
 		hxarray<hxtest_object, hxallocator_dynamic_capacity> dst(src);
@@ -395,7 +395,7 @@ TEST_F(hxarray_test_f, hxarray_dynamic_copy_constructor) {
 }
 
 TEST_F(hxarray_test_f, hxarray_dynamic_c_array_constructor) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	{
 		static const int32_t values[3] = { 2, 4, 6 };
 		hxarray<hxtest_object, hxallocator_dynamic_capacity> a(values);
@@ -408,7 +408,7 @@ TEST_F(hxarray_test_f, hxarray_dynamic_c_array_constructor) {
 
 #if HX_CPLUSPLUS >= 202002L
 TEST_F(hxarray_test_f, hxarray_dynamic_initializer_list_constructor) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	{
 		hxarray<int, hxallocator_dynamic_capacity> a { 10, 20, 30 };
 		EXPECT_EQ(a.size(), 3);
@@ -420,7 +420,7 @@ TEST_F(hxarray_test_f, hxarray_dynamic_initializer_list_constructor) {
 #endif
 
 TEST_F(hxarray_test_f, hxarray_dynamic_assign_from_iterators) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	{
 		hxtest_object src[3] = { hxtest_object(3), hxtest_object(6), hxtest_object(9) };
 		hxarray<hxtest_object, hxallocator_dynamic_capacity> a;
@@ -434,7 +434,7 @@ TEST_F(hxarray_test_f, hxarray_dynamic_assign_from_iterators) {
 
 #if HX_CPLUSPLUS >= 202002L
 TEST_F(hxarray_test_f, hxarray_dynamic_assign_range_rvalue) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	{
 		hxtest_object source_elements[] = {
 			hxtest_object(1),
@@ -455,12 +455,12 @@ TEST_F(hxarray_test_f, hxarray_dynamic_assign_range_rvalue) {
 #endif
 
 TEST(hxarray_test, hxarray_equal_mismatched_capacity) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	{
 		hxarray<int, hxallocator_dynamic_capacity> a;
 		hxarray<int, hxallocator_dynamic_capacity> b;
-		a.set_size(2);
-		b.set_size(3);
+		a.reserve(2);
+		b.reserve(3);
 		a[0] = 1; a[1] = 2;
 		b[0] = 1; b[1] = 2; b[2] = 3;
 		EXPECT_FALSE(a.equal(b));
@@ -468,12 +468,12 @@ TEST(hxarray_test, hxarray_equal_mismatched_capacity) {
 }
 
 TEST(hxarray_test, hxarray_less_different_sizes) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	{
 		hxarray<int, hxallocator_dynamic_capacity> shorter;
 		hxarray<int, hxallocator_dynamic_capacity> longer;
-		shorter.set_size(2);
-		longer.set_size(3);
+		shorter.reserve(2);
+		longer.reserve(3);
 		shorter[0] = 1; shorter[1] = 2;
 		longer[0] = 1; longer[1] = 2; longer[2] = 3;
 		EXPECT_TRUE(shorter.less(longer));
@@ -485,8 +485,8 @@ TEST(hxarray_test, hxarray_less_different_sizes) {
 TEST(hxarray_test, hxarray_equal_detects_last_element_difference) {
 	static const int v1[3] = { 1, 2, 3 };
 	static const int v2[3] = { 1, 2, 4 };
-	hxarray<int, 3> a(v1);
-	hxarray<int, 3> b(v2);
+	const hxarray<int, 3> a(v1);
+	const hxarray<int, 3> b(v2);
 	EXPECT_FALSE(a.equal(b));
 	EXPECT_FALSE(b.equal(a));
 }
@@ -494,17 +494,17 @@ TEST(hxarray_test, hxarray_equal_detects_last_element_difference) {
 TEST(hxarray_test, hxarray_less_detects_last_element_difference) {
 	static const int v1[3] = { 1, 2, 3 };
 	static const int v2[3] = { 1, 2, 4 };
-	hxarray<int, 3> a(v1);
-	hxarray<int, 3> b(v2);
+	const hxarray<int, 3> a(v1);
+	const hxarray<int, 3> b(v2);
 	EXPECT_TRUE(a.less(b));
 	EXPECT_FALSE(b.less(a));
 }
 
 TEST_F(hxarray_test_f, hxarray_dynamic_move_constructor) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	{
 		hxarray<hxtest_object, hxallocator_dynamic_capacity> src;
-		src.set_size(3);
+		src.reserve(3);
 		src[0] = hxtest_object(11);
 		src[1] = hxtest_object(22);
 		src[2] = hxtest_object(33);
@@ -516,8 +516,8 @@ TEST_F(hxarray_test_f, hxarray_dynamic_move_constructor) {
 		for(hxsize_t i = 0; i < 3; ++i) {
 			EXPECT_FALSE(dst[i].moved_from);
 		}
-		EXPECT_EQ(src.size(), 0);
-		EXPECT_EQ(src.capacity(), 0);
+		EXPECT_EQ(src.size(), 0); // NOLINT(clang-analyzer-cplusplus.Move)
+		EXPECT_EQ(src.capacity(), 0); // NOLINT(clang-analyzer-cplusplus.Move)
 	}
 	EXPECT_EQ(m_constructed, m_destructed);
 }

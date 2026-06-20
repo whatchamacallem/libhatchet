@@ -34,7 +34,9 @@ HX_DIR=$PWD
 # Build artifacts are not retained.
 rm -rf ./build; mkdir ./build && cd ./build
 
-set -o xtrace
+if [ "${1:-}" != "--headless" ]; then
+    set -o xtrace
+fi
 
 musl-gcc $BUILD $ERRORS $FLAGS -I"$HX_DIR/include" \
 	-std=c17 -c "$HX_DIR"/test/*.c
@@ -55,18 +57,23 @@ strip -o hxtest-strip --strip-unneeded hxtest
 # Turn off tracing silently and make sure the command returns 0.
 { set +o xtrace; } 2> /dev/null
 
-# Prints [  PASSED  ]
-./hxtest-strip
+if [ "${1:-}" != "--headless" ]; then
+    ./hxtest-strip
+else
+    ./hxtest-strip 2>&1 | grep -E '\[  PASSED  \]|\[  FAILED  \]|FAILED TESTS'
+fi
 
 cd ..
 
-echo -e "\n\n=========================================================================="
-echo "= Largest elf symbols..."
-echo "=========================================================================="
-./listsymbols.sh
+# --headless skips all output.
+if [ "${1:-}" != "--headless" ]; then
+    ./listsymbols.sh
+fi
 
-echo "=========================================================================="
-# Prints summary stats for the necessary components of the executable.
+SYMBOLS=$(nm --radix=d --print-size build/hxtest)
+echo "$SYMBOLS" | awk 'NF == 4 && $4 ~ /hx/ && $4 !~ /test/ && !seen[$1]++ {total += $2} \
+ END {printf "= Total non-test libhatchet bytes: %d\n", total}'
+
 size build/hxtest-strip
 
 echo "🪓🪓🪓"

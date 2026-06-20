@@ -227,8 +227,8 @@ hxattr_nodiscard constexpr bool hxisgraph(char ch_) {
 /// Implements standard `isspace` for a locale where all non-ASCII characters
 /// are considered graphical or mark making. Returns nonzero for space and `\t
 /// \n \v \f \r`. This is compatible with scanf-style parsing of UTF-8 string
-/// parameters. However, this is not `en_US.UTF-8` or the default C locale.
-/// It does match the POSIX locale.
+/// parameters. However, this is not `en_US.UTF-8`. It does match the the
+/// default C locale and the POSIX locale.
 hxattr_nodiscard constexpr bool hxisspace(char ch_) {
 	return ch_ == ' ' || (static_cast<unsigned char>(ch_) - 0x09u) < 0x05u;
 }
@@ -335,15 +335,16 @@ HX_NS_END_
 // ----------------------------------------------------------------------------
 // C Macro Utility API - Does it all backwards in heels.
 
-/// Returns the size of a C array.
+/// Returns the size of a C array. WARNING: Args will be multiply instantiated.
 #define hxsize(x_) (sizeof(x_) / sizeof(x_)[0])
 
-/// `hxabs` - Returns the absolute value of `x` using a `<` comparison.
+/// `hxabs` - Returns the absolute value of `x` using a `<` comparison. WARNING:
+/// Args will be multiply instantiated.
 /// - `x` : The value to compute the absolute value for.
 #define hxabs(x_) ((x_) < 0 ? (0 - (x_)) : (x_))
 
 /// `hxclamp` - Returns `x` clamped between the `minimum` and `maximum` using `<`
-/// comparisons.
+/// comparisons. WARNING: Args will be multiply instantiated.
 /// - `x` : The value to clamp.
 /// - `minimum` : The minimum allowable value.
 /// - `maximum` : The maximum allowable value.
@@ -351,18 +352,20 @@ HX_NS_END_
 	((x_) < (minimum_) ? (minimum_) : ((maximum_) < (x_) ? (maximum_) : (x_)))
 
 /// `hxmax` - Returns the maximum value of `x` and `y` using a `<` comparison.
+/// WARNING: Args will be multiply instantiated.
 /// - `x` : The first value.
 /// - `y` : The second value.
 #define hxmax(x_, y_) ((y_) < (x_) ? (x_) : (y_))
 
 /// `hxmin` - Returns the minimum value of `x` and `y` using a `<` comparison.
+/// WARNING: Args will be multiply instantiated.
 /// - `x` : The first value.
 /// - `y` : The second value.
 #define hxmin(x_, y_) ((x_) < (y_) ? (x_) : (y_))
 
 /// `hxswap_memcpy` - Exchanges the contents of `x` and `y` using `memcpy` and a
 /// stack temporary. This is intended for internal use where it is known to be
-/// safe to do so.
+/// safe to do so. WARNING: Args will be multiply instantiated.
 /// - `x` : First object.
 /// - `y` : Second object.
 #define hxswap_memcpy(x_,y_) do { \

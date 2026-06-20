@@ -68,6 +68,7 @@ export {
 #include "../include/hx/hxconstexpr_list.hpp"
 #include "../include/hx/hxdeque.hpp"
 #include "../include/hx/hxfile.hpp"
+#include "../include/hx/hxfree_list.hpp"
 #include "../include/hx/hxflat_map.hpp"
 #include "../include/hx/hxflat_set.hpp"
 #include "../include/hx/hxhash_table.hpp"

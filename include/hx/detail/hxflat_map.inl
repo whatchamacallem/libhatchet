@@ -340,7 +340,7 @@ inline void hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capacity_>::rese
 
 template<typename key_t_, typename mapped_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
 inline void hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capacity_>::swap(
-		hxflat_map& x_) {
+		hxflat_map& x_) noexcept {
 	static_assert(capacity_ == hxallocator_dynamic_capacity,
 		"hxallocator_dynamic_capacity required for hxflat_map::swap");
 	hxswap_memcpy(*this, x_);

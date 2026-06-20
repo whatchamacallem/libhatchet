@@ -99,7 +99,8 @@ hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::const_iterator::n
 // hxhash_table out-of-line implementations
 
 template<hxhash_table_concept_ node_t_, typename deleter_t_, bool multi_t_, hxhash_t table_size_bits_>
-inline hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::hxhash_table(void) {
+inline hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::hxhash_table(deleter_t_ deleter_)
+		: m_deleter_(deleter_) {
 	m_size_ = 0;
 	// Pre-requires keyword checks.
 	static_assert(hxis_same<decltype(hxdeclval<const node_t_&>().hash_next()),
@@ -225,11 +226,11 @@ hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::extract(
 				*head_ = n_->hash_next();
 			}
 			--m_size_;
-			return hxptr<node_t_, deleter_t_>(n_);
+			return hxptr<node_t_, deleter_t_>(n_, m_deleter_);
 		}
 		previous_ = n_;
 	}
-	return hxptr<node_t_, deleter_t_>();
+	return hxptr<node_t_, deleter_t_>(hxnull, m_deleter_);
 }
 
 template<hxhash_table_concept_ node_t_, typename deleter_t_, bool multi_t_, hxhash_t table_size_bits_>
@@ -272,8 +273,7 @@ hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::insert(node_t_* p
 	if(!multi_t_) {
 		for(node_t_* n_ = *pos_; n_; n_ = n_->hash_next()) {
 			if(hxkey_equal(n_->hash_key(), ptr_->hash_key())) {
-				const deleter_t_ d_;
-				if(d_) { d_(ptr_); }
+				if(m_deleter_) { m_deleter_(ptr_); }
 				return iterator(this, n_);
 			}
 		}

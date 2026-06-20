@@ -233,12 +233,12 @@ bool hxfile::getline(char* buffer, int buffer_size) {
 	hxassertmsg(buffer_size >= 2, "buffer_size too small");
 
 	int written = 0;
-	char buf[HX_MAX_LINE];
+	char line_buf[HX_MAX_LINE];
 
 	for(;;) {
 		ssize_t bytes_read = 0;
 		do {
-			bytes_read = ::read(static_cast<int>(m_file_pimpl_), buf, HX_MAX_LINE - 1u);
+			bytes_read = ::read(static_cast<int>(m_file_pimpl_), line_buf, HX_MAX_LINE - 1u);
 		} while(bytes_read < 0 && errno == EINTR);
 
 		if(bytes_read <= 0) {
@@ -251,11 +251,11 @@ bool hxfile::getline(char* buffer, int buffer_size) {
 			return false;
 		}
 
-		const char* const nl = static_cast<const char*>(::memchr(buf, '\n', static_cast<size_t>(bytes_read)));
-		const ssize_t line_end = nl ? static_cast<ssize_t>(nl - buf + 1) : bytes_read;
+		const char* const nl = static_cast<const char*>(::memchr(line_buf, '\n', static_cast<size_t>(bytes_read)));
+		const ssize_t line_end = nl ? static_cast<ssize_t>(nl - line_buf + 1) : bytes_read;
 		const int copy_len = (line_end < static_cast<ssize_t>(buffer_size - 1 - written)) ?
 			static_cast<int>(line_end) : buffer_size - 1 - written;
-		::memcpy(buffer + written, buf, static_cast<size_t>(copy_len));
+		::memcpy(buffer + written, line_buf, static_cast<size_t>(copy_len));
 		written += copy_len;
 
 		if(nl || written == buffer_size - 1) {
@@ -278,10 +278,10 @@ bool hxfile::print(const char* format, ...) {
 		return true;
 	}
 
-	char buf[HX_MAX_LINE + 1u];
+	char line_buf[HX_MAX_LINE + 1u];
 	va_list args;
 	va_start(args, format);
-	const int len = ::vsnprintf(buf, HX_MAX_LINE + 1u, format, args);
+	const int len = ::vsnprintf(line_buf, HX_MAX_LINE + 1u, format, args);
 	va_end(args);
 
 	hxassert_always(len >= 0, "vsnprintf %s", ::strerror(errno));
@@ -296,7 +296,7 @@ bool hxfile::print(const char* format, ...) {
 	while(written < to_write) {
 		ssize_t n = 0;
 		do {
-			n = ::write(static_cast<int>(m_file_pimpl_), buf + written, to_write - written);
+			n = ::write(static_cast<int>(m_file_pimpl_), line_buf + written, to_write - written);
 		} while(n < 0 && errno == EINTR);
 		if(n <= 0) {
 			break;
@@ -318,17 +318,17 @@ bool hxfile::print(const char* format, ...) {
 int hxfile::scan(const char* format, ...) {
 	hxassertmsg(((m_open_mode_ & hxfile::in) != 0u) && (m_file_pimpl_ >= 0), "invalid_file");
 
-	char buf[HX_MAX_LINE];
-	const ssize_t bytes_read = ::read(static_cast<int>(m_file_pimpl_), buf, HX_MAX_LINE - 1u);
+	char line_buf[HX_MAX_LINE];
+	const ssize_t bytes_read = ::read(static_cast<int>(m_file_pimpl_), line_buf, HX_MAX_LINE - 1u);
 	if(bytes_read > 0) {
-		buf[static_cast<size_t>(bytes_read)] = '\0';
+		line_buf[static_cast<size_t>(bytes_read)] = '\0';
 	} else {
-		buf[0] = '\0';
+		line_buf[0] = '\0';
 	}
 
 	va_list args;
 	va_start(args, format);
-	const int items_scanned = ::vsscanf(buf, format, args);
+	const int items_scanned = ::vsscanf(line_buf, format, args);
 	va_end(args);
 
 	hxassert_always(items_scanned != EOF || ((m_open_mode_ & hxfile::skip_asserts) != 0u),

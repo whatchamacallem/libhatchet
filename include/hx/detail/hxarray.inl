@@ -339,10 +339,11 @@ void hxarray<T_, capacity_>::memset(int byte_) {
 }
 
 template<hxarray_element_concept_ T_, hxsize_t capacity_>
-void hxarray<T_, capacity_>::set_size(hxsize_t size_) noexcept {
+void hxarray<T_, capacity_>::reserve(hxsize_t size_,
+		hxsystem_allocator_t allocator_, hxalignment_t alignment_) noexcept {
 	const hxsize_t n_ = this->capacity();
-	hxassert_hard(n_ == 0 || n_ == size_, "set_size can not resize");
-	this->reserve_storage(size_);
+	hxassert_hard(n_ == 0 || n_ == size_, "reserve can not resize");
+	this->reserve_storage(size_, allocator_, alignment_);
 	if(n_ == 0) {
 		T_* it_ = this->data();
 		for(const T_*const end_ = it_ + size_; it_ != end_; ++it_) {

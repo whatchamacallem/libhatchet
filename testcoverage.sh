@@ -21,10 +21,32 @@ set -eu
 HX_DIR=$PWD
 HX_GCOV=gcov-$(gcc -dumpversion)
 
+# Args are: [--headless] [target-directory]
+HX_HEADLESS=
+HX_TARGET=
+for ARG in "$@"; do
+	if [ "$ARG" = "--headless" ]; then
+		HX_HEADLESS=1
+	else
+		case "$ARG" in
+			/*) HX_TARGET="$ARG" ;;
+			*) HX_TARGET="$HX_DIR/$ARG" ;;
+		esac
+		case "$HX_TARGET" in
+			*/) ;;
+			*) HX_TARGET="$HX_TARGET/" ;;
+		esac
+	fi
+done
+
+[ -n "$HX_TARGET" ] || HX_TARGET="$HX_DIR/build/"
+
 # Build artifacts are not retained.
 rm -rf ./build; mkdir ./build && cd ./build
 
-set -o xtrace
+if [ -z "$HX_HEADLESS" ]; then
+    set -o xtrace
+fi
 
 gcc -I"$HX_DIR"/include --coverage -O0 -g -DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG \
     -std=c99 -Wall -Werror -Wfatal-errors -pthread -c "$HX_DIR"/test/*.c
@@ -34,15 +56,20 @@ g++ -I"$HX_DIR"/include --coverage -O0 -g -DHX_HARDENING_MODE=HX_HARDENING_MODE_
     -Wfatal-errors -fno-exceptions -Wno-c2y-extensions -pthread -lpthread -lstdc++    \
     "$HX_DIR"/src/*.cpp "$HX_DIR"/test/*.cpp *.o -o hxtest
 
-echo runtests | ./hxtest help execstdin
+if [ -z "$HX_HEADLESS" ]; then
+    echo runtests | ./hxtest help execstdin
+else
+    echo runtests | ./hxtest help execstdin > /dev/null 2>&1
+fi
 
-gcovr --gcov-executable "$HX_GCOV" --exclude-lines-by-pattern '.*hxassert.*' --html-details coverage.html --root .. .
+mkdir -p "$HX_TARGET"
+gcovr --gcov-executable "$HX_GCOV" --exclude-lines-by-pattern '.*hxassert.*' --html-details "$HX_TARGET" --root .. .
 
 { set +o xtrace; } 2> /dev/null
 
 # Launch Chrome if it is installed.
-if [ "${1:-}" != "--headless" ] && which google-chrome; then
-	google-chrome coverage.html >/dev/null 2>&1;
+if [ -z "$HX_HEADLESS" ] && which google-chrome; then
+	google-chrome "${HX_TARGET}coverage_details.html" >/dev/null 2>&1;
 fi
 
 # Make sure the script returns 0.

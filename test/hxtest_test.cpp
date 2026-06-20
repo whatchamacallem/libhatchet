@@ -96,7 +96,8 @@ TEST(hxtest_test, double_eq) {
 }
 
 TEST(hxtest_test, all_tests) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
+	hxlog_warning("EXPECTING_TEST_WARNINGS");
 	EXPECT_TRUE(hxctest_all());
 }
 
@@ -106,14 +107,14 @@ TEST(hxtest_test, succeed) {
 
 #if HX_TEST_ERROR_HANDLING
 TEST(hxtest_error_handling, fail) {
-	hxlog_warning("EXPECTING_TEST_FAILURE\n");
+	hxlog_warning("EXPECTING_TEST_FAILURE");
 	SUCCEED();
 	FAIL();
 	hxassert_always(0, "internal_error FAIL() did not return");
 }
 
 TEST(hxtest_error_handling, add_failure) {
-	hxlog_warning("EXPECTING_TEST_FAILURE\n");
+	hxlog_warning("EXPECTING_TEST_FAILURE");
 	SUCCEED();
 	for(int i = 10; i--;) {
 		ADD_FAILURE();
@@ -121,12 +122,12 @@ TEST(hxtest_error_handling, add_failure) {
 }
 
 TEST(hxtest_error_handling, add_failure_at) {
-	hxlog_warning("EXPECTING_TEST_FAILURE\n");
+	hxlog_warning("EXPECTING_TEST_FAILURE");
 	SUCCEED();
 	ADD_FAILURE_AT("fake_file.cpp", 10000);
 }
 
 TEST(hxtest_error_handling, nothing_asserted) {
-	hxlog_warning("EXPECTING_TEST_FAILURE\n");
+	hxlog_warning("EXPECTING_TEST_FAILURE");
 }
 #endif

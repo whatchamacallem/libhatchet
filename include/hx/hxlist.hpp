@@ -177,12 +177,13 @@ public:
 		/// \endcond
 	};
 
-	/// Constructs an empty list.
-	explicit hxlist(void);
+	/// Constructs an empty list with an optional deleter instance.
+	/// - `deleter` : The deleter to invoke on nodes when erasing or clearing.
+	explicit hxlist(deleter_t_ deleter_=deleter_t_());
 
 	/// Destroys the list by calling `clear()`, which invokes the deleter on
 	/// every remaining node.
-	~hxlist(void) { this->clear(); }
+	~hxlist(void) { this->clear(m_deleter_); }
 
 	/// Returns a reference to the last node. The list must not be empty.
 	hxattr_nodiscard node_t_& back(void);
@@ -208,8 +209,8 @@ public:
 	template<typename deleter_override_t_>
 	void clear(const deleter_override_t_& deleter_) noexcept;
 
-	/// Removes all nodes using the list's default `deleter_t`.
-	void clear(void) { this->clear(deleter_t_()); }
+	/// Removes all nodes using the stored deleter.
+	void clear(void) { this->clear(m_deleter_); }
 
 	/// Returns `true` if the list contains no nodes.
 	hxattr_nodiscard bool empty(void) const { return m_size_ == 0; }
@@ -227,11 +228,11 @@ public:
 	/// - `pos` : The node to unlink and erase.
 	/// - `deleter` : Override deleter callable. Called only if it evaluates to true.
 	template<typename deleter_override_t_>
-	void erase(const_iterator pos_, const deleter_override_t_& deleter_);
+	void erase(const_iterator pos_, const deleter_override_t_& deleter_) noexcept;
 
-	/// Unlinks and deletes the node at `pos` using the list's default `deleter_t`.
+	/// Unlinks and deletes the node at `pos` using the stored deleter.
 	/// - `pos` : Iterator to the node to unlink and delete.
-	void erase(const_iterator pos_) { this->erase(pos_, deleter_t_()); }
+	void erase(const_iterator pos_) noexcept { this->erase(pos_, m_deleter_); }
 
 	/// `extract` - Returns an `hxptr` owning the node at `pos` after unlinking it
 	/// from the list.
@@ -309,7 +310,7 @@ public:
 	/// default deleter on each removed node.
 	/// - `predicate` : A callable taking a `node_t` reference, returning bool.
 	template<typename predicate_t_>
-	hxsize_t remove_if(predicate_t_ predicate_);
+	hxsize_t remove_if(predicate_t_ predicate_) noexcept;
 
 	/// Reverses the order of nodes in the list in-place. WARNING: Iterators are
 	/// invalidated.
@@ -333,6 +334,7 @@ private:
 	void insert_(hxlist_node* prev_, hxlist_node* next_, hxlist_node* ptr_);
 	void extract_(hxlist_node* prev_, hxlist_node* ptr_);
 
+	deleter_t_ m_deleter_;
 	hxsize_t m_size_;
 	hxlist_node m_sentinel_;
 	// When empty m_sentinel_.m_list_link_ == 0 and m_tail_ == &m_sentinel_.

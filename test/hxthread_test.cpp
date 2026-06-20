@@ -250,7 +250,7 @@ TEST(hxthread_test_condition_variable, wait_notify_sequence) {
 }
 
 TEST(hxthread_test_thread, multiple_thread_start_join) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	const int reps = 10;
 	int shared = 0;
 	hxmutex mutex;

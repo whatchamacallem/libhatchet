@@ -149,11 +149,8 @@ int hxtest_::run_all_tests_(const char* test_suite_filter) {
 	hxinsertion_sort(m_test_cases_, m_test_cases_ + m_num_test_cases_, hxtest_case_sort);
 
 	// Starting point. Expected to reset to zero after each test.
-	hxsystem_allocator_scope temporary_stack_base(hxsystem_allocator_temporary_stack);
-
-	hxassert_always(temporary_stack_base.get_current_allocation_count() == 0u
-				&& temporary_stack_base.get_current_bytes_allocated() == 0u,
-		"test_leaks Temp stack is expected to be empty when running tests");
+	hxassert_always(hxmemory_manager_utilization(true, false).allocations_outstanding == 0u,
+		"test_leaks Temp stacks are expected to be empty when running tests");
 
 	for(hxtest_case_interface_** it = m_test_cases_; it != (m_test_cases_ + m_num_test_cases_); ++it) {
 		if((test_suite_filter == hxnull)
@@ -170,9 +167,8 @@ int hxtest_::run_all_tests_(const char* test_suite_filter) {
 				(*it)->run_test_();
 
 				// Expect the test to use another scope to reset the stack if needed.
-				const size_t t_count = temporary_stack_base.get_current_allocation_count();
-				const size_t t_bytes = temporary_stack_base.get_current_bytes_allocated();
-				if((t_count != 0u) || (t_bytes != 0u)) {
+				hxmemory_manager_stats stats = hxmemory_manager_utilization(true, false);
+				if(stats.allocations_outstanding != 0u || stats.bytes_outstanding != 0u) {
 					this->condition_check_(false, (*it)->file_(), (*it)->line_(),
 						"test_leaks All tests must reset the temp stack.", true);
 				}
@@ -196,6 +192,8 @@ int hxtest_::run_all_tests_(const char* test_suite_filter) {
 		}
 	}
 	m_current_test_ = hxnull;
+
+	hxmemory_manager_utilization(false, true);
 
 	hxlog_console("[==========] skipped %d tests. failed %d assertions.\n",
 		m_num_test_cases_ - m_pass_count_ - m_fail_count_, m_total_assert_count_);

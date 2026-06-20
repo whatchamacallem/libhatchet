@@ -51,8 +51,8 @@ TEST(hxmemory_manager_test, hxnew) {
 }
 
 TEST(hxmemory_manager_test, bytes) {
-const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
-	hxlog_warning("EXPECTING_TEST_WARNINGS\n");
+const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
+	hxlog_warning("EXPECTING_TEST_WARNINGS");
 	for(size_t i=10u; i != 0u; --i) {
 		void* p = hxmalloc(i);
 		ASSERT_NE(p, hxnullptr);
@@ -62,7 +62,7 @@ const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporar
 }
 
 TEST(hxmemory_manager_test, bytes_single_byte) {
-const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	void* p = hxmalloc(1u);
 	ASSERT_NE(p, hxnullptr);
 	::memset(p, 0x66, 1u);
@@ -70,7 +70,7 @@ const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporar
 }
 
 TEST(hxmemory_manager_test, string_duplicate) {
-const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	char* p = hxstring_duplicate("str");
 	ASSERT_NE(p, hxnullptr);
 	ASSERT_STREQ(p, "str");
@@ -78,7 +78,7 @@ const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporar
 }
 
 TEST(hxmemory_manager_test, string_duplicate_empty) {
-const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	char* p = hxstring_duplicate("");
 	ASSERT_NE(p, hxnullptr);
 	ASSERT_STREQ(p, "");
@@ -86,7 +86,7 @@ const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporar
 }
 
 TEST(hxmemory_manager_test, string_duplicate_single_char) {
-const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	char* p = hxstring_duplicate("x");
 	ASSERT_NE(p, hxnullptr);
 	ASSERT_STREQ(p, "x");
@@ -94,16 +94,83 @@ const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporar
 }
 
 TEST(hxmemory_manager_test, temp_overflow) {
-	hxlog_warning("EXPECTING_TEST_WARNINGS\n");
-	void* p = hxmalloc_ext(HX_MEMORY_BUDGET_TEMPORARY_STACK + 1, hxsystem_allocator_temporary_stack, 1u);
+	hxlog_warning("EXPECTING_TEST_WARNINGS");
+	const size_t temp_stack_size = 1u * HX_MIB;
+	void* p = hxmalloc_ext(temp_stack_size + 1, hxsystem_allocator_stack_0, 1u);
 	ASSERT_NE(p, hxnullptr);
 	hxfree(p);
-const hxsystem_allocator_scope temp(hxsystem_allocator_temporary_stack);
-	p = hxmalloc(HX_MEMORY_BUDGET_TEMPORARY_STACK + 1);
+	// This time without alignment.
+	const hxsystem_allocator_scope temp(hxsystem_allocator_stack_0);
+	p = hxmalloc(temp_stack_size + 1);
 	ASSERT_NE(p, hxnullptr);
 	hxfree(p);
 }
+
+TEST(hxmemory_manager_test, additional_stacks_addressable) {
+	const hxsystem_allocator_t stack_1 = hxsystem_allocator_stack_0 + 1;
+	const hxsystem_allocator_t stack_2 = hxsystem_allocator_stack_0 + 2;
+	const hxsystem_allocator_scope scope_1(stack_1);
+	const hxsystem_allocator_scope scope_2(stack_2);
+	void* p1 = hxmalloc_ext(64u, stack_1, hxalignment);
+	void* p2 = hxmalloc_ext(64u, stack_2, hxalignment);
+	ASSERT_NE(p1, hxnullptr);
+	ASSERT_NE(p2, hxnullptr);
+	ASSERT_NE(p1, p2);
+	::memset(p1, 0x55, 64u);
+	::memset(p2, 0xaa, 64u);
+	hxfree(p1);
+	hxfree(p2);
+}
+
+TEST(hxmemory_manager_test, additional_stacks_scope_current) {
+	const hxsystem_allocator_t stack_1 = hxsystem_allocator_stack_0 + 1;
+	const hxsystem_allocator_scope temporary_stack_scope(stack_1);
+	void* p = hxmalloc(128u);
+	ASSERT_NE(p, hxnullptr);
+	::memset(p, 0x66, 128u);
+	hxfree(p);
+}
+
 #if HX_USE_MEMORY_MANAGER
+
+TEST(hxmemory_manager_test, additional_stacks_reset_on_scope_close) {
+	const hxsystem_allocator_t stack_1 = hxsystem_allocator_stack_0 + 1;
+	size_t baseline_bytes = 0u;
+	size_t baseline_count = 0u;
+	{
+		const hxsystem_allocator_scope temporary_stack_scope(stack_1);
+		baseline_bytes = temporary_stack_scope.get_current_bytes_allocated();
+		baseline_count = temporary_stack_scope.get_current_allocation_count();
+		void* p = hxmalloc(16u);
+		ASSERT_NE(p, hxnullptr);
+		ASSERT_EQ(temporary_stack_scope.get_current_allocation_count(), baseline_count + 1u);
+		ASSERT_GT(temporary_stack_scope.get_current_bytes_allocated(), baseline_bytes);
+		hxfree(p);
+	}
+	const hxsystem_allocator_scope temporary_stack_scope(stack_1);
+	ASSERT_EQ(temporary_stack_scope.get_current_allocation_count(), baseline_count);
+	ASSERT_EQ(temporary_stack_scope.get_current_bytes_allocated(), baseline_bytes);
+}
+
+TEST(hxmemory_manager_test, additional_stacks_are_independent) {
+	const hxsystem_allocator_t stack_1 = hxsystem_allocator_stack_0 + 1;
+	const hxsystem_allocator_t stack_2 = hxsystem_allocator_stack_0 + 2;
+	const hxsystem_allocator_scope scope_1(stack_1);
+	void* p1 = hxmalloc(16u);
+	ASSERT_NE(p1, hxnullptr);
+	ASSERT_EQ(scope_1.get_current_allocation_count(), 1u);
+	{
+		const hxsystem_allocator_scope scope_2(stack_2);
+		ASSERT_EQ(scope_2.get_current_allocation_count(), 0u);
+		void* p2 = hxmalloc(16u);
+		ASSERT_NE(p2, hxnullptr);
+		ASSERT_EQ(scope_2.get_current_allocation_count(), 1u);
+		hxfree(p2);
+	}
+	ASSERT_EQ(scope_1.get_current_allocation_count(), 1u);
+	hxfree(p1);
+}
+
 class hxmemory_manager_test_f :
 	public testing::Test
 {
@@ -153,7 +220,7 @@ public:
 		void* ptr2 = hxnull;
 		const int asserts_allowed = hxg_settings.asserts_to_be_skipped;
 		{
-			const hxsystem_allocator_scope allocator_scope(hxsystem_allocator_temporary_stack);
+			const hxsystem_allocator_scope allocator_scope(hxsystem_allocator_stack_0);
 			ASSERT_EQ(0u, allocator_scope.get_initial_allocation_count());
 			ASSERT_EQ(0u, allocator_scope.get_initial_bytes_allocated());
 			ASSERT_EQ(0u, allocator_scope.get_current_allocation_count());
@@ -167,7 +234,7 @@ public:
 		}
 		ASSERT_EQ(hxg_settings.asserts_to_be_skipped, 0);
 		{
-			const hxsystem_allocator_scope allocator_scope(hxsystem_allocator_temporary_stack);
+			const hxsystem_allocator_scope allocator_scope(hxsystem_allocator_stack_0);
 			ASSERT_EQ(allocator_scope.get_initial_allocation_count(), 1);
 			ASSERT_EQ(allocator_scope.get_initial_bytes_allocated(), 0);
 			hxg_settings.asserts_to_be_skipped = 1;
@@ -180,10 +247,10 @@ public:
 };
 
 TEST_F(hxmemory_manager_test_f, execute) {
-	for(size_t i = 0; i < hxsystem_allocator_current; ++i) {
+	for(size_t i = 0; i <= hxsystem_allocator_stack_0; ++i) {
 		test_memory_allocator_normal(static_cast<hxsystem_allocator_t>(i));
 	}
-	hxlog_warning("EXPECTING_TEST_FAILURE\n");
+	hxlog_warning("EXPECTING_TEST_FAILURE");
 	test_memory_allocator_leak();
 }
 #endif // HX_USE_MEMORY_MANAGER

@@ -127,7 +127,7 @@ TEST(hxset_algorithms_test, int_pointer_ranges) {
 }
 
 TEST(hxset_algorithms_test, hxarray_output_iterator_support) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_temporary_stack);
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	auto expect_hxarray = [](const hxvector<hxtest_ref_tracker_t>& actual, const int* expected, hxsize_t count) {
 		ASSERT_EQ(actual.size(), count);
 		for(hxsize_t i = 0; i < count; ++i) {

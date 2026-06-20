@@ -178,12 +178,13 @@ public:
 		/// \endcond
 	};
 
-	/// Constructs an empty list.
-	hxconstexpr explicit hxconstexpr_list(void);
+	/// Constructs an empty list with an optional deleter instance.
+	/// - `deleter` : The deleter to invoke on nodes when erasing or clearing.
+	hxconstexpr explicit hxconstexpr_list(deleter_t_ deleter_=deleter_t_());
 
 	/// Destroys the list by calling `clear()`, which invokes the deleter on
 	/// every remaining node.
-	hxconstexpr ~hxconstexpr_list(void) { this->clear(); }
+	hxconstexpr ~hxconstexpr_list(void) { this->clear(m_deleter_); }
 
 	/// Returns a reference to the last node. The list must not be empty.
 	hxattr_nodiscard hxconstexpr node_t_& back(void);
@@ -209,11 +210,11 @@ public:
 	template<typename deleter_override_t_>
 	hxconstexpr void clear(const deleter_override_t_& deleter_) noexcept;
 
-	/// Removes all nodes using the list's default `deleter_t`.
-	hxconstexpr void clear(void) { this->clear(deleter_t_()); }
+	/// Removes all nodes using the stored deleter.
+	hxconstexpr void clear(void) { this->clear(m_deleter_); }
 
 	/// Returns `true` if the list contains no nodes.
-	hxattr_nodiscard hxconstexpr bool empty(void) const { return m_sentinel_.m_list_next_ == &m_sentinel_; }
+	hxattr_nodiscard hxconstexpr bool empty(void) const;
 
 	/// Returns an iterator to the sentinel, representing one past the last node.
 	/// This is also the iterator to one before the first node.
@@ -228,11 +229,11 @@ public:
 	/// - `pos` : The node to unlink and erase.
 	/// - `deleter` : Override deleter callable. Called only if it evaluates to true.
 	template<typename deleter_override_t_>
-	hxconstexpr void erase(const_iterator pos_, const deleter_override_t_& deleter_);
+	hxconstexpr void erase(const_iterator pos_, const deleter_override_t_& deleter_) noexcept;
 
-	/// Unlinks and deletes the node at `pos` using the list's default `deleter_t`.
+	/// Unlinks and deletes the node at `pos` using the stored deleter.
 	/// - `pos` : Iterator to the node to unlink and delete.
-	hxconstexpr void erase(const_iterator pos_) { this->erase(pos_, deleter_t_()); }
+	hxconstexpr void erase(const_iterator pos_) noexcept { this->erase(pos_, m_deleter_); }
 
 	/// `extract` - Returns an `hxptr` owning the node at `pos` after unlinking it
 	/// from the list.
@@ -310,7 +311,7 @@ public:
 	/// default deleter on each removed node.
 	/// - `predicate` : A callable taking a `node_t` reference, returning bool.
 	template<typename predicate_t_>
-	hxconstexpr hxsize_t remove_if(predicate_t_ predicate_);
+	hxconstexpr hxsize_t remove_if(predicate_t_ predicate_) noexcept;
 
 	/// Reverses the order of nodes in the list in-place.
 	hxconstexpr void reverse(void);
@@ -330,9 +331,11 @@ private:
 	hxconstexpr_list& operator=(const hxconstexpr_list&) = delete;
 	hxconstexpr_list& operator=(hxconstexpr_list&&) = delete;
 
-	hxconstexpr void insert_(hxconst_list_node* prev_, hxconst_list_node* next_, hxconst_list_node* ptr_);
+	hxconstexpr void insert_(hxconst_list_node* prev_, hxconst_list_node* next_,
+		hxconst_list_node* ptr_);
 	hxconstexpr void extract_(hxconst_list_node* ptr_);
 
+	deleter_t_ m_deleter_;
 	hxsize_t m_size_;
 	hxconst_list_node m_sentinel_;
 };

@@ -116,14 +116,6 @@ protected:
 	/// \endcond
 };
 
-/// `InitGoogleTest` - Initializes Google Test with command-line arguments.
-/// No-op in this implementation.
-inline void InitGoogleTest(int *, char **) { }
-
-/// `InitGoogleTest` - Overloaded version of `InitGoogleTest` with no arguments.
-/// No-op in this implementation.
-inline void InitGoogleTest(void) { }
-
 } // namespace testing
 #endif // !HX_USE_MODULE
 

@@ -101,7 +101,7 @@ hxattr_weak void hxinit_internal(int version) {
 	(void)version;
 
 	if(hxg_init_ver_ == 0) {
-		hxsettings_construct();
+		hxsettings_construct_();
 
 #if HX_USE_FLOATING_POINT_TRAPS
 		// You need the math library -lm. This is a nonstandard glibc/_GNU_SOURCE extension.

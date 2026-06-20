@@ -229,7 +229,8 @@ public:
 	/// Requires `x.size() <= capacity()`.
 	/// - `x` : The map to copy from.
 	template<hxsize_t capacity_x_>
-	void operator=(const hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capacity_x_>& x_) noexcept;
+	void operator=(const hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_,
+		capacity_x_>& x_) noexcept;
 
 	/// Move assigns from a temporary map using `swap`. Requires
 	/// `hxallocator_dynamic_capacity`.
@@ -282,7 +283,8 @@ public:
 	/// the same order using `hxkey_equal` on both keys and values.
 	/// - `x` : The map to compare against.
 	template<hxsize_t capacity_x_>
-	hxattr_nodiscard bool equal(const hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capacity_x_>& x_) const;
+	hxattr_nodiscard bool equal(const hxflat_map<key_t_, mapped_t_, compare_t_,
+		multi_t_, capacity_x_>& x_) const;
 
 	/// Removes all elements with the given key and destroys their key-value
 	/// pairs. Returns the number of elements removed.
@@ -333,7 +335,8 @@ public:
 	/// using `hxkey_equal` and `hxkey_less` on keys.
 	/// - `x` : The map to compare against.
 	template<hxsize_t capacity_x_>
-	hxattr_nodiscard bool less(const hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capacity_x_>& x_) const;
+	hxattr_nodiscard bool less(const hxflat_map<key_t_, mapped_t_, compare_t_,
+		multi_t_, capacity_x_>& x_) const;
 
 	/// Returns an iterator to the first element whose key is not ordered before
 	/// `key`. Returns `end` if no such element exists.
@@ -358,7 +361,7 @@ public:
 
 	/// Swaps the contents with `x`. Requires `hxallocator_dynamic_capacity`.
 	/// - `x` : The map to swap with.
-	void swap(hxflat_map& x_);
+	void swap(hxflat_map& x_) noexcept;
 
 	/// Returns an iterator to the first element whose key is ordered after
 	/// `key`. Returns `end` if no such element exists.

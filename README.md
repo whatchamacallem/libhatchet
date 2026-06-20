@@ -55,14 +55,14 @@ system allocators.
   uses W, A, S, and D keys). One line of assembly may be needed for uncommon
   hardware.
 
-- **Memory Management**: Support for various allocation semantics, particularly
+- **Memory Management**: Supports various allocation semantics, particularly
   valuable for applications where crashing from memory fragmentation is
   unacceptable. If you have a lot of temporary allocations, this system
   reasonably offers 30% memory and 30% performance improvements with minor
-  modifications to your code. In complex applications additional stacks would be
-  required for streaming different resources. Fancy tools like heaptrack can be
-  used by disabling the memory manager with `-DHX_USE_MEMORY_MANAGER=0`. Leak
-  tracking is also built in.
+  modifications to your code. Complex applications are supported using an array
+  of variable sized stacks. Fancy tools like heaptrack can be used by disabling
+  the memory manager with `-DHX_USE_MEMORY_MANAGER=0`. Leak tracking is also
+  built in.
 
 - **Console**: Provides an embedded command processor with automatic C++
   function binding using templates. Useful for interactive target debugging

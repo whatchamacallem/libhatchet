@@ -372,7 +372,7 @@ TEST(hxoptional_test, value_or_engaged_zero) {
 TEST(hxoptional_test, destructor_exactly_one_call) {
 	hxs_test_ctor_count = 0;
 	hxs_test_dtor_count = 0;
-	{ hxoptional<hxtest_optional_counted_t> o(hxtest_optional_counted_t(1)); }
+	{ const hxoptional<hxtest_optional_counted_t> o(hxtest_optional_counted_t(1)); }
 	EXPECT_EQ(hxs_test_dtor_count, hxs_test_ctor_count);
 	EXPECT_GE(hxs_test_dtor_count, 1);
 }

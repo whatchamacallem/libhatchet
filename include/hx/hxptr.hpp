@@ -29,12 +29,11 @@ class hxptr {
 public:
 	using element_t = T_;
 
-	/// Constructs a null `hxptr` that owns nothing.
-	hxconstexpr hxptr(void) : m_ptr_(hxnull) { }
-
-	/// Constructs an `hxptr` that takes ownership of `ptr`.
+	/// Constructs an `hxptr` that takes ownership of `ptr` with a specific
+	/// deleter instance.
 	/// - `ptr` : The pointer to take ownership of. May be null.
-	hxconstexpr explicit hxptr(T_* ptr_) : m_ptr_(ptr_) { }
+	/// - `deleter` : The deleter instance to use when freeing `ptr`.
+	hxconstexpr hxptr(T_* ptr_=hxnull, deleter_t_ deleter_=deleter_t_()) noexcept;
 
 	/// Move constructor. Transfers ownership from `other` to this. `other` is
 	/// left null.
@@ -92,13 +91,14 @@ public:
 
 	/// Exchanges ownership with `other`. Neither pointer is deleted.
 	/// - `other` : The `hxptr` to swap with.
-	hxconstexpr void swap(hxptr& other_);
+	hxconstexpr void swap(hxptr& other_) noexcept;
 
 private:
 	hxptr(const hxptr&) = delete;
 	hxptr& operator=(const hxptr&) = delete;
 
 	T_* m_ptr_;
+	deleter_t_ m_deleter_;
 };
 
 /// `hxptr<T[], deleter_t>` - Partial specialization of `hxptr` for array types.
@@ -116,7 +116,8 @@ public:
 /// - `allocator` : The memory manager ID to use for allocation. Defaults to
 ///    `hxsystem_allocator_current`.
 /// - `align` : Alignment to use when allocating. Defaults to `hxalignment`.
-template <typename T_, hxsystem_allocator_t allocator_=hxsystem_allocator_current, hxalignment_t align_=hxalignment, typename... args_t_>
+template<typename T_, hxsystem_allocator_t allocator_=hxsystem_allocator_current,
+	hxalignment_t align_=hxalignment, typename... args_t_>
 hxattr_nodiscard hxptr<T_> hxmake_ptr(args_t_&&... args_) {
 	return hxptr<T_>(::new(hxmalloc_ext(sizeof(T_), allocator_, align_)) T_(static_cast<args_t_&&>(args_)...));
 }

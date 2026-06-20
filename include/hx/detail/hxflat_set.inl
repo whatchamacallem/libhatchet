@@ -204,7 +204,7 @@ inline void hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::reserve(hxsize_
 
 template<typename key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
 inline void hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::swap(
-		hxflat_set& x_) {
+		hxflat_set& x_) noexcept {
 	static_assert(capacity_ == hxallocator_dynamic_capacity,
 		"hxallocator_dynamic_capacity required for hxflat_set::swap");
 	hxswap_memcpy(*this, x_);
