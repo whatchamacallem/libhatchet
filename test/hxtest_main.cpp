@@ -44,9 +44,9 @@ TEST(hxtest_main, set_assert_handler) {
 
 bool run_all_tests(void) {
 	hxlog_console("libhatchet 🪓🪓🪓 " LIBHATCHET_TAG "\n");
-	hxlog_console("release: %d profile: %d\n",
+	hxlog_console("hardening: %d profiler: %d\n",
 		static_cast<int>(HX_HARDENING_MODE),
-		static_cast<int>(HX_PROFILE));
+		static_cast<int>(HX_USE_PROFILER));
 
 	// RUN_ALL_TESTS is a Google Test symbol.
 	const size_t tests_failing = static_cast<size_t>(RUN_ALL_TESTS());

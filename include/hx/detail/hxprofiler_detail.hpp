@@ -5,7 +5,7 @@
 //
 // hxprofiler_internal_ internals. See hxprofiler.hpp instead.
 
-#if !defined HX_PROFILE
+#if !defined HX_USE_PROFILER
 #error #include <hx/hxprofiler.h> instead.
 #endif
 

@@ -206,38 +206,48 @@ extern "C" {
 // ----------------------------------------------------------------------------
 // Target independent.
 
+#if !defined HX_USE_GOOGLE_TEST
+/// `HX_USE_GOOGLE_TEST` - In case you need to use Google Test. Defaults to `0`.
+#define HX_USE_GOOGLE_TEST 0
+#endif
+
+#if !defined HX_USE_POSIX_FILE_IO
+/// `HX_USE_POSIX_FILE_IO` - Have hxfile use POSIX I/O instead of C file I/O.
+#define HX_USE_POSIX_FILE_IO 0
+#endif
+
+#if !defined HX_USE_PROFILER
+/// `HX_USE_PROFILER` - Enable this to use the profiler.
+/// - `0` Disables code for capturing profiling data.
+/// - `1` Compiles in code. See `hxprofile_scope`.
+#define HX_USE_PROFILER (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
+#endif
+
+#if !defined HX_PROFILER_MAX_RECORDS
+/// `HX_PROFILER_MAX_RECORDS` - Set to `4096` if not defined. The profiler doesn't
+/// reallocate. This is the maximum.
+#define HX_PROFILER_MAX_RECORDS 4096
+#endif
+
+#if !defined HX_USE_MEMORY_MANAGER
+/// `HX_USE_MEMORY_MANAGER` - Disables memory management for debugging and for
+/// platforms like wasm where extra system allocations are probably cheaper than
+/// code size.
+/// - `0` : normal target operation
+/// - `1` : remove code entirely
+#define HX_USE_MEMORY_MANAGER 1
+#endif
+
 /// `HX_KIB` - A KiB is 1024 bytes.
 #define HX_KIB (1 << 10)
 
 /// `HX_MIB` - A MiB is 1,048,576 bytes.
 #define HX_MIB (1 << 20)
 
-/// \cond HIDDEN
-// HX_APPEND_COUNTER2_ - Used to generate unique identifiers. This is weird
-// because the ## operator happens before macro arg evaluation and both
-// happen before general macro evaluation.
-#define HX_APPEND_COUNTER2_(x_, y_) x_ ## y_
-// This version does evaluate its macro args.
-#define HX_APPEND_COUNTER_(x_, y_) HX_APPEND_COUNTER2_(x_, y_)
-/// \endcond
-/// `HX_APPEND_COUNTER` - Generates a semi-unique identifier by appending a
-/// unique number for that translation unit to `x`.
-/// - `x` : A C identifier to be made unique.
-#define HX_APPEND_COUNTER(x_) HX_APPEND_COUNTER_(x_, __COUNTER__)
-
 #if !defined HX_MAX_LINE
 /// `HX_MAX_LINE` - Set to 512. Maximum length for formatted messages printed
 /// with this platform. Stack space needs to be available for it.
 #define HX_MAX_LINE (2 * HX_KIB)
-#endif
-
-#if !defined HX_MEMORY_MANAGER_DISABLE
-/// `HX_MEMORY_MANAGER_DISABLE` - Disables memory management for debugging and for
-/// platforms like wasm where extra system allocations are probably cheaper than
-/// code size.
-/// - `0` : normal target operation
-/// - `1` : remove code entirely
-#define HX_MEMORY_MANAGER_DISABLE 0
 #endif
 
 #if !defined HX_MEMORY_BUDGET_PERMANENT
@@ -250,40 +260,29 @@ extern "C" {
 #define HX_MEMORY_BUDGET_TEMPORARY_STACK  (1u * HX_MIB)
 #endif
 
-#if !defined HX_PROFILE
-/// `HX_PROFILE`
-/// - `0` Disables code for capturing profiling data.
-/// - `1` Compiles in code. See `hxprofile_scope`.
-#define HX_PROFILE (HX_HARDENING_MODE) > HX_HARDENING_MODE_STANDARD
-#endif
-
-#if !defined HX_PROFILER_MAX_RECORDS
-/// `HX_PROFILER_MAX_RECORDS` - Set to `4096` if not defined. The profiler doesn't
-/// reallocate. This is the maximum.
-#define HX_PROFILER_MAX_RECORDS 4096
-#endif
-
-#if !defined HX_USE_GOOGLE_TEST
-/// `HX_USE_GOOGLE_TEST` - In case you need to use Google Test. Defaults to `0`.
-#define HX_USE_GOOGLE_TEST 0
-#endif
-
-#if !defined HX_USE_POSIX_FILE_IO
-/// `HX_USE_POSIX_FILE_IO` - Have hxfile use POSIX I/O instead of C file I/O.
-#define HX_USE_POSIX_FILE_IO 0
-#endif
-
-#if !defined HX_TEST_ERROR_HANDLING
-/// `HX_TEST_ERROR_HANDLING` - Tests that the failure of tests is handled correctly.
-/// Set to `0` if not defined. Set by `testerrorhandling.sh` and `coverage.sh`.
-#define HX_TEST_ERROR_HANDLING 0
-#endif
-
 #if !defined HX_RADIX_SORT_MIN_SIZE
 /// `HX_RADIX_SORT_MIN_SIZE` - Radix sort uses `hxinsertion_sort` below this size.
 /// Set to `32` if not defined.
 #define HX_RADIX_SORT_MIN_SIZE 32u
 #endif
+
+/// \cond HIDDEN
+// HX_APPEND_COUNTER2_ - Used to generate unique identifiers. This is weird
+// because the ## operator happens before macro arg evaluation and both happen
+// before general macro evaluation.
+#define HX_APPEND_COUNTER2_(x_, y_) x_ ## y_
+// This version does evaluate its macro args.
+#define HX_APPEND_COUNTER_(x_, y_) HX_APPEND_COUNTER2_(x_, y_)
+// `HX_APPEND_COUNTER` - Generates a semi-unique identifier by appending a
+// unique number for that translation unit to `x`.
+#define HX_APPEND_COUNTER(x_) HX_APPEND_COUNTER_(x_, __COUNTER__)
+
+// `HX_TEST_ERROR_HANDLING` - Tests that the failure of tests is handled correctly.
+// Set to `0` if not defined. Set by `testerrorhandling.sh` and `coverage.sh`.
+#if !defined HX_TEST_ERROR_HANDLING
+#define HX_TEST_ERROR_HANDLING 0
+#endif
+/// \endcond
 
 /// `hxsettings` - Constructed by first call to `hxinit` which happens when or
 /// before the system memory allocators construct.

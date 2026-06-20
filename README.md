@@ -20,6 +20,8 @@ when using `ccache` without precompiled headers. The compiler's budget for
 optimization isn't blown out by layers you don't normally need. Although
 intrinsics are available for that problem.
 
+<img src="libhatchet.jpg" alt="banner" width="200" height="200" align="right" hspace="20">
+
 A key property of this codebase is its embrace of clang's Undefined Behavior
 Sanitizer (UBSan), which enables developers to write pointer-centric C++ code
 while enjoying runtime checks comparable to managed languages. The
@@ -27,8 +29,6 @@ implementation maintains compatibility with all possible warning flags and
 sanitizers for both gcc and clang. Of course, asserts are also widely used. The
 implementation also avoids dynamic allocations except when initializing system
 allocators.
-
-<img src="libhatchet.jpg" alt="banner" width="400" height="400" align="right" hspace="20">
 
 ## Key Features
 
@@ -126,7 +126,7 @@ applications additional stacks would be required for streaming different
 resources. Different allocation strategies can also be added.
 
 Fancy tools like heaptrack can be used by disabling the memory manager with
-`-DHX_MEMORY_MANAGER_DISABLE`. Leak tracking is also built in.
+`-DHX_USE_MEMORY_MANAGER=0`. Leak tracking is also built in.
 
 `hxptr` is provided just in case you want a `std::unique_ptr` replacement.
 

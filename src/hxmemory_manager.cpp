@@ -64,8 +64,8 @@ hxattr_allocator(free) hxattr_hot hxattr_noexcept static void* hxmalloc_checked_
 	return t;
 }
 
-// HX_MEMORY_MANAGER_DISABLE. See hxsettings.h.
-#if !(HX_MEMORY_MANAGER_DISABLE)
+// HX_USE_MEMORY_MANAGER. See hxsettings.h.
+#if HX_USE_MEMORY_MANAGER
 
 // All pathways are thread-safe by default. In theory locking could be removed
 // if threads avoided sharing allocators, but I do not want to scare anyone.
@@ -577,7 +577,7 @@ size_t hxmemory_manager_leak_count(void) {
 }
 
 // ----------------------------------------------------------------------------
-#else // HX_MEMORY_MANAGER_DISABLE
+#else // !HX_USE_MEMORY_MANAGER
 
 extern "C"
 hxattr_noexcept void* hxmalloc(size_t size) {
@@ -617,4 +617,4 @@ size_t hxsystem_allocator_scope::get_current_allocation_count(void) const { retu
 
 size_t hxsystem_allocator_scope::get_current_bytes_allocated(void) const { return 0; }
 
-#endif // HX_MEMORY_MANAGER_DISABLE
+#endif // !HX_USE_MEMORY_MANAGER

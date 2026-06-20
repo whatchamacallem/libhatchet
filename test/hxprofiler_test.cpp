@@ -10,7 +10,7 @@
 
 #include <hx/hxtest.hpp>
 
-#if HX_PROFILE
+#if HX_USE_PROFILER
 
 namespace {
 
@@ -133,4 +133,4 @@ TEST(hxprofiler_test, write_to_chrome_tracing_command) {
 	hxprofiler_log();
 }
 
-#endif // HX_PROFILE
+#endif // HX_USE_PROFILER

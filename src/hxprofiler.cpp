@@ -6,7 +6,7 @@
 #include "../include/hx/hxconsole.hpp"
 #include "../include/hx/hxfile.hpp"
 
-#if HX_PROFILE
+#if HX_USE_PROFILER
 
 namespace {
 
@@ -111,4 +111,4 @@ void hxprofiler_internal_::write_to_chrome_tracing_(const char* filename) {
 
 } // hxdetail_
 
-#endif // HX_PROFILE
+#endif // HX_USE_PROFILER

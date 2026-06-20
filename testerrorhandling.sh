@@ -18,4 +18,4 @@ set -eu
 # Tests additional configuration options as well.
 echo "WARNING: These tests will spew errors and still return successfully."
 ./testmatrix.sh -DHX_TEST_ERROR_HANDLING=1 -DHX_USE_THREADS=0 \
-	'-DHX_MEMORY_MANAGER_DISABLE=(HX_HARDENING_MODE==HX_HARDENING_MODE_STANDARD)'
+	'-DHX_USE_MEMORY_MANAGER=(HX_HARDENING_MODE!=HX_HARDENING_MODE_STANDARD)'

@@ -7,7 +7,7 @@
 /// (`hxprofile_scope`, `hxprofile_scope_min` with optional cycle cutoffs).
 /// Allows exporting to Chrome's tracing format
 /// (`hxprofiler_write_to_chrome_tracing`). Profiling is enabled only if
-/// `HX_PROFILE` is defined.
+/// `HX_USE_PROFILER` is defined.
 ///
 /// | Macro | Purpose |
 /// | --- | --- |
@@ -37,7 +37,7 @@ extern "C" double emscripten_get_now(void);
 /// following include.
 using hxcycles_t = size_t;
 
-#if HX_PROFILE
+#if HX_USE_PROFILER
 #include "detail/hxprofiler_detail.hpp"
 /// \cond HIDDEN
 #define HX_PROFILE_ONLY_(x_) x_
@@ -55,7 +55,7 @@ static const double hxmicroseconds_per_cycle = 1.0e+6 / hxcycles_per_second;
 static const hxcycles_t hxdefault_cycles_cutoff = 1000;
 
 /// `hxtime_sample_cycles(void)` - Set up the processor cycle counter for your
-/// architecture. This is callable without enabling `HX_PROFILE`.
+/// architecture. This is callable without enabling `HX_USE_PROFILER`.
 inline hxcycles_t hxtime_sample_cycles(void);
 
 /// `hxprofile_scope(const char* label_string_literal)` - Declares an RAII-style
