@@ -44,8 +44,11 @@ concept hxconvertible_to = requires(from_t_ (&&from_)()) {
     requires requires { static_cast<to_t_>(from_()); };
 };
 
-// Used with the `->` return-type constraint syntax in requires-expressions to
-// enforce that a return type is exactly `to_t_` rather than merely convertible.
+/// `hxsame_as` - A concept that requires two types to be the same. Used with the
+/// `->` return-type constraint syntax in requires-expressions to enforce that a
+/// return type is exactly `to_t` rather than merely convertible.
+/// - `from_t` : The first type.
+/// - `to_t` : The second type.
 template<typename from_t_, typename to_t_>
 concept hxsame_as = hxis_same<from_t_, to_t_>::value;
 #endif
@@ -143,7 +146,6 @@ hxinline_constexpr hxhash_t hxhash_prime2_ = hxhash_t{0x85EBCA77u};
 hxinline_constexpr hxhash_t hxhash_prime3_ = hxhash_t{0xC2B2AE3Du};
 hxinline_constexpr hxhash_t hxhash_prime4_ = hxhash_t{0x27D4EB2Fu};
 hxinline_constexpr hxhash_t hxhash_prime5_ = hxhash_t{0x165667B1u};
-/// \endcond
 
 // xxhash32 avalanche: x ^= x >> 15, x *= prime2, x ^= x >> 13, x *= prime3, x ^= x >> 16.
 hxattr_nodiscard inline hxhash_t hxhash_avalanche_(hxhash_t x_) {
@@ -154,6 +156,7 @@ hxattr_nodiscard inline hxhash_t hxhash_avalanche_(hxhash_t x_) {
     x_ ^= x_ >> 16u;
     return x_;
 }
+/// \endcond
 
 /// `hxkey_hash(T)` - Returns the xxhash32 of a numeric value cast to 32 bits.
 /// Used by the base hash table node. Override for custom key types. Overrides

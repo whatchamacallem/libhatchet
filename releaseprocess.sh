@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 # This file is licensed under the terms of the LICENSE.md file.
 
-set -eu pipefail
+set -euo pipefail
 
 export LANG=C.UTF-8
 export LC_ALL=C.UTF-8
@@ -51,25 +51,20 @@ git checkout "$BRANCH"
 git reset --hard "$TARGET"
 git push --force
 
-# Regenerate Doxygen HTML and publish it to the gh-pages branch served by
-# GitHub Pages. The commit is built with a throwaway index and pushed by hash so
-# HEAD, the working tree and the reflog are never touched.
-PAGES_BRANCH="gh-pages"
-eval "$(grep OUTPUT_DIRECTORY Doxyfile | tr -d ' ')"
+# Publish docs to the gh-pages branch served by GitHub Pages. The commit
+# has no parent and the branch is purged afterwards.
 doxygen
-touch "$OUTPUT_DIRECTORY/.nojekyll"
+touch docs/.nojekyll
 GIT_INDEX_FILE=$(mktemp -u)
 export GIT_INDEX_FILE
-GIT_WORK_TREE="$OUTPUT_DIRECTORY" git add -A
-TREE=$(git write-tree)
-DOCS_COMMIT=$(git commit-tree "$TREE" -m "docs $TAG")
-git push --force origin "$DOCS_COMMIT:refs/heads/$PAGES_BRANCH"
+GIT_WORK_TREE="docs" git add -A
+DOCS_TREE_OBJECT=$(git write-tree)
+DOCS_COMMIT=$(git commit-tree "$DOCS_TREE_OBJECT" -m "docs $TAG")
+git push --force origin "$DOCS_COMMIT:refs/heads/gh-pages"
 rm -f "$GIT_INDEX_FILE"
 unset GIT_INDEX_FILE
-git update-ref -d "refs/remotes/origin/$PAGES_BRANCH" 2> /dev/null || true
+git update-ref -d "refs/remotes/origin/gh-pages" 2> /dev/null || true
 git prune --expire=now
-
-./clean.sh
 
 { set +o xtrace; } 2> /dev/null
 

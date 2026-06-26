@@ -185,10 +185,11 @@ public:
 	using node_t = node_t_;
 	using key_t = typename node_t_::key_t;
 
-	/// `const_iterator` - A forward iterator. Iteration is Θ(`n + (1 <<
-	/// table_size_bits)`). Iterators are only invalidated by the removal of the
-	/// `node_t` referenced. WARNING: The iterators will automatically convert
-	/// themselves to pointers when used in pointer context.
+	/// `const_iterator` - A forward iterator over the const elements of the
+	/// hash table. Iteration is Θ(`n + (1 << table_size_bits)`). Iterators are
+	/// only invalidated by the removal of the `node_t` referenced. WARNING: The
+	/// iterators will automatically convert themselves to pointers when used in
+	/// pointer context.
 	class const_iterator
 	{
 	public:

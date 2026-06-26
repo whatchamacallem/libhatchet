@@ -53,7 +53,7 @@ fi
 
 git fsck
 
-# Drop the gh-pages remote-tracking ref so its docs objects are pruned.
+# Delete the gh-pages GitHub Pages branch. Should not be required.
 git update-ref -d "refs/remotes/origin/gh-pages" 2> /dev/null || true
 
 git reflog expire --expire=24.hours.ago --expire-unreachable=24.hours.ago --all

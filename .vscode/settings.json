@@ -12,6 +12,7 @@
         "asan",
         "ascontiguousarray",
         "ASICs",
+        "AUTOBRIEF",
         "bitfield",
         "BOOTSEL",
         "bugprone",

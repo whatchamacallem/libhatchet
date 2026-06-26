@@ -16,15 +16,18 @@ HTML_EXTRA_STYLESHEET  = doxygen-awesome.css
 HTML_EXTRA_FILES       = doxygen-awesome.css
 HTML_OUTPUT            = .
 IMAGE_PATH             = .
+INCLUDE_FILE_PATTERNS  = *.h *.hpp *.inl
+INCLUDE_PATH           = include
 INPUT                  = include/hx/ README.md
 INPUT_FILTER           = "sed -E 's/\bT_\b/T/g'"
+JAVADOC_AUTOBRIEF      = YES
 MACRO_EXPANSION        = YES
 OUTPUT_DIRECTORY       = docs/
 PAGE_OUTLINE_PANEL     = NO
-PREDEFINED             = HX_DOXYGEN_PARSER=1
+PREDEFINED             = HX_DOXYGEN_PARSER=1 HX_CPLUSPLUS=202302L
 PROJECT_NAME           = "libhatchet"
 QUIET                  = YES
-REPEAT_BRIEF           = NO
+REPEAT_BRIEF           = YES
 SHOW_INCLUDE_FILES     = NO
 USE_MDFILE_AS_MAINPAGE = README.md
 WARN_AS_ERROR          = FAIL_ON_WARNINGS

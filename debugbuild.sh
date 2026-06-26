@@ -123,7 +123,8 @@ if [ "$OPT_GRIND" = "1" ]; then
 	fi
 fi
 
-BUILD="-DHX_USE_NAMESPACE=hx -DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG -DHX_USE_PROFILER=1"
+# Enable as much code as possible for the default build and run.
+BUILD="-DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG -DHX_USE_CONSOLE=2 -DHX_USE_PROFILER=1"
 build_hxtest
 
 # Show stats or save tokens.

@@ -22,7 +22,7 @@
 /// -  C++17: 201703L
 /// -  C++20: 202002L
 /// -  C++23: 202302L
-#define HX_CPLUSPLUS 202302L // Sets C++ version for Doxygen parser.
+#define HX_CPLUSPLUS 202302L // See Doxyfile.
 #elif defined __cplusplus
 #define HX_CPLUSPLUS __cplusplus
 #else
@@ -240,10 +240,10 @@
 
 #if !defined HX_USE_CONSOLE
 /// `HX_USE_CONSOLE` - Control whether the console is included in the build.
-/// C++20 is required to use the console.
-/// `0` - Disables the console. `1` - Enables the console.
-/// `2` - Enables the debug console. This allows executing files and modifying memory.
-#define HX_USE_CONSOLE ((HX_CPLUSPLUS >= 202002L) ? 2 : 0)
+/// C++20 is required to use the console. `0` - Disables the console. `1` -
+/// Enables the console. `2` - Enables the debug console. This allows executing
+/// files and modifying memory.
+#define HX_USE_CONSOLE ((HX_CPLUSPLUS >= 202002L) ? 1 : 0)
 #elif (HX_USE_CONSOLE) && HX_CPLUSPLUS && HX_CPLUSPLUS < 202002L
 #error The console requires C++20 or later.
 #endif
@@ -255,23 +255,21 @@
 #if !defined HX_USE_LOGGING
 /// `HX_USE_LOGGING` - Control whether logging statements are included in the
 /// build. Note: `hxlog_handler` is always available and is used by the asserts.
-/// `0` - Disables the logging macros.
-/// `1` - All logging except `hxlog`.
-/// `2` - All logging including `hxlog`. This is the default.
+/// `0` - Disables the logging macros. `1` - All logging except `hxlog`. `2` -
+/// All logging including `hxlog`. This is the default.
 #define HX_USE_LOGGING 2
 #endif
 
 #if !defined HX_USE_FILE_IO
 /// `HX_USE_FILE_IO` - Select if `hxfile` exists and if it uses C file I/O or
-/// POSIX I/O. `stdout` is used for logging even when `hxfile` is disabled.
-/// `0` - Disables hxfile. `1` - C file I/O. `2` - POSIX file I/O.
+/// POSIX I/O. `stdout` is used for logging even when `hxfile` is disabled. `0`
+/// - Disables hxfile. `1` - C file I/O. `2` - POSIX file I/O.
 #define HX_USE_FILE_IO 1
 #endif
 
 #if !defined HX_USE_PROFILER
-/// `HX_USE_PROFILER` - Enable this to use the profiler.
-/// - `0` Disables code for capturing profiling data.
-/// - `1` Compiles in code. See `hxprofile_scope`.
+/// `HX_USE_PROFILER` - Enable this to use the profiler. - `0` Disables code for
+/// capturing profiling data. - `1` Compiles in code. See `hxprofile_scope`.
 #define HX_USE_PROFILER 0
 #endif
 
@@ -284,9 +282,8 @@
 #if !defined HX_USE_MEMORY_MANAGER
 /// `HX_USE_MEMORY_MANAGER` - Used to disable memory management for debugging
 /// and for platforms like wasm where extra system allocations are probably
-/// cheaper than code size.
-/// - `0` : normal target operation
-/// - `1` : remove code entirely
+/// cheaper than code size. - `0` : normal target operation - `1` : remove code
+/// entirely
 #define HX_USE_MEMORY_MANAGER 1
 #endif
 

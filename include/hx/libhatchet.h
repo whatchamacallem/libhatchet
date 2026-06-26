@@ -4,10 +4,10 @@
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
 /// \file
-/// libhatchet. Requires C99 for C. C++11 is minimum for C++. Utilizes language
-/// features up to C++20. Inclusion on the compiler search path is not required.
-/// However, the headers are intended to be included as follows: `#include
-/// <hx/libhatchet.h>`
+/// Provides core macros, memory management and feature detection. Requires C99
+/// for C. C++11 is minimum for C++. Utilizes language features up to C++20.
+/// Inclusion on the compiler search path is not required. However, the headers
+/// are intended to be included as follows: `#include <hx/libhatchet.h>`
 ///
 /// Defines logging macros `hxlog`, `hxlog_release`, `hxlog_console`,
 /// `hxlog_warning` which vary by `HX_USE_LOGGING` and defines log verbosity
@@ -33,10 +33,10 @@
 
 /// `int LIBHATCHET_VER` - One digit major, and two digit minor and patch
 /// versions.
-#define LIBHATCHET_VER 14311
+#define LIBHATCHET_VER 14312
 
 /// `LIBHATCHET_TAG` - Major, minor and patch version tag name.
-#define LIBHATCHET_TAG "v1.43.11"
+#define LIBHATCHET_TAG "v1.43.12"
 
 #if !defined HX_HARDENING_MODE
 /// `HX_HARDENING_MODE` - Library hardening level. See the README.md for levels.

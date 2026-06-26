@@ -48,6 +48,7 @@ else()
 
 	# Turn on everything so Clang-Tidy sees it.
 	target_compile_definitions(hxtest PRIVATE HX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG)
+	target_compile_definitions(hxtest PRIVATE HX_USE_CONSOLE=2)
 	target_compile_definitions(hxtest PRIVATE HX_USE_PROFILER=1)
 
 	if(MSVC)
