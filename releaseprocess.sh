@@ -62,8 +62,7 @@ GIT_INDEX_FILE=$(mktemp -u)
 export GIT_INDEX_FILE
 GIT_WORK_TREE="$OUTPUT_DIRECTORY" git add -A
 TREE=$(git write-tree)
-PAGES_PARENT=$(git ls-remote origin "refs/heads/$PAGES_BRANCH" | cut -f1)
-DOCS_COMMIT=$(git commit-tree "$TREE" ${PAGES_PARENT:+-p "$PAGES_PARENT"} -m "docs $TAG")
+DOCS_COMMIT=$(git commit-tree "$TREE" -m "docs $TAG")
 git push --force origin "$DOCS_COMMIT:refs/heads/$PAGES_BRANCH"
 rm -f "$GIT_INDEX_FILE"
 unset GIT_INDEX_FILE

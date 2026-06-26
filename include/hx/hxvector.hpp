@@ -23,17 +23,17 @@ HX_NS_BEGIN_
 
 #if HX_CPLUSPLUS >= 202002L
 
-/// `hxarray_concept_` - Concept smoke testing the `hxvector` element. Any kind
+/// `hxvector_concept` - Concept smoke testing the `hxvector` element. Any kind
 /// of constructor or assignment operator may or may not be required depending
 /// on use. All operator usage should be reasonably predictable. Only the
 /// destructor is explicitly required.
 template<typename T_>
-concept hxarray_concept_ = requires(T_& x_) {
+concept hxvector_concept_ = requires(T_& x_) {
 	sizeof(T_);
 	{ x_.~T_() };
 };
 #else
-#define hxarray_concept_ typename
+#define hxvector_concept_ typename
 #endif
 
 /// \cond HIDDEN
@@ -80,7 +80,7 @@ private:
 /// excessive number of operators is due to the rules about default operators.
 /// - `T` : Element type stored by the array.
 /// - `capacity` : Maximum element count or `hxallocator_dynamic_capacity` for dynamic storage.
-template<hxarray_concept_ T_, hxsize_t capacity_=hxallocator_dynamic_capacity>
+template<hxvector_concept_ T_, hxsize_t capacity_=hxallocator_dynamic_capacity>
 class hxvector : private hxallocator<T_, capacity_> {
 public:
 	/// Random access iterator.

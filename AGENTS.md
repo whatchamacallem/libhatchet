@@ -174,18 +174,21 @@ to debug instead.
 
 Update documentation independently only when making changes that obsolete it. Do
 not add documentation describing reasons for making changes, e.g. instructions
-given, issues resolved or bugs fixed. Remove trailing `_` from symbols in
-doxygen comments and leave them in regular comments and follow existing style
-otherwise. Do not use `;` or `-` in documentation unless it is part of a code
-block or the doxygen formatting shown below. Documentation will be explicitly
-requested when the design is final. Usage examples in documentation are not
-expected to follow the preceding rules and are instead examples of code written
+given, issues resolved or bugs fixed. Documentation will be explicitly requested
+when the design is final. Usage examples in documentation are not expected to
+follow the preceding rules and are instead examples of code written
 independently outside of the project. Put comments on preceding lines instead of
 on the same line as code.
 
 Describe only the expectation enforced by asserts in documentation instead of
 explicitly describing the asserts themselves. If the assert just enforces a
 routine invariant then do not document it at all.
+
+Remove trailing `_` from symbols in doxygen comments and leave them in regular
+comments and follow existing style otherwise. Do not use `;` or `-` in
+documentation unless it is part of a code block or the doxygen formatting shown
+below. Keep all documentation ASCII. Use `/// \cond HIDDEN` blocks around all
+internal symbols.
 
 Wrap all documentation except parameter documentation at 80 columns. Begin
 function documentation by describing the return value on the stack if not

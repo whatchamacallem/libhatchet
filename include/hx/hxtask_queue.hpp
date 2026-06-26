@@ -130,6 +130,7 @@ public:
 	void wait_for_all(void);
 
 private:
+	/// \cond HIDDEN
 	hxtask_queue(const hxtask_queue&) = delete;
 	void operator=(const hxtask_queue&) = delete;
 
@@ -165,6 +166,7 @@ private:
 #else
 #define hxtask_queue_lock_ ((void)0)
 #endif
+	/// \endcond
 };
 
 #include "detail/hxtask_queue.inl"

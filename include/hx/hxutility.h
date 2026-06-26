@@ -56,10 +56,12 @@ template<bool condition_, typename type_=void> struct hxenable_if_ { };
 template<typename type_> struct hxenable_if_<true, type_> { using type = type_; };
 /// \endcond
 
+/// \cond HIDDEN
 /// `hxenable_if_t<condition>` - Implements `std::enable_if_t`. This is available
 /// instead of the `requires` keyword when backwards compatibility is required.
 template<bool condition_, typename type_=void>
 using hxenable_if_t = typename hxenable_if_<condition_, type_>::type;
+/// \endcond
 
 /// `hxnullptr_t` - A class that will only convert to a null `T` pointer. Useful
 /// when an integer constant arg would be ambiguous or otherwise break template

@@ -21,17 +21,17 @@ HX_NS_BEGIN_
 
 #if HX_CPLUSPLUS >= 202002L
 
-/// Concept smoke testing the `hxarray` element. Any kind of constructor or
-/// assignment operator may or may not be required depending on use. All
-/// operator usage should be reasonably predictable. Only the destructor is
-/// explicitly required.
+/// `hxarray_concept` - Concept smoke testing the `hxarray` element. Any kind of
+/// constructor or assignment operator may or may not be required depending on
+/// use. All operator usage should be reasonably predictable. Only the
+/// destructor is explicitly required.
 template<typename T_>
-concept hxarray_element_concept_ = requires(T_& x_) {
+concept hxarray_concept_ = requires(T_& x_) {
 	sizeof(T_);
 	{ x_.~T_() };
 };
 #else
-#define hxarray_element_concept_ typename
+#define hxarray_concept_ typename
 #endif
 
 /// `hxarray` - Implements `std::array` with a few things added. It also
@@ -50,7 +50,7 @@ concept hxarray_element_concept_ = requires(T_& x_) {
 /// - `T` : Element type stored by the array.
 /// - `capacity` : Fixed element count or `hxallocator_dynamic_capacity` for
 ///   heap-allocated storage set once by `reserve`.
-template<hxarray_element_concept_ T_, hxsize_t capacity_=hxallocator_dynamic_capacity>
+template<hxarray_concept_ T_, hxsize_t capacity_=hxallocator_dynamic_capacity>
 class hxarray : private hxallocator<T_, capacity_> {
 public:
 	/// `iterator` - Random access iterator.

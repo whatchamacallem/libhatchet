@@ -17,6 +17,7 @@ HTML_EXTRA_FILES       = doxygen-awesome.css
 HTML_OUTPUT            = .
 IMAGE_PATH             = .
 INPUT                  = include/hx/ README.md
+INPUT_FILTER           = "sed -E 's/\bT_\b/T/g'"
 MACRO_EXPANSION        = YES
 OUTPUT_DIRECTORY       = docs/
 PAGE_OUTLINE_PANEL     = NO

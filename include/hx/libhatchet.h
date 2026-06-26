@@ -33,10 +33,10 @@
 
 /// `int LIBHATCHET_VER` - One digit major, and two digit minor and patch
 /// versions.
-#define LIBHATCHET_VER 14310
+#define LIBHATCHET_VER 14311
 
 /// `LIBHATCHET_TAG` - Major, minor and patch version tag name.
-#define LIBHATCHET_TAG "v1.43.10"
+#define LIBHATCHET_TAG "v1.43.11"
 
 #if !defined HX_HARDENING_MODE
 /// `HX_HARDENING_MODE` - Library hardening level. See the README.md for levels.
@@ -240,9 +240,11 @@ inline constexpr hxhash_t hxhash_bits = 32u;
 /// `hxinit_internal` - Internal. Use `hxinit` instead. It checks `hxg_init_ver_`.
 void hxinit_internal(int version_) hxattr_cold;
 
-/// `hxg_init_ver_` - Internal. Set to the current library version by `hxinit`.
-/// It is zero when the platform has not been initialized.
+/// \cond HIDDEN
+// `hxg_init_ver_` - Internal. Set to the current library version by `hxinit`.
+// It is zero when the platform has not been initialized.
 extern int hxg_init_ver_;
+/// \endcond
 
 /// `hxshutdown` - Terminates service. Releases all resources acquired by the
 /// platform and confirms all memory allocations have been released.
@@ -274,7 +276,7 @@ hxattr_noreturn void hxexit(int status_) hxattr_noexcept hxattr_cold;
 } // extern "C"
 #endif
 
-/// \cond INTERNAL
+/// \cond HIDDEN
 // WARNING: gcc version 13 was reporting the wrong __cplusplus for C++23.
 #if HX_CPLUSPLUS >= 202302L
 // This allows hxassert_handler and hxlog_handler to be used by compile time

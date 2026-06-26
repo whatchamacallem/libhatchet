@@ -51,7 +51,7 @@ for ARG in "$@"; do
 done
 
 # Clear the output window when building from the editor.
-if [ "$OPT_HEADLESS" = "0" ] && [ "$OPT_RUN" = "0" ] && [ -z "${CLAUDE_CODE:-}" ]; then
+if [ "$OPT_HEADLESS" = "0" ] && [ "$OPT_RUN" = "0" ] && [ -z "${CLAUDECODE:-}" ]; then
 	export TERM=xterm-256color
 	clear
 fi
@@ -82,6 +82,9 @@ build_hxtest() {
 
 if [ "$OPT_GRIND" = "1" ]; then
 	COUNT=1
+	SPINNER_STATE=0
+	set -- "[    ]" "[#   ]" "[##  ]" "[### ]" "[####]" "[ ###]" "[  ##]" "[   #]"
+
 	for NAMESPACE in "" -DHX_USE_NAMESPACE=hx; do
 	for CONSOLE   in 0 1 2;  do
 	for FILE_IO   in 0 1 2;  do
@@ -106,7 +109,8 @@ if [ "$OPT_GRIND" = "1" ]; then
 		[ -n "$THREADS"   ] && BUILD="$BUILD -DHX_USE_THREADS=$THREADS"
 
 		if [ "$OPT_HEADLESS" = "1" ]; then
-			printf "$COUNT "
+			SPINNER_STATE=$(((SPINNER_STATE % 8) + 1))
+			eval "printf '\\r%s' \"\${$SPINNER_STATE}\""
 		else
 			echo "[$COUNT] $BUILD"
 		fi
@@ -115,7 +119,7 @@ if [ "$OPT_GRIND" = "1" ]; then
 	done; done; done; done; done; done; done; done
 
 	if [ "$OPT_HEADLESS" = "1" ]; then
-		printf "\n"
+		printf "\r      \r"
 	fi
 fi
 
@@ -123,7 +127,7 @@ BUILD="-DHX_USE_NAMESPACE=hx -DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG -DHX_US
 build_hxtest
 
 # Show stats or save tokens.
-if [ "$OPT_HEADLESS" = "0" ] && [ -z "${CLAUDE_CODE:-}" ]; then
+if [ "$OPT_HEADLESS" = "0" ] && [ -z "${CLAUDECODE:-}" ]; then
 	ccache --show-stats
 fi
 

@@ -1,8 +1,5 @@
 {
   "respectGitignore": true,
-  "env": {
-    "CLAUDE_CODE": "1"
-  },
   "permissions": {
     "allow": [
       "Bash(*)",
