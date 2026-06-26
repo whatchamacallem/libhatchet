@@ -1,6 +1,6 @@
 # libhatchet
 
-Please use the most recent tagged release. It has been exhaustively tested.
+Please use the most recent [tagged release](https://github.com/whatchamacallem/libhatchet). It has been exhaustively tested.
 
 ## Overview
 
@@ -30,10 +30,9 @@ system allocators.
 
 ## Key Features
 
-- **Library hardening and asserts** are controlled via `HX_HARDENING_MODE`.
-
-  E.g. usage is `-DHX_HARDENING_MODE=HX_HARDENING_MODE_STANDARD`. See
-  `libhatchet.h` for the different kinds of asserts available. Note: Checks
+- **Library hardening and asserts** are controlled via `HX_HARDENING_MODE`. E.g.
+  usage is `-DHX_HARDENING_MODE=HX_HARDENING_MODE_STANDARD`. See
+  `<hx/libhatchet.h>` for the different kinds of asserts available. Note: Checks
   against `null` are only provided at the debug level of hardening.
 
   - `HX_HARDENING_MODE_NONE`: Omits library hardening and disables all asserts.
@@ -81,7 +80,7 @@ system allocators.
   and poor cache coherence. If those are not your concerns, consider using
   additional libraries. No tree data structures will be provided. For efficiency
   reasons exceptions are not supported and therefore `noexcept` is widely
-  applied to defend against data loss due to their unexpected use.
+  applied to defend against data loss due to the unexpected use of exceptions.
 
   There are two array classes that both support two allocation modes:
 
@@ -95,12 +94,12 @@ system allocators.
   See the headers at [include/hx/](include/hx/) for the remaining containers.
   They generally use the same names as the standard.
 
-- **Pretty Printers** Implements GDB-compatible pretty printers, enabling
+- **Pretty Printers**: Implements GDB-compatible pretty printers, enabling
   debuggers and most code editors to display container contents in a
   human-readable format.
 
 - **Algorithms**: `hxradix_sort` is provided for Θ(n) sorting. See
-  `<hx/hxalgorithm.h>` for standard algorithms and comparison based sorting and
+  `<hx/hxalgorithm.hpp>` for standard algorithms and comparison based sorting and
   lookup.
 
 - **Performance Focus**: This is systems code. Everything has to be well
@@ -137,7 +136,7 @@ The markdown source for the documentation is in the header files at
 `include/hx/` and is also readable as-is. The stylesheet was tested with Doxygen
 1.15.0.
 
-Reading `include/hx/settings.h` is recommended. There are a number of important
+Reading `<hx/hxsettings.h>` is recommended. There are a number of important
 things that can be configured on the compiler command line. E.g. whether or not
 the library is wrapped in a namespace.
 
@@ -146,14 +145,14 @@ the library is wrapped in a namespace.
 This project was started for the author's own personal use, and it tries to be
 complete enough for ordinary C++ programmers. It was started before a lot of
 similar functionality was added to the standard. However, if you find something
-missing, odds are your favorite AI already knows how add it, or it was omitted
-because the C library was deemed sufficient.
+missing, odds are your favorite AI already knows how to add it, or it was
+omitted because the C library was deemed sufficient.
 
 That said, some functionality of the C++ standard library is not worth
 reimplementing here. If you need these things you are advised to use the
 standard library shipped with your compiler.
 
-- Atomics. The C version of `<stdatomic.h>` is incompatible with gcc++.
+- Atomics. The C version of `<stdatomic.h>` is incompatible with g++.
 - Iterators Library. This codebase intentionally deemphasizes iterators.
 - Ranges Library. This would be a large and pointless rewrite.
 - Strings Library. These are allocation intensive. See the `{fmt}` project.

@@ -11,12 +11,12 @@ import traceback
 #	template<typename T_, hxsize_t fixed_capacity_>
 #	class hxallocator {
 #		// ...
-#		T_ m_data_[fixed_capacity_];
+#		alignas(T_) char m_data_[fixed_capacity_ * hxsizeof<T_>()];
 #	};
 #	template<typename T_>
 #	class hxallocator<T_, 0> {
 #		// ...
-#		int m_capacity_;
+#		hxsize_t m_capacity_;
 #		T_* m_data_;
 #	};
 #	template<typename T_, hxsize_t capacity_=0>
@@ -52,7 +52,8 @@ class HxArrayPrinter:
 					return '<unallocated>'
 				raw_data = int(data)
 			else:
-				# Static capacity: m_data_ is an inline array.
+				# Static capacity: m_data_ is an inline char array whose
+				# address is the element buffer base.
 				capacity = int(targ1)
 				if capacity <= 0:
 					return '<invalid capacity>'

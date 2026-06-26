@@ -33,7 +33,7 @@ the error fixed.
 Add code like you are adding weight to an airplane. Use K&R style. Use tabs of
 size 4 instead of spaces.
 
-This is a bespoke C17/C++20 alternative to the C++ standard library. Never use
+This is a bespoke C17/C++23 alternative to the C++ standard library. Never use
 the `std` namespace. The ranges library should not be implemented and do not go
 looking for a `std::span` equivalent. Symbols starting with `hx` that have the
 same name as symbols in the standard library are generally functionally
@@ -44,8 +44,8 @@ functionality is often available. Prefer `hxsize_t` which is an alias for
 Do not use C++ exceptions, RTTI or assume asserts are enabled. Check when adding
 includes whether they are redundant and write them as `<stdio.h>` not
 `<cstdio>`. Generously use `hxassertmsg` for debug asserts and `hxassert_harden`
-for release asserts. Declare and define functions with no args as `void x(void)`
-instead of `void x()`.
+for release asserts. Declare and define functions (except destructors) with no
+args as `void x(void)` instead of `void x()`.
 
 Read `.clang-tidy` when writing new code as it is in use and C-style casts are
 not allowed. The rules are only checked by `testcmake.sh` and are not checked by

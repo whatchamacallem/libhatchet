@@ -10,7 +10,7 @@
 
 HX_NS_USE
 
-TEST(hxhxalgorithm_test, hxmerge_iterator_support) {
+TEST(hxalgorithm_test, hxmerge_iterator_support) {
 	hxtest_ref_tracker_t left[3] = { hxtest_ref_tracker_t(1), hxtest_ref_tracker_t(3), hxtest_ref_tracker_t(5) };
 	hxtest_ref_tracker_t right[3] = { hxtest_ref_tracker_t(2), hxtest_ref_tracker_t(4), hxtest_ref_tracker_t(6) };
 	hxtest_ref_tracker_t dest[6] = {
@@ -43,7 +43,7 @@ TEST(hxhxalgorithm_test, hxmerge_iterator_support) {
 	}
 }
 
-TEST(hxhxalgorithm_test, hxbinary_search_iterator_support) {
+TEST(hxalgorithm_test, hxbinary_search_iterator_support) {
 	hxtest_ref_tracker_t values[7] = {
 		hxtest_ref_tracker_t(-5), hxtest_ref_tracker_t(-1), hxtest_ref_tracker_t(0), hxtest_ref_tracker_t(3),
 		hxtest_ref_tracker_t(5), hxtest_ref_tracker_t(8), hxtest_ref_tracker_t(12)

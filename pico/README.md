@@ -2,7 +2,7 @@
 
 Builds and runs the libhatchet test suite on a Raspberry Pi Pico 2, streaming
 results over USB serial. It should work on the Pi Pico 1 although a couple of
-the tests may need to be modified to use less emory.
+the tests may need to be modified to use less memory.
 
 You may need to customize the environment variables at the top of
 `./libhatchet_flash_pico.sh` before this works for you.

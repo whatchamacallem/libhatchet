@@ -25,7 +25,7 @@ static int run_all_tests(void) {
     return (tests_failing == 0u) ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
-int main() {
+int main(void) {
     stdio_init_all();
 
     while (!stdio_usb_connected()) {

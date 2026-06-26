@@ -41,11 +41,19 @@ class HxDequePrinter:
 
 			elem_type = self.val.type.template_argument(0)
 
+			# Static capacity stores m_data_ as an inline char array so its
+			# address is the buffer base. Dynamic capacity stores m_data_ as a
+			# pointer whose value is the buffer base.
+			if int(self.val.type.template_argument(1)) == 0:
+				data_addr = int(self.val['m_data_'])
+			else:
+				data_addr = int(self.val['m_data_'].address)
+
 			self._count = count
 			self._capacity = capacity
 			self._mask = mask
 			self._head = int(self.val['m_head_'])
-			self._data_addr = int(self.val['m_data_'].address)
+			self._data_addr = data_addr
 			self._elem_type = elem_type
 
 			basename = f'{elem_type}'.split(':')[-1]

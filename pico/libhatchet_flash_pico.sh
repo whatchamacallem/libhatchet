@@ -4,7 +4,7 @@
 # This file is licensed under the terms of the LICENSE.md file.
 #
 # Build the libhatchet test suite for Pico 2, flash it, then stream serial output.
-# Run with: ./flash_libhatchet.sh [--port /dev/ttyACM0] [--board pico2]
+# Run with: ./libhatchet_flash_pico.sh [--port /dev/ttyACM0] [--board pico2]
 set -euo pipefail
 
 # These need to be configured to your install directories:
@@ -103,7 +103,7 @@ fi
 sleep 0.5
 
 if [[ -z "$PORT" ]] || [[ ! -e "$PORT" ]]; then
-    die "No serial port found. Try: ./flash_hatchet.sh --port /dev/ttyACM0"
+    die "No serial port found. Try: ./libhatchet_flash_pico.sh --port /dev/ttyACM0"
 fi
 
 ok "Serial port: $PORT at ${BAUD} baud."

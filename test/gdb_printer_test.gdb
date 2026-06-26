@@ -5,7 +5,7 @@
 # GDB batch script to smoke-test the pretty printers against the real hxtest
 # binary. Run from the build directory:
 #
-#   gdb -batch -x ../test/test_printers.gdb hxtest
+#   gdb -batch -x ../test/gdb_printer_test.gdb hxtest
 
 source ../gdb/hxarray_printer.py
 source ../gdb/hxbitset_printer.py
