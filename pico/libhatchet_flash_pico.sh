@@ -18,7 +18,7 @@ BOARD="${BOARD:-pico2}"
 BAUD="${BAUD:-115200}"
 PORT="${PORT:-}"
 
-# ── argument parsing ───────────────────────────────────────────────────────────
+# -- Argument Parsing -----------------------------------------------------------
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --port)  PORT="$2";  shift 2 ;;
@@ -28,7 +28,7 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# ── helpers ────────────────────────────────────────────────────────────────────
+# -- Helpers --------------------------------------------------------------------
 info()  { echo -e "\033[1;34m[INFO]\033[0m  $*"; }
 ok()    { echo -e "\033[1;32m[OK]\033[0m    $*"; }
 warn()  { echo -e "\033[1;33m[WARN]\033[0m  $*"; }
@@ -36,12 +36,12 @@ die()   { echo -e "\033[1;31m[ERROR]\033[0m $*" >&2; exit 1; }
 
 require() { command -v "$1" &>/dev/null || die "Required tool not found: $1"; }
 
-# ── pre-flight checks ──────────────────────────────────────────────────────────
+# -- Pre-Flight Checks ----------------------------------------------------------
 require cmake
 require arm-none-eabi-gcc
 require picotool
 
-# ── 1. build ───────────────────────────────────────────────────────────────────
+# -- 1. Build -------------------------------------------------------------------
 info "Cleaning build directory ..."
 rm -rf "$BUILD_DIR"
 
@@ -61,7 +61,7 @@ UF2="$BUILD_DIR/libhatchet_test_pico.uf2"
 [[ -f "$UF2" ]] || die "Build succeeded but $UF2 not found."
 ok "Build complete: $UF2"
 
-# ── 2. flash ───────────────────────────────────────────────────────────────────
+# -- 2. Flash -------------------------------------------------------------------
 info "Looking for Pico 2 in BOOTSEL mode ..."
 
 TIMEOUT=30
@@ -69,10 +69,8 @@ ELAPSED=0
 while ! picotool info &>/dev/null; do
     if [[ $ELAPSED -eq 0 ]]; then
         warn "No Pico found in BOOTSEL mode."
-        echo ""
-        echo "  ► Hold the BOOTSEL button on the Pico 2, plug in USB, then release."
-        echo "  ► Waiting up to ${TIMEOUT}s ..."
-        echo ""
+        echo " - Hold the BOOTSEL button on the Pico 2, plug in USB, then release."
+        echo " - Waiting up to ${TIMEOUT}s ..."
     fi
     sleep 1
     (( ELAPSED++ ))
@@ -85,9 +83,9 @@ ok "Pico detected. Flashing ..."
 picotool load -f "$UF2"
 picotool reboot
 
-ok "Flash complete — Pico is rebooting."
+ok "Flash complete. Pico is rebooting."
 
-# ── 3. find serial port ────────────────────────────────────────────────────────
+# -- 3. Find Serial Port --------------------------------------------------------
 if [[ -z "$PORT" ]]; then
     info "Waiting for serial port to appear ..."
     for i in $(seq 1 150); do

@@ -186,5 +186,4 @@ void hxintro_sort_(iterator_t_ begin_, iterator_t_ end_, const less_t_& less_, i
 }
 
 } // namespace hxdetail_ {
-
 #endif // HX_DOXYGEN_PARSER

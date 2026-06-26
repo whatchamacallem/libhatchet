@@ -9,7 +9,7 @@ instead consider redesign, rewriting, and updating as preferred to maintaining
 existing design, code and documentation whenever that reduces complexity and
 aligns with requests. Existing code, documentation and tests may have been
 recently written in an entirely exploratory mode, and therefore preserving it
-may actually hinder elegant design and implementation.
+can hinder intended design and implementation.
 
 When asked to update documentation or tests assume existing bug free code is
 correct when it conflicts with documentation or tests. If bugs or compile errors
@@ -20,6 +20,13 @@ correct. Do not enshrine bugs in tests or documentation.
 Do not add features or functionality that has not been explicitly requested. If
 additional functionality is advisable present the user with a numbered list.
 Always number separate items in any analysis so they are easy referenced.
+
+Do not create or modify git commits unless asked. Assume git commits indicate
+intent instead of being in error. Make a checklist for any multi-step task. E.g.
+when a change touches two different places.
+
+If the prompt is only an error message or warning assume it is a request to have
+the error fixed.
 
 ## Style Guide
 
@@ -45,8 +52,8 @@ not allowed. The rules are only checked by `testcmake.sh` and are not checked by
 `vscode`. Declare local variables `const` when they are not modified. Prefer
 `1000u` to `(size_t)1000`.
 
-Do not write simple one line helper functions. Except prefer delegating
-constructors over repeating field initializers. Do not write code that requires
+Do not add unrequested private helper methods to a class. Except prefer
+delegating constructors over repeating field initializers. Do not write code that requires
 unnecessary traversal of data structures in the debugger watch window.
 
 Do not use defensive programming or guard against mistakes. Never implement
@@ -64,15 +71,19 @@ Separate code onto individual lines when it helps step through expressions
 individually in the debugger. Use references instead of pointers when a pointer
 would never be null.
 
-Make any function or operator implementation that will not fit on one line in
-100 chars an out of line implementation that goes after the class body.
-Alphabetize all the functions, keeping operators first. Place the opening brace
+Alphabetize all class methods, keeping operators first. Place the opening brace
 of a function body on the same line as the function signature. When creating a
 new class do not use global operators and use class methods instead.
 
 When using the C library use C-style headers and not the C++ wrappers around
 them. E.g. use `<math.h>` not `<cmath>`. The goal is to be able to compile
 against libc alone without using the C++ standard library at all.
+
+## Inline Files
+
+Create a new `detail/*.inl` for any new class that has its own `.hpp` header.
+When there is an `.inl` file, create out of line definitions for all member
+functions that do not fit on a single line within 100 chars.
 
 ## Naming
 
@@ -84,12 +95,13 @@ code and template metaprogramming. Never use the word "member" and instead use
 
 Classes, structs and functions begin with `hx` and not `hx_`. Template
 parameters are `snake_case` and end with `_t_`. `using` statements may publish
-template parameters and other types with an `_t` suffix in violation of POSIX
-2.2.2. Function parameters and private fields do not begin with `hx` and end
-with an underscore. Private fields begin with `m_`. Global variables start with
-`hxg_` and static or anonymous namespace variables start with `hxs_`. Prefix
-calls to the C standard library with `::` to indicate they are in the global
-namespace. Use `src_` and `dst_` for source and destination iterators.
+template parameters and other types with an `_t` suffix (in violation of POSIX
+chapter 2, section 2.2.2). Function parameters and private fields do not begin
+with `hx` and end with an underscore. Private fields begin with `m_`. Global
+variables start with `hxg_` and static or anonymous namespace variables start
+with `hxs_`. Prefix calls to the C standard library with `::` to indicate they
+are in the global namespace. Use `src_` and `dst_` for source and destination
+iterators.
 
 Prefix all calls to methods in header files with `this->`.
 
@@ -155,7 +167,8 @@ build with `debugbuild.sh` without `--run`. Then run GDB in batch mode passing
 directory as the working directory to avoid polluting the unstaged changes. Both
 `hxassert()` and `hxbreakpoint()` will raise `SIGTRAP` and can be added
 temporarily to stop execution at a specific point. Do not look for a core dump
-on WSL as cores are discarded.
+on WSL as cores are discarded. If `ptrace` is not allowed then make a core dump
+to debug instead.
 
 ## Documentation
 
@@ -172,7 +185,7 @@ on the same line as code.
 
 Describe only the expectation enforced by asserts in documentation instead of
 explicitly describing the asserts themselves. If the assert just enforces a
-routine invariant than do not document it at all.
+routine invariant then do not document it at all.
 
 Wrap all documentation except parameter documentation at 80 columns. Begin
 function documentation by describing the return value on the stack if not
@@ -190,7 +203,7 @@ Do not reorder major sections of code unless asked. This codebase does not put
 translation unit local declarations and definitions close to where they are used
 but instead places them near the top of the file to be immediately visible to
 reviewers. E.g. at most one anonymous namespace at the top of a translation unit
-should normally be needed to hold all  local definitions.
+should normally be needed to hold all local definitions.
 
 Do not add section dividers e.g. `// ------`. All text files must end with a
 single `\n`.

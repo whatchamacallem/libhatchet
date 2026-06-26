@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file hxoptional.hpp An optional value type.
+/// \file
+/// An optional value type.
 
 #include "libhatchet.h"
 
@@ -44,6 +45,8 @@ hxinline_constexpr hxnullopt_t hxnullopt{0};
 template<typename T_>
 class hxoptional {
 public:
+	/// `value_type` - Publishes the contained value type. Doesn't end with `_t`
+	/// because of the standard.
 	using value_type = T_;
 
 	/// Constructs a disengaged `hxoptional`.
@@ -191,5 +194,4 @@ hxoptional<hxremove_cvref_t<T_>> hxmake_optional(T_&& value_) {
 }
 
 #include "detail/hxoptional.inl"
-
 HX_NS_END_

@@ -218,6 +218,11 @@ T_* hxarray<T_, capacity_>::binary_search(const T_& value_) {
 }
 
 template<hxarray_element_concept_ T_, hxsize_t capacity_>
+hxsize_t hxarray<T_, capacity_>::capacity(void) const {
+	return hxallocator<T_, capacity_>::capacity();
+}
+
+template<hxarray_element_concept_ T_, hxsize_t capacity_>
 bool hxarray<T_, capacity_>::equal(const hxarray& x_) const {
 	const hxsize_t n_ = this->capacity();
 	if(n_ != x_.capacity()) { return false; }

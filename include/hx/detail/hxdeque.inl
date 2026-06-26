@@ -64,6 +64,11 @@ const T_& hxdeque<T_, capacity_>::back(void) const {
 }
 
 template<typename T_, hxsize_t capacity_>
+hxsize_t hxdeque<T_, capacity_>::capacity(void) const {
+	return hxallocator<T_, capacity_>::capacity();
+}
+
+template<typename T_, hxsize_t capacity_>
 void hxdeque<T_, capacity_>::clear(void) noexcept {
 	T_* const data_ = this->data();
 	for(hxsize_t i_ = 0; i_ < m_count_; ++i_) {

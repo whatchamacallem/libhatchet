@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file hxarray.hpp Implements `std::array` with a few things added and a few
-/// unimplemented.
+/// \file
+/// Implements `std::array` with a few things added and a few unimplemented.
 
 #include "libhatchet.h"
 
@@ -51,15 +51,16 @@ concept hxarray_element_concept_ = requires(T_& x_) {
 /// - `capacity` : Fixed element count or `hxallocator_dynamic_capacity` for
 ///   heap-allocated storage set once by `reserve`.
 template<hxarray_element_concept_ T_, hxsize_t capacity_=hxallocator_dynamic_capacity>
-class hxarray : public hxallocator<T_, capacity_> {
+class hxarray : private hxallocator<T_, capacity_> {
 public:
-	/// Random access iterator.
+	/// `iterator` - Random access iterator.
 	using iterator = T_*;
 
-	/// Const random access iterator.
+	/// `const_iterator` - Const random access iterator.
 	using const_iterator = const T_*;
 
-	/// Publishes the value type. Doesn't end with `_t` because of the standard.
+	/// `value_type` - Publishes the value type. Doesn't end with `_t` because of
+	/// the standard.
 	using value_type = T_;
 
 	/// Default constructs all elements.
@@ -184,11 +185,20 @@ public:
 	/// - `value` : The value to locate.
 	hxattr_nodiscard T_* binary_search(const T_& value_);
 
+	/// Returns the capacity of the array.
+	hxattr_nodiscard hxsize_t capacity(void) const;
+
 	/// Returns a `const T*` to the beginning of the array (alias for `begin`).
 	const T_* cbegin(void) const { return this->data(); }
 
 	/// Returns a `const T*` to the end of the array.
 	const T_* cend(void) const { return this->data() + this->capacity(); }
+
+	/// Returns a pointer to a const and potentially uninitialized array of `T`.
+	const T_* data(void) const { return hxallocator<T_, capacity_>::data(); }
+
+	/// Returns a pointer to a potentially uninitialized array of `T`.
+	T_* data(void) { return hxallocator<T_, capacity_>::data(); }
 
 	/// Returns true if the arrays compare equivalent using `hxkey_equal`.
 	/// Callers must check the return value to detect mismatches.
@@ -268,7 +278,7 @@ public:
 			hxsystem_allocator_t allocator_=hxsystem_allocator_current,
 			hxalignment_t alignment_=hxalignment) noexcept;
 
-			/// Returns the number of elements in the array.
+	/// Returns the number of elements in the array.
 	hxattr_nodiscard hxsize_t size(void) const { return this->capacity(); }
 
 	/// Returns the number of bytes in the array. (Non-standard.)
@@ -285,7 +295,7 @@ private:
 // Without the "requires" keyword these end up being ambiguous.
 #if HX_CPLUSPLUS >= 202002L
 
-/// `bool hxequal(hxarray<T, N>& x, hxarray<T, N>& y)` - Compares the contents
+/// `bool hxkey_equal(hxarray<T, N>& x, hxarray<T, N>& y)` - Compares the contents
 /// of `x` and `y` for equivalence.
 template<typename T_, hxsize_t capacity_>
 bool hxkey_equal(const hxarray<T_, capacity_>& x_, const hxarray<T_, capacity_>& y_) {
@@ -308,8 +318,7 @@ void hxswap(hxarray<T_, hxallocator_dynamic_capacity>& x_,
 			hxarray<T_, hxallocator_dynamic_capacity>& y_) noexcept {
 	x_.swap(y_);
 }
+
 #endif // HX_CPLUSPLUS >= 202002L
-
 #include "detail/hxarray.inl"
-
 HX_NS_END_

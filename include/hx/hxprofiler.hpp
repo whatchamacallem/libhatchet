@@ -3,11 +3,11 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file hxprofiler.hpp Provides macros for RAII-style profiling
-/// (`hxprofile_scope`, `hxprofile_scope_min` with optional cycle cutoffs).
-/// Allows exporting to Chrome's tracing format
-/// (`hxprofiler_write_to_chrome_tracing`). Profiling is enabled only if
-/// `HX_USE_PROFILER` is defined.
+/// \file
+/// Provides macros for RAII-style profiling (`hxprofile_scope`,
+/// `hxprofile_scope_min` with optional cycle cutoffs). Allows exporting to
+/// Chrome's tracing format (`hxprofiler_write_to_chrome_tracing`). Profiling is
+/// enabled only if `HX_USE_PROFILER` is defined.
 ///
 /// | Macro | Purpose |
 /// | --- | --- |
@@ -38,7 +38,13 @@ using hxcycles_t = size_t;
 /// assumes 2.8 GHz. These constants are primarily used with `printf`, which
 /// promotes everything to double anyway.
 hxinline_constexpr double hxcycles_per_second = 2.8e+9;
+
+/// `hxmilliseconds_per_cycle` - The number of milliseconds in a single
+/// processor cycle, derived from `hxcycles_per_second`.
 hxinline_constexpr double hxmilliseconds_per_cycle = 1.0e+3 / hxcycles_per_second;
+
+/// `hxmicroseconds_per_cycle` - The number of microseconds in a single
+/// processor cycle, derived from `hxcycles_per_second`.
 hxinline_constexpr double hxmicroseconds_per_cycle = 1.0e+6 / hxcycles_per_second;
 
 /// `hxtime_sample_cycles(void)` - Set up the processor cycle counter for your
@@ -88,5 +94,4 @@ HX_NS_END_
 #define hxprofiler_write_to_chrome_tracing(filename_) \
 	HX_PROFILE_ONLY_(HX_NS_PREFIX_ hxdetail_::hxg_profiler_.write_to_chrome_tracing_(filename_))
 #endif
-
 #include "detail/hxprofiler_detail.hpp"

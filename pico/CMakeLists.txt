@@ -23,7 +23,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 pico_sdk_init()
 
-# ── libhatchet ─────────────────────────────────────────────────────────────────
+# -- libhatchet -----------------------------------------------------------------
 
 add_subdirectory($ENV{LIBHATCHET_PATH} libhatchet)
 
@@ -48,7 +48,7 @@ target_compile_options(hatchet PRIVATE
     -nostdinc++
 )
 
-# ── test executable ────────────────────────────────────────────────────────────
+# -- Test Executable ------------------------------------------------------------
 
 get_filename_component(LIBHATCHET_ABS "$ENV{LIBHATCHET_PATH}" ABSOLUTE)
 file(GLOB TEST_SOURCES "${LIBHATCHET_ABS}/test/*.c" "${LIBHATCHET_ABS}/test/*.cpp")

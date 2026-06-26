@@ -8,7 +8,7 @@ trap '{ set +o xtrace; } 2> /dev/null
 	trap - 1 2 3 6 15
 	for pid in $(pgrep -g "$$" 2>/dev/null); do
 		[ "$pid" = "$$" ] && continue
-		kill "$pid" 2>/dev/null
+		kill -9 "$pid" 2>/dev/null
 	done
 	exit 1
 ' 1 2 3 6 15

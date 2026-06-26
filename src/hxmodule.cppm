@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file hxmodule.cppm Module for libhatchet. Requires C++20 or later. Use
-/// `import hx;` to import instead of individual `#include` directives.
-/// `<hx/libhatchet.h>`, `<hx/hxconsole.hpp>`, `<hx/hxprofiler.hpp>` and
-/// `<hx/hxtest.hpp>` may be included separately in the same translation unit in
-/// order to use their macros as long as `HX_USE_MODULE` is true.
+// Module for libhatchet. Requires C++20 or later. Use `import hx;` to import
+// instead of individual `#include` directives. `<hx/libhatchet.h>`,
+// `<hx/hxconsole.hpp>`, `<hx/hxprofiler.hpp>` and `<hx/hxtest.hpp>` may be
+// included separately in the same translation unit in order to use their macros
+// as long as `HX_USE_MODULE=1`.
 
 module;
 #include <errno.h>

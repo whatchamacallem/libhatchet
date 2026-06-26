@@ -3,12 +3,12 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file hxmemory_manager.h Memory Manager C/C++ API. Memory allocators are
-/// selected using an ID. These are the large system-wide allocators, not the
-/// per-container `hxallocator` which allocates from here. Temporary stacks are
-/// allocated at runtime with `hxmemory_manager_allocate_stacks` and a
-/// sophisticated streaming design can select between them using
-/// `hxsystem_allocator_stack_0` + index.
+/// \file
+/// Memory Manager C/C++ API. Memory allocators are selected using an ID. These
+/// are the large system-wide allocators, not the per-container `hxallocator`
+/// which allocates from here. Temporary stacks are allocated at runtime with
+/// `hxmemory_manager_allocate_stacks` and a sophisticated streaming design can
+/// select between them using `hxsystem_allocator_stack_0` + index.
 ///
 /// General purpose memory allocators are inefficient and unsafe to use. The
 /// problem is that long running code requires a lot of extra space to make sure
@@ -16,7 +16,7 @@
 /// (Hardware support for virtual memory can help defrag the program heap, but
 /// that requires processor support and even more expensive system call
 /// overhead.) For code that uses a lot of temporary intermediate allocations
-/// 1/3 of your memory and 1/3 or your processor time could get eaten by the
+/// 1/3 of your memory and 1/3 of your processor time could get eaten by the
 /// heap allocator. The `hxsystem_allocator_stack_0` is provided as a
 /// replacement for that use case.
 ///
@@ -77,14 +77,16 @@ inline constexpr hxalignment_t hxalignment = static_cast<hxalignment_t>(alignof(
 typedef int hxsystem_allocator_t;
 
 enum {
-	/// Use current allocation scope. Not a real allocator slot.
+	/// `hxsystem_allocator_current` - Use current allocation scope. Not a real
+	/// allocator slot.
 	hxsystem_allocator_current = -1,
-	/// OS heap with alignment.
+	/// `hxsystem_allocator_heap` - OS heap with alignment.
 	hxsystem_allocator_heap,
-	/// Contigious allocations that must not be freed.
+	/// `hxsystem_allocator_permanent` - Contiguous allocations that must not be
+	/// freed.
 	hxsystem_allocator_permanent,
-	/// Temporary stacks. Reset to previous depth at scope closure. Stack index
-	/// n is `hxsystem_allocator_stack_0 + n`.
+	/// `hxsystem_allocator_stack_0` - Temporary stacks. Reset to previous depth
+	/// at scope closure. Stack index n is `hxsystem_allocator_stack_0 + n`.
 	hxsystem_allocator_stack_0
 };
 
@@ -237,9 +239,9 @@ void hxdelete(T_* t_) noexcept {
 	}
 }
 
-/// A callable that deletes objects of type `T` using `hxdelete`. Used by
-/// containers to implement the destruction of their contents according to a
-/// template parameter. Implements `std::default_delete`.
+/// `hxdefault_delete` - A callable that deletes objects of type `T` using
+/// `hxdelete`. Used by containers to implement the destruction of their contents
+/// according to a template parameter. Implements `std::default_delete`.
 class hxdefault_delete {
 public:
 	/// Deletes the object using `hxdelete`.
@@ -250,9 +252,9 @@ public:
 	operator bool(void) const { return true; }
 };
 
-/// A version of `hxdefault_delete` that does not delete the object. Allows
-/// removing object destruction from container destructors that handle static
-/// allocations or don't own their contents for another reason.
+/// `hxdo_not_delete` - A version of `hxdefault_delete` that does not delete the
+/// object. Allows removing object destruction from container destructors that
+/// handle static allocations or don't own their contents for another reason.
 class hxdo_not_delete {
 public:
 	/// Does not delete the object.

@@ -20,7 +20,7 @@ import traceback
 #		T_* m_data_;
 #	};
 #	template<typename T_, hxsize_t capacity_=0>
-#	class hxvector : public hxallocator<T_, capacity_> {
+#	class hxvector : private hxallocator<T_, capacity_> {
 #		// ...
 #		T_* m_end_;
 #	}

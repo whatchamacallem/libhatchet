@@ -45,6 +45,11 @@ hxptr<T_, typename hxfree_list<T_, capacity_>::deleter_t>
 }
 
 template<hxfree_list_concept_ T_, hxsize_t capacity_>
+hxsize_t hxfree_list<T_, capacity_>::capacity(void) const {
+	return hxallocator<T_, capacity_>::capacity();
+}
+
+template<hxfree_list_concept_ T_, hxsize_t capacity_>
 bool hxfree_list<T_, capacity_>::is_allocator(const T_* p_) const noexcept {
 	return p_ != hxnull
 		&& static_cast<const void*>(p_) >= static_cast<const void*>(this->data())

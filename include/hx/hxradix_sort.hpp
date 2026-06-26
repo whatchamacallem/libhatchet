@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file hxradix_sort.hpp Θ(n) radix sort for 32-bit-or-smaller scalar keys.
+/// \file
+/// Θ(n) radix sort for 32-bit-or-smaller scalar keys.
 
 #include "libhatchet.h"
 
@@ -14,8 +15,9 @@
 
 HX_NS_BEGIN_
 
-/// A key-value pair used with `hxradix_sort`. Only 32-bit or smaller fixed size
-/// types from `<stdint.h>` are supported for `key_t`. Stores `value_t` by value.
+/// `hxradix_sort_key` - A key-value pair used with `hxradix_sort`. Only 32-bit
+/// or smaller fixed size types from `<stdint.h>` are supported for `key_t`.
+/// Stores `value_t` by value.
 template<typename key_t_, typename value_t_>
 class hxradix_sort_key {
 public:
@@ -77,11 +79,12 @@ private:
 	};
 };
 
-/// Internal. Used to share the implementation with all pointer types.
+/// `hxradix_sort_key_void` - Internal. Used to share the implementation with all
+/// pointer types.
 using hxradix_sort_key_void = hxradix_sort_key<uint32_t, void*>;
 
-/// Internal. The shared implementation used with all pointer types when sorting
-/// using 8-bit digits.
+/// `hxradix_sort_void` - Internal. The shared implementation used with all
+/// pointer types when sorting using 8-bit digits.
 /// - `begin` : Non-null pointer to the first element in the range being
 ///   reordered.
 /// - `end` : Non-null pointer one past the last element in the range. Must
@@ -91,8 +94,8 @@ hxattr_nonnull(1,2) hxattr_hot
 void hxradix_sort_void(hxradix_sort_key_void* begin_, hxradix_sort_key_void* end_,
 	hxsystem_allocator_t allocator_);
 
-/// Internal. The shared implementation used with all pointer types when sorting
-/// using 11-bit digits.
+/// `hxradix_sort_void11` - Internal. The shared implementation used with all
+/// pointer types when sorting using 11-bit digits.
 /// - `begin` : Non-null pointer to the first element in the range being
 ///   reordered.
 /// - `end` : Non-null pointer one past the last element in the range. Must
@@ -118,7 +121,7 @@ void hxradix_sort_void11(hxradix_sort_key_void* begin_, hxradix_sort_key_void* e
 ///   for(uint32_t i = size; i--;) {
 ///     rs.push_back(hxradix_sort_key<key_t, example_t*>(x[i].id, &x[i]));
 ///   }
-///   hxradix_sort(rs.begin(), rs.end());
+///   hxradix_sort(rs.begin(), rs.end(), hxsystem_allocator_heap);
 /// ```
 ///
 /// - `begin` : Non-null pointer to the first element in the range being
@@ -133,9 +136,10 @@ void hxradix_sort(hxradix_sort_key<key_t_, value_t_>* begin_, hxradix_sort_key<k
 		reinterpret_cast<hxradix_sort_key_void*>(end_), allocator_);
 }
 
-/// Sorts an array of `hxradix_sort_key<key_t, value_t>` by `key_t` using 11-bit
-/// digits. `key_t` is the sort key and `value_t` the value being sorted. Keys
-/// of `double`, `int64_t`, and `uint64_t` are not supported. `hxradix_sort`
+/// `hxradix_sort11` - Sorts an array of `hxradix_sort_key<key_t, value_t>` by
+/// `key_t` using 11-bit digits. `key_t` is the sort key and `value_t` the value
+/// being sorted. Keys of `double`, `int64_t`, and `uint64_t` are not supported.
+/// `hxradix_sort`
 /// scales linearly with the byte-length of the key, whereas `hxinsertion_sort`
 /// is Θ(n) on mostly sorted data.
 /// - `begin` : Non-null pointer to the first element in the range being

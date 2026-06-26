@@ -235,6 +235,11 @@ T_* hxvector<T_, capacity_>::binary_search(const T_& value_) {
 }
 
 template<hxarray_concept_ T_, hxsize_t capacity_>
+hxsize_t hxvector<T_, capacity_>::capacity(void) const {
+	return hxallocator<T_, capacity_>::capacity();
+}
+
+template<hxarray_concept_ T_, hxsize_t capacity_>
 void hxvector<T_, capacity_>::clear(void) noexcept {
 	this->destruct_(this->data(), m_end_);
 	m_end_ = this->data();
@@ -521,28 +526,44 @@ T_& hxvector<T_, capacity_>::push_back(args_t_&&... args_) noexcept {
 	return *::new(m_end_++) T_(hxforward<args_t_>(args_)...);
 }
 
+// gcc with -O2 and a sanitizer loses track of the index_ != 0 guard.
+#if !defined __clang__ && defined __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
 template<hxarray_concept_ T_, hxsize_t capacity_>
 template<typename ref_t_>
 T_& hxvector<T_, capacity_>::push_heap(ref_t_&& arg_) noexcept {
 	T_*const begin_ = this->data();
 	T_* node_ = static_cast<T_*>(this->push_back_unconstructed_());
 	hxsize_t index_ = node_ - begin_;
+	if(index_ == 0) {
+		::new(node_) T_(hxforward<ref_t_>(arg_));
+		return *node_;
+	}
+	index_ = (index_ - 1) >> 1;
+	T_* parent_ = begin_ + index_;
+	if(!hxkey_less(*parent_, arg_)) {
+		::new(node_) T_(hxforward<ref_t_>(arg_));
+		return *node_;
+	}
+	::new(node_) T_(hxmove(*parent_));
+	node_ = parent_;
 	while(index_ != 0) {
 		index_ = (index_ - 1) >> 1;
-		T_*const parent_ = begin_ + index_;
-		// arg_ has to be comparable to T_.
+		parent_ = begin_ + index_;
 		if(!hxkey_less(*parent_, arg_)) {
 			break;
 		}
-		// Shifts unconstructed element (the hole) into position.
-		::new(node_) T_(hxmove(*parent_));
-		parent_->T_::~T_();
+		*node_ = hxmove(*parent_);
 		node_ = parent_;
 	}
-	// Construct new element.
-	::new(node_) T_(hxforward<ref_t_>(arg_));
+	*node_ = hxforward<ref_t_>(arg_);
 	return *node_;
 }
+#if !defined __clang__ && defined __GNUC__
+#pragma GCC diagnostic pop
+#endif
 
 template<hxarray_concept_ T_, hxsize_t capacity_>
 void hxvector<T_, capacity_>::reserve(hxsize_t size_, hxsystem_allocator_t allocator_,

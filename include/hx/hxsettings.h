@@ -3,9 +3,10 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file hxsettings.h Compiler detection and target specific C++11/C++14
-/// polyfill. Use `#if (HX_...)` instead of `#ifdef(HX_...)` for all `HX_`*
-/// macros. `HX_USE_NAMESPACE` can be used to wrap the library in a namespace.
+/// \file
+/// Compiler detection and target specific C++ feature polyfill. Use `#if
+/// HX_...` instead of `#ifdef HX_...` for all `HX_`* macros. `HX_USE_NAMESPACE`
+/// can be used to wrap the library in a namespace.
 
 #if !LIBHATCHET_VER
 #error #include <hx/libhatchet.h> instead.
@@ -29,8 +30,8 @@
 #define HX_CPLUSPLUS 0
 #endif
 
-// ----------------------------------------------------------------------------
-// Target settings for Doxygen. See the Doxyfile. Run doxygen with no args.
+// -- Target settings for Doxygen ----------------------------------------------
+// See the Doxyfile. Run doxygen with no args.
 #if defined HX_DOXYGEN_PARSER
 
 /// `HX_USE_THREADS` - `11` indicates C11 threads are in use. `1` is for pthreads
@@ -90,17 +91,16 @@
 /// formatting so it can type-check the format string.
 #define hxattr_printf(...)
 
-/// Allow calling code to override static library code. Note: MSVC treats all
-/// static library symbols as weak.
+/// `hxattr_weak` - Allow calling code to override static library code. Note:
+/// MSVC treats all static library symbols as weak.
 #define hxattr_weak
 
 /// `hxattr_scanf` - Indicates to gcc that a function uses `scanf`-style
 /// formatting so it can type-check the format string.
 #define hxattr_scanf(...)
 
-// ----------------------------------------------------------------------------
-// Target settings for MSVC. MSVC doesn't support C++'s feature test macros very
-// well.
+// -- Target settings for MSVC -------------------------------------------------
+// MSVC doesn't support C++'s feature test macros very well.
 #elif defined _MSC_VER
 
 #if defined __clang__
@@ -144,9 +144,8 @@
 // library objects as weak.
 #define hxattr_weak
 
-// ----------------------------------------------------------------------------
-// Target settings for clang and gcc. Further compilers will require
-// customization.
+// -- Target settings for Clang and GCC ----------------------------------------
+// Further compilers will require customization.
 #else // Assume gcc/clang.
 
 // hxthreads.hpp should work in C++11 with pthread.h. _POSIX_THREADS is the
@@ -207,22 +206,20 @@
 #define hxattr_printf(pos_, start_) __attribute__((format(printf, pos_, start_)))
 #define hxattr_scanf(pos_, start_) __attribute__((format(scanf, pos_, start_)))
 #define hxattr_weak __attribute__((weak))
-
 #endif // target specific settings
 
-// ----------------------------------------------------------------------------
-// Target independent.
-
+// -- Target independent -------------------------------------------------------
 #if HX_CPLUSPLUS >= 202302L
-/// hxconstexpr enables C++23 compatable constexpr usage for functions as that
-/// has support for destructors. Falls back to not using constexpr below C++23.
+/// `hxconstexpr` - Enables C++23 compatable constexpr usage for functions as
+/// that has support for destructors. Falls back to not using constexpr below
+/// C++23.
 #define hxconstexpr constexpr
 #else
 #define hxconstexpr
 #endif // HX_CPLUSPLUS < 202302L
 
 #if HX_CPLUSPLUS >= 201703L
-/// hxinline_constexpr enables C++17 compatable "inline constexpr" usage for
+/// `hxinline_constexpr` - Enables C++17 compatable "inline constexpr" usage for
 /// variables so they can be exported from modules. Falls back to not using
 /// inline below C++17.
 #define hxinline_constexpr inline constexpr
@@ -234,16 +231,16 @@
 #endif
 
 #if !defined HX_USE_MODULE
-/// Setting `-DHX_USE_MODULE=1` when using modules (e.g. `import hx;`) will
-/// allow the macros in `<hx/libhatchet.h>`, `<hx/hxconsole.hpp>`,
-/// `<hx/hxprofiler.hpp>` and `<hx/hxtest.hpp>` to be textually included
-/// alongside `import hx;`. See `src/hxmodule.cppm`.
+/// `HX_USE_MODULE` - Setting `-DHX_USE_MODULE=1` when using modules (e.g.
+/// `import hx;`) will allow the macros in `<hx/libhatchet.h>`,
+/// `<hx/hxconsole.hpp>`, `<hx/hxprofiler.hpp>` and `<hx/hxtest.hpp>` to be
+/// textually included alongside `import hx;`. See `src/hxmodule.cppm`.
 #define HX_USE_MODULE 0
 #endif
 
 #if !defined HX_USE_CONSOLE
-/// Control whether the console is included in the build. C++20 is required to
-/// use the console.
+/// `HX_USE_CONSOLE` - Control whether the console is included in the build.
+/// C++20 is required to use the console.
 /// `0` - Disables the console. `1` - Enables the console.
 /// `2` - Enables the debug console. This allows executing files and modifying memory.
 #define HX_USE_CONSOLE ((HX_CPLUSPLUS >= 202002L) ? 2 : 0)
@@ -251,13 +248,13 @@
 #error The console requires C++20 or later.
 #endif
 #if (HX_USE_CONSOLE) > 1 && defined __wasm__
-// This warning is primarilly for security and sanity checking reasons.
+// This warning is primarily for security and sanity checking reasons.
 #error The debug console is not designed for use with WASM.
 #endif
 
 #if !defined HX_USE_LOGGING
-/// Control whether logging statements are included in the build. Note:
-/// `hxlog_handler` is always available and is used by the asserts.
+/// `HX_USE_LOGGING` - Control whether logging statements are included in the
+/// build. Note: `hxlog_handler` is always available and is used by the asserts.
 /// `0` - Disables the logging macros.
 /// `1` - All logging except `hxlog`.
 /// `2` - All logging including `hxlog`. This is the default.
@@ -285,7 +282,7 @@
 #endif
 
 #if !defined HX_USE_MEMORY_MANAGER
-/// `HX_USE_MEMORY_MANAGER` - Used to disables memory management for debugging
+/// `HX_USE_MEMORY_MANAGER` - Used to disable memory management for debugging
 /// and for platforms like wasm where extra system allocations are probably
 /// cheaper than code size.
 /// - `0` : normal target operation
@@ -294,7 +291,8 @@
 #endif
 
 #if !defined HX_PROVIDE_NEW_DELETE
-/// Provide new/delete when the std libray is absent unless overriden.
+/// `HX_PROVIDE_NEW_DELETE` - Provide new/delete when the std library is absent
+/// unless overridden.
 #define HX_PROVIDE_NEW_DELETE !(HX_USE_LIBCXX)
 #endif
 
@@ -414,14 +412,17 @@ extern "C" {
 /// `hxsettings` - Constructed by first call to `hxinit` which happens when on
 /// or before the system memory allocators construct. Not thread safe.
 struct hxsettings {
-	/// Logging level for the application (e.g., verbosity of logs).
+	/// `log_level` - Logging level for the application (e.g., verbosity of
+	/// logs).
 	uint8_t log_level;
 
-	/// Allows deallocation of permanent resources at system shut down.
+	/// `deallocate_permanent` - Allows deallocation of permanent resources at
+	/// system shut down.
 	bool deallocate_permanent;
 
 #if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
-	/// Number of asserts to skip, useful for testing assert behavior.
+	/// `asserts_to_be_skipped` - Number of asserts to skip, useful for testing
+	/// assert behavior.
 	int asserts_to_be_skipped;
 #endif
 };
@@ -429,7 +430,7 @@ struct hxsettings {
 /// `hxg_settings` - Global class constructed by `hxinit`.
 extern struct hxsettings hxg_settings;
 
-/// Internal. Used to reset settings at startup.
+/// `hxsettings_construct` - Internal. Used to reset settings at startup.
 void hxsettings_construct_(void);
 
 #if HX_CPLUSPLUS

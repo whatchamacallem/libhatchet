@@ -3,8 +3,9 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file hxbitset.hpp - A fixed-size bitset stored as an array of `size_t` words
-/// with no heap allocation.
+/// \file
+/// A fixed-size bitset stored as an array of `size_t` words with no heap
+/// allocation.
 
 #include "libhatchet.h"
 
@@ -15,9 +16,9 @@
 
 HX_NS_BEGIN_
 
-/// hxbitset - A fixed-size bitset stored as an array of `size_t` words with no
+/// `hxbitset` - A fixed-size bitset stored as an array of `size_t` words with no
 /// heap allocation.
-/// - `bit_count` : The number of bits in the `hxbitset`. Must be greater than zero. Also known as the popcount.
+/// - `bit_count` : The number of bits in the `hxbitset`. Must be greater than zero.
 template<size_t bit_count_>
 class hxbitset {
 public:
@@ -144,5 +145,4 @@ private:
 };
 
 #include "detail/hxbitset.inl"
-
 HX_NS_END_

@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file hxrandom.hpp A 64-bit LCG random number generator useful for test
-/// data.
+/// \file
+/// A 64-bit LCG random number generator useful for test data.
 
 #include "libhatchet.h"
 
@@ -77,7 +77,7 @@ public:
 	/// Reads a specified number of random bytes into the provided buffer. The
 	/// sequence generated matches a little-endian stream of
 	/// `uint32_t` generated using `u32`.
-	/// - `chars` : Non-null pointer to a buffer large enough for `count` characters.
+	/// - `chars` : Non-null pointer to a buffer large enough for `count` bytes.
 	/// - `count` : Number of bytes to read.
 	hxconstexpr void read(uint8_t* chars_, hxsize_t count_) hxattr_nonnull(2) {
 		while(count_>=4) {

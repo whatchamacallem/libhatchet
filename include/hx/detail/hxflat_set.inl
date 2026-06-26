@@ -86,6 +86,11 @@ inline auto hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::operator[](
 }
 
 template<typename key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
+inline hxsize_t hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::capacity(void) const {
+	return hxallocator<key_t_, capacity_>::capacity();
+}
+
+template<typename key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
 inline void hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::clear(void) noexcept {
 	key_t_* hxrestrict it_ = this->data();
 	const key_t_* const end_ = m_end_;

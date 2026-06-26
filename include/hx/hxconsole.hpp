@@ -3,8 +3,9 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file hxconsole.hpp Implements a simple console for debugging, remote use or
-/// for parsing configuration files. Output is directed to the system log with
+/// \file
+/// Implements a simple console for debugging, remote use or for parsing
+/// configuration files. Output is directed to the system log with
 /// `hxlog_level_console`. Requires C++20 or later. Set `HX_USE_CONSOLE=2` to
 /// enable the debug console. See `hxconsole.cpp` for details. This is optimized
 /// for generated code size and not speed.

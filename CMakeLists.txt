@@ -13,12 +13,12 @@ cmake_minimum_required(VERSION 3.21)
 project(libhatchet)
 
 if(NOT PROJECT_IS_TOP_LEVEL)
-	# Compile as a library. 
+	# Compile as a library.
 	file(GLOB SOURCES "src/*.cpp")
 	add_library(hatchet STATIC ${SOURCES})
 	target_include_directories(hatchet PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 else()
-	# Compile as a test suite. 
+	# Compile as a test suite.
 	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_BINARY_DIR}")
 	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_BINARY_DIR}")
 
@@ -76,14 +76,14 @@ else()
 		)
 	endif()
 
-	# Download or un-tar GoogleTest into a local workspace cache.
+	# Extract GoogleTest 1.15.2 into the cache directory.
 	#
-	# Uses a per-configuration sub-directory so that switching between Win32/x64 or
-	# Debug/Release builds does not cause conflicts between incompatible cached
-	# GoogleTest binaries. CMAKE_GENERATOR_PLATFORM is set by the Visual Studio
-	# multi-config generator (-A x64 / -A Win32). CMAKE_BUILD_TYPE is set by
-	# single-config generators (Ninja, Make) via -DCMAKE_BUILD_TYPE=. When neither
-	# is set the cache lives directly under ./cache.
+	# Uses a per-configuration sub-directory so that switching between Win32/x64
+	# or Debug/Release builds does not cause conflicts between incompatible
+	# cached GoogleTest binaries. CMAKE_GENERATOR_PLATFORM is set by the Visual
+	# Studio multi-config generator (-A x64 / -A Win32). CMAKE_BUILD_TYPE is set
+	# by single-config generators (Ninja, Make) via -DCMAKE_BUILD_TYPE=. When
+	# neither is set the cache lives directly under ./cache.
 	if(CMAKE_GENERATOR_PLATFORM)
 		set(HX_CACHE_SUFFIX "${CMAKE_GENERATOR_PLATFORM}")
 	elseif(CMAKE_SIZEOF_VOID_P EQUAL 8)

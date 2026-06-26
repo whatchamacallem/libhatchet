@@ -3,8 +3,9 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file hxtask.hpp Pure virtual base class for operations to be performed on
-/// a different thread or at a later time.
+/// \file
+/// Pure virtual base class for operations to be performed on a different thread
+/// or at a later time.
 
 #include "libhatchet.h"
 

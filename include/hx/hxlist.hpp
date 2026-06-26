@@ -3,10 +3,11 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file hxlist.hpp An embedded doubly linked list with intrusive node linkage.
-/// This is the same as `hxconstexpr_list` except that it does not work with
-/// `constexpr` as it uses pointer arithmetic to save one pointer per-node.
-/// It should be exception safe even if `deleter_t`'s constructor throws.
+/// \file
+/// An embedded doubly linked list with intrusive node linkage. This is the same
+/// as `hxconstexpr_list` except that it does not work with `constexpr` as it
+/// uses pointer arithmetic to save one pointer per-node. It should be exception
+/// safe even if `deleter_t`'s constructor throws.
 
 #include "libhatchet.h"
 
@@ -21,10 +22,11 @@
 
 HX_NS_BEGIN_
 
-/// Intrusive doubly linked list node base. Derive from `hxlist_node` to make a
-/// type linkable into an `hxlist`. Nodes default to unlinked on construction.
-/// Copy and move construction and assignment produce or leave a fresh unlinked
-/// node so that subclasses may implement the standard operators naturally.
+/// `hxlist_node` - Intrusive doubly linked list node base. Derive from
+/// `hxlist_node` to make a type linkable into an `hxlist`. Nodes default to
+/// unlinked on construction. Copy and move construction and assignment produce
+/// or leave a fresh unlinked node so that subclasses may implement the standard
+/// operators naturally.
 class hxlist_node {
 public:
 	/// Constructs an unlinked node.
@@ -80,7 +82,7 @@ class hxlist {
 public:
 	using node_t = node_t_;
 
-	/// Bidirectional iterator over const nodes.
+	/// `const_iterator` - Bidirectional iterator over const nodes.
 	class const_iterator {
 	public:
 		/// Constructs an iterator that must not be incremented or dereferenced.
@@ -141,7 +143,7 @@ public:
 		/// \endcond
 	};
 
-	/// Bidirectional iterator over mutable nodes.
+	/// `iterator` - Bidirectional iterator over mutable nodes.
 	class iterator : public const_iterator {
 	public:
 		/// Constructs an iterator that must not be incremented or dereferenced.
@@ -307,7 +309,7 @@ public:
 	void release_all(void);
 
 	/// Removes all nodes for which `predicate` returns true, invoking the
-	/// default deleter on each removed node.
+	/// stored deleter on each removed node.
 	/// - `predicate` : A callable taking a `node_t` reference, returning bool.
 	template<typename predicate_t_>
 	hxsize_t remove_if(predicate_t_ predicate_) noexcept;
@@ -342,5 +344,4 @@ private:
 };
 
 #include "detail/hxlist.inl"
-
 HX_NS_END_

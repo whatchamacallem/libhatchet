@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file hxallocator.hpp Similar to `std::allocator`. Supports static or
-/// dynamic allocation.
+/// \file
+/// Similar to `std::allocator`. Supports static or dynamic allocation.
 
 #include "libhatchet.h"
 
@@ -15,7 +15,8 @@
 
 HX_NS_BEGIN_
 
-/// A capacity value that allows for dynamic allocation.
+/// `hxallocator_dynamic_capacity` - A capacity value that allows for dynamic
+/// allocation.
 hxinline_constexpr hxsize_t hxallocator_dynamic_capacity = 0;
 
 /// `hxallocator<1+>` - Provides static allocation when capacity is greater than
@@ -23,14 +24,15 @@ hxinline_constexpr hxsize_t hxallocator_dynamic_capacity = 0;
 template<typename T_, hxsize_t fixed_capacity_>
 class hxallocator {
 public:
+	/// `value_t` - Publishes the value type.
 	using value_t = T_;
 
-	/// Template specialization below should have been selected.
+	// Template specialization below should have been selected.
 	static_assert(fixed_capacity_ > 0, "Fixed capacity must be > 0.");
 
 	/// Initializes memory to `0xab` when `HX_HARDENING_MODE ==
 	/// HX_HARDENING_MODE_DEBUG`.
-	hxallocator() {
+	hxallocator(void) {
 #if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
 		::memset(m_data_, 0xab, sizeof m_data_);
 #endif
@@ -53,7 +55,7 @@ public:
 	/// Provided for interface compatibility with the dynamic allocator.
 	/// - `size` : The number of elements of type `T` to ensure are available.
 	/// - `allocator` : Ignored.
-	/// - `alignment` : The alignment of the allocator is checked against this.
+	/// - `alignment` : Ignored.
 	void reserve_storage(hxsize_t size_,
 			hxsystem_allocator_t allocator_=hxsystem_allocator_current,
 			hxalignment_t alignment_=hxalignment) {
@@ -74,6 +76,7 @@ private:
 template<typename T_>
 class hxallocator<T_, hxallocator_dynamic_capacity> {
 public:
+	/// `value_t` - Publishes the value type.
 	using value_t = T_;
 
 	/// Does not allocate until `reserve_storage` is called.

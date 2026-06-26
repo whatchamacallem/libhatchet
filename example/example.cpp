@@ -9,6 +9,8 @@
 // one of the most studied and visually recognised objects in mathematics. It is
 // formally defined as the set of all complex numbers C for which the sequence
 // Z(n+1) = Z(n)² + C, with Z(0) = 0, remains bounded as n tends to infinity.
+//
+// Use "cat example/example_correct.txt" if you just want to see the output.
 
 #include <signal.h>
 #include <stdio.h>
@@ -30,10 +32,8 @@ import hx;
 
 namespace {
 
-// Smooth coloring constants for fractional escape iteration count and
-// true-color RGB sine gradient.
-const double s_example_inv_log2       = 1.4426950408889634;    // 1/log(2)
-const double s_example_log_log2       = -0.36651292058166435;  // log(log(2))
+const double s_example_inv_log2       = 1.4426950408889634;
+const double s_example_log_log2       = -0.36651292058166435;
 const double s_example_angle_freq     = 6.28318530717958647692 / 16.0;
 const double s_example_two_pi_over_3  = 2.09439510239319552;
 const double s_example_four_pi_over_3 = 4.18879020478639098;
@@ -97,48 +97,57 @@ public:
 		m_row_buffer = row_buffer;
 	}
 
+	void color(double real_origin, double imaginary_origin,
+			unsigned& r, unsigned& g, unsigned& b) {
+		double real = 0.0;
+		double imaginary = 0.0;
+		hxsize_t iter = 0;
+		while(iter < m_max_iter) {
+			const double real_squared = real * real;
+			const double imaginary_squared = imaginary * imaginary;
+			if(real_squared + imaginary_squared > 4.0) {
+				break;
+			}
+			imaginary = 2.0 * real * imaginary + imaginary_origin;
+			real = real_squared - imaginary_squared + real_origin;
+			++iter;
+		}
+		if(iter == m_max_iter) {
+			r = 0; g = 0; b = 0;
+			return;
+		}
+		const double mod_squared = real * real + imaginary * imaginary;
+		const double log_zn = ::log(mod_squared) * 0.5;
+		const double mu = static_cast<double>(iter) + 1.0
+			- (::log(log_zn) - s_example_log_log2) * s_example_inv_log2;
+		const double angle = mu * s_example_angle_freq;
+		r = static_cast<unsigned>(s_example_amplitude
+			+ s_example_amplitude * ::sin(angle));
+		g = static_cast<unsigned>(s_example_amplitude
+			+ s_example_amplitude * ::sin(angle + s_example_two_pi_over_3));
+		b = static_cast<unsigned>(s_example_amplitude
+			+ s_example_amplitude * ::sin(angle + s_example_four_pi_over_3));
+	}
+
 	bool execute(hx::hxtask_queue*) override {
 		hxprofile_scope("row");
 
 		const double col_scale = m_zoom / 80.0;
-
-		// Terminal chars are ~2x taller than wide; halve the y-step for square
-		// pixels.
-		const double row_scale = col_scale * 0.5;
-		const double imaginary_origin = m_center_y + (static_cast<double>(m_row) - 19.5) * row_scale;
+		const double row_scale = col_scale * 0.25;
+		const double upper_origin = m_center_y
+			+ (static_cast<double>(m_row * 2) - 39.5) * row_scale;
+		const double lower_origin = m_center_y
+			+ (static_cast<double>(m_row * 2 + 1) - 39.5) * row_scale;
 		char* dst = m_row_buffer;
 
 		for(hxsize_t col = 0; col < 80; ++col) {
 			const double real_origin = m_center_x + (static_cast<double>(col) - 39.5) * col_scale;
-			double real = 0.0;
-			double imaginary = 0.0;
-			hxsize_t iter = 0;
-			while(iter < m_max_iter) {
-				const double real_squared = real * real;
-				const double imaginary_squared = imaginary * imaginary;
-				if(real_squared + imaginary_squared > 4.0) {
-					break;
-				}
-				imaginary = 2.0 * real * imaginary + imaginary_origin;
-				real = real_squared - imaginary_squared + real_origin;
-				++iter;
-			}
-			if(iter == m_max_iter) {
-				dst += ::sprintf(dst, "\033[48;2;0;0;0m ");
-			} else {
-				const double mod_squared = real * real + imaginary * imaginary;
-				const double log_zn = ::log(mod_squared) * 0.5;
-				const double mu = static_cast<double>(iter) + 1.0
-					- (::log(log_zn) - s_example_log_log2) * s_example_inv_log2;
-				const double angle = mu * s_example_angle_freq;
-				const unsigned r = static_cast<unsigned>(s_example_amplitude
-					+ s_example_amplitude * ::sin(angle));
-				const unsigned g = static_cast<unsigned>(s_example_amplitude
-					+ s_example_amplitude * ::sin(angle + s_example_two_pi_over_3));
-				const unsigned b = static_cast<unsigned>(s_example_amplitude
-					+ s_example_amplitude * ::sin(angle + s_example_four_pi_over_3));
-				dst += ::sprintf(dst, "\033[48;2;%u;%u;%um ", r, g, b);
-			}
+			unsigned upper_r, upper_g, upper_b;
+			unsigned lower_r, lower_g, lower_b;
+			this->color(real_origin, upper_origin, upper_r, upper_g, upper_b);
+			this->color(real_origin, lower_origin, lower_r, lower_g, lower_b);
+			dst += ::sprintf(dst, "\033[48;2;%u;%u;%u;38;2;%u;%u;%um\xe2\x96\x84",
+				upper_r, upper_g, upper_b, lower_r, lower_g, lower_b);
 		}
 		dst[0] = '\033'; dst[1] = '['; dst[2] = '0'; dst[3] = 'm';
 		dst[4] = '\n'; dst[5] = '\0';
@@ -157,10 +166,8 @@ private:
 };
 
 // Enqueues all 40 row tasks, waits for completion, then prints the frame.
-// max_iter is scaled with zoom so detail increases as the view narrows. Writes
-// a Chrome tracing profile to profile.json after each render.
 bool example_render(hx::hxtask_queue& queue, hx::hxarray<example_row_task, 40>& tasks,
-		hx::hxarray<hx::hxarray<char, 2048>, 40>& row_storage) {
+		hx::hxarray<hx::hxarray<char, 4096>, 40>& row_storage) {
 	hxsize_t max_iter = static_cast<hxsize_t>(50.0 * ::sqrt(::sqrt(1.0 / s_example_zoom))) + 20;
 	if(max_iter < 64)   { max_iter = 64; }
 	if(max_iter > 4096) { max_iter = 4096; }
@@ -200,8 +207,6 @@ void example_usage(void) {
 		"\texit\n");
 }
 
-// Loads example.cfg, renders the initial frame, then loops reading hxconsole
-// commands from stdin. Ctrl-C sets s_example_exit and interrupts fgets.
 int example_main(void) {
 	hxinit();
 
@@ -216,8 +221,8 @@ int example_main(void) {
 		hx::hxout << "error: example.cfg not found or failed to execute\n";
 		exit_code = EXIT_FAILURE;
 	} else {
-		hx::hxarray<hx::hxarray<char, 2048>, 40>* row_storage =
-			hx::hxnew<hx::hxarray<hx::hxarray<char, 2048>, 40>>();
+		hx::hxarray<hx::hxarray<char, 4096>, 40>* row_storage =
+			hx::hxnew<hx::hxarray<hx::hxarray<char, 4096>, 40>>();
 
 		hx::hxtask_queue queue(40, 8);
 		hx::hxarray<example_row_task, 40> tasks;

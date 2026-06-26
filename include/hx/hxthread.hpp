@@ -3,10 +3,10 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file hxthread.hpp C++ wrappers for POSIX pthreads or C11 `threads.h`.
-/// Provides `hxthread_local`, `hxmutex`, `hxunique_lock`,
-/// `hxcondition_variable`, and `hxthread`. For atomics consider
-/// `<stdatomic.h>`.
+/// \file
+/// C++ wrappers for POSIX pthreads or C11 `threads.h`. Provides
+/// `hxthread_local`, `hxmutex`, `hxunique_lock`, `hxcondition_variable`, and
+/// `hxthread`. For atomics consider `<stdatomic.h>`.
 
 #include "libhatchet.h"
 
@@ -101,8 +101,8 @@ private:
 #endif
 };
 
-/// Returns the current thread ID. Returns `0` when threads are disabled. This
-/// is used by the profiler and so it tries to be efficient.
+/// `hxthread_id` - Returns the current thread ID. Returns `0` when threads are
+/// disabled. This is used by the profiler and so it tries to be efficient.
 inline size_t hxthread_id(void) {
 #if (HX_USE_THREADS) == 11
 #if defined(_WIN32)
@@ -359,6 +359,8 @@ private:
 class hxthread {
 public:
 #if (HX_USE_THREADS) == 11
+	/// The return type of a thread entry point as required by the configured
+	/// backend.
 	using return_t = int;
 #else
 	using return_t = void*;
@@ -369,7 +371,7 @@ public:
 
 	/// Constructs and starts a thread with the given function and argument. Does
 	/// not free the argument. Any function that takes a single pointer and
-	/// returns a void pointer should work. The return value is ignored but may be
+	/// returns `return_t` should work. The return value is ignored but may be
 	/// unsafe to cast to a function with a different return type.
 	/// - `entry_point` : Function pointer of type: `entry_point(T*)`.
 	/// - `parameter` : `T*` to pass to the function.
@@ -385,8 +387,8 @@ public:
 	}
 
 	/// Starts a thread with the given function and argument. Does not free the
-	/// argument. Any function that takes a single `T` pointer and returns a
-	/// `void` pointer should work. The return value is ignored but is required by
+	/// argument. Any function that takes a single `T` pointer and returns
+	/// `return_t` should work. The return value is ignored but is required by
 	/// the native calling convention.
 	/// - `entry_point` : Function pointer of type: `entry_point(T*)`.
 	/// - `parameter` : `T*` to pass to the function.
@@ -455,5 +457,4 @@ private:
 };
 
 #endif // HX_USE_THREADS
-
 HX_NS_END_

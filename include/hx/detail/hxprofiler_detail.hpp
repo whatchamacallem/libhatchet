@@ -131,5 +131,4 @@ private:
 HX_NS_END_
 #endif // !(HX_USE_MODULE)
 #endif // HX_USE_PROFILER
-
 #endif // HX_DOXYGEN_PARSER

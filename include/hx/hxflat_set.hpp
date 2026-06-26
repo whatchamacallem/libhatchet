@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file hxflat_set.hpp A sorted flat set and multiset backed by an array of
-/// keys.
+/// \file
+/// A sorted flat set and multiset backed by an array of keys.
 
 #include "libhatchet.h"
 
@@ -20,7 +20,7 @@
 HX_NS_BEGIN_
 
 /// `hxflat_set` - A sorted associative container that stores keys in a single
-/// array. Lookup is O(log n) via binary search. Insert and erase are O(n)
+/// array. Lookup is Θ(log n) via binary search. Insert and erase are Θ(n)
 /// because elements are shifted to maintain order. This design keeps keys
 /// cache-friendly and avoids heap overhead per element.
 ///
@@ -48,22 +48,22 @@ template<typename key_t_,
 	typename compare_t_=hxkey_less_t<key_t_>,
 	bool multi_t_=true,
 	hxsize_t capacity_=hxallocator_dynamic_capacity>
-class hxflat_set : public hxallocator<key_t_, capacity_> {
+class hxflat_set : private hxallocator<key_t_, capacity_> {
 public:
 	using key_t = key_t_;
 	using compare_t = compare_t_;
 
-	/// Random access iterator over keys.
+	/// `iterator` - Random access iterator over keys.
 	using iterator = const key_t_*;
 
-	/// Const random access iterator over keys.
+	/// `const_iterator` - Const random access iterator over keys.
 	using const_iterator = const key_t_*;
 
 	/// Constructs an empty set. Requires `reserve` before inserting when
 	/// `capacity` is `hxallocator_dynamic_capacity`.
 	explicit hxflat_set(void);
 
-	/// Copy constructs from another `hxflat_set`. Requires `x.size() <= capacity()`.
+	/// Copy constructs from another `hxflat_set`. Requires `x.size()` ≤ `capacity()`.
 	/// - `x` : A non-temporary `hxflat_set<key_t, compare_t, multi_t, capacity>`.
 	hxflat_set(const hxflat_set& x_) noexcept;
 
@@ -76,12 +76,12 @@ public:
 	~hxflat_set(void) noexcept;
 
 	/// Assigns the contents of `x` to this set. Clears this set then copies
-	/// all elements from `x`. Requires `x.size() <= capacity()`.
+	/// all elements from `x`. Requires `x.size()` ≤ `capacity()`.
 	/// - `x` : The set to copy from.
 	void operator=(const hxflat_set& x_) noexcept;
 
 	/// Cross-capacity copy assignment. Assigns the contents of `x` to this
-	/// set. Requires `x.size() <= capacity()`.
+	/// set. Requires `x.size()` ≤ `capacity()`.
 	/// - `x` : The set to copy from.
 	template<hxsize_t capacity_x_>
 	void operator=(const hxflat_set<key_t_, compare_t_, multi_t_, capacity_x_>& x_) noexcept;
@@ -99,6 +99,9 @@ public:
 	/// Returns a const pointer to the first element.
 	const key_t_* begin(void) const { return this->data(); }
 
+	/// Returns the capacity of the set or 0 if unallocated.
+	hxattr_nodiscard hxsize_t capacity(void) const;
+
 	/// Returns a const pointer to the first element (alias for `begin`).
 	const key_t_* cbegin(void) const { return this->data(); }
 
@@ -111,6 +114,12 @@ public:
 	/// Returns the number of elements with the given key.
 	/// - `key` : The key to count.
 	hxattr_nodiscard hxsize_t count(const key_t_& key_) const;
+
+	/// Returns a pointer to a const and potentially uninitialized array of `key_t`.
+	const key_t_* data(void) const { return hxallocator<key_t_, capacity_>::data(); }
+
+	/// Returns a pointer to a potentially uninitialized array of `key_t`.
+	key_t_* data(void) { return hxallocator<key_t_, capacity_>::data(); }
 
 	/// Checks if the set contains no elements.
 	hxattr_nodiscard bool empty(void) const { return m_end_ == this->data(); }

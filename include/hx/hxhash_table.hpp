@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file hxhash_table.hpp A fixed-size hash table with embedded singly-linked
-/// list buckets.
+/// \file
+/// A fixed-size hash table with embedded singly-linked list buckets.
 
 #include "libhatchet.h"
 
@@ -23,7 +23,8 @@ HX_NS_BEGIN_
 #include "detail/hxhash_table_detail.hpp"
 
 #if HX_CPLUSPLUS >= 202002L
-/// Concept capturing the interface requirements for `hxhash_table` nodes.
+/// `hxhash_table_concept` - Concept capturing the interface requirements for
+/// `hxhash_table` nodes.
 template<typename node_t_>
 concept hxhash_table_concept_ =
 	requires(node_t_& node_, const node_t_& const_node_) {
@@ -72,8 +73,9 @@ public:
 	/// required to be unique.
 	hxhash_t hash_value(void) const { return m_hash_; }
 
-	/// Returns the cached hash value for the stored key. Hash values are not
-	/// required to be unique.
+	/// Returns the hash value computed for `key`. Hash values are not required
+	/// to be unique.
+	/// - `key` : The key to hash.
 	static hxhash_t hash_value(key_t_ key_) { return hxkey_hash(key_); }
 
 private:
@@ -87,7 +89,7 @@ private:
 	hxhash_t m_hash_;
 };
 
-/// Base class for unordered map entries.
+/// `hxhash_table_map_node` - Base class for unordered map entries.
 template<typename key_t_, typename value_t_>
 class hxhash_table_map_node : public hxhash_table_set_node<key_t_> {
 public:
@@ -170,9 +172,10 @@ private:
 /// `table_size_bits` configures the hash table size to `2^table_size_bits`.
 /// Otherwise use `set_table_size_bits` to configure hash bits dynamically. See
 /// `hxdo_not_delete` for situations where the table does not own the nodes.
-/// When `multi_t` is `false`, `insert` returns an `hxptr` owning the rejected
-/// duplicate on a key collision without inserting the new node. When `multi_t`
-/// is `true`, duplicate keys are always inserted and `insert` returns `void`.
+/// When `multi_t` is `false` and a node with an equal key already exists,
+/// `insert` invokes the deleter on the rejected node and returns an iterator to
+/// the existing node. When `multi_t` is `true`, duplicate keys are always
+/// inserted. In both cases `insert` returns an iterator.
 template<hxhash_table_concept_ node_t_,
 	typename deleter_t_=hxdefault_delete,
 	bool multi_t_ = false,
@@ -182,10 +185,10 @@ public:
 	using node_t = node_t_;
 	using key_t = typename node_t_::key_t;
 
-	/// A forward iterator. Iteration is Θ(`n + (1 << table_size_bits)`).
-	/// Iterators are only invalidated by the removal of the `node_t`
-	/// referenced. WARNING: The iterators will automatically convert themselves
-	/// to pointers when used in pointer context.
+	/// `const_iterator` - A forward iterator. Iteration is Θ(`n + (1 <<
+	/// table_size_bits)`). Iterators are only invalidated by the removal of the
+	/// `node_t` referenced. WARNING: The iterators will automatically convert
+	/// themselves to pointers when used in pointer context.
 	class const_iterator
 	{
 	public:
@@ -233,7 +236,8 @@ public:
 		/// \endcond
 	};
 
-	/// A mutable iterator that can modify the elements of the hash table.
+	/// `iterator` - A mutable iterator that can modify the elements of the hash
+	/// table.
 	class iterator : public const_iterator
 	{
 	public:
@@ -286,7 +290,7 @@ public:
 
 	/// Removes all nodes and calls `deleter()` on every node. Deleter can be
 	/// function pointers with signature `void deleter(node_t*)` or callables
-	/// supporting `operator()(node_t*)` and `operator (bool)`. deleter could be
+	/// supporting `operator()(node_t*)` and `operator bool`. deleter could be
 	/// a free list or a null function pointer.
 	/// - `deleter` : A function or callable to call on each removed `node_t`.
 	template<typename deleter_override_t_>
@@ -295,7 +299,7 @@ public:
 	/// Removes all nodes and calls the stored deleter on every node.
 	void clear(void) noexcept { this->clear(m_deleter_); }
 
-	/// Counts the number of Nodes with the given key.
+	/// Counts the number of nodes with the given key.
 	/// - `key` : The key to count occurrences of in the hash table.
 	hxattr_nodiscard hxsize_t count(const typename node_t_::key_t& key_) const;
 
@@ -319,7 +323,7 @@ public:
 	/// Returns an iterator pointing to the end of the hash table.
 	iterator end(void) { return iterator(); }
 
-	/// Releases all Nodes matching key and calls `deleter` on every node. Returns
+	/// Releases all nodes matching key and calls `deleter` on every node. Returns
 	/// the number of nodes released. Deleter can be functions with signature `void
 	/// deleter(node_t*)` and callables supporting `operator()(node_t*)` and with
 	/// an `operator bool`. e.g., a free list or a null pointer.
@@ -369,16 +373,16 @@ public:
 	template<typename ptr_deleter_t_>
 	iterator insert(hxptr<node_t_, ptr_deleter_t_>&& ptr_) noexcept;
 
-	/// Returns the average number of Nodes per bucket.
+	/// Returns the average number of nodes per bucket.
 	hxattr_nodiscard float load_factor(void) const;
 
 	/// Returns the size of the largest bucket.
 	hxattr_nodiscard hxsize_t load_max(void) const;
 
-	/// Clears the hash table without deleting any Nodes.
+	/// Clears the hash table without deleting any nodes.
 	void release_all(void);
 
-	/// Removes all Nodes matching the given key without deleting them.
+	/// Removes all nodes matching the given key without deleting them.
 	/// - `key` : The key to search for and release from the hash table.
 	hxsize_t release_key(const typename node_t_::key_t& key_);
 
@@ -421,5 +425,4 @@ private:
 };
 
 #include "detail/hxhash_table.inl"
-
 HX_NS_END_

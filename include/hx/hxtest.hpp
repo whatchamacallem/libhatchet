@@ -3,13 +3,14 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file hxtest.hpp Google Test-compatible framework for writing unit tests. It
-/// does not spam your system memory allocator with string operations right
-/// after an assert fails. Actually, it never allocates. To disable this header
-/// and switch to testing with `<gtest/gtest.h>` directly, use
-/// `-DHX_USE_GOOGLE_TEST=1`. Only core features are provided. This framework
-/// uses only `operator<` and `operator==` in its assertions. Compatibility with
-/// Google Test may require additional relational operators.
+/// \file
+/// Google Test-compatible framework for writing unit tests. It does not spam
+/// your system memory allocator with string operations right after an assert
+/// fails. Actually, it never allocates. To disable this header and switch to
+/// testing with `<gtest/gtest.h>` directly, use `-DHX_USE_GOOGLE_TEST=1`. Only
+/// core features are provided. This framework uses only `operator<` and
+/// `operator==` in its assertions. Compatibility with Google Test may require
+/// additional relational operators.
 ///
 /// - `TEST(suite, name)` - Defines a test case without a fixture.
 /// - `TEST_F(fixture, name)` - Defines a test case using a fixture class.
@@ -55,8 +56,8 @@
 ///   | `EXPECT_NE(T a, T b)` | Requires `a != b` using `!(a == b)`. |
 ///   | `EXPECT_LT(T a, T b)` | Requires `a < b`. |
 ///   | `EXPECT_GT(T a, T b)` | Requires `a > b` using `b < a`. |
-///   | `EXPECT_LE(T a, T b)` | Requires `a <= b` using `!(b < a)`. |
-///   | `EXPECT_GE(T a, T b)` | Requires `a >= b` using `!(a < b)`. |
+///   | `EXPECT_LE(T a, T b)` | Requires `a` ≤ `b` using `!(b < a)`. |
+///   | `EXPECT_GE(T a, T b)` | Requires `a` ≥ `b` using `!(a < b)`. |
 ///   | `EXPECT_NEAR(T expected, T actual, T absolute_range)` | Requires that two values are within a given range. |
 ///   | `EXPECT_FLOAT_EQ(float a, float b)` | Checks floats for equality within a scaled tolerance. |
 ///   | `EXPECT_DOUBLE_EQ(double a, double b)` | Checks doubles for equality within a scaled tolerance. |
@@ -68,8 +69,8 @@
 ///   | `ASSERT_NE(T a, T b)` | Requires `a != b` using `!(a == b)`. |
 ///   | `ASSERT_LT(T a, T b)` | Requires `a < b`. |
 ///   | `ASSERT_GT(T a, T b)` | Requires `a > b` using `b < a`. |
-///   | `ASSERT_LE(T a, T b)` | Requires `a <= b` using `!(b < a)`. |
-///   | `ASSERT_GE(T a, T b)` | Requires `a >= b` using `!(a < b)`. |
+///   | `ASSERT_LE(T a, T b)` | Requires `a` ≤ `b` using `!(b < a)`. |
+///   | `ASSERT_GE(T a, T b)` | Requires `a` ≥ `b` using `!(a < b)`. |
 ///   | `ASSERT_NEAR(T expected, T actual, T absolute_error)` | Requires that two values are within a given range. |
 ///   | `ASSERT_FLOAT_EQ(float a, float b)` | Checks floats for equality within a scaled tolerance. |
 ///   | `ASSERT_DOUBLE_EQ(double a, double b)` | Checks doubles for equality within a scaled tolerance. |
@@ -179,11 +180,11 @@ protected:
 #define EXPECT_TRUE(x_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_((x_), __FILE__, __LINE__, #x_, false)
 /// `void EXPECT_FALSE(bool)` - Requires that the condition is false.
 #define EXPECT_FALSE(x_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_(!(x_), __FILE__, __LINE__, "!" #x_, false)
-/// `void EXPECT_NEAR(T expected, T actual, T absolute_error)` - Requires that
+/// `void EXPECT_NEAR(T expected, T actual, T absolute_range)` - Requires that
 /// two values are within a given range.
 /// - `expected` : Reference value to compare against.
 /// - `actual` : Value being tested.
-/// - `absolute_error` : Maximum permitted absolute difference.
+/// - `absolute_range` : Maximum permitted absolute difference.
 #define EXPECT_NEAR(expected_, actual_, absolute_range_) do { \
 	const auto hxexp_ = (expected_); const auto hxact_ = (actual_); \
 	HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_( \
@@ -194,9 +195,9 @@ protected:
 #define EXPECT_LT(a_, b_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_((a_) < (b_), __FILE__, __LINE__, #a_ " < " #b_, false)
 /// `void EXPECT_GT(T a, T b)` - Requires `a > b` using `b < a`.
 #define EXPECT_GT(a_, b_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_((b_) < (a_), __FILE__, __LINE__, #a_ " > " #b_, false)
-/// `void EXPECT_LE(T a, T b)` - Requires `a <= b` using `!(b < a)`.
+/// `void EXPECT_LE(T a, T b)` - Requires `a` ≤ `b` using `!(b < a)`.
 #define EXPECT_LE(a_, b_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_(!((b_) < (a_)), __FILE__, __LINE__, #a_ " <= " #b_, false)
-/// `void EXPECT_GE(T a, T b)` - Requires `a >= b` using `!(a < b)`.
+/// `void EXPECT_GE(T a, T b)` - Requires `a` ≥ `b` using `!(a < b)`.
 #define EXPECT_GE(a_, b_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_(!((a_) < (b_)), __FILE__, __LINE__, #a_ " >= " #b_, false)
 /// `void EXPECT_EQ(T a, T b)` - Requires `a == b`.
 #define EXPECT_EQ(a_, b_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_((a_) == (b_), __FILE__, __LINE__, #a_ " == " #b_, false)
@@ -235,9 +236,9 @@ protected:
 #define ASSERT_LT(a_, b_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_((a_) < (b_), __FILE__, __LINE__, #a_ " < " #b_, true)
 /// `void ASSERT_GT(T a, T b)` - Requires `a > b` using `b < a`.
 #define ASSERT_GT(a_, b_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_((b_) < (a_), __FILE__, __LINE__, #a_ " > " #b_, true)
-/// `void ASSERT_LE(T a, T b)` - Requires `a <= b` using `!(b < a)`.
+/// `void ASSERT_LE(T a, T b)` - Requires `a` ≤ `b` using `!(b < a)`.
 #define ASSERT_LE(a_, b_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_(!((b_) < (a_)), __FILE__, __LINE__, #a_ " <= " #b_, true)
-/// `void ASSERT_GE(T a, T b)` - Requires `a >= b` using `!(a < b)`.
+/// `void ASSERT_GE(T a, T b)` - Requires `a` ≥ `b` using `!(a < b)`.
 #define ASSERT_GE(a_, b_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_(!((a_) < (b_)), __FILE__, __LINE__, #a_ " >= " #b_, true)
 /// `void ASSERT_EQ(T a, T b)` - Requires `a == b`.
 #define ASSERT_EQ(a_, b_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_((a_) == (b_), __FILE__, __LINE__, #a_ " == " #b_, true)
@@ -247,7 +248,7 @@ protected:
 /// within a scaled tolerance.
 #define ASSERT_FLOAT_EQ(a_, b_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_(HX_NS_PREFIX_ hxdetail_::hxtest_float_eq_((a_), (b_)), __FILE__, __LINE__, #a_ " ~= " #b_, true)
 /// `void ASSERT_DOUBLE_EQ(double a, double b)` - Requires doubles for equality
-/// within a scaled tolerance. Non-finite numbers always compare false.
+/// within a scaled tolerance.
 #define ASSERT_DOUBLE_EQ(a_, b_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_(HX_NS_PREFIX_ hxdetail_::hxtest_double_eq_((a_), (b_)), __FILE__, __LINE__, #a_ " ~= " #b_, true)
 /// `void ASSERT_STREQ(const char* a, const char* b)` - Requires that two C
 /// strings are equal. Asserts on null arguments.

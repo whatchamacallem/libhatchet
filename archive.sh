@@ -2,23 +2,31 @@
 # SPDX-FileCopyrightText: © 2017-2026 Adrian Johnston.
 # SPDX-License-Identifier: MIT
 # This file is licensed under the terms of the LICENSE.md file.
-#
-# Run this script with no args to finish extracting the files in this archive.
-# It can also be used to create a new archive.
-#
-# This script archives only the .git folder as it contains everything needed to
-# restore the full file tree.
+
+set -eu
 
 PROJECT="$(basename "$PWD")"
 DATE="$(date +%Y-%m-%d)"
 ARCHIVE="$PROJECT-$DATE.git.txz"
 
+# Print help if the first arg starts with a - or there is more than one.
+if [ "$#" -gt 1 ] || { [ "$#" -eq 1 ] && [ "${1#-}" != "$1" ]; }; then
+	echo "$0 [destination-directory]"
+	echo "Will create $ARCHIVE in the destination-directory if"
+	echo "provided, otherwise ~/Backup/ if it exists and in ~/ otherwise. Restores all"
+	echo "files if $0 is the only file in the directory."
+	exit 1
+fi
+
+# Check for the .git file.
 if [ ! -d ".git" ]; then
 	echo "error: .git not found" >&2
 	exit 1
 fi
 
-if [ "$(command ls)" = "archive.sh" ]; then
+# Extract archive if this script is the only non-hidden file.
+if [ "$(command ls)" = "$0" ]; then
+	git fsck
 	git restore .
 	echo "Extracted all files in $PROJECT."
 
@@ -30,18 +38,29 @@ if [ "$(command ls)" = "archive.sh" ]; then
 	exit 0
 fi
 
-# Trim the reflog to 24 hours and repack .git...
-git reflog expire --expire=24.hours.ago --expire-unreachable=24.hours.ago --all
-git gc --prune=now --aggressive
-
-if [ -n "$1" ]; then
+# Create archive.
+if [ "$#" -eq 1 ]; then
 	DESTINATION="$1"
 elif [ -d "$HOME/Backups" ]; then
 	DESTINATION="$HOME/Backups"
 else
 	DESTINATION="$HOME"
 fi
+if [ ! -d "$DESTINATION" ]; then
+	echo "Destination directory not found: $DESTINATION" >&2
+	exit 1
+fi
 
-tar -cJf "$DESTINATION/$ARCHIVE" -C ".." "$PROJECT/archive.sh" "$PROJECT/.git"
+git fsck
 
+# Drop the gh-pages remote-tracking ref so its docs objects are pruned.
+git update-ref -d "refs/remotes/origin/gh-pages" 2> /dev/null || true
+
+git reflog expire --expire=24.hours.ago --expire-unreachable=24.hours.ago --all
+git gc --prune=now --aggressive
+
+# Save everything including local config.
+tar -cJf "$DESTINATION/$ARCHIVE" -C ".." "$PROJECT/$0" "$PROJECT/.git"
+
+printf "Wrote: "
 ls -h1s "$DESTINATION/$ARCHIVE"

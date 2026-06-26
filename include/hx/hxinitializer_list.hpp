@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file hxinitializer_list.hpp Implements or includes std::initializer_list
-/// depending on HX_USE_LIBCXX.
+/// \file
+/// Implements or includes std::initializer_list depending on HX_USE_LIBCXX.
 
 #include "libhatchet.h"
 
@@ -47,5 +47,4 @@ private:
 
 } // namespace std
 /// \endcond
-
 #endif // !HX_USE_LIBCXX

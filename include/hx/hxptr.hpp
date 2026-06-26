@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file hxptr.hpp A unique owning pointer.
+/// \file
+/// A unique owning pointer.
 
 #include "libhatchet.h"
 
@@ -27,6 +28,7 @@ HX_NS_BEGIN_
 template<typename T_, typename deleter_t_=hxdefault_delete>
 class hxptr {
 public:
+	/// `element_t` - Publishes the pointed-to type.
 	using element_t = T_;
 
 	/// Constructs an `hxptr` that takes ownership of `ptr` with a specific
@@ -123,5 +125,4 @@ hxattr_nodiscard hxptr<T_> hxmake_ptr(args_t_&&... args_) {
 }
 
 #include "detail/hxptr.inl"
-
 HX_NS_END_

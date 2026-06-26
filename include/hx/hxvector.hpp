@@ -3,8 +3,10 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file hxvector.hpp Implements `std::vector`, `std::inplace_vector` and
-/// `std::back_insert_iterator` with a chunk added a few things unimplemented.
+/// \file
+/// Implements `std::vector`, `std::inplace_vector` and
+/// `std::back_insert_iterator` with a few things added and a few things
+/// unimplemented.
 
 #include "libhatchet.h"
 
@@ -21,10 +23,10 @@ HX_NS_BEGIN_
 
 #if HX_CPLUSPLUS >= 202002L
 
-/// Concept smoke testing the `hxvector` element. Any kind of constructor or
-/// assignment operator may or may not be required depending on use. All
-/// operator usage should be reasonably predictable. Only the destructor is
-/// explicitly required.
+/// `hxarray_concept_` - Concept smoke testing the `hxvector` element. Any kind
+/// of constructor or assignment operator may or may not be required depending
+/// on use. All operator usage should be reasonably predictable. Only the
+/// destructor is explicitly required.
 template<typename T_>
 concept hxarray_concept_ = requires(T_& x_) {
 	sizeof(T_);
@@ -60,7 +62,8 @@ private:
 /// \endcond
 
 /// `hxvector` - Implements `std::vector`, `std::inplace_vector` and
-/// `std::back_insert_iterator` with a chunk added a few things unimplemented.
+/// `std::back_insert_iterator` with a few things added and a few things
+/// unimplemented.
 /// Uses raw pointers as an iterator type so that you get compile errors and
 /// debug symbols that use plain C++ pointers instead. There are exhaustive
 /// asserts. `hxvector` uses the `hxkey_less` and `hxkey_equal` overloads. They
@@ -78,7 +81,7 @@ private:
 /// - `T` : Element type stored by the array.
 /// - `capacity` : Maximum element count or `hxallocator_dynamic_capacity` for dynamic storage.
 template<hxarray_concept_ T_, hxsize_t capacity_=hxallocator_dynamic_capacity>
-class hxvector : public hxallocator<T_, capacity_> {
+class hxvector : private hxallocator<T_, capacity_> {
 public:
 	/// Random access iterator.
 	using iterator = T_*;
@@ -103,18 +106,18 @@ public:
 	explicit hxvector(hxsize_t size_, const T_& x_) noexcept;
 
 	/// Copy constructs an array. Non-explicit to allow assignment constructor.
-	/// - `x` : An `Array<T>`.
+	/// - `x` : An `hxvector<T>`.
 	hxvector(const hxvector& x_) noexcept;
 
 	/// Copy constructs an array. Non-explicit to allow assignment constructor.
-	/// - `x` : A non-temporary `Array<T>`.
+	/// - `x` : A non-temporary `hxvector<T>`.
 	template <hxsize_t capacity_x_>
 	hxvector(const hxvector<T_, capacity_x_>& x_) noexcept;
 
 	/// Copy construct from a temporary. Refuses to copy construct from a
 	/// statically allocated temporary for efficiency. Only works with
 	/// `hxallocator_dynamic_capacity`.
-	/// - `x` : A temporary `Array<T>`.
+	/// - `x` : A temporary `hxvector<T>`.
 	hxvector(hxvector&& x_) noexcept;
 
 	/// Constructs from a C-style array. Usable as an `initializer_list` when the
@@ -141,19 +144,19 @@ public:
 
 	/// Assigns the contents of another `hxvector` to this array. Standard except
 	/// reallocation is disallowed.
-	/// - `x` : A non-temporary Array<T>.
+	/// - `x` : A non-temporary `hxvector<T>`.
 	void operator=(const hxvector& x_) noexcept;
 
 	/// Assigns the contents of another `hxvector` to this array. Standard except
 	/// reallocation is disallowed.
-	/// - `x` : A non-temporary Array<T>.
+	/// - `x` : A non-temporary `hxvector<T>`.
 	template <hxsize_t capacity_x_>
 	void operator=(const hxvector<T_, capacity_x_>& x_) noexcept;
 
 	/// Swap contents with a temporary array using `swap`. Only works with
 	/// `hxallocator_dynamic_capacity`. Dynamically allocated arrays are swapped
 	/// with very little overhead.
-	/// - `x` : A temporary Array<T>.
+	/// - `x` : A temporary `hxvector<T>`.
 	void operator=(hxvector&& x_) noexcept;
 
 	/// Assign from a C-style array. Usable as an `initializer_list` when the
@@ -162,7 +165,7 @@ public:
 	/// static const int initial_values[] = { 5, 4, 3 };
 	/// hxvector<int, 32> current_values(initial_values);
 	/// ```
-	/// - `array` : A const array of `array_length` `value_t`.
+	/// - `array` : A const array of `array_length` `value_type`.
 	template<typename other_value_t_, hxsize_t array_length_>
 	void operator=(const other_value_t_(&array_)[array_length_]) noexcept;
 
@@ -291,6 +294,9 @@ public:
 	/// - `value` : The value to locate.
 	hxattr_nodiscard T_* binary_search(const T_& value_);
 
+	/// Returns the capacity of the array or 0 if unallocated.
+	hxattr_nodiscard hxsize_t capacity(void) const;
+
 	/// Returns a `const T*` to the beginning of the array (alias for
 	/// `begin`).
 	const T_* cbegin(void) const { return this->data(); }
@@ -300,6 +306,12 @@ public:
 
 	/// Clears the array, destroying all elements.
 	void clear(void) noexcept;
+
+	/// Returns a pointer to a const and potentially uninitialized array of `T`.
+	const T_* data(void) const { return hxallocator<T_, capacity_>::data(); }
+
+	/// Returns a pointer to a potentially uninitialized array of `T`.
+	T_* data(void) { return hxallocator<T_, capacity_>::data(); }
 
 	/// Emplaces an element at the end of the array using forwarded arguments.
 	/// Returns a reference to the new element. Exactly the same as `push_back`.
@@ -460,7 +472,6 @@ public:
 	void insert(hxsize_t index_, ref_t_&& x_) noexcept;
 
 	/// Sorts the array with insertion sort using `hxkey_less`. (Non-standard.)
-	/// - `less` : A key comparison callable defining a less-than ordering relationship.
 	void insertion_sort(void) noexcept;
 
 	/// Returns true if this array compares less than `x` using `hxkey_equal`
@@ -471,7 +482,6 @@ public:
 	hxattr_nodiscard bool less(const hxvector<T_, capacity_x_>& x_) const;
 
 	/// Converts the array into a max-heap using `hxkey_less`. (Non-standard.)
-	/// - `less` : A key comparison callable defining a less-than ordering relationship.
 	void make_heap(void) noexcept;
 
 	/// Returns the capacity of the array or 0 if unallocated. This is the
@@ -491,8 +501,8 @@ public:
 	void pop_back(void) noexcept;
 
 	/// Removes the first (maximum) element from a max-heap. This implements
-	/// `std::pop_heap` and `std::priority_queue` using `hxless` for ordering. See
-	/// `push_heap`.
+	/// `std::pop_heap` and `std::priority_queue` using `hxkey_less` for ordering.
+	/// See `push_heap`.
 	void pop_heap(void) noexcept;
 
 	/// Appends an element to the end of the array. `args_t` may be any types
@@ -503,7 +513,7 @@ public:
 	T_& push_back(args_t_&&... args_) noexcept;
 
 	/// Inserts an element into a max-heap. This implements `std::push_heap` and
-	/// `std::priority_queue` using `hxless` for ordering. See `pop_heap`.
+	/// `std::priority_queue` using `hxkey_less` for ordering. See `pop_heap`.
 	/// Returns a reference to the element added.
 	/// - `arg` : The element to add.
 	template<typename ref_t_>
@@ -558,8 +568,8 @@ private:
 // Without the "requires" keyword these end up being ambiguous.
 #if HX_CPLUSPLUS >= 202002L
 
-/// `bool hxequal(hxvector<T>& x, hxvector<T>& y)` - Compares the contents of `x`
-/// and `y` for equivalence.
+/// `bool hxkey_equal(hxvector<T>& x, hxvector<T>& y)` - Compares the contents
+/// of `x` and `y` for equivalence.
 template<typename T_, hxsize_t capacity_x_, hxsize_t capacity_y_>
 bool hxkey_equal(const hxvector<T_, capacity_x_>& x_, const hxvector<T_, capacity_y_>& y_) {
     return x_.equal(y_);
@@ -583,7 +593,5 @@ void hxswap(hxvector<T_, hxallocator_dynamic_capacity>& x_,
 }
 
 #endif // HX_CPLUSPLUS >= 202002L
-
 #include "detail/hxvector.inl"
-
 HX_NS_END_

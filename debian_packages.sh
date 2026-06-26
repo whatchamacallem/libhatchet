@@ -18,7 +18,7 @@ trap '{ set +o xtrace; } 2> /dev/null
     trap - 1 2 3 6 15
     for pid in $(pgrep -g "$$" 2>/dev/null); do
         [ "$pid" = "$$" ] && continue
-        kill "$pid" 2>/dev/null
+        kill -9 "$pid" 2>/dev/null
     done
     exit 1
 ' 1 2 3 6 15
@@ -34,7 +34,7 @@ color_offset=0
 separator() {
 	for((i=40; i--;)); do
 		local color_index=$(((color_offset + i) % total_colors))
-		echo -ne "\033[38;5;${colors[color_index]}m──"
+		echo -ne "\033[38;5;${colors[color_index]}m--"
 	done
 	echo -e "\033[0m"
 	((color_offset += 3))

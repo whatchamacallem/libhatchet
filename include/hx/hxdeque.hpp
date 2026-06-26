@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file hxdeque.hpp - A fixed-capacity deque backed by a power-of-two ring buffer
+/// \file
+/// A fixed-capacity deque backed by a power-of-two ring buffer
 
 #include "libhatchet.h"
 
@@ -17,13 +18,13 @@
 
 HX_NS_BEGIN_
 
-/// hxdeque - A fixed-capacity deque backed by a power-of-two ring buffer. All
-/// operations are `O(1)`. The capacity must be a power of two and greater than
-/// zero. This designed to do one thing very well and that is all.
+/// `hxdeque` - A fixed-capacity deque backed by a power-of-two ring buffer. All
+/// operations are `Θ(1)`. The capacity must be a power of two and greater than
+/// zero. This is designed to do one thing very well and that is all.
 /// - `T` : The element type stored in the deque.
 /// - `capacity` : Maximum element count or `hxallocator_dynamic_capacity` for dynamic storage.
 template<typename T_, hxsize_t capacity_=hxallocator_dynamic_capacity>
-class hxdeque : public hxallocator<T_, capacity_> {
+class hxdeque : private hxallocator<T_, capacity_> {
 public:
 	/// Constructs an empty hxdeque. When using static storage the capacity is
 	/// fixed at compile time. Asserts that the capacity is a power of two
@@ -60,8 +61,17 @@ public:
 	/// Returns a const reference to the back element.
 	hxattr_nodiscard const T_& back(void) const;
 
+	/// Returns the capacity of the deque or 0 if unallocated.
+	hxattr_nodiscard hxsize_t capacity(void) const;
+
 	/// Destroys all elements and resets the deque to empty without deallocating.
 	void clear(void) noexcept;
+
+	/// Returns a pointer to a const and potentially uninitialized array of `T`.
+	const T_* data(void) const { return hxallocator<T_, capacity_>::data(); }
+
+	/// Returns a pointer to a potentially uninitialized array of `T`.
+	T_* data(void) { return hxallocator<T_, capacity_>::data(); }
 
 	/// Constructs an element in place at the back using forwarded arguments.
 	/// Asserts if the deque is full or unallocated. Exactly the same as
@@ -131,5 +141,4 @@ private:
 };
 
 #include "detail/hxdeque.inl"
-
 HX_NS_END_

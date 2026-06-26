@@ -3,8 +3,9 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file hxfile.hpp - Single-ownership C++ RAII abstraction for file I/O. Both
-/// POSIX and libc implementations are available.
+/// \file
+/// Single-ownership C++ RAII abstraction for file I/O. Both POSIX and libc
+/// implementations are available.
 
 #include "libhatchet.h"
 
@@ -19,20 +20,21 @@ HX_NS_BEGIN_
 
 class hxfile;
 
-/// Global reference to stdin or equivalent.
+/// `hxin` - Global reference to stdin or equivalent.
 extern hxfile hxin;
 
-/// Global reference to stdout or equivalent.
+/// `hxout` - Global reference to stdout or equivalent.
 extern hxfile hxout;
 
-/// Global reference to stderr or equivalent.
+/// `hxerr` - Global reference to stderr or equivalent.
 extern hxfile hxerr;
 
-/// Global equivalent to `/dev/null`. May be written to but not read from.
+/// `hxdev_null` - Global equivalent to `/dev/null`. May be written to but not
+/// read from.
 extern hxfile hxdev_null;
 
-/// Equivalent to `std::endl` without the flush. Does not vary by platform.
-/// Non-empty POSIX text files must end with `\n`.
+/// `hxendl` - Equivalent to `std::endl` without the flush. Does not vary by
+/// platform. Non-empty POSIX text files must end with `\n`.
 hxinline_constexpr char hxendl[] = "\n";
 
 /// `hxfile` - Single-ownership C++ RAII abstraction for file I/O. Provides a
@@ -77,7 +79,7 @@ public:
 		/// reasonably unforeseen asserts to be skipped, set skip_asserts. Bad
 		/// parameters (e.g., writing to a file that is not open, was not opened
 		/// to be written to, or providing a null buffer) will still result in
-		/// assertions. e.g., `"w+b"`.
+		/// assertions.
 		skip_asserts = 4u
 	};
 
@@ -102,7 +104,7 @@ public:
 	/// This is done because `hxfile::hxfile()` uses variadic arguments.
 	hxfile(const char* file_, uint8_t mode_=0) = delete;
 
-	// Move constructor. No copy constructor is provided.
+	/// Move constructor. No copy constructor is provided.
 	hxfile(hxfile&& file_) noexcept;
 
 	/// Destroys the file and ensures it is closed when the object goes out of
@@ -259,5 +261,4 @@ private:
 };
 
 HX_NS_END_
-
 #endif // HX_USE_FILE_IO

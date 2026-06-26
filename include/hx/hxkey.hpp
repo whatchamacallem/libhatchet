@@ -3,15 +3,16 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file hxkey.hpp User-overloadable key-equal, key-less, and key-hash
-/// functions. By default this code uses only the `==` and `<` operators, which
-/// works with a defaulted `<=>` operator. Alternatively, these functions can be
-/// overloaded to resolve key operations without global operator overloads. This
-/// code uses C++20 concepts when available and provides no fallbacks for SFINAE
-/// otherwise. Partial specialization does not work before C++20. As an
-/// alternative, callables are recommended and supported for complex use cases
-/// because they are relatively easy to debug. See `hxkey_equal_t` and
-/// `hxkey_less_t` for generating default callables.
+/// \file
+/// User-overloadable key-equal, key-less, and key-hash functions. By default
+/// this code uses only the `==` and `<` operators, which works with a defaulted
+/// `<=>` operator. Alternatively, these functions can be overloaded to resolve
+/// key operations without global operator overloads. This code uses C++20
+/// concepts when available and provides no fallbacks for SFINAE otherwise.
+/// Partial specialization does not work before C++20. As an alternative,
+/// callables are recommended and supported for complex use cases because they
+/// are relatively easy to debug. See `hxkey_equal_t` and `hxkey_less_t` for
+/// generating default callables.
 
 #include "libhatchet.h"
 
@@ -31,8 +32,9 @@ using hxcstring_ = char*;
 /// \endcond
 
 #if HX_CPLUSPLUS >= 202002L
-/// A concept that requires one type to be convertible to another. See usage
-/// below. The compiler applies some unintuitive rules when evaluating this.
+/// `hxconvertible_to` - A concept that requires one type to be convertible to
+/// another. See usage below. The compiler applies some unintuitive rules when
+/// evaluating this.
 /// - `from_t` : The source type.
 /// - `to_t` : The target type.
 template<typename from_t_, typename to_t_>
@@ -61,8 +63,8 @@ hxattr_nodiscard constexpr bool hxkey_equal(const A_& a_, const B_& b_) {
     return a_ == b_;
 }
 
-/// `hxkey_equal(const char* a, const char* b)` is `strcmp(a, b) == 0`.
-/// Returns true if two C strings are equal (`strcmp(a, b) == 0`).
+/// `hxkey_equal(const char*, const char*)` - Returns true if two C strings are
+/// equal (`strcmp(a, b) == 0`).
 /// - `a` : The first C string.
 /// - `b` : The second C string.
 hxattr_nodiscard inline bool hxkey_equal(const hxcstring_const_& a_, const hxcstring_const_& b_) {

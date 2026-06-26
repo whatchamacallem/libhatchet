@@ -25,7 +25,8 @@ hxwarning_args = [
 	'-Wconversion',
 	'-Wdate-time',
 	'-Wmissing-declarations',
-	'-Wno-c2y-extensions'
+	'-Wno-c2y-extensions',
+	'-Wno-unknown-warning-option'
 ]
 
 hxinclude_directory = include_directories('include')

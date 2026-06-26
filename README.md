@@ -1,11 +1,11 @@
 # libhatchet
 
-Please use the most recent tagged release.
+Please use the most recent tagged release. It has been exhaustively tested.
 
 ## Overview
 
 > People say that you should not micro-optimize. But if what you love is
-> micro-optimization... that's what you should do. — Linus Torvalds
+> micro-optimization... that's what you should do. - Linus Torvalds
 
 libhatchet is a fast compiling lightweight, bespoke C17/C++23 alternative to the
 C++ standard library designed for cross-compilation to resource-constrained
@@ -129,13 +129,17 @@ system allocators.
 
 ## Documentation
 
-Running the command `doxygen` with no arguments will generate
-`docs/html/index.html`. The markdown source for the documentation is in the
-header files at `include/hx/` and is also readable as-is.
+The documentation is at
+<https://whatchamacallem.github.io/libhatchet>.
 
-Reading `include/hx/settings.h` is recommended. There are many things that can
-be configured on the compiler command line. E.g. whether or not the library is
-wrapped in a namespace.
+Running the command `doxygen` with no arguments will generate `docs/index.html`.
+The markdown source for the documentation is in the header files at
+`include/hx/` and is also readable as-is. The stylesheet was tested with Doxygen
+1.15.0.
+
+Reading `include/hx/settings.h` is recommended. There are a number of important
+things that can be configured on the compiler command line. E.g. whether or not
+the library is wrapped in a namespace.
 
 ## Not Provided
 
@@ -183,7 +187,7 @@ The scripted builds exercise the following toolchains, language modes, and
 | Script | Toolchain | Language Modes | `HX_HARDENING_MODE` | Notes |
 | --- | --- | --- | --- | --- |
 | `debugbuild.sh` | `clang`/`clang++` | C17, C++23 | 0 | 32-bit debug build with ccache and no exceptions/RTTI. |
-| `testcmake.sh` | `cmake` + default compiler | C17, C++23 | 0 (default) | Uses the real Google Test and runs `hxtest` and clang-tidy. |
+| `testcmake.sh` | `cmake` + default compiler | C17, C++23 | 0 (default) | Uses the real Google Test and runs `hxtest` and Clang-Tidy. |
 | `testcoverage.sh` | `gcc`, `g++` + `--coverage` | C99, C++23 | 0 | Enables `HX_TEST_ERROR_HANDLING=1` and emits `coverage.html`. |
 | `testmatrix.sh` | `gcc`, `clang` (ASan/UBSan) | C99, C17, C++11, C++23 | 0-3 | Sweeps optimization levels and sets `HX_USE_THREADS=0/1/11`. |
 | `teststrip.sh` | `musl-gcc` (static) | C17, C++11/14/17/20 | 3 | Size-focused static build with allocator/library stripping. |
@@ -199,16 +203,14 @@ discovered.
 
 The scripts are at the top level for easy access.
 
-```text
-├─ 📁 .vscode           # The vscode configuration files.
-├─ 📁 example           # Simple program showing usage.
-├─ 📁 gdb               # GDB scripts for the container classes.
-├─ 📁 include           # This is the directory to add to your include path.
-│   └─ 📁 hx            # These are all the <hx/hx*> header files.
-│       └─ 📁 detail    # These are internal header files.
-├─ 📁 src               # C/C++ files that have to be added to your build.
-└─ 📁 test              # An optional test suite.
-```
+- 📁 `.vscode` - The vscode configuration files.
+- 📁 `example` - Simple program showing usage.
+- 📁 `gdb` - GDB scripts for the container classes.
+- 📁 `include` - This is the directory to add to your include path.
+  - 📁 `hx` - These are all the `<hx/hx*>` header files.
+    - 📁 `detail` - These are internal header files.
+- 📁 `src` - C/C++ files that have to be added to your build.
+- 📁 `test` - An optional test suite.
 
 ## License
 

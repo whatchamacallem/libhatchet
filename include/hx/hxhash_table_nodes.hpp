@@ -3,8 +3,9 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file hxhash_table_nodes.hpp These are versions of the
-/// `hxhash_table::node_t` template parameter for integers and strings.
+/// \file
+/// These are versions of the `hxhash_table::node_t` template parameter for
+/// integers and strings.
 
 #include "libhatchet.h"
 
@@ -52,6 +53,8 @@ public:
 	const key_t_& hash_key(void) const { return m_key_; }
 	/// Returns the cached hash value for the stored key.
 	hxhash_t hash_value(void) const { return m_hash_; }
+	/// Returns the hash of a key without constructing a node.
+	/// - `key` : The key to hash.
 	static hxhash_t hash_value(key_t_ key_) { return hxkey_hash(key_); }
 
 private:
@@ -62,10 +65,9 @@ private:
 	hxhash_t m_hash_;
 };
 
-/// `hxhash_table_node_string_literal` - Specialization of
-/// `hxhash_table_set_node` for static C strings. This code expects the provided
-/// strings to outlive the container because it is intended for use with string
-/// literals.
+/// `hxhash_table_node_string_literal` - Subclass of `hxhash_table_set_node` for
+/// static C strings. This code expects the provided strings to outlive the
+/// container because it is intended for use with string literals.
 class hxhash_table_node_string_literal
 	: public hxhash_table_set_node<const char*> {
 public:
@@ -82,7 +84,7 @@ public:
 	}
 };
 
-/// `hxhash_table_node_string` - Specialization of `hxhash_table_set_node` for C
+/// `hxhash_table_node_string` - Subclass of `hxhash_table_set_node` for C
 /// strings. Allocates a copy, resulting in a string pool per hash table. The
 /// key is stored as a pointer to `const` to keep the hash table code
 /// const-correct.

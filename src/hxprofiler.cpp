@@ -12,8 +12,7 @@ HX_NS_BEGIN_
 
 namespace {
 
-// ----------------------------------------------------------------------------
-// Console commands
+// -- Console Commands ---------------------------------------------------------
 
 hxconsole_command_named(*+[](void) -> bool { hxprofiler_start(); return true; }, profilestart);
 hxconsole_command_named(*+[](void) -> bool { hxprofiler_stop(); return true; }, profilestop);
@@ -25,15 +24,14 @@ hxconsole_command_named(*+[](const char* filename) -> bool {
 
 } // namespace {
 
-// ----------------------------------------------------------------------------
-// Variables
 
 namespace hxdetail_ {
 
+// -- Variables ----------------------------------------------------------------
+
 hxprofiler_internal_ hxg_profiler_;
 
-// ----------------------------------------------------------------------------
-// hxprofiler_internal_
+// -- hxprofiler_internal_ -----------------------------------------------------
 
 void hxprofiler_internal_::start_(void) {
 #if HX_USE_THREADS

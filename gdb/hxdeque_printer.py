@@ -9,7 +9,7 @@ import traceback
 # hxdeque uses this layout:
 #
 #	template<typename T_, hxsize_t capacity_>
-#	class hxdeque : public hxallocator<T_, capacity_> {
+#	class hxdeque : private hxallocator<T_, capacity_> {
 #		// ...
 #		hxsize_t m_mask_;   // capacity - 1
 #		hxsize_t m_head_;   // index of front element

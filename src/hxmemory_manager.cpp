@@ -82,8 +82,8 @@ static hxmutex hxs_memory_manager_mutex;
 static_assert(hxsystem_allocator_heap == 0, "hxsystem_allocator_heap must be 0 for thread-local default");
 static hxthread_local<hxsystem_allocator_t> hxs_current_memory_allocator;
 
-// ----------------------------------------------------------------------------
-// hxmemory_allocation_header - Used until C++17.
+// -- hxmemory_allocation_header -----------------------------------------------
+// Used until C++17.
 #if !HX_USE_STD_ALIGNED_ALLOC
 class hxmemory_allocation_header {
 public:
@@ -92,9 +92,7 @@ public:
 };
 #endif
 
-// ----------------------------------------------------------------------------
-// hxmemory_allocator_base
-//
+// -- hxmemory_allocator_base --------------------------------------------------
 // Clang emits inline constructors of anonymous namespace types into module
 // consumers. Out-of-line constructors prevent this.
 class hxmemory_allocator_base {
@@ -120,9 +118,7 @@ private:
 	void operator=(const hxmemory_allocator_base&) = delete;
 };
 
-// ----------------------------------------------------------------------------
-// hxmemory_allocator_os_heap
-//
+// -- hxmemory_allocator_os_heap -----------------------------------------------
 // This just calls aligned_alloc when HX_HARDENING_MODE !=
 // HX_HARDENING_MODE_DEBUG. In debug and in C++98 mode this code wraps heap
 // allocations with a header and adds padding to obtain required alignment. This
@@ -155,7 +151,7 @@ public:
 
 	hxattr_hot void* on_alloc(size_t size, hxalignment_t alignment) override {
 #if HX_USE_STD_ALIGNED_ALLOC
-		// C11 aligned_alloc requires alignment >= sizeof(void*) on some platforms.
+		// C11 aligned_alloc requires alignment ≥ sizeof(void*) on some platforms.
 		alignment = hxmax(alignment, hxalignment);
 		const size_t alignment_mask = static_cast<size_t>(alignment) - 1u;
 
@@ -217,9 +213,8 @@ private:
 	size_t m_high_water;
 };
 
-// ----------------------------------------------------------------------------
-// hxmemory_allocator_stack: Nothing can be freed.
-
+// -- hxmemory_allocator_stack ------------------------------------------------
+// Nothing can be freed.
 class hxmemory_allocator_stack : public hxmemory_allocator_base {
 public:
 	hxattr_cold void construct(void* ptr, size_t size, const char* label) {
@@ -272,7 +267,7 @@ public:
 	}
 
 	hxattr_hot void on_free_non_virtual(void* ptr) {
-		// Use <= because a valid outstanding allocation of size 0 could have
+		// Use ≤ because a valid outstanding allocation of size 0 could have
 		// been made at m_current.
 		const uintptr_t ptr_value = reinterpret_cast<uintptr_t>(ptr);
 		hxassertmsg(m_allocation_count > 0 && ptr_value >= m_begin_
@@ -292,9 +287,8 @@ protected:
 	size_t m_allocation_count;
 };
 
-// ----------------------------------------------------------------------------
-// hxmemory_allocator_temp_stack: Resets after a scope closes.
-
+// -- hxmemory_allocator_temp_stack -------------------------------------------
+// Resets after a scope closes.
 class hxmemory_allocator_temp_stack : public hxmemory_allocator_stack {
 public:
 	hxattr_cold void construct(void* ptr, size_t size, const char* label) {
@@ -358,10 +352,7 @@ protected:
 #endif
 };
 
-// ----------------------------------------------------------------------------
-// hxmemory_manager
-
-constexpr int hxs_allocator_slot_count_ = hxsystem_allocator_stack_0 + HX_MEMORY_MAX_STACKS;
+// -- hxmemory_manager ---------------------------------------------------------
 
 class hxmemory_manager {
 public:
@@ -386,6 +377,8 @@ public:
 
 private:
 	friend class hxsystem_allocator_scope;
+
+	static constexpr int hxs_allocator_slot_count_ = hxsystem_allocator_stack_0 + HX_MEMORY_MAX_STACKS;
 
 	hxmemory_allocator_base*      m_memory_allocators[hxs_allocator_slot_count_];
 
@@ -564,9 +557,7 @@ void hxmemory_manager::free(void* ptr) {
 	m_memory_allocator_heap.on_free_non_virtual(ptr);
 }
 
-// ----------------------------------------------------------------------------
-// hxsystem_allocator_scope
-
+// -- hxsystem_allocator_scope -------------------------------------------------
 hxattr_noexcept hxsystem_allocator_scope::hxsystem_allocator_scope(hxsystem_allocator_t id) {
 	hxinit();
 	m_this_allocator_ = id;
@@ -615,9 +606,7 @@ hxmemory_manager_stats hxmemory_manager_utilization(bool stacks_only, bool log) 
 
 HX_NS_END_
 
-// ----------------------------------------------------------------------------
-// C API
-
+// -- C API --------------------------------------------------------------------
 extern "C"
 hxattr_noexcept void* hxmalloc(size_t size) {
 	return  hxmalloc_ext(size, hxsystem_allocator_current, hxalignment);
@@ -642,7 +631,7 @@ hxattr_noexcept void hxfree(void *ptr) {
 	HX_NS_PREFIX_ hxs_memory_manager.free(ptr);
 }
 
-// ----------------------------------------------------------------------------
+// -- Memory manager disabled --------------------------------------------------
 #else // !HX_USE_MEMORY_MANAGER
 
 HX_NS_BEGIN_

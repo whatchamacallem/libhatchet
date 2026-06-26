@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file hxtask_queue.hpp Provides a priority queue of tasks and a worker
-/// thread pool.
+/// \file
+/// Provides a priority queue of tasks and a worker thread pool.
 
 #include "libhatchet.h"
 
@@ -34,6 +34,8 @@ public:
 		hxtask* task;
 		int priority;
 
+		/// Orders records by `priority` so the highest priority sorts last.
+		/// - `x` : The record to compare against.
 		bool operator<(const record_t& x_) const { return this->priority < x_.priority; }
 
 #if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
@@ -47,7 +49,7 @@ public:
 	/// A `thread_pool_size` of `0` does not use threads.
 	explicit hxtask_queue(hxsize_t task_queue_size_, hxsize_t thread_pool_size_);
 
-	/// Calls `wait_for_all` before destruction.
+	/// Waits for all queued and executing tasks to complete before destruction.
 	~hxtask_queue(void);
 
 	/// Locks the queue and calls `fn` on each task. Returns true if the
@@ -166,5 +168,4 @@ private:
 };
 
 #include "detail/hxtask_queue.inl"
-
 HX_NS_END_

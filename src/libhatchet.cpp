@@ -31,7 +31,7 @@ bool (*hxg_assert_handler)(void);
 static_assert(0, "Warning: C++ exceptions are not supported");
 #endif
 
-// ----------------------------------------------------------------------------
+// -- __cxa --------------------------------------------------------------------
 
 #if !(HX_USE_LIBCXX)
 
@@ -79,7 +79,7 @@ hxattr_weak void __cxa_pure_virtual(void) {
 
 #endif
 
-// ----------------------------------------------------------------------------
+// -- __sanitizer_report_error_summary -----------------------------------------
 // Hooks clang's sanitizers into the debugger by overriding a weak library
 // symbol in the sanitizer support library. This provides clickable error
 // messages in VS Code and is otherwise unused.
@@ -91,7 +91,7 @@ hxattr_weak void __sanitizer_report_error_summary(const char *error_summary) { /
 	hxbreakpoint(); (void)error_summary;
 }
 
-// ----------------------------------------------------------------------------
+// -- libhatchet ---------------------------------------------------------------
 // Initialization, shutdown, exit, assert, and logging.
 
 hxattr_weak void hxinit_internal(int version) {

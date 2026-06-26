@@ -19,7 +19,7 @@
 HX_NS_BEGIN_
 
 // In this version the file is a POSIX fd stored directly as intptr_t. -1
-// represents closed or hxdev_null; valid fds are >= 0.
+// represents closed or hxdev_null; valid fds are ≥ 0.
 
 hxfile hxin(hxfile::in, static_cast<intptr_t>(STDIN_FILENO));
 hxfile hxout(hxfile::out, static_cast<intptr_t>(STDOUT_FILENO));

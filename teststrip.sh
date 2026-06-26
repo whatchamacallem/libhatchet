@@ -10,7 +10,7 @@ trap '{ set +o xtrace; } 2> /dev/null
     trap - 1 2 3 6 15
     for pid in $(pgrep -g "$$" 2>/dev/null); do
         [ "$pid" = "$$" ] && continue
-        kill "$pid" 2>/dev/null
+        kill -9 "$pid" 2>/dev/null
     done
     exit 1
 ' 1 2 3 6 15
@@ -22,9 +22,9 @@ export POSIXLY_CORRECT=1
 BUILD="-DHX_USE_LIBCXX=0 -DHX_HARDENING_MODE=HX_HARDENING_MODE_NONE \
     -DHX_USE_LOGGING=1 -DHX_USE_THREADS=11"
 
-ERRORS="-Wall -Wextra -pedantic-errors -Werror -Wfatal-errors -Wcast-qual \
-	-Wdisabled-optimization -Wshadow -Wundef -Wconversion -Wdate-time     \
-	-Wmissing-declarations -Wno-c2y-extensions"
+ERRORS="-Wall -Wextra -pedantic-errors -Werror -Wfatal-errors -Wcast-qual   \
+	-Wdisabled-optimization -Wshadow -Wundef -Wconversion -Wdate-time       \
+	-Wmissing-declarations -Wno-c2y-extensions -Wno-unknown-warning-option"
 
 # 32-bit MUSL is not tested as it is unsupported on Ubuntu.
 FLAGS="-Os -static -g -ffunction-sections -fdata-sections -ffast-math"

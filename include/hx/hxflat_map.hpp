@@ -3,8 +3,9 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file hxflat_map.hpp A sorted flat map and multimap backed by two parallel
-/// arrays of keys and values.
+/// \file
+/// A sorted flat map and multimap backed by two parallel arrays of keys and
+/// values.
 
 #include "libhatchet.h"
 
@@ -20,8 +21,8 @@
 HX_NS_BEGIN_
 
 /// `hxflat_map` - A sorted associative container that stores keys and mapped
-/// values in two parallel arrays. Lookup is O(log n) via binary search. Insert
-/// and erase are O(n) because elements are shifted to maintain order. This
+/// values in two parallel arrays. Lookup is Θ(log n) via binary search. Insert
+/// and erase are Θ(n) because elements are shifted to maintain order. This
 /// design keeps keys and values cache-friendly and avoids heap overhead per
 /// element.
 ///
@@ -31,10 +32,10 @@ HX_NS_BEGIN_
 /// `bool(const key_t_&, const key_t_&)` returning true when the first
 /// argument is ordered before the second. It defaults to `hxkey_less_t`.
 ///
-/// When `capacity` is `hxallocator_dynamic_capacity` storage must be
-/// allocated by calling `set_capacity` before inserting elements.  Otherwise
-/// the arrays are statically sized to `capacity` elements and `set_capacity`
-/// may only be called with exactly that value.
+/// When `capacity` is `hxallocator_dynamic_capacity` storage must be allocated
+/// by calling `reserve` before inserting elements. Otherwise the arrays are
+/// statically sized to `capacity` elements and `reserve` may only be called
+/// with exactly that value.
 ///
 /// E.g.:
 /// ```
@@ -57,9 +58,10 @@ public:
 	using mapped_t = mapped_t_;
 	using compare_t = compare_t_;
 
-	/// A random-access iterator over key-value pairs. Iterators are invalidated
-	/// by any insert or erase operation. Dereference via `operator*` returns a
-	/// `const const_iterator&` so callers can use `key()` and `value()`.
+	/// `const_iterator` - A random-access iterator over key-value pairs.
+	/// Iterators are invalidated by any insert or erase operation. Dereference
+	/// via `operator*` returns a `const const_iterator&` so callers can use
+	/// `key()` and `value()`.
 	class const_iterator {
 	public:
 		/// Constructs an end iterator.
@@ -150,7 +152,8 @@ public:
 		/// \endcond
 	};
 
-	/// A mutable random-access iterator that allows modifying the mapped value.
+	/// `iterator` - A mutable random-access iterator that allows modifying the
+	/// mapped value.
 	class iterator : public const_iterator {
 	public:
 		/// Constructs an end iterator.
@@ -204,11 +207,11 @@ public:
 		/// \endcond
 	};
 
-	/// Constructs an empty map. Requires `set_capacity` before inserting when
+	/// Constructs an empty map. Requires `reserve` before inserting when
 	/// `capacity` is `hxallocator_dynamic_capacity`.
 	explicit hxflat_map(void);
 
-	/// Copy constructs from another `hxflat_map`. Requires `x.size() <= capacity()`.
+	/// Copy constructs from another `hxflat_map`. Requires `x.size()` ≤ `capacity()`.
 	/// - `x` : A non-temporary `hxflat_map<key_t, mapped_t, compare_t, multi_t, capacity>`.
 	hxflat_map(const hxflat_map& x_) noexcept;
 
@@ -221,12 +224,12 @@ public:
 	~hxflat_map(void) noexcept;
 
 	/// Assigns the contents of `x` to this map. Clears this map then copies all
-	/// elements from `x`. Requires `x.size() <= capacity()`.
+	/// elements from `x`. Requires `x.size()` ≤ `capacity()`.
 	/// - `x` : The map to copy from.
 	void operator=(const hxflat_map& x_) noexcept;
 
 	/// Cross-capacity copy assignment. Assigns the contents of `x` to this map.
-	/// Requires `x.size() <= capacity()`.
+	/// Requires `x.size()` ≤ `capacity()`.
 	/// - `x` : The map to copy from.
 	template<hxsize_t capacity_x_>
 	void operator=(const hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_,
@@ -332,7 +335,7 @@ public:
 	iterator insert(const key_t_& key_, mapped_t_&& mapped_) noexcept;
 
 	/// Returns `true` if this map compares less than `x` lexicographically,
-	/// using `hxkey_equal` and `hxkey_less` on keys.
+	/// using `hxkey_equal` and `hxkey_less` on keys and values.
 	/// - `x` : The map to compare against.
 	template<hxsize_t capacity_x_>
 	hxattr_nodiscard bool less(const hxflat_map<key_t_, mapped_t_, compare_t_,
@@ -347,8 +350,8 @@ public:
 	/// - `key` : The key to search for.
 	hxattr_nodiscard iterator lower_bound(const key_t_& key_);
 
-	/// Allocates storage for `cap` keys and values. When `capacity_` is fixed,
-	/// `cap` must equal `capacity_`. Reallocation is not allowed.
+	/// Allocates storage for `cap` keys and values. When `capacity` is fixed,
+	/// `cap` must equal `capacity`. Reallocation is not allowed.
 	/// - `cap` : The number of elements to allocate storage for.
 	/// - `allocator` : The memory manager ID to use for allocation (default: `hxsystem_allocator_current`)
 	/// - `alignment` : The alignment for the allocation. (default: `hxalignment`)
@@ -421,6 +424,7 @@ void hxswap(
 	hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, hxallocator_dynamic_capacity>& y_) noexcept {
 	x_.swap(y_);
 }
+
 #endif // HX_CPLUSPLUS >= 202002L
 #include "detail/hxflat_map.inl"
 HX_NS_END_

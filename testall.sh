@@ -12,7 +12,7 @@ trap '{ set +o xtrace; } 2> /dev/null
     trap - 1 2 3 6 15
     for pid in $(pgrep -g "$$" 2>/dev/null); do
         [ "$pid" = "$$" ] && continue
-        kill "$pid" 2>/dev/null
+        kill -9 "$pid" 2>/dev/null
     done
     exit 1
 ' 1 2 3 6 15
@@ -24,19 +24,8 @@ if [ "${1:-}" = "--headless" ]; then
 	HEADLESS="--headless"
 fi
 
-if [ -z "$HEADLESS" ]; then
-	clear
-
-	echo "
-  '||   ||  '||      '||                .           '||                .
-   ||  ...   || ...   || ..    ....   .||.    ....   || ..     ....  .||.
-   ||   ||   ||'  ||  ||' ||  '' .||   ||   .|   ''  ||' ||  .|...||  ||
-   ||   ||   ||    |  ||  ||  .|' ||   ||   ||       ||  ||  ||       ||
-  .||. .||.  '|...'  .||. ||. '|..'|'  '|.'  '|...' .||. ||.  '|...'  '|.'
-"
-fi
-
-# Delete files matching .gitignore and reset ccache.
+# Delete files matching .gitignore and reset ccache. Required for following
+# tests to avoid matches with intermediates.
 ./clean.sh
 
 # The test directory should not use names ending with an underscore. Those names
@@ -72,16 +61,36 @@ if file $(git ls-files) | grep CRLF; then
 	exit 1
 fi
 
+# Use an array to avoid globbing. example_correct.txt holds captured ANSI
+# escapes and is exempted.
+TEXT_FILES=(! -name example_correct.txt \(
+	-name .clang-tidy -o -name .gdbinit -o -name .gitattributes
+	-o -name .gitignore -o -name '*.bat' -o -name '*.c' -o -name '*.cpp'
+	-o -name '*.h' -o -name '*.hpp' -o -name '*.inl' -o -name '*.json'
+	-o -name '*.md' -o -name '*.py' -o -name '*.sh' -o -name '*.txt' \))
+
 # Check for trailing whitespace.
-if grep -rnP '[ \t]+$' --include='*.h' --include='*.hpp' --include='*.inl' --include='*.c' \
-		--include='*.cpp' --include='*.md' --include='*.sh' . >&2; then
+if find . -type f "${TEXT_FILES[@]}" -exec grep -nP '[ \t]+$' {} + >&2; then
 	echo "error: Trailing whitespace found."
 	exit 1
 fi
 
+# Check for non-ASCII characters other than the allowed set. No Unicode BOM allowed.
+NON_ASCII_ALLOW='©Θ…²₁₂≤≥❌📁🪓'
+if find . -type f \( "${TEXT_FILES[@]}" \) -exec grep -nP "[^[:ascii:]$NON_ASCII_ALLOW]" {} + >&2; then
+	echo "error: Non-ASCII characters other than '$NON_ASCII_ALLOW' found."
+	exit 1
+fi
+
+# Reject ASCII control characters below 128 that are illegal in C/C++ source.
+if find . -type f "${TEXT_FILES[@]}" \
+		-exec grep -nP '[\x00-\x08\x0b-\x1f\x7f]' {} + >&2; then
+	echo "error: Illegal control characters found in C/C++ source."
+	exit 1
+fi
+
 # Check text files end with exactly one newline.
-find . -type f \( -name "*.hpp" -o -name "*.cpp" -o -name "*.h" -o -name "*.c" -o -name "*.inl" \
-				-o -name "*.sh" -o -name "*.py" \) | while read -r FILE; do
+find . -type f "${TEXT_FILES[@]}" | while read -r FILE; do
 	if [[ $(tail -c 2 "$FILE" | tr -dc '\n' | wc -c) -ne 1 ]]; then
 		echo "error: Text files must end with exactly one newline: $FILE"
 		exit 1
@@ -91,6 +100,7 @@ done
 PS4='\e[38;5;208m[${SECONDS}s] ${BASH_SOURCE}:${LINENO}: \e[0m'
 set -o xtrace
 
+git fsck
 ./testcmake.sh $HEADLESS
 ./testcoverage.sh $HEADLESS
 ./testerrorhandling.sh
@@ -98,7 +108,8 @@ set -o xtrace
 ./testmatrix.sh
 ./teststrip.sh $HEADLESS
 ./testwasm.sh --headless
-./debugbuild.sh --grind --run
+
+./debugbuild.sh --grind $HEADLESS --run
 doxygen
 
 ./clean.sh

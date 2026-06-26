@@ -3,11 +3,11 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file hxconstexpr_list.hpp An embedded doubly linked list with intrusive
-/// node linkage. This is the same as `hxlist` except that it works with
-/// `constexpr` as the expense of using an additional pointer per-node. This is
-/// the recommended compile time sequence container. `hxvector` and `hxlist` do
-/// not work at compile time.
+/// \file
+/// An embedded doubly linked list with intrusive node linkage. This is the same
+/// as `hxlist` except that it works with `constexpr` at the expense of using an
+/// additional pointer per-node. This is the recommended compile time sequence
+/// container. `hxvector` and `hxlist` do not work at compile time.
 
 #include "libhatchet.h"
 
@@ -22,12 +22,13 @@
 
 HX_NS_BEGIN_
 
-/// Intrusive doubly linked list node base. This is the same as `hxlist` except
-/// that it works with `constexpr` as the expense of using an additional pointer
-/// per-node. Derive from `hxconst_list_node` to make a type linkable into an
-/// `hxconstexpr_list`. Nodes default to unlinked on construction. Copy and move
-/// construction and assignment produce or leave a fresh unlinked node so that
-/// subclasses may implement the standard operators naturally.
+/// `hxconst_list_node` - Intrusive doubly linked list node base. This is the
+/// same as `hxlist` except that it works with `constexpr` at the expense of
+/// using an additional pointer per-node. Derive from `hxconst_list_node` to
+/// make a type linkable into an `hxconstexpr_list`. Nodes default to unlinked
+/// on construction. Copy and move construction and assignment produce or leave
+/// a fresh unlinked node so that subclasses may implement the standard
+/// operators naturally.
 class hxconst_list_node {
 public:
 	/// Constructs an unlinked node.
@@ -80,9 +81,11 @@ private:
 template<typename node_t_, typename deleter_t_=hxdefault_delete>
 class hxconstexpr_list {
 public:
+	/// `node_t` - The node type stored in the list. Derives from
+	/// `hxconst_list_node`.
 	using node_t = node_t_;
 
-	/// Bidirectional iterator over const nodes.
+	/// `const_iterator` - Bidirectional iterator over const nodes.
 	class const_iterator {
 	public:
 		/// Constructs an iterator that must not be incremented or dereferenced.
@@ -142,7 +145,7 @@ public:
 		/// \endcond
 	};
 
-	/// Bidirectional iterator over mutable nodes.
+	/// `iterator` - Bidirectional iterator over mutable nodes.
 	class iterator : public const_iterator {
 	public:
 		/// Constructs an iterator that must not be incremented or dereferenced.
@@ -308,7 +311,7 @@ public:
 	hxconstexpr void release_all(void);
 
 	/// Removes all nodes for which `predicate` returns true, invoking the
-	/// default deleter on each removed node.
+	/// stored deleter on each removed node.
 	/// - `predicate` : A callable taking a `node_t` reference, returning bool.
 	template<typename predicate_t_>
 	hxconstexpr hxsize_t remove_if(predicate_t_ predicate_) noexcept;
@@ -341,5 +344,4 @@ private:
 };
 
 #include "detail/hxconstexpr_list.inl"
-
 HX_NS_END_

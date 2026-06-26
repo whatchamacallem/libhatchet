@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file hxtask_dag_node.hpp Implements DAG dependency tracking as a layer on
-/// top of hxtask_queue.
+/// \file
+/// Implements DAG dependency tracking as a layer on top of hxtask_queue.
 
 #include "hxtask_queue.hpp"
 
@@ -24,6 +24,7 @@ HX_NS_BEGIN_
 template<hxsize_t max_successors_=4>
 class hxtask_dag_node : public hxtask {
 public:
+	/// Constructs a node with no predecessors or successors.
 	hxtask_dag_node(void);
 
 	/// Records a dependency: `successor` runs after this node completes,
@@ -64,5 +65,4 @@ private:
 };
 
 #include "detail/hxtask_dag_node.inl"
-
 HX_NS_END_

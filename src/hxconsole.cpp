@@ -115,14 +115,11 @@ void hxconsole_usage_(const char* id, const char* const* labels) {
 
 } // hxdetail_
 
-// ----------------------------------------------------------------------------
-// hxconsole_command_table
-//
+// -- hxconsole_command_table --------------------------------------------------
 // Compares command lines to static strings. Hashing stops at the first
 // non-printing character on the command line.
 
 namespace {
-
 class hxconsole_less {
 public:
 	bool operator()(const hxdetail_::hxconsole_hash_table_node_* a,
@@ -140,11 +137,9 @@ hxconsole_command_table& hxconsole_commands_(void) {
 	static hxconsole_command_table table_;
 	return table_;
 }
-
 } // namespace {
 
-// ----------------------------------------------------------------------------
-// Console API
+// -- Console API --------------------------------------------------------------
 
 // hxconsole_register_ is internal only.
 void hxdetail_::hxconsole_register_(hxconsole_hash_table_node_* node) {
@@ -245,10 +240,9 @@ bool hxconsole_exec_filename(const char* filename) {
 }
 #endif // HX_USE_FILE_IO
 
-// ----------------------------------------------------------------------------
-// Built-in console commands. These are not hooked up as console commands
-// automatically for WASM because they didn't seem that useful. WASM will
-// require custom plumbing anyway.
+// -- Built-in console commands -----------------------------------------------
+// These are not hooked up as console commands automatically for WASM because
+// they didn't seem that useful. WASM will require custom plumbing anyway.
 
 // These are considered too dangerous to enable by default. HX_USE_CONSOLE=2
 // enables the debug console.
@@ -301,6 +295,7 @@ hxconsole_command_named(hxconsole_float_dump, floatdump);
 // Executes commands and settings in a file. Usage: "exec <filename>".
 hxconsole_command_named(hxconsole_exec_filename, exec);
 #endif // HX_USE_FILE_IO
+
 } // namespace {
 #endif // (HX_USE_CONSOLE) > 1
 HX_NS_END_

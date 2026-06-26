@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file hxsort.hpp Standard sorting utilities. For scalar key sorting see
-/// `hxradix_sort.hpp`.
+/// \file
+/// Standard sorting utilities. For scalar key sorting see `hxradix_sort.hpp`.
 
 #include "libhatchet.h"
 

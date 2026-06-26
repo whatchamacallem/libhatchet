@@ -3,9 +3,10 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file hxalgorithm.hpp Searching and set utilities for libhatchet.
-/// Includes support for callables when defining custom key operations.
-/// Otherwise `T::operator<(const T&)` and `T::operator==(const T&)` are used.
+/// \file
+/// Searching and set utilities for libhatchet. Includes support for callables
+/// when defining custom key operations. Otherwise `T::operator<(const T&)` and
+/// `T::operator==(const T&)` are used.
 ///
 /// See `hxsort.hpp` for sorting algorithms including `hxinsertion_sort`,
 /// `hxheapsort` and `hxsort`. `hxbinary_search` is also over there.
@@ -64,7 +65,7 @@ iterator_t_ hxfind_if(iterator_t_ begin_, iterator_t_ end_, const predicate_t_& 
 	return end_;
 }
 
-/// `hxmerge` - Performs a stable merge sort of two ordered ranges `[begin0,
+/// `hxmerge` - Performs a stable merge of two ordered ranges `[begin0,
 /// end0)` and `[begin1, end1)` -> `output`. The input arrays must not overlap
 /// each other or the destination array. Elements are move-assigned out of the
 /// input ranges. Passing a hxvector as an output iterator like this
@@ -107,7 +108,7 @@ output_iterator_t_ hxmerge(iterator_t_ begin0_, iterator_t_ end0_, iterator_t_ b
 	return output_r_;
 }
 
-/// `hxmerge` (specialization) - Performs a stable merge sort of two ordered
+/// `hxmerge` (specialization) - Performs a stable merge of two ordered
 /// ranges `[begin0, end0)` and `[begin1, end1)` -> `output`. The input arrays
 /// must not overlap the destination array. Assumes both `[begin0, end0)` and
 /// `[begin1, end1)` are ordered by `hxless(a,b)`.  Passing a hxvector as an
@@ -182,7 +183,7 @@ hxminmax_result<iterator_t_> hxminmax(iterator_t_ begin_, iterator_t_ end_) {
 /// - `end1` : Pointer to one past the last element of the second ordered range.
 /// - `output` : Destination output iterator receiving the difference.
 /// - `less` : Comparator defining the less-than ordering relationship.
-/// Returns a pointer to one past the last element written.
+/// Returns an output iterator positioned one past the last element written.
 template<typename iterator_t_, typename output_iterator_t_, typename less_t_> hxattr_hot hxconstexpr
 output_iterator_t_ hxset_difference(iterator_t_ begin0_, iterator_t_ end0_, iterator_t_ begin1_,
 		iterator_t_ end1_, output_iterator_t_&& output_, const less_t_& less_) noexcept {
@@ -245,7 +246,7 @@ output_iterator_t_ hxset_difference(iterator_t_ begin0_, iterator_t_ end0_, iter
 /// - `end1` : Pointer to one past the last element of the second ordered range.
 /// - `output` : Destination output iterator receiving the intersection.
 /// - `less` : Comparator defining the less-than ordering relationship.
-/// Returns a pointer to one past the last element written.
+/// Returns an output iterator positioned one past the last element written.
 template<typename iterator_t_, typename output_iterator_t_, typename less_t_> hxattr_hot hxconstexpr
 output_iterator_t_ hxset_intersection(iterator_t_ begin0_, iterator_t_ end0_, iterator_t_ begin1_,
 		iterator_t_ end1_, output_iterator_t_&& output_, const less_t_& less_) noexcept {
@@ -303,7 +304,7 @@ output_iterator_t_ hxset_intersection(iterator_t_ begin0_, iterator_t_ end0_, it
 /// - `end1` : Pointer to one past the last element of the second ordered range.
 /// - `output` : Destination output iterator receiving the union.
 /// - `less` : Comparator defining the less-than ordering relationship.
-/// Returns a pointer to one past the last element written.
+/// Returns an output iterator positioned one past the last element written.
 template<typename iterator_t_, typename output_iterator_t_, typename less_t_> hxattr_hot hxconstexpr
 output_iterator_t_ hxset_union(iterator_t_ begin0_, iterator_t_ end0_, iterator_t_ begin1_,
 		iterator_t_ end1_, output_iterator_t_&& output_, const less_t_& less_) noexcept {

@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file hxutility.h A few utility functions and most standard C++ meta
-/// programming functions.
+/// \file
+/// A few utility functions and most standard C++ meta programming functions.
 
 #include "libhatchet.h"
 
@@ -17,8 +17,7 @@ extern "C" {
 #endif
 #endif
 
-// ----------------------------------------------------------------------------
-// C Utilities
+// -- C Utilities --------------------------------------------------------------
 
 /// `hxbasename` - Returns a pointer to those characters following the last
 /// `'\'` or `'/'` character or `path` if those are not present.
@@ -42,15 +41,15 @@ void hxhex_dump(const void* address_, size_t bytes_, bool pretty_) hxattr_nonnul
 
 HX_NS_BEGIN_
 
-// ----------------------------------------------------------------------------
-// C and C++ Utilities
+// -- C and C++ Utilities ------------------------------------------------------
 
-/// Returns the size of a C array. Rejects pointer arguments at compile time.
+/// `hxsize` - Returns the size of a C array. Rejects pointer arguments at
+/// compile time.
 template<typename T_, hxsize_t N_> hxattr_nodiscard constexpr
 hxsize_t hxsize(T_ (&)[N_]) { return N_; }
 
-// ----------------------------------------------------------------------------
-// C++ SFINAE (Substitution Failure Is Not An Error) based enable_if checks.
+// -- C++ SFINAE ---------------------------------------------------------------
+// Substitution Failure Is Not An Error. enable_if checks.
 
 /// \cond HIDDEN
 template<bool condition_, typename type_=void> struct hxenable_if_ { };
@@ -90,8 +89,9 @@ template<typename T_> struct hxremove_cv_<volatile T_> { using type = T_; };
 template<typename T_> struct hxremove_cv_<const volatile T_> { using type = T_; };
 /// \endcond
 
-/// Removes const and volatile from a type. Implements `std::remove_cv_t`.
-/// This is used to maintain semantic compatibility with the standard.
+/// `hxremove_cv_t` - Removes const and volatile from a type. Implements
+/// `std::remove_cv_t`. This is used to maintain semantic compatibility with the
+/// standard.
 template<typename T_> using hxremove_cv_t = typename hxremove_cv_<T_>::type;
 
 /// \cond HIDDEN
@@ -117,21 +117,21 @@ template<typename T_> using hxremove_reference_t = typename hxremove_reference_<
 /// `hxremove_cvref_t<T>` - Returns `T` with const, volatile, and references removed.
 template<typename T_> using hxremove_cvref_t = hxremove_cv_t<hxremove_reference_t<T_>>;
 
-/// Implements `std::declval`. Returns a `T&&` reference for use in unevaluated
-/// contexts such as `decltype`. Must not be called or defined.
+/// `hxdeclval` - Implements `std::declval`. Returns a `T&&` reference for use in
+/// unevaluated contexts such as `decltype`. Must not be called or defined.
 template<typename T_> T_&& hxdeclval(void) noexcept;
 
-/// Implements `std::true_type`.
+/// `hxtrue_t` - Implements `std::true_type`.
 struct hxtrue_t { constexpr static bool value = true; };
-/// Implements `std::false_type`.
+/// `hxfalse_t` - Implements `std::false_type`.
 struct hxfalse_t { constexpr static bool value = false; };
 
-/// Implements `std::is_array`.
+/// `hxis_array` - Implements `std::is_array`.
 template<typename T_> struct hxis_array : public hxfalse_t { };
 template<typename T_, size_t size_> struct hxis_array<T_[size_]> : public hxtrue_t { };
 template<typename T_> struct hxis_array<T_[]> : public hxtrue_t { };
 
-/// Implements `std::is_const`.
+/// `hxis_const` - Implements `std::is_const`.
 template<typename T_> struct hxis_const : public hxfalse_t { };
 template<typename T_> struct hxis_const<const T_> : public hxtrue_t { };
 
@@ -142,7 +142,7 @@ template<> struct hxis_floating_point_<double> : public hxtrue_t { };
 template<> struct hxis_floating_point_<long double> : public hxtrue_t { };
 /// \endcond
 
-/// Implements `std::is_floating_point`.
+/// `hxis_floating_point` - Implements `std::is_floating_point`.
 template<typename T_>
 struct hxis_floating_point : public hxis_floating_point_<hxremove_cv_t<T_>> { };
 
@@ -168,11 +168,11 @@ template<> struct hxis_integral_<long long> : public hxtrue_t { };
 template<> struct hxis_integral_<unsigned long long> : public hxtrue_t { };
 /// \endcond
 
-/// Implements `std::is_integral`.
+/// `hxis_integral` - Implements `std::is_integral`.
 template<typename T_>
 struct hxis_integral : public hxis_integral_<hxremove_cv_t<T_>> { };
 
-/// Implements `std::is_lvalue_reference`.
+/// `hxis_lvalue_reference` - Implements `std::is_lvalue_reference`.
 template<typename T_> struct hxis_lvalue_reference : public hxfalse_t { };
 template<typename T_> struct hxis_lvalue_reference<T_&> : public hxtrue_t { };
 
@@ -181,20 +181,20 @@ template<typename T_> struct hxis_pointer_ : public hxfalse_t { };
 template<typename T_> struct hxis_pointer_<T_*> : public hxtrue_t { };
 /// \endcond
 
-/// Returns whether T is a pointer type as `hxis_pointer_<T>::type`. Implements
-/// `std::is_pointer`.
+/// `hxis_pointer` - Returns whether T is a pointer type as
+/// `hxis_pointer<T>::value`. Implements `std::is_pointer`.
 template<typename T> struct hxis_pointer : hxis_pointer_<hxremove_cv_t<T>> { };
 
-/// Implements `std::is_reference`.
+/// `hxis_reference` - Implements `std::is_reference`.
 template<typename T_> struct hxis_reference : public hxfalse_t { };
 template<typename T_> struct hxis_reference<T_&>  : public hxtrue_t { };
 template<typename T_> struct hxis_reference<T_&&> : public hxtrue_t { };
 
-/// Implements `std::is_rvalue_reference`.
+/// `hxis_rvalue_reference` - Implements `std::is_rvalue_reference`.
 template<typename T_> struct hxis_rvalue_reference : public hxfalse_t { };
 template<typename T_> struct hxis_rvalue_reference<T_&&> : public hxtrue_t { };
 
-/// Implements `std::is_same`.
+/// `hxis_same` - Implements `std::is_same`.
 template<typename A_, typename B_> struct hxis_same : public hxfalse_t { };
 template<typename A_> struct hxis_same<A_, A_> : public hxtrue_t { };
 
@@ -203,7 +203,7 @@ template<typename T_> struct hxis_void_ : public hxfalse_t { };
 template<> struct hxis_void_<void> : public hxtrue_t { };
 /// \endcond
 
-/// Implements `std::is_void`.
+/// `hxis_void` - Implements `std::is_void`.
 template<typename T_> struct hxis_void : public hxis_void_<hxremove_cv_t<T_>> { };
 
 /// \cond HIDDEN
@@ -212,20 +212,22 @@ template<typename T_> struct hxrestrict_t_<T_*> { using type = T_* hxrestrict; }
 template<typename T_> struct hxrestrict_t_<T_* const> { using type = T_* const hxrestrict; };
 /// \endcond
 
-/// Adds the `__restrict` keyword to C++ pointers. (Non-standard.)
+/// `hxrestrict_t` - Adds the `__restrict` keyword to C++ pointers.
+/// (Non-standard.)
 template<typename T_> using hxrestrict_t = typename hxrestrict_t_<T_>::type;
 
-/// Implements standard `isgraph` for a locale where all non-ASCII characters
-/// are considered graphical or mark making. This is compatible with scanf-style
-/// parsing of UTF-8 string parameters. However, this is not `en_US.UTF-8`, the
-/// default C locale or the POSIX locale.
+/// `hxisgraph` - Implements standard `isgraph` for a locale where all non-ASCII
+/// characters are considered graphical or mark making. This is compatible with
+/// scanf-style parsing of UTF-8 string parameters. However, this is not
+/// `en_US.UTF-8`, the default C locale or the POSIX locale.
 hxattr_nodiscard constexpr bool hxisgraph(char ch_) {
 	return ((static_cast<unsigned char>(ch_) - 0x21u) < 0x5eu)
 		|| ((static_cast<unsigned char>(ch_) & 0x80u) != 0u);
 }
 
-/// Implements standard `isspace` for a locale where all non-ASCII characters
-/// are considered graphical or mark making. Returns nonzero for space and `\t
+/// `hxisspace` - Implements standard `isspace` for a locale where all non-ASCII
+/// characters are considered graphical or mark making. Returns nonzero for
+/// space and `\t
 /// \n \v \f \r`. This is compatible with scanf-style parsing of UTF-8 string
 /// parameters. However, this is not `en_US.UTF-8`. It does match the the
 /// default C locale and the POSIX locale.
@@ -233,9 +235,9 @@ hxattr_nodiscard constexpr bool hxisspace(char ch_) {
 	return ch_ == ' ' || (static_cast<unsigned char>(ch_) - 0x09u) < 0x05u;
 }
 
-/// Returns `log2(n)` as an integer which is the power of 2 of the largest bit
-/// in `n`. WARNING: `hxlog2i(0)` is currently -127 and is UB. `i` >= 2^32-128
-/// will also round up returning an incorrect result.
+/// `hxlog2i` - Returns `log2(n)` as an integer which is the power of 2 of the
+/// largest bit in `n`. WARNING: `hxlog2i(0)` is currently -127 and is UB. `i` ≥
+/// 2^32-128 will also round up returning an incorrect result.
 /// - `i` : A `uint32_t`.
 hxattr_nodiscard inline int hxlog2i(uint32_t i_) {
 	// Use the floating point hardware because this isn't important enough.
@@ -263,9 +265,9 @@ hxattr_nodiscard constexpr T_ hxclamp(T_ x_, T_ minimum_, T_ maximum_) {
 	return (x_ < minimum_) ? minimum_ : ((maximum_ < x_) ? maximum_ : x_);
 }
 
-/// Implements `std::forward`. Call as `hxforward<T>(x)` **from inside a
-/// templated forwarding function** where the parameter was declared `T&&` and
-/// `T` was **deduced**. `T` must be explicitly specified. E.g.,
+/// `hxforward` - Implements `std::forward`. Call as `hxforward<T>(x)` **from
+/// inside a templated forwarding function** where the parameter was declared
+/// `T&&` and `T` was **deduced**. `T` must be explicitly specified. E.g.,
 /// ```cpp
 ///   template<typename T>
 ///   void forwards_temp(T&&x) { requires_temp(hxforward<T>(x)); }
@@ -277,8 +279,9 @@ constexpr T_&& hxforward(hxremove_reference_t<T_>&& x_) {
 	return static_cast<T_&&>(x_);
 }
 
-/// This is the `T&` version of hxforward<T>. It gets invoked when `T` turns out
-/// to be an l-value. This happens when a `T&` is passed as a `T&&`.
+/// `hxforward` - This is the `T&` version of hxforward<T>. It gets invoked when
+/// `T` turns out to be an l-value. This happens when a `T&` is passed as a
+/// `T&&`.
 template<typename T_>
 constexpr T_&& hxforward(hxremove_reference_t<T_>& x_) {
 	return static_cast<T_&&>(x_);
@@ -296,9 +299,9 @@ hxattr_nodiscard constexpr T_ hxmax(T_ x_, T_ y_) { return ((y_) < (x_)) ? (x_) 
 template<typename T_>
 hxattr_nodiscard constexpr T_ hxmin(T_ x_, T_ y_) { return ((x_) < (y_)) ? (x_) : (y_); }
 
-/// Implements `std::move`. Converts either a `T&` or a `T&&` to a `T&&`. Do not
-/// specify `T` explicitly as it will not work as expected. This uses the rules
-/// about reference collapsing to handle both `T&` and `T&&`.
+/// `hxmove` - Implements `std::move`. Converts either a `T&` or a `T&&` to a
+/// `T&&`. Do not specify `T` explicitly as it will not work as expected. This
+/// uses the rules about reference collapsing to handle both `T&` and `T&&`.
 template<typename T_>
 constexpr hxremove_reference_t<T_>&& hxmove(T_&& t_) {
 	return static_cast<hxremove_reference_t<T_>&&>(t_);
@@ -330,12 +333,12 @@ void hxswap_memcpy(T_& x_, T_& y_) {
 }
 
 HX_NS_END_
-
 #else // !HX_CPLUSPLUS
-// ----------------------------------------------------------------------------
-// C Macro Utility API - Does it all backwards in heels.
 
-/// Returns the size of a C array. WARNING: Args will be multiply instantiated.
+// -- C Macro Utility API - Does it all backwards in heels --------------------
+
+/// `hxsize` - Returns the size of a C array. WARNING: Args will be multiply
+/// instantiated.
 #define hxsize(x_) (sizeof(x_) / sizeof(x_)[0])
 
 /// `hxabs` - Returns the absolute value of `x` using a `<` comparison. WARNING:

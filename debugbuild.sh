@@ -3,18 +3,20 @@
 # SPDX-License-Identifier: MIT
 # This file is licensed under the terms of the LICENSE.md file.
 #
-# This build uses 32-bit pointers because they are easier to read.
+# Intended for used with GDB while iterating on code. Also checks permutations
+# of build flags.
 #
-# The -m32 switch enables 32-bit compilation. See debian_packages.sh.
-#
-# Do not use a .pch with ccache. It won't work as expected.
+# This build uses 32-bit pointers because they are easier to read. The -m32
+# switch enables 32-bit compilation. See debian_packages.sh. Do not use a .pch
+# with ccache. It won't work as expected.
 
-# -Wdate-time is for ccache. -Wno-unused-variable is only for debugging.
+# -Wdate-time is for ccache users. -Wno-unused-variable is only for debugging.
 ERRORS="-Wall -Wextra -pedantic-errors -Werror -Wfatal-errors -Wcast-qual \
 	-Wdisabled-optimization -Wshadow -Wundef -Wconversion -Wdate-time     \
-	-Wmissing-declarations -Wno-c2y-extensions -Wno-unused-variable"
+	-Wmissing-declarations -Wno-unused-variable -Wno-c2y-extensions       \
+	-Wno-unknown-warning-option"
 
-FLAGS=" -O0 -m32 -ggdb3 -fdiagnostics-absolute-paths -fdiagnostics-color=always"
+FLAGS="-O0 -m32 -ggdb3 -fdiagnostics-absolute-paths -fdiagnostics-color=always"
 
 export POSIXLY_CORRECT=1
 
@@ -23,7 +25,7 @@ trap '{ set +o xtrace; } 2> /dev/null
     trap - 1 2 3 6 15
     for pid in $(pgrep -g "$$" 2>/dev/null); do
         [ "$pid" = "$$" ] && continue
-        kill "$pid" 2>/dev/null
+        kill -9 "$pid" 2>/dev/null
     done
     exit 1
 ' 1 2 3 6 15
@@ -31,22 +33,25 @@ trap '{ set +o xtrace; } 2> /dev/null
 set -eu
 
 OPT_GRIND=0
+OPT_HEADLESS=0
 OPT_RUN=0
 for ARG in "$@"; do
 	case "$ARG" in
-		--grind) OPT_GRIND=1 ;;
-		--run)   OPT_RUN=1 ;;
+		--grind)    OPT_GRIND=1 ;;
+		--headless) OPT_HEADLESS=1 ;;
+		--run)      OPT_RUN=1 ;;
 		*)
-			echo "Usage: $0 [--grind] [--run]"
-			echo "  --grind  Build all configuration combinations."
-			echo "  --run    Run hxtest after building."
+			echo "Usage: $0 [--grind] [--headless] [--run]"
+			echo "  --grind    Build all configuration combinations."
+			echo "  --headless Reduce hxtest output to pass and fail lines."
+			echo "  --run      Run hxtest after building."
 			exit 1
 			;;
 	esac
 done
 
-# Clear the output window when used interactively.
-if [ "$OPT_RUN" = "0" ] && [ -z "${CLAUDE_CODE:-}" ]; then
+# Clear the output window when building from the editor.
+if [ "$OPT_HEADLESS" = "0" ] && [ "$OPT_RUN" = "0" ] && [ -z "${CLAUDE_CODE:-}" ]; then
 	export TERM=xterm-256color
 	clear
 fi
@@ -100,22 +105,35 @@ if [ "$OPT_GRIND" = "1" ]; then
 		[ -n "$PROFILER"  ] && BUILD="$BUILD -DHX_USE_PROFILER=$PROFILER"
 		[ -n "$THREADS"   ] && BUILD="$BUILD -DHX_USE_THREADS=$THREADS"
 
-		echo "[$COUNT] $BUILD"
+		if [ "$OPT_HEADLESS" = "1" ]; then
+			printf "$COUNT "
+		else
+			echo "[$COUNT] $BUILD"
+		fi
+
 		build_hxtest
 	done; done; done; done; done; done; done; done
+
+	if [ "$OPT_HEADLESS" = "1" ]; then
+		printf "\n"
+	fi
 fi
 
 BUILD="-DHX_USE_NAMESPACE=hx -DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG -DHX_USE_PROFILER=1"
 build_hxtest
 
 # Show stats or save tokens.
-if [ -z "${CLAUDE_CODE:-}" ]; then
+if [ "$OPT_HEADLESS" = "0" ] && [ -z "${CLAUDE_CODE:-}" ]; then
 	ccache --show-stats
 fi
 
 if [ "$OPT_RUN" = "1" ]; then
 	cd build
-	./hxtest
+	if [ "$OPT_HEADLESS" = "1" ]; then
+		./hxtest 2>&1 | grep -E '\[  PASSED  \]|\[  FAILED  \]|FAILED TESTS'
+	else
+		./hxtest
+	fi
 fi
 
 echo 🪓🪓🪓

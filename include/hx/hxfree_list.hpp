@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file hxfree_list.hpp Implements a fixed-capacity free list allocator backed
-/// by `hxallocator`.
+/// \file
+/// Implements a fixed-capacity free list allocator backed by `hxallocator`.
 
 #include "libhatchet.h"
 
@@ -20,8 +20,8 @@ HX_NS_BEGIN_
 
 #if HX_CPLUSPLUS >= 202002L
 
-/// Concept smoke testing the `hxfree_list` element. Only the destructor is
-/// explicitly required.
+/// `hxfree_list_concept` - Concept smoke testing the `hxfree_list` element.
+/// Only the destructor is explicitly required.
 template<typename T_>
 concept hxfree_list_concept_ = requires(T_& x_) {
 	sizeof(T_);
@@ -42,9 +42,10 @@ concept hxfree_list_concept_ = requires(T_& x_) {
 /// - `T` : Element type stored by the free list.
 /// - `capacity` : Pool size or `hxallocator_dynamic_capacity`.
 template<hxfree_list_concept_ T_, hxsize_t capacity_=hxallocator_dynamic_capacity>
-class hxfree_list : public hxallocator<T_, capacity_> {
+class hxfree_list : private hxallocator<T_, capacity_> {
 public:
-	/// A callable deleter that releases a `T` back to this `hxfree_list`.
+	/// `deleter_t` - A callable deleter that releases a `T` back to this
+	/// `hxfree_list`.
 	class deleter_t {
 	public:
 		/// Constructs a deleter associated with `owner`.
@@ -62,10 +63,10 @@ public:
 		hxfree_list* m_owner_;
 	};
 
-	/// Publishes the value type.
+	/// `value_t` - Publishes the value type.
 	using value_t = T_;
 
-	/// Publish the hxptr type.
+	/// `ptr_t` - Publish the hxptr type.
 	using ptr_t = hxptr<T_, deleter_t>;
 
 	/// When `capacity` is `hxallocator_dynamic_capacity` storage must be
@@ -86,6 +87,9 @@ public:
 	/// - `args` : Arguments forwarded to `T`'s constructor.
 	template<typename... args_t_>
 	hxattr_nodiscard hxptr<T_, deleter_t> allocate(args_t_&&... args_) noexcept;
+
+	/// Returns the capacity of the pool or 0 if unallocated.
+	hxattr_nodiscard hxsize_t capacity(void) const;
 
 	/// Returns a `deleter_t` associated with this `hxfree_list`.
 	deleter_t deleter(void) noexcept { return deleter_t(*this); }
@@ -122,7 +126,7 @@ public:
 			hxsystem_allocator_t allocator_=hxsystem_allocator_current,
 			hxalignment_t alignment_=hxalignment) noexcept;
 
-	/// Returns the number unallocated `T` available.
+	/// Returns the number of unallocated `T` available.
 	hxattr_nodiscard hxsize_t size(void) const { return m_size_; }
 
 	/// Constructs a `T` in a free slot and returns an `hxptr` owning it. Returns
@@ -149,5 +153,4 @@ private:
 };
 
 #include "detail/hxfree_list.inl"
-
 HX_NS_END_

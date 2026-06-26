@@ -3,10 +3,11 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-/// \file libhatchet.h libhatchet. Requires C99 for C. C++11 is minimum for
-/// C++. Utilizes language features up to C++20. Inclusion on the compiler
-/// search path is not required. However, the headers are intended to be
-/// included as follows: `#include <hx/libhatchet.h>`
+/// \file
+/// libhatchet. Requires C99 for C. C++11 is minimum for C++. Utilizes language
+/// features up to C++20. Inclusion on the compiler search path is not required.
+/// However, the headers are intended to be included as follows: `#include
+/// <hx/libhatchet.h>`
 ///
 /// Defines logging macros `hxlog`, `hxlog_release`, `hxlog_console`,
 /// `hxlog_warning` which vary by `HX_USE_LOGGING` and defines log verbosity
@@ -32,10 +33,10 @@
 
 /// `int LIBHATCHET_VER` - One digit major, and two digit minor and patch
 /// versions.
-#define LIBHATCHET_VER 14308
+#define LIBHATCHET_VER 14309
 
 /// `LIBHATCHET_TAG` - Major, minor and patch version tag name.
-#define LIBHATCHET_TAG "v1.43.8"
+#define LIBHATCHET_TAG "v1.43.09"
 
 #if !defined HX_HARDENING_MODE
 /// `HX_HARDENING_MODE` - Library hardening level. See the README.md for levels.
@@ -182,7 +183,7 @@
 #if !(HX_USE_MODULE)
 #if HX_CPLUSPLUS
 
-/// hxsize_t - A signed `hxsize_t`, same as `ssize_t` or `ptrdiff_t`. Use on a
+/// `hxsize_t` - A signed size type, same as `ssize_t` or `ptrdiff_t`. Use on a
 /// 32-bit system with more than 2 GiB RAM is undefined.
 typedef ptrdiff_t hxsize_t;
 
@@ -194,7 +195,8 @@ extern "C" {
 #endif
 
 #if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
-/// Assert handler. Do not call directly, signature changes and then is removed.
+/// `hxassert_handler` - Assert handler. Do not call directly, signature changes
+/// and then is removed.
 /// WARNING: Compile errors from consteval code calling this function are
 /// intentional and are how you know a compile time assert has been hit.
 bool hxassert_handler(const char* file_, size_t line_) hxattr_noexcept hxattr_nonnull(1) hxattr_cold;
@@ -210,15 +212,18 @@ void hxassert_handler(void) hxattr_noexcept hxattr_cold;
 /// Independently controls what messages are compiled in. See
 /// `hxg_settings.log_level`.
 enum hxlog_level_t {
-	/// Written to `hxout`. Structured output. No automatic newline.
+	/// `hxlog_level_log` - Written to `hxout`. Structured output. No automatic
+	/// newline.
 	hxlog_level_log,
-	/// Written to `hxerr`. Unstructured informative output including error
-	/// messages regarding console commands and `hxtest` results. No automatic
-	/// newline. No news is good news.
+	/// `hxlog_level_console` - Written to `hxerr`. Unstructured informative
+	/// output including error messages regarding console commands and `hxtest`
+	/// results. No automatic newline. No news is good news.
 	hxlog_level_console,
-	/// Written to `hxerr`. Warnings about serious problems.
+	/// `hxlog_level_warning` - Written to `hxerr`. Warnings about serious
+	/// problems.
 	hxlog_level_warning,
-	/// Written to `hxerr`. Reason for abnormal termination or test failure.
+	/// `hxlog_level_assert` - Written to `hxerr`. Reason for abnormal
+	/// termination or test failure.
 	hxlog_level_assert
 };
 
