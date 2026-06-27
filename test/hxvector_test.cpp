@@ -532,6 +532,21 @@ TEST(hxvector_test, all_of_stops_at_first_false) {
 	EXPECT_EQ(calls, 2);
 }
 
+TEST(hxvector_test, const_all_of_any_of_stop_at_boundary) {
+	hxvector<int, 3> v;
+	v.push_back(1);
+	v.push_back(0);
+	v.push_back(1);
+	const hxvector<int, 3>& cv = v;
+	int all_calls = 0;
+	EXPECT_FALSE(cv.all_of([&](const int& x) -> bool { ++all_calls; return x != 0; }));
+	EXPECT_EQ(all_calls, 2);
+	EXPECT_TRUE(cv.all_of([](const int& x) { return x >= 0; }));
+	int any_calls = 0;
+	EXPECT_TRUE(cv.any_of([&](const int& x) -> bool { ++any_calls; return x == 0; }));
+	EXPECT_EQ(any_calls, 2);
+}
+
 TEST(hxvector_test, all_of_single_true_element) {
 	hxvector<int, 1> v;
 	v.push_back(5);
@@ -604,6 +619,10 @@ TEST(hxvector_test, find_returns_first_match) {
 		return (value & 1) == 0 && value > 4;
 	});
 	EXPECT_EQ(mutable_predicate, values.begin() + 3);
+	const int* mutable_predicate_missing = values.find_if([](int& value) {
+		return value < 0;
+	});
+	EXPECT_EQ(mutable_predicate_missing, values.end());
 #if HX_CPLUSPLUS >= 202002L
 	if(const int* t = values.find_if([](int& value) { return value == 8; }); t == values.end()) {
 		ADD_FAILURE();

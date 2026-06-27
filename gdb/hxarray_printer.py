@@ -48,7 +48,7 @@ class hxarray_printer:
 			raw_data: int
 			if targ1 == 0:
 				capacity = int(self.val['m_capacity_'])
-				if capacity == 0:
+				if capacity <= 0:
 					return '<unallocated>'
 				raw_data = int(data)
 			else:

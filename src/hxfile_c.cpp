@@ -108,7 +108,7 @@ bool hxfile::openv_(uint8_t mode, const char* filename, va_list args) {
 	hxassertmsg(len >= 0 && len < HX_MAX_LINE, "vsnprintf"); (void)len;
 
 	m_file_pimpl_ = reinterpret_cast<intptr_t>(::fopen(line_buf, m));
-	hxassert_always((m_file_pimpl_ != 0) || ((mode & hxfile::skip_asserts) != 0u),
+	hxassert_hard((m_file_pimpl_ != 0) || ((mode & hxfile::skip_asserts) != 0u),
 		"fopen %s %s: %s", line_buf, m, ::strerror(errno));
 
 	m_fail_ = (m_file_pimpl_ == 0);
@@ -154,7 +154,7 @@ bool hxfile::set_pos(size_t position) {
 
 size_t hxfile::read(void* bytes, size_t buffer_size, size_t byte_count) {
 	hxassertmsg(((m_open_mode_ & hxfile::in) != 0u) && (m_file_pimpl_ != 0), "invalid_file");
-	hxassert_always(byte_count <= buffer_size || ((m_open_mode_ & hxfile::skip_asserts) != 0u),
+	hxassert_hard(byte_count <= buffer_size || ((m_open_mode_ & hxfile::skip_asserts) != 0u),
 		"read %zu overflows %zu", byte_count, buffer_size);
 
 	if(byte_count > buffer_size) {
@@ -232,7 +232,7 @@ bool hxfile::print(const char* format, ...) {
 	const int len = ::vfprintf(reinterpret_cast<FILE*>(m_file_pimpl_), format, args);
 	va_end(args);
 
-	hxassert_always(len >= 0, "vfprintf %s", ::strerror(errno));
+	hxassert_hard(len >= 0, "vfprintf %s", ::strerror(errno));
 	if(len < 0) {
 		m_fail_ = true;
 		return false;
@@ -248,7 +248,7 @@ int hxfile::scan(const char* format, ...) {
 	const int items_scanned = ::vfscanf(reinterpret_cast<FILE*>(m_file_pimpl_), format, args); // NOLINT(clang-analyzer-core.NonNullParamChecker)
 	va_end(args);
 
-	hxassert_always(items_scanned != EOF || ((m_open_mode_ & hxfile::skip_asserts) != 0u), "vfscanf %s", ::strerror(errno));
+	hxassert_hard(items_scanned != EOF || ((m_open_mode_ & hxfile::skip_asserts) != 0u), "vfscanf %s", ::strerror(errno));
 
 	if(items_scanned == EOF) {
 		m_fail_ = true;

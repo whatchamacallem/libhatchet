@@ -161,6 +161,8 @@ TEST(hxarray_test, hxarray_find) {
 	EXPECT_EQ(miss, a.end());
 	const int* mp = a.find_if([](int& value) { return (value & 1) == 0 && value > 4; });
 	EXPECT_EQ(mp, a.begin() + 3);
+	const int* mp_miss = a.find_if([](int& value) { return value < 0; });
+	EXPECT_EQ(mp_miss, a.end());
 }
 
 TEST(hxarray_test, hxarray_find_last_element) {

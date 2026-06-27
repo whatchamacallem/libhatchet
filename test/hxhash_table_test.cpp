@@ -144,6 +144,24 @@ const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0)
 	EXPECT_EQ(m_destructed, 3);
 }
 
+TEST_F(hxhash_table_test_f, raw_pointer_insert_duplicate_invokes_deleter) {
+	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, false, 4>;
+	{
+		table_t table;
+		hxtest_integer* node = hxnew<hxtest_integer>(55);
+		EXPECT_EQ(&*table.insert(node), node);
+		EXPECT_EQ(table.size(), 1);
+		EXPECT_EQ(m_destructed, 0);
+		hxtest_integer* dup = hxnew<hxtest_integer>(55);
+		EXPECT_EQ(&*table.insert(dup), node);
+		EXPECT_EQ(table.size(), 1);
+		EXPECT_EQ(m_destructed, 1);
+		EXPECT_EQ(table.find(55), node);
+	}
+	EXPECT_EQ(m_constructed, 2);
+	EXPECT_EQ(m_destructed, 2);
+}
+
 TEST_F(hxhash_table_test_f, map_node_usage) {
 	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	using map_node_t = hxhash_table_map_node<int32_t, hxtest_object>;

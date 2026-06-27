@@ -74,13 +74,6 @@ private:
 	hxtest_ref_tracker_t* m_pointer;
 };
 
-inline bool hxtest_value_less(const hxtest_ref_tracker_t& lhs, const hxtest_ref_tracker_t& rhs) {
-	return lhs.value < rhs.value;
-}
-inline bool hxtest_value_greater(const hxtest_ref_tracker_t& lhs, const hxtest_ref_tracker_t& rhs) {
-	return lhs.value > rhs.value;
-}
-
 class hxtest_object_fixture :
 	public testing::Test
 {
@@ -146,6 +139,30 @@ public:
 	int32_t id;
 };
 
+class hxtest_skip_asserts {
+public:
+	explicit hxtest_skip_asserts(int count) {
+		hxs_remaining = count;
+		hxset_assert_handler(handler);
+	}
+	~hxtest_skip_asserts(void) {
+		hxset_assert_handler(hxnull);
+		hxs_remaining = 0;
+	}
+	static int remaining(void) { return hxs_remaining; }
+	static bool handler(void) {
+		if(hxs_remaining > 0) {
+			--hxs_remaining;
+			return true;
+		}
+		return false;
+	}
+private:
+	hxtest_skip_asserts(const hxtest_skip_asserts&) = delete;
+	hxtest_skip_asserts& operator=(const hxtest_skip_asserts&) = delete;
+	static int hxs_remaining;
+};
+
 template<typename T>
 class hxtest_pointer_range {
 public:
@@ -159,3 +176,10 @@ private:
 	T* begin_ptr;
 	T* end_ptr;
 };
+
+inline bool hxtest_value_less(const hxtest_ref_tracker_t& lhs, const hxtest_ref_tracker_t& rhs) {
+	return lhs.value < rhs.value;
+}
+inline bool hxtest_value_greater(const hxtest_ref_tracker_t& lhs, const hxtest_ref_tracker_t& rhs) {
+	return lhs.value > rhs.value;
+}

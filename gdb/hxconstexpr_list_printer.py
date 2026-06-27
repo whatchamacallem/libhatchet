@@ -18,10 +18,11 @@ from typing import Iterator, Optional, Set, Tuple
 #	template<typename node_t_, typename deleter_t_=hxdefault_delete>
 #	class hxconstexpr_list {
 #		// ...
-#		deleter_t_        m_deleter_;
-#		hxsize_t          m_size_;
-#		hxconstexpr_list_node m_sentinel_;  // sentinel: m_sentinel_.m_list_next_ is front,
-#	};                                      //           m_sentinel_.m_list_prev_ is back.
+#		deleter_t_            m_deleter_;
+#		hxsize_t              m_size_;
+#       // m_sentinel_.m_list_next_ is front. m_sentinel_.m_list_prev_ is back.
+#		hxconstexpr_list_node m_sentinel_;
+#	};
 #
 
 class hxconstexpr_list_printer:

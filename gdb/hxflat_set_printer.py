@@ -52,11 +52,13 @@ class hxflat_set_printer:
 			raw_data: int
 			if cap_arg == 0:
 				capacity = int(self.val['m_capacity_'])
-				if capacity == 0:
+				if capacity <= 0:
 					return '<unallocated>'
 				raw_data = int(data)
 			else:
 				capacity = int(cap_arg)
+				if capacity <= 0:
+					return '<invalid capacity>'
 				raw_data = int(data.address)
 
 			raw_end: int = int(end)

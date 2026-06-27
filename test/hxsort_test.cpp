@@ -109,6 +109,16 @@ TEST(hxsort_test, sort_grinder) {
 	}
 }
 
+TEST(hxsort_test, intro_sort_depth_limit_falls_back_to_heapsort) {
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
+	const hxsize_t count = 2048;
+	hxvector<int> equal_values(count, 7);
+	hxsort(equal_values.begin(), equal_values.end());
+	for(hxsize_t i = 0; i < count; ++i) {
+		EXPECT_EQ(equal_values[i], 7);
+	}
+}
+
 TEST(hxsort_test, sort_grinder_generic) {
 	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	hxrandom rng(3);

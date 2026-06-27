@@ -44,6 +44,9 @@ class hxflat_map_printer:
 
 	def to_string(self) -> str:
 		try:
+			if self.val['m_size_'].is_optimized_out:
+				return '<optimized out>'
+
 			size: int = int(self.val['m_size_'])
 			keys_alloc: gdb.Value = self.val['m_keys_']
 			vals_alloc: gdb.Value = self.val['m_values_']
@@ -57,12 +60,14 @@ class hxflat_map_printer:
 			raw_vals: int
 			if cap_arg == 0:
 				capacity = int(keys_alloc['m_capacity_'])
-				if capacity == 0:
+				if capacity <= 0:
 					return '<unallocated>'
 				raw_keys = int(keys_alloc['m_data_'])
 				raw_vals = int(vals_alloc['m_data_'])
 			else:
 				capacity = int(cap_arg)
+				if capacity <= 0:
+					return '<invalid capacity>'
 				raw_keys = int(keys_alloc['m_data_'].address)
 				raw_vals = int(vals_alloc['m_data_'].address)
 

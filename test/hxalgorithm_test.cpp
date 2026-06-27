@@ -178,6 +178,16 @@ TEST(hxset_algorithms_test, hxarray_output_iterator_support) {
 	expect_hxarray(difference_output, expected_difference, hxsize(expected_difference));
 }
 
+TEST(hxset_algorithms_test, difference_left_tail_after_right_exhausted) {
+	const int left[3] = { 1, 5, 9 };
+	const int right[1] = { 5 };
+	int dest[3] = { };
+	const int* difference_end = hxset_difference(left + 0, left + 3, right + 0, right + 1, dest + 0);
+	EXPECT_EQ(difference_end - dest, ptrdiff_t{2});
+	EXPECT_EQ(dest[0], 1);
+	EXPECT_EQ(dest[1], 9);
+}
+
 TEST(hxmerge_test, right_tail_appended_after_left_exhausted) {
 	const int left[1] = { 1 };
 	const int right[2] = { 2, 3 };

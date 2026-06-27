@@ -51,7 +51,7 @@ class hxdeque_printer:
 			if self.val['m_count_'].is_optimized_out:
 				return '<optimized out>'
 
-			if capacity == 0:
+			if capacity <= 0:
 				return '<unallocated>'
 
 			elem_type: gdb.Type = self.val.type.template_argument(0)

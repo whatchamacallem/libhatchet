@@ -5,6 +5,7 @@
 #include <hx/hxfile.hpp>
 #include <hx/hxutility.h>
 #include <hx/hxtest.hpp>
+#include "test_trackers.hpp"
 
 #if HX_USE_FILE_IO
 #if defined __GNUC__
@@ -13,6 +14,19 @@
 #endif
 
 HX_NS_USE
+
+namespace {
+void hxfile_test_make_empty(const char* filename) {
+	const hxfile writer(hxfile::out, "%s", filename);
+	EXPECT_TRUE(writer.is_open());
+}
+
+void hxfile_test_make_bytes(const char* filename, const void* bytes, size_t count) {
+	hxfile writer(hxfile::out, "%s", filename);
+	EXPECT_TRUE(writer.is_open());
+	EXPECT_EQ(writer.write(bytes, count), count);
+}
+} // namespace
 
 TEST(hxfile_test, empty_name_rejects_empty_path) {
 	const hxfile f(hxfile::in | hxfile::skip_asserts, "");
@@ -285,5 +299,153 @@ TEST(hxfile_test, eof_variants) {
 		EXPECT_TRUE(reader.fail());
 		EXPECT_TRUE(reader.eof());
 	}
+}
+
+TEST(hxfile_test, dev_null_writes_are_skipped) {
+	const char bytes[4] = { 'a', 'b', 'c', 'd' };
+	EXPECT_EQ(hxdev_null.write(bytes, sizeof bytes), sizeof bytes);
+	EXPECT_FALSE(hxdev_null.fail());
+	EXPECT_TRUE(hxdev_null.flush());
+	EXPECT_TRUE(hxdev_null.print("ignored %d", 5));
+	EXPECT_FALSE(hxdev_null.fail());
+}
+
+TEST(hxfile_test, open_method_reopens_file) {
+	hxfile f;
+	EXPECT_FALSE(f.is_open());
+	EXPECT_TRUE(f.open(hxfile::out | hxfile::skip_asserts, "hxfile_test_open%d.txt", 1));
+	EXPECT_TRUE(f.is_open());
+	EXPECT_FALSE(f.fail());
+}
+
+TEST(hxfile_test, none_mode_fails_without_opening) {
+	const hxfile f(hxfile::none | hxfile::skip_asserts, "hxfile_test_none.txt");
+	EXPECT_FALSE(f.is_open());
+	EXPECT_TRUE(f.fail());
+}
+
+TEST(hxfile_test, assert_open_fails_fires_when_not_skipped) {
+	hxlog_warning("EXPECTING_ASSERT_FAILURE");
+	const hxtest_skip_asserts skip(1);
+	const hxfile f(hxfile::in, "test-file-does-not-exist-assert");
+#if (HX_HARDENING_MODE) != HX_HARDENING_MODE_NONE
+	EXPECT_EQ(skip.remaining(), 0);
+#endif
+	EXPECT_TRUE(f.fail());
+	EXPECT_FALSE(f.is_open());
+}
+
+TEST(hxfile_test, assert_open_fails_honors_skip) {
+	const hxtest_skip_asserts skip(1);
+	const hxfile f(hxfile::in | hxfile::skip_asserts, "test-file-does-not-exist-assert");
+	EXPECT_EQ(skip.remaining(), 1);
+	EXPECT_TRUE(f.fail());
+	EXPECT_FALSE(f.is_open());
+}
+
+TEST(hxfile_test, assert_read_overflow_fires_when_not_skipped) {
+	hxlog_warning("EXPECTING_ASSERT_FAILURE");
+	const char filename[] = "hxfile_test_assert_read_overflow.bin";
+	const uint8_t data[4] = { 1u, 2u, 3u, 4u };
+	hxfile_test_make_bytes(filename, data, sizeof data);
+
+	hxfile reader(hxfile::in, filename);
+	uint8_t buf[2] = { 0u, 0u };
+	const hxtest_skip_asserts skip(1);
+	EXPECT_EQ(reader.read(buf, sizeof buf, sizeof buf + 1u), 0u);
+#if (HX_HARDENING_MODE) != HX_HARDENING_MODE_NONE
+	EXPECT_EQ(skip.remaining(), 0);
+#endif
+	EXPECT_TRUE(reader.fail());
+	EXPECT_FALSE(reader.eof());
+}
+
+TEST(hxfile_test, assert_read_overflow_honors_skip) {
+	const char filename[] = "hxfile_test_assert_read_overflow.bin";
+	const uint8_t data[4] = { 1u, 2u, 3u, 4u };
+	hxfile_test_make_bytes(filename, data, sizeof data);
+
+	hxfile reader(hxfile::in | hxfile::skip_asserts, filename);
+	uint8_t buf[2] = { 0u, 0u };
+	const hxtest_skip_asserts skip(1);
+	EXPECT_EQ(reader.read(buf, sizeof buf, sizeof buf + 1u), 0u);
+	EXPECT_EQ(skip.remaining(), 1);
+	EXPECT_TRUE(reader.fail());
+	EXPECT_FALSE(reader.eof());
+}
+
+TEST(hxfile_test, assert_read_short_fires_when_not_skipped) {
+	hxlog_warning("EXPECTING_ASSERT_FAILURE");
+	const char filename[] = "hxfile_test_assert_read_short.bin";
+	hxfile_test_make_empty(filename);
+
+	hxfile reader(hxfile::in, filename);
+	uint8_t buf[4] = { 0u, 0u, 0u, 0u };
+	const hxtest_skip_asserts skip(1);
+	EXPECT_EQ(reader.read(buf, sizeof buf, sizeof buf), 0u);
+#if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
+	EXPECT_EQ(skip.remaining(), 0);
+#endif
+	EXPECT_TRUE(reader.fail());
+	EXPECT_TRUE(reader.eof());
+}
+
+TEST(hxfile_test, assert_read_short_honors_skip) {
+	const char filename[] = "hxfile_test_assert_read_short.bin";
+	hxfile_test_make_empty(filename);
+
+	hxfile reader(hxfile::in | hxfile::skip_asserts, filename);
+	uint8_t buf[4] = { 0u, 0u, 0u, 0u };
+	const hxtest_skip_asserts skip(1);
+	EXPECT_EQ(reader.read(buf, sizeof buf, sizeof buf), 0u);
+	EXPECT_EQ(skip.remaining(), 1);
+	EXPECT_TRUE(reader.fail());
+	EXPECT_TRUE(reader.eof());
+}
+
+TEST(hxfile_test, assert_scan_eof_fires_when_not_skipped) {
+	hxlog_warning("EXPECTING_ASSERT_FAILURE");
+	const char filename[] = "hxfile_test_assert_scan_eof.txt";
+	hxfile_test_make_empty(filename);
+
+	hxfile reader(hxfile::in, filename);
+	int scanned = 0;
+	const hxtest_skip_asserts skip(1);
+	EXPECT_LT(reader.scan("%d", &scanned), 0);
+#if (HX_HARDENING_MODE) != HX_HARDENING_MODE_NONE
+	EXPECT_EQ(skip.remaining(), 0);
+#endif
+	EXPECT_TRUE(reader.fail());
+	EXPECT_TRUE(reader.eof());
+}
+
+TEST(hxfile_test, assert_scan_eof_honors_skip) {
+	const char filename[] = "hxfile_test_assert_scan_eof.txt";
+	hxfile_test_make_empty(filename);
+
+	hxfile reader(hxfile::in | hxfile::skip_asserts, filename);
+	int scanned = 0;
+	const hxtest_skip_asserts skip(1);
+	EXPECT_LT(reader.scan("%d", &scanned), 0);
+	EXPECT_EQ(skip.remaining(), 1);
+	EXPECT_TRUE(reader.fail());
+	EXPECT_TRUE(reader.eof());
+}
+
+TEST(hxfile_test, getline_single_byte_buffer_reads_nothing) {
+	const char filename[] = "hxfile_test_getline_single.txt";
+	{
+		hxfile writer(hxfile::out, filename);
+		writer.write("ab\n", 3u);
+	}
+	hxfile reader(hxfile::in, filename);
+	char buf[2] = { '\xff', '\xff' };
+	EXPECT_TRUE(reader.getline(buf, 1));
+	EXPECT_EQ(buf[0], '\0');
+	EXPECT_EQ(buf[1], '\xff');
+	EXPECT_FALSE(reader.fail());
+	EXPECT_FALSE(reader.eof());
+	EXPECT_TRUE(reader.getline(buf + 1, 1));
+	EXPECT_EQ(buf[1], '\0');
 }
 #endif // HX_USE_FILE_IO

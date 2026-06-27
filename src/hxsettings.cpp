@@ -15,10 +15,6 @@ struct hxsettings hxg_settings;
 void hxsettings_construct_(void) {
 	hxg_settings.log_level = hxlog_level_log;
 	hxg_settings.deallocate_permanent = false;
-
-#if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
-	hxg_settings.asserts_to_be_skipped = 0;
-#endif
 }
 
 } // extern "C"

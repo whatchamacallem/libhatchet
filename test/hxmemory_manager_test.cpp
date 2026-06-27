@@ -4,6 +4,7 @@
 
 #include <hx/hxutility.h>
 #include <hx/hxtest.hpp>
+#include "test_trackers.hpp"
 
 HX_NS_USE
 
@@ -218,30 +219,32 @@ public:
 	static void test_memory_allocator_leak(void) {
 #if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
 		void* ptr2 = hxnull;
-		const int asserts_allowed = hxg_settings.asserts_to_be_skipped;
 		{
-			const hxsystem_allocator_scope allocator_scope(hxsystem_allocator_stack_0);
-			ASSERT_EQ(0u, allocator_scope.get_initial_allocation_count());
-			ASSERT_EQ(0u, allocator_scope.get_initial_bytes_allocated());
-			ASSERT_EQ(0u, allocator_scope.get_current_allocation_count());
-			ASSERT_EQ(0u, allocator_scope.get_current_bytes_allocated());
-			void* ptr1 = hxmalloc(100);
-			ptr2 = hxmalloc(200);
-			::memset(ptr1, 0x33, 100);
-			::memset(ptr2, 0x33, 200);
-			hxfree(ptr1);
-			hxg_settings.asserts_to_be_skipped = 1;
+			const hxtest_skip_asserts skip(1);
+			{
+				const hxsystem_allocator_scope allocator_scope(hxsystem_allocator_stack_0);
+				ASSERT_EQ(0u, allocator_scope.get_initial_allocation_count());
+				ASSERT_EQ(0u, allocator_scope.get_initial_bytes_allocated());
+				ASSERT_EQ(0u, allocator_scope.get_current_allocation_count());
+				ASSERT_EQ(0u, allocator_scope.get_current_bytes_allocated());
+				void* ptr1 = hxmalloc(100);
+				ptr2 = hxmalloc(200);
+				::memset(ptr1, 0x33, 100);
+				::memset(ptr2, 0x33, 200);
+				hxfree(ptr1);
+			}
+			ASSERT_EQ(skip.remaining(), 0);
 		}
-		ASSERT_EQ(hxg_settings.asserts_to_be_skipped, 0);
 		{
-			const hxsystem_allocator_scope allocator_scope(hxsystem_allocator_stack_0);
-			ASSERT_EQ(allocator_scope.get_initial_allocation_count(), 1);
-			ASSERT_EQ(allocator_scope.get_initial_bytes_allocated(), 0);
-			hxg_settings.asserts_to_be_skipped = 1;
-			hxfree(ptr2);
+			const hxtest_skip_asserts skip(1);
+			{
+				const hxsystem_allocator_scope allocator_scope(hxsystem_allocator_stack_0);
+				ASSERT_EQ(allocator_scope.get_initial_allocation_count(), 1);
+				ASSERT_EQ(allocator_scope.get_initial_bytes_allocated(), 0);
+				hxfree(ptr2);
+			}
+			ASSERT_EQ(skip.remaining(), 0);
 		}
-		ASSERT_EQ(hxg_settings.asserts_to_be_skipped, 0);
-		hxg_settings.asserts_to_be_skipped = asserts_allowed;
 #endif
 	}
 };

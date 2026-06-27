@@ -70,6 +70,11 @@ bool hxconsole_test_fn_f64(double v_)      { hxs_console_test_fn_f64  = v_; retu
 bool hxconsole_test_fn_bool(bool v_)       { hxs_console_test_fn_bool = v_; return true; }
 bool hxconsole_test_fn_str(const char* v_) { hxs_console_test_fn_str  = v_; return true; }
 
+long long          hxs_console_test_fn_ll  = 0;
+unsigned long long hxs_console_test_fn_ull = 0;
+bool hxconsole_test_fn_ll(long long v_)           { hxs_console_test_fn_ll  = v_; return true; }
+bool hxconsole_test_fn_ull(unsigned long long v_) { hxs_console_test_fn_ull = v_; return true; }
+
 int32_t     hxs_console_test_fn_mixed_i32 = 0;
 float       hxs_console_test_fn_mixed_f32 = 0.0f;
 const char* hxs_console_test_fn_mixed_str = hxnull;
@@ -125,6 +130,8 @@ hxconsole_command(hxconsole_test_fn_f32);
 hxconsole_command(hxconsole_test_fn_f64);
 hxconsole_command(hxconsole_test_fn_bool);
 hxconsole_command(hxconsole_test_fn_str);
+hxconsole_command(hxconsole_test_fn_ll);
+hxconsole_command(hxconsole_test_fn_ull);
 hxconsole_command(hxconsole_test_fn_mixed);
 hxconsole_command(hxconsole_test_fn_ints);
 hxconsole_command(hxconsole_test_fn_void);
@@ -580,6 +587,32 @@ TEST(hxconsole_test, function_overflow_signed_min_unsigned_zero_boundary) {
 	hxs_console_test_fn_u8 = 99;
 	EXPECT_TRUE(hxconsole_exec_line("hxconsole_test_fn_u8 0"));
 	EXPECT_EQ(hxs_console_test_fn_u8, static_cast<uint8_t>(0));
+}
+
+TEST(hxconsole_test, long_long_parsing) {
+	hxs_console_test_fn_ll = 0;
+	EXPECT_TRUE(hxconsole_exec_line("hxconsole_test_fn_ll -123"));
+	EXPECT_EQ(hxs_console_test_fn_ll, -123ll);
+	hxs_console_test_fn_ll = 0;
+	EXPECT_TRUE(hxconsole_exec_line("hxconsole_test_fn_ll 456"));
+	EXPECT_EQ(hxs_console_test_fn_ll, 456ll);
+}
+
+TEST(hxconsole_test, unsigned_long_long_parsing) {
+	hxs_console_test_fn_ull = 0;
+	EXPECT_TRUE(hxconsole_exec_line("hxconsole_test_fn_ull 789"));
+	EXPECT_EQ(hxs_console_test_fn_ull, 789ull);
+}
+
+TEST(hxconsole_test, unsigned_long_long_rejects_negative) {
+	hxlog_warning("EXPECTING_TEST_WARNINGS");
+	hxs_console_test_fn_ull = 55;
+	EXPECT_FALSE(hxconsole_exec_line("hxconsole_test_fn_ull -1"));
+	EXPECT_EQ(hxs_console_test_fn_ull, 55ull);
+}
+
+TEST(hxconsole_test, help_logs_commands_and_variables) {
+	EXPECT_TRUE(hxconsole_help());
 }
 
 #if defined __GNUC__

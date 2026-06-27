@@ -4,7 +4,9 @@
 
 #include "test_trackers.hpp"
 
-static hxtest_object_fixture* hxs_object_current = hxnull;
+// -- hxtest_object_fixture ----------------------------------------------------
+
+hxtest_object_fixture* hxs_object_current = hxnull;
 
 hxtest_object_fixture::hxtest_object_fixture(void) :
 	m_constructed(0),
@@ -23,3 +25,7 @@ hxtest_object_fixture& hxtest_object_fixture::get(void) {
 	hxassertmsg(hxs_object_current != hxnull, "no active hxtest_object_fixture");
 	return *hxs_object_current;
 }
+
+// -- hxtest_skip_asserts ------------------------------------------------------
+
+int hxtest_skip_asserts::hxs_remaining = 0;

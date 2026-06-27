@@ -47,10 +47,8 @@ class hxvector_printer:
 				capacity = int(self.val['m_capacity_'])
 			else:
 				capacity = int(self.val.type.template_argument(1))
-			if capacity == 0:
+			if capacity <= 0:
 				return '<unallocated>'
-			if capacity < 0:
-				return '<negative capacity>'
 
 			data: int
 			if self.val.type.template_argument(1) != 0:

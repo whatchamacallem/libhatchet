@@ -428,12 +428,6 @@ struct hxsettings {
 	/// `deallocate_permanent` - Allows deallocation of permanent resources at
 	/// system shut down.
 	bool deallocate_permanent;
-
-#if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
-	/// `asserts_to_be_skipped` - Number of asserts to skip, useful for testing
-	/// assert behavior.
-	int asserts_to_be_skipped;
-#endif
 };
 
 /// `hxg_settings` - Global class constructed by `hxinit`.

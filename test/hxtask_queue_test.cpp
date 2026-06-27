@@ -463,3 +463,18 @@ TEST(hxtask_queue_test, canceling) {
 	EXPECT_FALSE(t3.executed);
 	EXPECT_FALSE(t3.cancelled);
 }
+
+TEST(hxtask_queue_test, canceling_task_without_on_cancel_override) {
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
+	class hxtask_queue_test_default_cancel_t : public hxtask {
+	public:
+		bool execute(hxtask_queue*) override { executed = true; return true; }
+		bool executed = false;
+	};
+	hxtask_queue_test_default_cancel_t t0;
+	hxtask_queue q(1, 0);
+	q.enqueue(&t0);
+	EXPECT_TRUE(q.cancel(&t0));
+	q.wait_for_all();
+	EXPECT_FALSE(t0.executed);
+}

@@ -181,11 +181,6 @@ hxattr_weak hxattr_noexcept void hxset_assert_handler(bool (*handler)(void)) {
 #if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
 hxattr_weak hxattr_noexcept bool hxassert_handler(const char* file, size_t line) {
 	const char* f = hxbasename(file);
-	if((hxg_init_ver_ != 0) && hxg_settings.asserts_to_be_skipped > 0) {
-		--hxg_settings.asserts_to_be_skipped;
-		hxlog_handler(hxlog_level_assert, "skipped %s(%zu)", f, line);
-		return true;
-	}
 	if(hxg_assert_handler != hxnull && hxg_assert_handler()) {
 		return true;
 	}

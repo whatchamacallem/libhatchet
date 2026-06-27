@@ -105,7 +105,7 @@ bool hxfile::openv_(uint8_t mode, const char* filename, va_list args) {
 	hxassertmsg(len >= 0 && len < HX_MAX_LINE, "vsnprintf"); (void)len;
 
 	const int fd = ::open(line_buf, flags, 0666u);
-	hxassert_always((fd >= 0) || ((mode & hxfile::skip_asserts) != 0u),
+	hxassert_hard((fd >= 0) || ((mode & hxfile::skip_asserts) != 0u),
 		"open %s: %s", line_buf, ::strerror(errno));
 
 	m_fail_ = (fd < 0);
@@ -158,7 +158,7 @@ bool hxfile::set_pos(size_t position) {
 
 size_t hxfile::read(void* bytes, size_t buffer_size, size_t byte_count) {
 	hxassertmsg(((m_open_mode_ & hxfile::in) != 0u) && (m_file_pimpl_ >= 0), "invalid_file");
-	hxassert_always(byte_count <= buffer_size || ((m_open_mode_ & hxfile::skip_asserts) != 0u),
+	hxassert_hard(byte_count <= buffer_size || ((m_open_mode_ & hxfile::skip_asserts) != 0u),
 		"read %zu overflows %zu", byte_count, buffer_size);
 
 	if(byte_count > buffer_size) {
@@ -230,7 +230,14 @@ __attribute__((no_sanitize("memory")))
 #endif
 bool hxfile::getline(char* buffer, int buffer_size) {
 	hxassertmsg(((m_open_mode_ & hxfile::in) != 0u) && (m_file_pimpl_ >= 0), "invalid_file");
-	hxassertmsg(buffer_size >= 2, "buffer_size too small");
+
+	// Same as fgets. Not perfect.
+	if(buffer_size <= 1) {
+		if(buffer_size == 1) {
+			buffer[0] = '\0';
+		}
+		return true;
+	}
 
 	int written = 0;
 	char line_buf[HX_MAX_LINE];
@@ -262,7 +269,7 @@ bool hxfile::getline(char* buffer, int buffer_size) {
 			if(static_cast<ssize_t>(copy_len) < bytes_read) {
 				const off_t seek_result = ::lseek(static_cast<int>(m_file_pimpl_),
 					static_cast<off_t>(copy_len) - static_cast<off_t>(bytes_read), SEEK_CUR);
-				hxassert_always(seek_result >= 0, "lseek: %s", ::strerror(errno));
+				hxassert_hard(seek_result >= 0, "lseek: %s", ::strerror(errno)); (void)seek_result;
 			}
 			buffer[written] = '\0';
 			return true;
@@ -284,7 +291,7 @@ bool hxfile::print(const char* format, ...) {
 	const int len = ::vsnprintf(line_buf, HX_MAX_LINE + 1u, format, args);
 	va_end(args);
 
-	hxassert_always(len >= 0, "vsnprintf %s", ::strerror(errno));
+	hxassert_hard(len >= 0, "vsnprintf %s", ::strerror(errno));
 	if(len < 0) {
 		m_fail_ = true;
 		return false;
@@ -303,7 +310,7 @@ bool hxfile::print(const char* format, ...) {
 		}
 		written += static_cast<size_t>(n);
 	}
-	hxassert_always(written == to_write, "write %s", ::strerror(errno));
+	hxassert_hard(written == to_write, "write %s", ::strerror(errno));
 
 	if(written != to_write) {
 		m_fail_ = true;
@@ -331,7 +338,7 @@ int hxfile::scan(const char* format, ...) {
 	const int items_scanned = ::vsscanf(line_buf, format, args);
 	va_end(args);
 
-	hxassert_always(items_scanned != EOF || ((m_open_mode_ & hxfile::skip_asserts) != 0u),
+	hxassert_hard(items_scanned != EOF || ((m_open_mode_ & hxfile::skip_asserts) != 0u),
 		"vsscanf %s", ::strerror(errno));
 
 	if(items_scanned == EOF) {
