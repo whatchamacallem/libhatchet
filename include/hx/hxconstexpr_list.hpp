@@ -22,23 +22,23 @@
 
 HX_NS_BEGIN_
 
-/// `hxconst_list_node` - Intrusive doubly linked list node base. This is the
-/// same as `hxlist` except that it works with `constexpr` at the expense of
-/// using an additional pointer per-node. Derive from `hxconst_list_node` to
+/// `hxconstexpr_list_node` - Intrusive doubly linked list node base. This is
+/// the same as `hxlist` except that it works with `constexpr` at the expense of
+/// using an additional pointer per-node. Derive from `hxconstexpr_list_node` to
 /// make a type linkable into an `hxconstexpr_list`. Nodes default to unlinked
 /// on construction. Copy and move construction and assignment produce or leave
 /// a fresh unlinked node so that subclasses may implement the standard
 /// operators naturally.
-class hxconst_list_node {
+class hxconstexpr_list_node {
 public:
 	/// Constructs an unlinked node.
-	hxconstexpr hxconst_list_node(void) : m_list_prev_(hxnull), m_list_next_(hxnull) { }
+	hxconstexpr hxconstexpr_list_node(void) : m_list_prev_(hxnull), m_list_next_(hxnull) { }
 
 	/// Constructs an unlinked node.
-	hxconstexpr hxconst_list_node(const hxconst_list_node&) : hxconst_list_node() { }
+	hxconstexpr hxconstexpr_list_node(const hxconstexpr_list_node&) : hxconstexpr_list_node() { }
 
 	/// Assigns nothing. List linkage of either node is not affected.
-	hxconstexpr hxconst_list_node& operator=(const hxconst_list_node& other_) {
+	hxconstexpr hxconstexpr_list_node& operator=(const hxconstexpr_list_node& other_) {
 		hxassertmsg(this != &other_, "self_assignment"); (void)other_;
 		return *this;
 	}
@@ -46,23 +46,23 @@ public:
 private:
 	/// \cond HIDDEN
 	template<typename, typename> friend class hxconstexpr_list;
-	hxconst_list_node* m_list_prev_;
-	hxconst_list_node* m_list_next_;
+	hxconstexpr_list_node* m_list_prev_;
+	hxconstexpr_list_node* m_list_next_;
 	/// \endcond
 };
 
 /// `hxconstexpr_list` - An intrusive doubly linked list that takes ownership of
 /// nodes via a `deleter_t` callable, defaulting to `hxdefault_delete`. `node_t`
-/// must derive from `hxconst_list_node`. The destructor calls `clear()` which
-/// invokes the deleter on all remaining nodes. Subclasses of `node_t` may be
-/// inserted heterogeneously. Use `hxdo_not_delete` to avoid freeing nodes.
+/// must derive from `hxconstexpr_list_node`. The destructor calls `clear()`
+/// which invokes the deleter on all remaining nodes. Subclasses of `node_t` may
+/// be inserted heterogeneously. Use `hxdo_not_delete` to avoid freeing nodes.
 /// Note: It is possible to iterate backwards from `--list.end()` to
 /// `--list.begin()` however reverse iterators are not provided.
 ///
 /// For example:
 ///
 /// ```cpp
-///   struct example_t : public hxconst_list_node {
+///   struct example_t : public hxconstexpr_list_node {
 ///       example_t(int x) : value(x) { }
 ///       int value;
 ///   };
@@ -75,14 +75,14 @@ private:
 ///   }
 /// ```
 ///
-/// - `node_t` : The node type. Must derive from `hxconst_list_node`.
+/// - `node_t` : The node type. Must derive from `hxconstexpr_list_node`.
 /// - `deleter_t` : A callable that frees a node pointer. Defaults to
 ///    `hxdefault_delete`. Use `hxconsteval_delete` for `consteval` work.
 template<typename node_t_, typename deleter_t_=hxdefault_delete>
 class hxconstexpr_list {
 public:
 	/// `node_t` - The node type stored in the list. Derives from
-	/// `hxconst_list_node`.
+	/// `hxconstexpr_list_node`.
 	using node_t = node_t_;
 
 	/// `const_iterator` - Bidirectional iterator over const nodes.
@@ -131,16 +131,16 @@ public:
 	protected:
 		/// \cond HIDDEN
 		template<typename, typename> friend class hxconstexpr_list;
-		hxconstexpr const_iterator(hxconst_list_node* current_, const hxconst_list_node* sentinel_)
+		hxconstexpr const_iterator(hxconstexpr_list_node* current_, const hxconstexpr_list_node* sentinel_)
 			: m_current_node_(current_)
 #if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
 			, m_sentinel_(sentinel_)
 #endif
 		{ (void)sentinel_; }
 
-		hxconst_list_node* m_current_node_;
+		hxconstexpr_list_node* m_current_node_;
 #if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
-		const hxconst_list_node* m_sentinel_;
+		const hxconstexpr_list_node* m_sentinel_;
 #endif
 		/// \endcond
 	};
@@ -176,7 +176,7 @@ public:
 	private:
 		/// \cond HIDDEN
 		template<typename, typename> friend class hxconstexpr_list;
-		hxconstexpr iterator(hxconst_list_node* current_, const hxconst_list_node* sentinel_)
+		hxconstexpr iterator(hxconstexpr_list_node* current_, const hxconstexpr_list_node* sentinel_)
 			: const_iterator(current_, sentinel_) { }
 		/// \endcond
 	};
@@ -334,13 +334,13 @@ private:
 	hxconstexpr_list& operator=(const hxconstexpr_list&) = delete;
 	hxconstexpr_list& operator=(hxconstexpr_list&&) = delete;
 
-	hxconstexpr void insert_(hxconst_list_node* prev_, hxconst_list_node* next_,
-		hxconst_list_node* ptr_);
-	hxconstexpr void extract_(hxconst_list_node* ptr_);
+	hxconstexpr void insert_(hxconstexpr_list_node* prev_, hxconstexpr_list_node* next_,
+		hxconstexpr_list_node* ptr_);
+	hxconstexpr void extract_(hxconstexpr_list_node* ptr_);
 
 	deleter_t_ m_deleter_;
 	hxsize_t m_size_;
-	hxconst_list_node m_sentinel_;
+	hxconstexpr_list_node m_sentinel_;
 };
 
 #include "detail/hxconstexpr_list.inl"

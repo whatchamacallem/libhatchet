@@ -12,6 +12,12 @@
 #error #include <hx/libhatchet.h> instead.
 #endif
 
+/// \cond HIDDEN
+#ifndef __has_include
+#define __has_include(x) 0
+#endif
+/// \endcond
+
 #if defined HX_DOXYGEN_PARSER
 /// `HX_CPLUSPLUS` - A version of `__cplusplus` that is defined to `0` when
 /// `__cplusplus` is undefined. Allows use in C preprocessor statements without
@@ -151,7 +157,7 @@
 // hxthreads.hpp should work in C++11 with pthread.h. _POSIX_THREADS is the
 // correct way to observe the -pthread compiler flag.
 #if !defined HX_USE_THREADS
-#if defined __has_include && __has_include(<threads.h>)
+#if __has_include(<threads.h>)
 #define HX_USE_THREADS 11
 #elif defined _POSIX_THREADS
 #define HX_USE_THREADS 1
@@ -162,7 +168,7 @@
 
 #if !defined HX_USE_LIBCXX
 #define HX_USE_LIBCXX 1
-#elif !(HX_USE_LIBCXX) && !defined HX_SKIP_LIBCXX_CHECK && defined __has_include && __has_include(<new>)
+#elif !(HX_USE_LIBCXX) && !defined HX_SKIP_LIBCXX_CHECK && __has_include(<new>)
 #error Use -nostdinc++ to use the C headers instead of the C++ ones.
 #endif
 
@@ -271,6 +277,12 @@
 /// `HX_USE_PROFILER` - Enable this to use the profiler. - `0` Disables code for
 /// capturing profiling data. - `1` Compiles in code. See `hxprofile_scope`.
 #define HX_USE_PROFILER 0
+#endif
+
+#if !defined HX_CYCLES_PER_SECOND
+/// `HX_CYCLES_PER_SECOND` - Configures the CPU cycles per second. This is
+/// hardcoded to avoid an OS dependency. WARNING: Processors may change speed.
+#define HX_CYCLES_PER_SECOND 3.0e+9
 #endif
 
 #if !defined HX_PROFILER_MAX_RECORDS

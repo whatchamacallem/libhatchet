@@ -32,8 +32,23 @@
 					"ignoreFailures": false
 				},
 				{
+					"description": "Load hxconstexpr_list printer",
+					"text": "source ${workspaceFolder}/gdb/hxconstexpr_list_printer.py",
+					"ignoreFailures": false
+				},
+				{
 					"description": "Load hxdeque printer",
 					"text": "source ${workspaceFolder}/gdb/hxdeque_printer.py",
+					"ignoreFailures": false
+				},
+				{
+					"description": "Load hxflat_map printer",
+					"text": "source ${workspaceFolder}/gdb/hxflat_map_printer.py",
+					"ignoreFailures": false
+				},
+				{
+					"description": "Load hxflat_set printer",
+					"text": "source ${workspaceFolder}/gdb/hxflat_set_printer.py",
 					"ignoreFailures": false
 				},
 				{
@@ -42,8 +57,8 @@
 					"ignoreFailures": false
 				},
 				{
-					"description": "Load hxconstexpr_list printer",
-					"text": "source ${workspaceFolder}/gdb/hxconst_list_printer.py",
+					"description": "Load hxlist printer",
+					"text": "source ${workspaceFolder}/gdb/hxlist_printer.py",
 					"ignoreFailures": false
 				},
 				{

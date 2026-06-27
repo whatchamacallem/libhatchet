@@ -10,7 +10,6 @@
 #ifndef HX_DOXYGEN_PARSER
 HX_BEGIN_INL_
 
-
 template<typename T_>
 hxoptional<T_>::hxoptional(const hxoptional& other_) noexcept : m_engaged_(false) {
 	if (other_.m_engaged_) {

@@ -20,22 +20,33 @@ module;
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#if !defined __wasm__
+#if defined __x86_64__ || defined __i386__ || defined _M_X64 || defined _M_IX86
+#if defined _MSC_VER || defined __INTEL_COMPILER
+#include <intrin.h>
+#else
+#include <x86intrin.h>
+#endif
+#endif // x86/x64
+#endif // !defined __wasm__
+
+#if !defined HX_USE_THREADS || (HX_USE_THREADS)
+#if __has_include(<threads.h>)
+#include <threads.h>
+#endif
 #if __has_include(<pthread.h>)
 #include <pthread.h>
 #endif
-#include <threads.h>
-
-#if defined _MSC_VER
-#include <intrin.h>
-#elif __has_include(<x86intrin.h>)
-#include <x86intrin.h>
 #endif
 
+// <stdio.h> is already included and HX_USE_FILE_IO defaults to 1.
 #if defined HX_USE_FILE_IO && (HX_USE_FILE_IO) == 2
 #include <fcntl.h>
 #include <unistd.h>
 #endif
 
+// HX_USE_LIBCXX defaults to 1.
 #if !defined HX_USE_LIBCXX || (HX_USE_LIBCXX)
 #include <new>
 #include <initializer_list>
@@ -45,6 +56,7 @@ module;
 #error HX_USE_GOOGLE_TEST is set and Google Test 1.15.2 does not compile as a module.
 #endif
 
+// Modules are not allowed to override globals.
 #define HX_PROVIDE_NEW_DELETE 0
 
 // Out of line declarations (.inl files) have to be outside the export block.
@@ -56,6 +68,7 @@ module;
 #define HX_END_INL_ export {
 #endif
 
+// hxmemory_manager.h and hxsettings.h are not meant to be included directly.
 export module hx;
 export {
 #include "../include/hx/libhatchet.h"
@@ -76,13 +89,13 @@ export {
 #include "../include/hx/hxinitializer_list.hpp"
 #include "../include/hx/hxkey.hpp"
 #include "../include/hx/hxlist.hpp"
-#include "../include/hx/hxmemory_manager.h"
+//#include "../include/hx/hxmemory_manager.h"
 #include "../include/hx/hxoptional.hpp"
 #include "../include/hx/hxprofiler.hpp"
 #include "../include/hx/hxptr.hpp"
 #include "../include/hx/hxradix_sort.hpp"
 #include "../include/hx/hxrandom.hpp"
-#include "../include/hx/hxsettings.h"
+//#include "../include/hx/hxsettings.h"
 #include "../include/hx/hxsort.hpp"
 #include "../include/hx/hxtask.hpp"
 #include "../include/hx/hxtask_dag_node.hpp"

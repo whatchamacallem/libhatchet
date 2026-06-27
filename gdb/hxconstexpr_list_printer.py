@@ -7,31 +7,30 @@ import gdb.printing
 import traceback
 from typing import Iterator, Optional, Set, Tuple
 
-# hxlist uses this layout:
+# hxconstexpr_list uses this layout:
 #
-#	class hxlist_node {
+#	class hxconstexpr_list_node {
 #		// ...
-#		intptr_t m_list_link_;  // prev XOR next
+#		hxconstexpr_list_node* m_list_prev_;
+#		hxconstexpr_list_node* m_list_next_;
 #	};
 #
 #	template<typename node_t_, typename deleter_t_=hxdefault_delete>
-#	class hxlist {
+#	class hxconstexpr_list {
 #		// ...
-#		deleter_t_   m_deleter_;
-#		hxsize_t     m_size_;
-#		hxlist_node  m_sentinel_;  // m_sentinel_.m_list_link_ == tail XOR front
-#		hxlist_node* m_tail_;      // points to last node, or &m_sentinel_ when empty
-#	};
+#		deleter_t_        m_deleter_;
+#		hxsize_t          m_size_;
+#		hxconstexpr_list_node m_sentinel_;  // sentinel: m_sentinel_.m_list_next_ is front,
+#	};                                      //           m_sentinel_.m_list_prev_ is back.
 #
 
-class hxlist_printer:
+class hxconstexpr_list_printer:
 	def __init__(self, val: gdb.Value) -> None:
 		self.val: gdb.Value = val
 		self._size: int
 		self._node_type: gdb.Type
 		self._sentinel_addr: int
-		self._tail_addr: int
-		self._sentinel_link: int
+		self._front_addr: int
 		self._base_type: Optional[gdb.Type]
 		self._base_field_names: Set[Optional[str]]
 
@@ -46,8 +45,7 @@ class hxlist_printer:
 			self._size = size
 			self._node_type = node_type
 			self._sentinel_addr = int(self.val['m_sentinel_'].address)
-			self._tail_addr = int(self.val['m_tail_'])
-			self._sentinel_link = int(self.val['m_sentinel_']['m_list_link_'])
+			self._front_addr = int(self.val['m_sentinel_']['m_list_next_'])
 
 			self._base_type = None
 			self._base_field_names = set()
@@ -77,8 +75,7 @@ class hxlist_printer:
 			if not hasattr(self, '_size') or self._base_type is None:
 				return
 			node_ptr_type: gdb.Type = self._base_type.pointer()
-			current_addr: int = self._tail_addr ^ self._sentinel_link
-			prev_addr: int = self._sentinel_addr
+			current_addr: int = self._front_addr
 			for idx in range(self._size):
 				if current_addr == self._sentinel_addr:
 					break
@@ -91,10 +88,7 @@ class hxlist_printer:
 					for name, val in fields:
 						yield (f'[{idx}] {name}', val)
 				base_ptr: gdb.Value = gdb.Value(current_addr).cast(node_ptr_type)
-				link: int = int(base_ptr['m_list_link_'])
-				next_addr: int = prev_addr ^ link
-				prev_addr = current_addr
-				current_addr = next_addr
+				current_addr = int(base_ptr['m_list_next_'])
 		except Exception:
 			return
 
@@ -102,8 +96,8 @@ class hxlist_printer:
 		return 'array'
 
 def build_pretty_printer() -> gdb.printing.RegexpCollectionPrettyPrinter:
-	pp = gdb.printing.RegexpCollectionPrettyPrinter('hxlist')
-	pp.add_printer('hxlist', r'hxlist<', hxlist_printer)
+	pp = gdb.printing.RegexpCollectionPrettyPrinter('hxconstexpr_list')
+	pp.add_printer('hxconstexpr_list', r'hxconstexpr_list<', hxconstexpr_list_printer)
 	return pp
 
 gdb.printing.register_pretty_printer(gdb.current_objfile(), build_pretty_printer(), replace=True)

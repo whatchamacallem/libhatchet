@@ -23,8 +23,6 @@ hxconsole_command_named(*+[](const char* filename) -> bool {
 #endif
 
 } // namespace {
-
-
 namespace hxdetail_ {
 
 // -- Variables ----------------------------------------------------------------

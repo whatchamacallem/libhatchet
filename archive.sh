@@ -5,13 +5,14 @@
 
 set -eu
 
+SCRIPT_NAME=$(basename "$0")
 PROJECT="$(basename "$PWD")"
 DATE="$(date +%Y-%m-%d)"
 ARCHIVE="$PROJECT-$DATE.git.txz"
 
 # Print help if the first arg starts with a - or there is more than one.
 if [ "$#" -gt 1 ] || { [ "$#" -eq 1 ] && [ "${1#-}" != "$1" ]; }; then
-	echo "$0 [destination-directory]"
+	echo "$SCRIPT_NAME [destination-directory]"
 	echo "Will create $ARCHIVE in the destination-directory if"
 	echo "provided, otherwise ~/Backup/ if it exists and in ~/ otherwise. Restores all"
 	echo "files if $0 is the only file in the directory."
@@ -25,7 +26,7 @@ if [ ! -d ".git" ]; then
 fi
 
 # Extract archive if this script is the only non-hidden file.
-if [ "$(command ls)" = "$0" ]; then
+if [ "$(command ls)" = "$SCRIPT_NAME" ]; then
 	git fsck
 	git restore .
 	echo "Extracted all files in $PROJECT."
@@ -60,7 +61,7 @@ git reflog expire --expire=24.hours.ago --expire-unreachable=24.hours.ago --all
 git gc --prune=now --aggressive
 
 # Save everything including local config.
-tar -cJf "$DESTINATION/$ARCHIVE" -C ".." "$PROJECT/$0" "$PROJECT/.git"
+tar -cJf "$DESTINATION/$ARCHIVE" -C ".." "$PROJECT/$SCRIPT_NAME" "$PROJECT/.git"
 
 printf "Wrote: "
 ls -h1s "$DESTINATION/$ARCHIVE"

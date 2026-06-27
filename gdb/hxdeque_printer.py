@@ -2,13 +2,25 @@
 # SPDX-License-Identifier: MIT
 # This file is licensed under the terms of the LICENSE.md file.
 
-import gdb # type: ignore
-import gdb.printing # type: ignore
+import gdb
+import gdb.printing
 import traceback
+from typing import Iterator, Tuple
 
 # hxdeque uses this layout:
 #
-#	template<typename T_, hxsize_t capacity_>
+#	template<typename T_, hxsize_t fixed_capacity_>
+#	class hxallocator {
+#		// ...
+#		alignas(T_) char m_data_[fixed_capacity_ * hxsizeof<T_>()];  // static
+#	};
+#	template<typename T_>
+#	class hxallocator<T_, hxallocator_dynamic_capacity> {
+#		// ...
+#		hxsize_t m_capacity_;
+#		T_* m_data_;
+#	};
+#	template<typename T_, hxsize_t capacity_=hxallocator_dynamic_capacity>
 #	class hxdeque : private hxallocator<T_, capacity_> {
 #		// ...
 #		hxsize_t m_mask_;   // capacity - 1
@@ -17,21 +29,24 @@ import traceback
 #		hxsize_t m_count_;  // number of elements
 #	};
 #
-# hxallocator<T_, capacity_> stores elements as char[capacity_ * hxsizeof(T_)],
-# so m_data_.address is always the base of the element array.
-#
 # Elements are stored at indices (m_head_ + i) & m_mask_ for i in [0, m_count_).
 #
 
-class HxDequePrinter:
-	def __init__(self, val):
-		self.val = val
+class hxdeque_printer:
+	def __init__(self, val: gdb.Value) -> None:
+		self.val: gdb.Value = val
+		self._count: int
+		self._capacity: int
+		self._mask: int
+		self._head: int
+		self._data_addr: int
+		self._elem_type: gdb.Type
 
-	def to_string(self):
+	def to_string(self) -> str:
 		try:
-			count = int(self.val['m_count_'])
-			mask = int(self.val['m_mask_'])
-			capacity = mask + 1 if mask != 0 else 0
+			count: int = int(self.val['m_count_'])
+			mask: int = int(self.val['m_mask_'])
+			capacity: int = mask + 1 if mask != 0 else 0
 
 			if self.val['m_count_'].is_optimized_out:
 				return '<optimized out>'
@@ -39,11 +54,9 @@ class HxDequePrinter:
 			if capacity == 0:
 				return '<unallocated>'
 
-			elem_type = self.val.type.template_argument(0)
+			elem_type: gdb.Type = self.val.type.template_argument(0)
 
-			# Static capacity stores m_data_ as an inline char array so its
-			# address is the buffer base. Dynamic capacity stores m_data_ as a
-			# pointer whose value is the buffer base.
+			data_addr: int
 			if int(self.val.type.template_argument(1)) == 0:
 				data_addr = int(self.val['m_data_'])
 			else:
@@ -56,30 +69,30 @@ class HxDequePrinter:
 			self._data_addr = data_addr
 			self._elem_type = elem_type
 
-			basename = f'{elem_type}'.split(':')[-1]
+			basename: str = f'{elem_type}'.split(':')[-1]
 			return f'[{count}/{capacity}] {basename}'
 		except Exception:
-			error = f'{traceback.format_exc()}'
+			error: str = f'{traceback.format_exc()}'
 			return error.split('\n', 1)[1]
 
-	def children(self):
+	def children(self) -> Iterator[Tuple[str, gdb.Value]]:
 		try:
 			if not hasattr(self, '_count'):
 				return
 			for i in range(self._count):
-				slot = (self._head + i) & self._mask
-				addr = self._data_addr + slot * self._elem_type.sizeof
-				ptr = gdb.Value(addr).cast(self._elem_type.pointer())
+				slot: int = (self._head + i) & self._mask
+				addr: int = self._data_addr + slot * self._elem_type.sizeof
+				ptr: gdb.Value = gdb.Value(addr).cast(self._elem_type.pointer())
 				yield (f'[{i}]', ptr.dereference())
 		except Exception:
 			return
 
-	def display_hint(self):
+	def display_hint(self) -> str:
 		return 'array'
 
-def build_pretty_printer():
-	pp = gdb.printing.RegexpCollectionPrettyPrinter('hxdeque_printer')
-	pp.add_printer('hxdeque', r'hxdeque<', HxDequePrinter)
+def build_pretty_printer() -> gdb.printing.RegexpCollectionPrettyPrinter:
+	pp = gdb.printing.RegexpCollectionPrettyPrinter('hxdeque')
+	pp.add_printer('hxdeque', r'hxdeque<', hxdeque_printer)
 	return pp
 
 gdb.printing.register_pretty_printer(gdb.current_objfile(), build_pretty_printer(), replace=True)

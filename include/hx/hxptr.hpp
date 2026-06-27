@@ -57,7 +57,6 @@ public:
 	/// Returns the owned pointer. The pointer must not be null.
 	hxattr_nodiscard hxconstexpr T_* operator->(void) const;
 
-
 	/// Returns `true` if the owned pointer is non-null.
 	hxattr_nodiscard hxconstexpr operator bool(void) const;
 

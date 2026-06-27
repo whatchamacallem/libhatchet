@@ -66,7 +66,6 @@ private:
 };
 } // namespace
 
-
 TEST(hxprofiler_test, single_scope_runs_for_1ms) {
 	hxprofiler_start();
 	{

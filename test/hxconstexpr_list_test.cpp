@@ -10,8 +10,8 @@ HX_NS_USE
 #if HX_CPLUSPLUS >= 202302L
 namespace {
 
-consteval bool hxtest_hxconst_list_consteval_integration(void) {
-	struct hxtest_node_t : hxconst_list_node {
+consteval bool hxtest_hxconstexpr_list_consteval_integration(void) {
+	struct hxtest_node_t : hxconstexpr_list_node {
 		constexpr explicit hxtest_node_t(int v) : value(v) { }
 		int value;
 	};
@@ -113,17 +113,17 @@ consteval bool hxtest_hxconst_list_consteval_integration(void) {
 	return true;
 }
 
-static_assert(hxtest_hxconst_list_consteval_integration(),
+static_assert(hxtest_hxconstexpr_list_consteval_integration(),
 	"hxconstexpr_list consteval: integration test must pass");
 } // namespace
 #endif // HX_CPLUSPLUS >= 202302L
 
-hxattr_noinline static void hxtest_gdb_break_hxconst_list(void) { }
-#define hxtest_gdb_break_hxlist hxtest_gdb_break_hxconst_list
+hxattr_noinline static void hxtest_gdb_break_hxconstexpr_list(void) { }
+#define hxtest_gdb_break_hxlist hxtest_gdb_break_hxconstexpr_list
 #define hxlist hxconstexpr_list
-#define hxlist_node hxconst_list_node
-#define hxlist_test hxconst_list_test
-#define hxlist_node_test hxconst_list_node_test
+#define hxlist_node hxconstexpr_list_node
+#define hxlist_test hxconstexpr_list_test
+#define hxlist_node_test hxconstexpr_list_node_test
 #define hxtest_list_counted_node_t hxtest_const_list_counted_node_t
 #define hxtest_list_node_t hxtest_const_list_node_t
 

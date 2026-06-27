@@ -2,11 +2,12 @@
 # SPDX-License-Identifier: MIT
 # This file is licensed under the terms of the LICENSE.md file.
 
-import gdb # type: ignore
-import gdb.printing # type: ignore
+import gdb
+import gdb.printing
 import traceback
+from typing import Iterator, Tuple
 
-# hxvector uses this allocation strategy:
+# hxvector uses this layout:
 #
 #	template<typename T_, hxsize_t fixed_capacity_>
 #	class hxallocator {
@@ -14,35 +15,34 @@ import traceback
 #		alignas(T_) char m_data_[fixed_capacity_ * hxsizeof<T_>()];
 #	};
 #	template<typename T_>
-#	class hxallocator<T_, 0> {
+#	class hxallocator<T_, hxallocator_dynamic_capacity> {
 #		// ...
 #		hxsize_t m_capacity_;
 #		T_* m_data_;
 #	};
-#	template<typename T_, hxsize_t capacity_=0>
+#	template<hxvector_concept_ T_, hxsize_t capacity_=hxallocator_dynamic_capacity>
 #	class hxvector : private hxallocator<T_, capacity_> {
 #		// ...
 #		T_* m_end_;
 #	}
 #
 
-class HxVectorPrinter:
-	"""
-	Pretty printer for hxvector<T, capacity>. There are two different underlying
-	implementations and this logic works for both of them.
-	"""
+class hxvector_printer:
+	def __init__(self, val: gdb.Value) -> None:
+		self.val: gdb.Value = val
+		self._elem_type: gdb.Type
+		self._size: int
+		self._data: int
 
-	def __init__(self, val):
-		self.val = val
-
-	def to_string(self):
+	def to_string(self) -> str:
 		try:
-			data = self.val['m_data_']
-			end = self.val['m_end_']
+			data_val: gdb.Value = self.val['m_data_']
+			end_val: gdb.Value = self.val['m_end_']
 
-			if data.is_optimized_out or end.is_optimized_out:
+			if data_val.is_optimized_out or end_val.is_optimized_out:
 				return '<optimized out>'
 
+			capacity: int
 			if self.val.type.template_argument(1) == 0:
 				capacity = int(self.val['m_capacity_'])
 			else:
@@ -52,48 +52,45 @@ class HxVectorPrinter:
 			if capacity < 0:
 				return '<negative capacity>'
 
-			# There are two different underlying implementations and this logic
-			# works for both of them. This is Python, so we have int instead of
-			# uintptr_t to calculate addresses with.
+			data: int
 			if self.val.type.template_argument(1) != 0:
-				data = int(data.address)
+				data = int(data_val.address)
 			else:
-				data = int(data)
-			end = int(end)
+				data = int(data_val)
+			end: int = int(end_val)
 
-			elem_type = self.val.type.template_argument(0)
-			size = int((end - data) / elem_type.sizeof)
+			elem_type: gdb.Type = self.val.type.template_argument(0)
+			size: int = int((end - data) / elem_type.sizeof)
 			if size < 0:
 				return '<negative size>'
 
-			# Cache these for calculating children.
 			self._elem_type = elem_type
 			self._size = size
 			self._data = data
 
-			basename = f'{self._elem_type}'.split(':')[-1]
+			basename: str = f'{self._elem_type}'.split(':')[-1]
 			return '[{}/{}] {}'.format(self._size, capacity, basename)
 		except Exception as e:
-			error = f'{traceback.format_exc()}'
+			error: str = f'{traceback.format_exc()}'
 			return error.split('\n', 1)[1]
 
-	def children(self):
+	def children(self) -> Iterator[Tuple[str, gdb.Value]]:
 		try:
 			if not hasattr(self, '_size'):
 				return
 			for i in range(self._size):
-				int_ptr = self._data + i * self._elem_type.sizeof
-				elem_ptr = gdb.Value(int_ptr).cast(self._elem_type.pointer())
+				int_ptr: int = self._data + i * self._elem_type.sizeof
+				elem_ptr: gdb.Value = gdb.Value(int_ptr).cast(self._elem_type.pointer())
 				yield (f'[{i}]', elem_ptr.dereference())
 		except Exception:
 			return
 
-	def display_hint(self):
+	def display_hint(self) -> str:
 		return 'vector'
 
-def build_pretty_printer():
-	pp = gdb.printing.RegexpCollectionPrettyPrinter('hxvector_printer')
-	pp.add_printer('hxvector', r'^hxvector<', HxVectorPrinter)
+def build_pretty_printer() -> gdb.printing.RegexpCollectionPrettyPrinter:
+	pp = gdb.printing.RegexpCollectionPrettyPrinter('hxvector')
+	pp.add_printer('hxvector', r'^hxvector<', hxvector_printer)
 	return pp
 
 gdb.printing.register_pretty_printer(gdb.current_objfile(), build_pretty_printer(), replace=True)

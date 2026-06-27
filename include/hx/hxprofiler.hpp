@@ -37,7 +37,7 @@ using hxcycles_t = size_t;
 /// `hxcycles_per_second` - WARNING: Customize for your processor speed. This
 /// assumes 2.8 GHz. These constants are primarily used with `printf`, which
 /// promotes everything to double anyway.
-hxinline_constexpr double hxcycles_per_second = 2.8e+9;
+hxinline_constexpr double hxcycles_per_second = HX_CYCLES_PER_SECOND;
 
 /// `hxmilliseconds_per_cycle` - The number of milliseconds in a single
 /// processor cycle, derived from `hxcycles_per_second`.

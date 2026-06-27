@@ -9,7 +9,7 @@
 
 source ../gdb/hxarray_printer.py
 source ../gdb/hxbitset_printer.py
-source ../gdb/hxconst_list_printer.py
+source ../gdb/hxconstexpr_list_printer.py
 source ../gdb/hxdeque_printer.py
 source ../gdb/hxflat_map_printer.py
 source ../gdb/hxflat_set_printer.py
@@ -49,7 +49,7 @@ commands
   continue
 end
 
-break hxtest_gdb_break_hxconst_list
+break hxtest_gdb_break_hxconstexpr_list
 commands
   up
   echo \n=== hxconstexpr_list ===\n

@@ -2,9 +2,10 @@
 # SPDX-License-Identifier: MIT
 # This file is licensed under the terms of the LICENSE.md file.
 
-import gdb # type: ignore
-import gdb.printing # type: ignore
+import gdb
+import gdb.printing
 import traceback
+from typing import Iterator, Optional, Tuple
 
 # hxbitset uses this layout:
 #
@@ -15,57 +16,56 @@ import traceback
 #	};
 #
 
-_MAX_BITS = 128
+_MAX_BITS: int = 128
 
-class HxBitsetPrinter:
-	def __init__(self, val):
-		self.val = val
+class hxbitset_printer:
+	def __init__(self, val: gdb.Value) -> None:
+		self.val: gdb.Value = val
 
-	def to_string(self):
+	def to_string(self) -> str:
 		try:
-			bit_count = int(self.val.type.template_argument(0))
-			size_t_type = gdb.lookup_type('size_t')
-			word_bits = size_t_type.sizeof * 8
+			bit_count: int = int(self.val.type.template_argument(0))
+			size_t_type: gdb.Type = gdb.lookup_type('size_t')
+			word_bits: int = size_t_type.sizeof * 8
 
-			data_field = self.val['m_data_']
+			data_field: gdb.Value = self.val['m_data_']
 			if data_field.is_optimized_out:
 				return '<optimized out>'
 
-			displayed_bits = min(bit_count, _MAX_BITS)
-			chars = []
-			# std::bitset::to_string emits bit (bit_count-1) first down to bit 0.
+			displayed_bits: int = min(bit_count, _MAX_BITS)
+			chars: list[str] = []
 			for bit in range(bit_count - 1, bit_count - 1 - displayed_bits, -1):
-				word_idx = bit // word_bits
-				bit_idx = bit % word_bits
-				word = int(data_field[word_idx])
+				word_idx: int = bit // word_bits
+				bit_idx: int = bit % word_bits
+				word: int = int(data_field[word_idx])
 				chars.append('1' if (word >> bit_idx) & 1 else '0')
 
-			result = ''.join(chars)
+			result: str = ''.join(chars)
 			if bit_count > _MAX_BITS:
 				result += '...'
 			return result
 		except Exception:
-			error = f'{traceback.format_exc()}'
+			error: str = f'{traceback.format_exc()}'
 			return error.split('\n', 1)[1]
 
-	def children(self):
+	def children(self) -> Iterator[Tuple[str, gdb.Value]]:
 		try:
-			size_t_type = gdb.lookup_type('size_t')
-			word_bits = size_t_type.sizeof * 8
-			bit_count = int(self.val.type.template_argument(0))
-			word_count = (bit_count + word_bits - 1) // word_bits
-			data_field = self.val['m_data_']
+			size_t_type: gdb.Type = gdb.lookup_type('size_t')
+			word_bits: int = size_t_type.sizeof * 8
+			bit_count: int = int(self.val.type.template_argument(0))
+			word_count: int = (bit_count + word_bits - 1) // word_bits
+			data_field: gdb.Value = self.val['m_data_']
 			for i in range(word_count):
 				yield (f'm_data_[{i}]', data_field[i])
 		except Exception:
 			return
 
-	def display_hint(self):
+	def display_hint(self) -> Optional[str]:
 		return None
 
-def build_pretty_printer():
-	pp = gdb.printing.RegexpCollectionPrettyPrinter('hxbitset_printer')
-	pp.add_printer('hxbitset', r'hxbitset<', HxBitsetPrinter)
+def build_pretty_printer() -> gdb.printing.RegexpCollectionPrettyPrinter:
+	pp = gdb.printing.RegexpCollectionPrettyPrinter('hxbitset')
+	pp.add_printer('hxbitset', r'hxbitset<', hxbitset_printer)
 	return pp
 
 gdb.printing.register_pretty_printer(gdb.current_objfile(), build_pretty_printer(), replace=True)
