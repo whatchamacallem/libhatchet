@@ -3,10 +3,8 @@
 # SPDX-License-Identifier: MIT
 # This file is licensed under the terms of the LICENSE.md file.
 #
-# After building the emsdk, these commands need to be run in the emsdk
-# directory:
-#
-#   ./emsdk activate latest && source ./emsdk_env.sh
+# Requires the the emsdk. After installing the emsdk it is recommended to add it
+# to your .bashrc.
 
 # Prevent leaking background tasks.
 trap '{ set +o xtrace; } 2> /dev/null

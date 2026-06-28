@@ -123,6 +123,7 @@
         "MALLOC",
         "MDFILE",
         "memcpy",
+        "memset",
         "metaprogramming",
         "mftb",
         "MMIX",

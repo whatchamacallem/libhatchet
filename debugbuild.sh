@@ -3,14 +3,14 @@
 # SPDX-License-Identifier: MIT
 # This file is licensed under the terms of the LICENSE.md file.
 #
-# Intended for used with GDB while iterating on code. Also checks permutations
-# of build flags.
+# Intended for used with GDB during iterative development. Also checks
+# permutations of build flags.
 #
 # This build uses 32-bit pointers because they are easier to read. The -m32
 # switch enables 32-bit compilation. See debian_packages.sh. Do not use a .pch
 # with ccache. It won't work as expected.
 
-# -Wdate-time is for ccache users. -Wno-unused-variable is only for debugging.
+# -Wno-unused-variable is only for debugging.
 ERRORS="-Wall -Wextra -pedantic-errors -Werror -Wfatal-errors -Wcast-qual \
 	-Wdisabled-optimization -Wshadow -Wundef -Wconversion -Wdate-time     \
 	-Wmissing-declarations -Wno-unused-variable -Wno-c2y-extensions       \

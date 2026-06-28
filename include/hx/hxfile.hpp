@@ -157,8 +157,7 @@ public:
 	bool set_pos(size_t position_);
 
 	/// Reads a specified number of bytes from the file into the provided
-	/// buffer. Asserts that `count` does not exceed `buffer_size`. Does not
-	/// reset the failure flag to false on success.
+	/// buffer. Does not reset the failure flag to false on success.
 	/// - `bytes` : Non-null pointer to a buffer of at least `buffer_size` bytes.
 	/// - `buffer_size` : Capacity of the buffer in bytes.
 	/// - `count` : Number of bytes to read from the file. Must not exceed `buffer_size`.

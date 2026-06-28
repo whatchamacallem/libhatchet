@@ -34,24 +34,23 @@ public:
 	/// - `x` : The `hxbitset` to copy from.
 	hxconstexpr hxbitset(const hxbitset& x_);
 
-	/// Assigns the bits of `x` to this `hxbitset`. Asserts that `&x` is not `this`.
+	/// Assigns the bits of `x` to this `hxbitset`.
 	/// - `x` : The `hxbitset` to copy from.
 	hxconstexpr void operator=(const hxbitset& x_);
 
-	/// Returns the value of the bit at position `pos`. Asserts that `pos` is in
-	/// range.
+	/// Returns the value of the bit at position `pos`.
 	/// - `pos` : Bit index. Must be less than `bit_count`.
 	hxattr_nodiscard hxconstexpr bool operator[](size_t pos_) const;
 
-	/// Applies bitwise AND with `x` in place. Asserts that `&x` is not `this`.
+	/// Applies bitwise AND with `x` in place.
 	/// - `x` : The `hxbitset` to AND with.
 	hxconstexpr hxbitset& operator&=(const hxbitset& x_);
 
-	/// Applies bitwise OR with `x` in place. Asserts that `&x` is not `this`.
+	/// Applies bitwise OR with `x` in place.
 	/// - `x` : The `hxbitset` to OR with.
 	hxconstexpr hxbitset& operator|=(const hxbitset& x_);
 
-	/// Applies bitwise XOR with `x` in place. Asserts that `&x` is not `this`.
+	/// Applies bitwise XOR with `x` in place.
 	/// - `x` : The `hxbitset` to XOR with.
 	hxconstexpr hxbitset& operator^=(const hxbitset& x_);
 
@@ -63,8 +62,7 @@ public:
 	/// - `count` : Number of positions to shift right.
 	hxconstexpr hxbitset& operator>>=(size_t count_);
 
-	/// Returns `true` if all bits compare equal to those of `x`. Asserts that
-	/// `&x` is not `this`.
+	/// Returns `true` if all bits compare equal to those of `x`.
 	/// - `x` : The `hxbitset` to compare with.
 	hxattr_nodiscard hxconstexpr bool operator==(const hxbitset& x_) const;
 
@@ -92,13 +90,12 @@ public:
 	/// Flips all bits.
 	hxconstexpr hxbitset& flip(void);
 
-	/// Flips the bit at position `pos`. Asserts that `pos` is in range.
+	/// Flips the bit at position `pos`.
 	/// - `pos` : Bit index that must be less than `bit_count`.
 	hxconstexpr hxbitset& flip(size_t pos_);
 
-	/// Copies `len` bytes from `src` into the `hxbitset` storage. Asserts that
-	/// `len` does not exceed `bytes()`. Missing bytes or trailing bits beyond
-	/// `bit_count` are masked to zero after the copy.
+	/// Copies `len` bytes from `src` into the `hxbitset` storage. Missing bytes
+	/// or trailing bits beyond `bit_count` are masked to zero after the copy.
 	/// - `src` : Pointer to the source data.
 	/// - `len` : Number of bytes to copy. Must not exceed `bytes()`.
 	void load(const void* src_, size_t len_);
@@ -109,15 +106,14 @@ public:
 	/// Clears all bits to 0.
 	hxconstexpr hxbitset& reset(void);
 
-	/// Clears the bit at position `pos`. Asserts that `pos` is in range.
+	/// Clears the bit at position `pos`.
 	/// - `pos` : Bit index that must be less than `bit_count`.
 	hxconstexpr hxbitset& reset(size_t pos_);
 
 	/// Sets all bits to 1.
 	hxconstexpr hxbitset& set(void);
 
-	/// Sets or clears the bit at position `pos`. Asserts that `pos` is in
-	/// range.
+	/// Sets or clears the bit at position `pos`.
 	/// - `pos` : Bit index that must be less than `bit_count`.
 	/// - `value` : The value to assign, defaults to `true`.
 	hxconstexpr hxbitset& set(size_t pos_, bool value_=true);
@@ -125,8 +121,7 @@ public:
 	/// Returns the number of bits.
 	hxattr_nodiscard static constexpr size_t size(void) { return bit_count_; }
 
-	/// Returns the value of the bit at position `pos`. Asserts that `pos` is in
-	/// range.
+	/// Returns the value of the bit at position `pos`.
 	/// - `pos` : Bit index must be less than `bit_count`.
 	hxattr_nodiscard hxconstexpr bool test(size_t pos_) const;
 

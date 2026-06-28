@@ -47,7 +47,8 @@ system allocators.
   embedded C99 library. musl libc is recommended for embedded Linux and is
   widely packaged: <https://musl.libc.org/>. No other C++ runtime or C++ code is
   required. pthreads or C99's `<thread.h>` may be used for threading, which are
-  widely implemented standards.
+  widely implemented standards. See `.clang-tidy` for a discussion of linting
+  rules and portability concerns.
 
 - **Profiling System**: Uses processor cycle sampling to create a hierarchical
   timeline capture compatible with Chrome's `about://tracing` viewer (navigation

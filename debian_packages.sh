@@ -5,13 +5,10 @@
 #
 # Building and running all the tests on Ubuntu 24.04 LTS requires these packages.
 #
-# It should be safe to just run this script on Ubuntu. gdb-multiarch recently
-# became required for vscode to set 32-bit breakpoints reliably. vscode is
-# recommended because it is already configured but is not required or installed
-# here. google-chrome will also be launched when a web page is generated if it
-# is available but is not required or installed here.
-#
-# Please open a PR if anything is missing or has changed.
+# It should be safe to just run this script on Ubuntu. gdb-multiarch is now
+# required for GDB to set 32-bit breakpoints reliably. google-chrome will be
+# launched when a web page is generated, if available, but is not required or
+# installed here. emcc is required for testwasm.sh but is not installed here.
 
 # Prevent leaking background tasks.
 trap '{ set +o xtrace; } 2> /dev/null

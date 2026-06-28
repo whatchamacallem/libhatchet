@@ -2,8 +2,6 @@
 # SPDX-FileCopyrightText: © 2017-2026 Adrian Johnston.
 # SPDX-License-Identifier: MIT
 # This file is licensed under the terms of the LICENSE.md file.
-#
-# sudo apt install musl musl-dev musl-tools
 
 # Prevent leaking background tasks.
 trap '{ set +o xtrace; } 2> /dev/null
@@ -42,7 +40,7 @@ musl-gcc $BUILD $ERRORS $FLAGS -I"$HX_DIR/include" \
 	-std=c17 -c "$HX_DIR"/test/*.c
 
 # Test every supported version of the standard without libc++.
-for VERSION in 11 14 17 20; do
+for VERSION in 11 14 17 20 23; do
 
 # -Wl,--gc-sections and -flto=12 should reduce size.
 musl-gcc $BUILD $ERRORS $FLAGS -I"$HX_DIR/include" -std=c++$VERSION -nostdinc++ \
@@ -51,7 +49,7 @@ musl-gcc $BUILD $ERRORS $FLAGS -I"$HX_DIR/include" -std=c++$VERSION -nostdinc++ 
 
 done
 
-# Only process and display the c++20 version.
+# Only process and display the c++23 version.
 strip -o hxtest-strip --strip-unneeded hxtest
 
 # Turn off tracing silently and make sure the command returns 0.

@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 # This file is licensed under the terms of the LICENSE.md file.
 
-# Only rerun cmake manually as is customary. Build artifacts ARE retained.
+# Does not rerun cmake as is customary. Build artifacts ARE retained.
 
 # Prevent leaking background tasks.
 trap '{ set +o xtrace; } 2> /dev/null

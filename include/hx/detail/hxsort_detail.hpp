@@ -78,9 +78,6 @@ void hxmake_heap_(hxrestrict_t<iterator_t_> begin_, iterator_t_ end_, const less
 // Average time: `Θ(n log n)`, worst time: `Θ(n²)`. This algorithm is only
 // intended to sort ranges over a minimum length before calling back to the
 // `sort_callback` parameter.
-// - `callback` : Callback callable matching `void callback(T* begin, T* end,
-//   const less_t& less, int depth)` for recursive sorting.
-// - `depth` : Current recursion depth.
 template<typename iterator_t_, typename less_t_, typename sort_callback_t_>  hxattr_hot hxconstexpr
 void hxpartition_sort_(hxrestrict_t<iterator_t_> begin_, iterator_t_ end_, const less_t_& less_,
 						const sort_callback_t_& sort_callback_, int depth_) {

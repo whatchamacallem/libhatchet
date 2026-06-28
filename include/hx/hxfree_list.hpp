@@ -81,9 +81,8 @@ public:
 	/// All `T` must have been released before destruction.
 	~hxfree_list(void) noexcept;
 
-	/// Constructs a `T` in a free slot and returns an `hxptr` owning it.
-	/// Asserts when no slots remain. Use `release()` to transfer to a different
-	/// hxptr type.
+	/// Constructs a `T` in a free slot and returns an `hxptr` owning it. Use
+	/// `release()` to transfer to a different hxptr type.
 	/// - `args` : Arguments forwarded to `T`'s constructor.
 	template<typename... args_t_>
 	hxattr_nodiscard hxptr<T_, deleter_t> allocate(args_t_&&... args_) noexcept;

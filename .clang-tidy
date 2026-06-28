@@ -2,15 +2,56 @@
 # SPDX-License-Identifier: MIT
 # This file is licensed under the terms of the LICENSE.md file.
 #
-# Regarding insecureAPI.DeprecatedOrUnsafeBufferHandling, Annex K of the C11
-# standard was never widely implemented. This is not a portable expectation.
+# WARNING: Using cppcoreguidelines-virtual-class-destructor is not possible
+# because virtual destructors cause link errors when ::delete is not
+# implemented. Please remember to mark your base class destructors as virtual
+# when needed as this is not done for you in the provided virtual classes.
 #
-# Using cppcoreguidelines-virtual-class-destructor is not possible because
-# virtual destructors cause link errors when ::delete is not implemented. Please
-# remember to mark your base class destructors as virtual when needed as this is
-# not done for you in the provided virtual classes.
+# WARNING: memcpy() and memset() are used in constructors, destructors and
+# swap() in violation of the C++ standard as the author considered this less
+# brittle and unsightly. No compiler has ever objected. The C++ standard is
+# adding a legal way to do this but it will not be adopted. Deleters must be
+# movable this way.
 #
-# Also audit the NOLINT markers linting is a concern for your project.
+# The following exceptions are enabled below.
+#
+# -bugprone-easily-swappable-parameters: Flags functions with consecutive
+# parameters of the same type. This requirement is insane.
+#
+# -bugprone-forwarding-reference-overload: Flags constructors taking a
+# forwarding reference that can unintentionally hijack copy/move construction or
+# shadow other overloads. The C++ standard mandates this.
+#
+# -bugprone-implicit-widening-of-multiplication-result: Flags multiplications
+# computed in a narrow type then assigned/widened to a larger type. This
+# requirement was deemed unsightly.
+#
+# -bugprone-sizeof-expression: Flags suspicious sizeof usages such as sizeof.
+# The author considers sizeof operations on expressions to be less brittle.
+#
+# -bugprone-multi-level-implicit-pointer-conversion: Flags implicit conversions
+# between pointers with differing levels of indirection. This is a consequence
+# of writing memory allocators.
+#
+# -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling: Annex K
+# of the C11 standard was never widely implemented. This is not a portable
+# expectation.
+#
+# -performance-enum-size: Recommends specifying a smaller fixed underlying type
+# for enums whose values fit, reducing memory footprint. This is a consequence
+# of passing enums declared in C to C++ functions.
+#
+# -performance-no-int-to-ptr: Flags integer-to-pointer casts that defeat alias
+# analysis and inhibit compiler optimizations. This is a consequence of writing
+# memory allocators. No known performance issue exists.
+#
+# -portability-avoid-pragma-once: Flags use of the non-standard #pragma once.
+# This requirement was deemed unsightly and easy to fix.
+#
+# misc-const-correctness.AnalyzePointers had too many false positives in
+# v21.1.8. The valid warnings were fixed.
+#
+# Also audit the NOLINT markers if linting is a concern for your project.
 #
 
 Checks: >
@@ -68,7 +109,6 @@ Checks: >
   -performance-no-int-to-ptr,
   -portability-avoid-pragma-once
 
-# misc-const-correctness.AnalyzePointers had too many false positives in v21.1.8.
 CheckOptions:
   misc-const-correctness.AnalyzePointers: 'false'
 FormatStyle: none

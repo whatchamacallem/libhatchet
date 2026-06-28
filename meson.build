@@ -5,7 +5,7 @@
 project('libhatchet', ['c', 'cpp'],
 	version : '1.0',
 	license : 'MIT',
-	meson_version : '>=1.1',
+	meson_version : '>=1.7',
 	default_options : [
 		'c_std=c17',
 		'cpp_std=c++23',
@@ -32,10 +32,11 @@ hxwarning_args = [
 hxinclude_directory = include_directories('include')
 
 if get_option('build_module')
-	# WARNING: This was only tested with GCC 15.2.0, Clang 20.1.8, Meson 1.7.0
-	# and Ninja 1.12.1. Module support was a work in progress at that time.
+	# WARNING: The earliest versions this was tested with were GCC 15.2.0, Clang
+	# 20.1.8, Meson 1.7.0 and Ninja 1.12.1. Module support was still a work in
+	# progress at that time.
 	#
-	# This required a custom_target to make it work. -std=c++23 must be passed
+	# This required a custom_target to make it work. -std=c++2x must be passed
 	# explicitly since project default_options do not apply to custom_target
 	# commands. get_option('cpp_args') forwards project-level flags (e.g. -m32).
 	# GCC writes gcm.cache/hx.gcm in the build directory as a side effect and
@@ -47,7 +48,7 @@ if get_option('build_module')
 	# headers re-included from the module purview and -fmodule-output=@OUTPUT1@
 	# to produce hx.pcm alongside the object file. Consumers find it via
 	# -fprebuilt-module-path pointing at the build root. Does not declare
-	# DHX_USE_MODULE=1. That is for accessing macros later.
+	# HX_USE_MODULE=1. That is for accessing macros alongside the module.
 
 	_hxcpp = meson.get_compiler('cpp')
 	_hxis_clang = _hxcpp.get_id() == 'clang'

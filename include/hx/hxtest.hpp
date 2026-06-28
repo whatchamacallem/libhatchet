@@ -61,8 +61,8 @@
 ///   | `EXPECT_NEAR(T expected, T actual, T absolute_range)` | Requires that two values are within a given range. |
 ///   | `EXPECT_FLOAT_EQ(float a, float b)` | Checks floats for equality within a scaled tolerance. |
 ///   | `EXPECT_DOUBLE_EQ(double a, double b)` | Checks doubles for equality within a scaled tolerance. |
-///   | `EXPECT_STREQ(const char* a, const char* b)` | Requires that two C strings are equal. Asserts on null arguments. |
-///   | `EXPECT_STRNE(const char* a, const char* b)` | Requires that two C strings differ. Asserts on null arguments. |
+///   | `EXPECT_STREQ(const char* a, const char* b)` | Requires that two C strings are equal. |
+///   | `EXPECT_STRNE(const char* a, const char* b)` | Requires that two C strings differ. |
 ///   | `ASSERT_TRUE(bool x)` | Requires that the condition is true. |
 ///   | `ASSERT_FALSE(bool x)` | Requires that the condition is false. |
 ///   | `ASSERT_EQ(T a, T b)` | Requires `a == b`. |
@@ -74,8 +74,8 @@
 ///   | `ASSERT_NEAR(T expected, T actual, T absolute_error)` | Requires that two values are within a given range. |
 ///   | `ASSERT_FLOAT_EQ(float a, float b)` | Checks floats for equality within a scaled tolerance. |
 ///   | `ASSERT_DOUBLE_EQ(double a, double b)` | Checks doubles for equality within a scaled tolerance. |
-///   | `ASSERT_STREQ(const char* a, const char* b)` | Requires that two C strings are equal. Asserts on null arguments. |
-///   | `ASSERT_STRNE(const char* a, const char* b)` | Requires that two C strings differ. Asserts on null arguments. |
+///   | `ASSERT_STREQ(const char* a, const char* b)` | Requires that two C strings are equal. |
+///   | `ASSERT_STRNE(const char* a, const char* b)` | Requires that two C strings differ. |
 ///
 /// See: https://google.github.io/googletest/reference/assertions.html
 
@@ -210,11 +210,11 @@ protected:
 /// within a scaled tolerance.
 #define EXPECT_DOUBLE_EQ(a_, b_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_(HX_NS_PREFIX_ hxdetail_::hxtest_double_eq_((a_), (b_)), __FILE__, __LINE__, #a_ " ~= " #b_, false)
 /// `void EXPECT_STREQ(const char* a, const char* b)` - Requires that two C
-/// strings are equal. Asserts on null arguments.
+/// strings are equal.
 #define EXPECT_STREQ(a_, b_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_( \
 	HX_NS_PREFIX_ hxdetail_::hxtest_str_eq_((a_), (b_)), __FILE__, __LINE__, #a_ " == " #b_, false)
 /// `void EXPECT_STRNE(const char* a, const char* b)` - Requires that two C
-/// strings differ. Asserts on null arguments.
+/// strings differ.
 #define EXPECT_STRNE(a_, b_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_( \
 	HX_NS_PREFIX_ hxdetail_::hxtest_str_ne_((a_), (b_)), __FILE__, __LINE__, #a_ " != " #b_, false)
 /// `void ASSERT_TRUE(bool)` - Requires that the condition is true.
@@ -251,11 +251,11 @@ protected:
 /// within a scaled tolerance.
 #define ASSERT_DOUBLE_EQ(a_, b_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_(HX_NS_PREFIX_ hxdetail_::hxtest_double_eq_((a_), (b_)), __FILE__, __LINE__, #a_ " ~= " #b_, true)
 /// `void ASSERT_STREQ(const char* a, const char* b)` - Requires that two C
-/// strings are equal. Asserts on null arguments.
+/// strings are equal.
 #define ASSERT_STREQ(a_, b_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_( \
 	HX_NS_PREFIX_ hxdetail_::hxtest_str_eq_((a_), (b_)), __FILE__, __LINE__, #a_ " == " #b_, true)
 /// `void ASSERT_STRNE(const char* a, const char* b)` - Requires that two C
-/// strings differ. Asserts on null arguments.
+/// strings differ.
 #define ASSERT_STRNE(a_, b_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_( \
 	HX_NS_PREFIX_ hxdetail_::hxtest_str_ne_((a_), (b_)), __FILE__, __LINE__, #a_ " != " #b_, true)
 

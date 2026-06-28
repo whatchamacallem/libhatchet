@@ -27,31 +27,26 @@ template<typename T_, hxsize_t capacity_=hxallocator_dynamic_capacity>
 class hxdeque : private hxallocator<T_, capacity_> {
 public:
 	/// Constructs an empty hxdeque. When using static storage the capacity is
-	/// fixed at compile time. Asserts that the capacity is a power of two
-	/// and greater than zero.
+	/// fixed at compile time.
 	/// - `dynamic_capacity` : Element capacity for dynamic storage.
 	explicit hxdeque(hxsize_t dynamic_capacity_=0);
 
 	/// Destroys all elements in the deque.
 	~hxdeque(void);
 
-	/// Returns a reference to the element at logical index `index`. Asserts if
-	/// `index` is out of range or the deque is unallocated.
+	/// Returns a reference to the element at logical index `index`.
 	/// - `index` : Zero-based index from the front.
 	hxattr_nodiscard T_& operator[](hxsize_t index_);
 
 	/// Returns a const reference to the element at logical index `index`.
-	/// Asserts if `index` is out of range or the deque is unallocated.
 	/// - `index` : Zero-based index from the front.
 	hxattr_nodiscard const T_& operator[](hxsize_t index_) const;
 
-	/// Returns a reference to the element at logical index `index`. Asserts if
-	/// `index` is out of range or the deque is unallocated.
+	/// Returns a reference to the element at logical index `index`.
 	/// - `index` : Zero-based index from the front.
 	hxattr_nodiscard T_& at(hxsize_t index_);
 
 	/// Returns a const reference to the element at logical index `index`.
-	/// Asserts if `index` is out of range or the deque is unallocated.
 	/// - `index` : Zero-based index from the front.
 	hxattr_nodiscard const T_& at(hxsize_t index_) const;
 
@@ -74,15 +69,13 @@ public:
 	T_* data(void) { return hxallocator<T_, capacity_>::data(); }
 
 	/// Constructs an element in place at the back using forwarded arguments.
-	/// Asserts if the deque is full or unallocated. Exactly the same as
-	/// `push_back`.
+	/// Exactly the same as `push_back`.
 	/// - `args` : Arguments forwarded to `T`'s constructor.
 	template<typename... args_t_>
 	void emplace_back(args_t_&&... args_) noexcept;
 
 	/// Constructs an element in place at the front using forwarded arguments.
-	/// Asserts if the deque is full or unallocated. Exactly the same as
-	/// `push_front`.
+	/// Exactly the same as `push_front`.
 	/// - `args` : Arguments forwarded to `T`'s constructor.
 	template<typename... args_t_>
 	void emplace_front(args_t_&&... args_) noexcept;
@@ -99,27 +92,26 @@ public:
 	/// Returns `true` if the deque is at capacity.
 	hxattr_nodiscard bool full(void) const;
 
-	/// Removes and destroys the back element. Asserts if empty or unallocated.
+	/// Removes and destroys the back element.
 	void pop_back(void) noexcept;
 
-	/// Removes and destroys the front element. Asserts if empty or unallocated.
+	/// Removes and destroys the front element.
 	void pop_front(void) noexcept;
 
-	/// Appends an element at the back using forwarded arguments. Asserts if
-	/// the deque is full or unallocated. Exactly the same as `emplace_back`.
+	/// Appends an element at the back using forwarded arguments. Exactly the
+	/// same as `emplace_back`.
 	/// - `args` : Arguments forwarded to `T`'s constructor.
 	template<typename... args_t_>
 	void push_back(args_t_&&... args_) noexcept;
 
-	/// Prepends an element at the front using forwarded arguments. Asserts if
-	/// the deque is full or unallocated. Exactly the same as `emplace_front`.
+	/// Prepends an element at the front using forwarded arguments. Exactly the
+	/// same as `emplace_front`.
 	/// - `args` : Arguments forwarded to `T`'s constructor.
 	template<typename... args_t_>
 	void push_front(args_t_&&... args_) noexcept;
 
 	/// Allocates storage for a dynamic deque. May only be called once and only
-	/// when the deque has no storage. Asserts that the capacity is a power of
-	/// two and greater than zero.
+	/// when the deque has no storage.
 	/// - `dynamic_capacity` : Element capacity to allocate.
 	void reserve(hxsize_t dynamic_capacity_);
 

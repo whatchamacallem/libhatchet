@@ -121,10 +121,8 @@ inline size_t hxthread_id(void) {
 // pthreads is a little too nutty because it has a range of valid implementations.
 #if HX_USE_THREADS
 
-/// `hxmutex` - `std::mutex` style wrapper for the configured thread backend.
-/// Asserts on unexpected failure by the native API. Currently default behavior
-/// mirrors non-recursive, no error-checking primitives. That means
-/// non-recursive, no error-checking and no translation layer.
+/// `hxmutex` - `std::mutex` style wrapper for the configured threading backend.
+/// Default behavior is non-recursive and no translation layer.
 class hxmutex {
 public:
 	/// Constructs a mutex and initializes it. May not return if the mutex can't
@@ -164,9 +162,9 @@ public:
 #endif
 	}
 
-	/// Unlocks the mutex. Returns true on success. Asserts and returns false
-	/// otherwise. It is undefined to unlock a mutex that you have not locked, and
-	/// such an operation may succeed.
+	/// Unlocks the mutex. Returns true on success and false otherwise. It is
+	/// undefined to unlock a mutex that you have not locked, and such an
+	/// operation may succeed.
 	bool unlock(void) {
 #if (HX_USE_THREADS) == 11
 		const int code_ = ::mtx_unlock(&m_mutex_);
@@ -383,7 +381,7 @@ public:
 
 	/// Destructor. Asserts that the thread was stopped correctly.
 	~hxthread(void) {
-		hxassertmsg(!this->joinable(), "thread_still_running");
+		hxassert_hard(!this->joinable(), "thread_still_running");
 	}
 
 	/// Starts a thread with the given function and argument. Does not free the
