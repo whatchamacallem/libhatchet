@@ -46,6 +46,7 @@ TEST_F(hxflat_map_test_f, construct_static_empty) {
 	EXPECT_TRUE(m.empty());
 	EXPECT_EQ(m.size(), 0);
 	EXPECT_EQ(m.capacity(), 1);
+	EXPECT_EQ(m.max_size(), 1);
 	EXPECT_FALSE(m.full());
 }
 
@@ -55,8 +56,10 @@ TEST_F(hxflat_map_test_f, construct_dynamic_empty) {
 	EXPECT_TRUE(m.empty());
 	EXPECT_EQ(m.size(), 0);
 	EXPECT_EQ(m.capacity(), 0);
+	EXPECT_EQ(m.max_size(), 0);
 	m.reserve(8);
 	EXPECT_EQ(m.capacity(), 8);
+	EXPECT_EQ(m.max_size(), 8);
 }
 
 TEST_F(hxflat_map_test_f, reserve_static_exact) {

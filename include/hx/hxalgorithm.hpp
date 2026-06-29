@@ -22,6 +22,30 @@
 
 HX_NS_BEGIN_
 
+/// `hxall_of` - Returns true if the `predicate` callable returns true for every
+/// element in `[begin, end)`. Returns true for an empty range.
+template<typename iterator_t_, typename predicate_t_> hxattr_hot hxattr_nodiscard hxconstexpr
+bool hxall_of(iterator_t_ begin_, iterator_t_ end_, const predicate_t_& predicate_) {
+	for(hxrestrict_t<iterator_t_> it_(begin_); it_ != end_; ++it_) {
+		if(!predicate_(*it_)) {
+			return false;
+		}
+	}
+	return true;
+}
+
+/// `hxany_of` - Returns true if the `predicate` callable returns true for at
+/// least one element in `[begin, end)`. Returns false for an empty range.
+template<typename iterator_t_, typename predicate_t_> hxattr_hot hxattr_nodiscard hxconstexpr
+bool hxany_of(iterator_t_ begin_, iterator_t_ end_, const predicate_t_& predicate_) {
+	for(hxrestrict_t<iterator_t_> it_(begin_); it_ != end_; ++it_) {
+		if(predicate_(*it_)) {
+			return true;
+		}
+	}
+	return false;
+}
+
 /// `hxcount_if` - Returns the number of elements in `[begin, end)` for which
 /// the `predicate` callable returns true.
 template<typename iterator_t_, typename predicate_t_> hxattr_hot hxattr_nodiscard hxconstexpr
@@ -56,6 +80,17 @@ iterator_t_ hxfind_if(iterator_t_ begin_, iterator_t_ end_, const predicate_t_& 
 		}
 	}
 	return end_;
+}
+
+/// `hxfor_each` - Applies the `function` callable to each element in `[begin,
+/// end)` in order. Returns the `function` callable after it has been applied to
+/// every element.
+template<typename iterator_t_, typename function_t_> hxattr_hot hxconstexpr
+function_t_ hxfor_each(iterator_t_ begin_, iterator_t_ end_, function_t_ function_) {
+	for(hxrestrict_t<iterator_t_> it_(begin_); it_ != end_; ++it_) {
+		function_(*it_);
+	}
+	return function_;
 }
 
 /// `hxmerge` - Performs a stable merge of two ordered ranges `[begin0, end0)`

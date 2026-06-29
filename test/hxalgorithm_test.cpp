@@ -3,8 +3,9 @@
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
 #include <hx/hxalgorithm.hpp>
-#include <hx/hxrandom.hpp>
 #include <hx/hxvector.hpp>
+#include <hx/hxflat_map.hpp>
+#include <hx/hxrandom.hpp>
 #include <hx/hxtest.hpp>
 #include "test_trackers.hpp"
 
@@ -403,6 +404,81 @@ TEST(hxfind_if_test, iterator_support) {
 	const hxtest_iter_api_t empty_result =
 		hxfind_if(begin, begin, [](const hxtest_ref_tracker_t& x) { return x.value == 10; });
 	EXPECT_EQ(empty_result, begin);
+}
+
+TEST(hxall_of_test, flat_map_iterator) {
+	hxflat_map<int, int, hxkey_less_t<int>, false, 4> m;
+	m.insert(1, 10);
+	m.insert(2, 20);
+	m.insert(3, 30);
+	EXPECT_TRUE(hxall_of(m.begin(), m.end(),
+		[](const hxflat_map<int, int, hxkey_less_t<int>, false, 4>::const_iterator& it) {
+			return it.value() >= 10; }));
+	EXPECT_FALSE(hxall_of(m.begin(), m.end(),
+		[](const hxflat_map<int, int, hxkey_less_t<int>, false, 4>::const_iterator& it) {
+			return it.value() >= 30; }));
+	EXPECT_TRUE(hxall_of(m.begin(), m.begin(),
+		[](const hxflat_map<int, int, hxkey_less_t<int>, false, 4>::const_iterator& it) {
+			return it.value() >= 100; }));
+}
+
+TEST(hxany_of_test, flat_map_iterator) {
+	hxflat_map<int, int, hxkey_less_t<int>, false, 4> m;
+	m.insert(1, 10);
+	m.insert(2, 20);
+	m.insert(3, 30);
+	EXPECT_TRUE(hxany_of(m.begin(), m.end(),
+		[](const hxflat_map<int, int, hxkey_less_t<int>, false, 4>::const_iterator& it) {
+			return it.value() == 30; }));
+	EXPECT_FALSE(hxany_of(m.begin(), m.end(),
+		[](const hxflat_map<int, int, hxkey_less_t<int>, false, 4>::const_iterator& it) {
+			return it.value() == 99; }));
+	EXPECT_FALSE(hxany_of(m.begin(), m.begin(),
+		[](const hxflat_map<int, int, hxkey_less_t<int>, false, 4>::const_iterator& it) {
+			return it.value() == 10; }));
+}
+
+TEST(hxfind_if_test, flat_map_iterator) {
+	using map_t = hxflat_map<int, int, hxkey_less_t<int>, false, 4>;
+	map_t m;
+	m.insert(1, 10);
+	m.insert(2, 20);
+	m.insert(3, 30);
+	map_t::const_iterator result = hxfind_if(m.begin(), m.end(),
+		[](const map_t::const_iterator& it) { return it.value() >= 20; });
+	EXPECT_NE(result, m.end());
+	EXPECT_EQ(result.key(), 2);
+	result = hxfind_if(m.begin(), m.end(),
+		[](const map_t::const_iterator& it) { return it.key() == 1; });
+	EXPECT_EQ(result, m.begin());
+	result = hxfind_if(m.begin(), m.end(),
+		[](const map_t::const_iterator& it) { return it.value() == 30; });
+	EXPECT_NE(result, m.end());
+	EXPECT_EQ(result.key(), 3);
+	result = hxfind_if(m.begin(), m.end(),
+		[](const map_t::const_iterator& it) { return it.value() == 99; });
+	EXPECT_EQ(result, m.end());
+	result = hxfind_if(m.begin(), m.begin(),
+		[](const map_t::const_iterator& it) { return it.value() == 10; });
+	EXPECT_EQ(result, m.begin());
+}
+
+TEST(hxfor_each_test, flat_map_iterator) {
+	using map_t = hxflat_map<int, int, hxkey_less_t<int>, false, 4>;
+	map_t m;
+	m.insert(1, 10);
+	m.insert(2, 20);
+	m.insert(3, 30);
+	struct hxfor_each_test_accumulator_t {
+		int total;
+		void operator()(const map_t::const_iterator& it) { total += it.value(); }
+	};
+	const hxfor_each_test_accumulator_t result =
+		hxfor_each(m.begin(), m.end(), hxfor_each_test_accumulator_t{0});
+	EXPECT_EQ(result.total, 60);
+	const hxfor_each_test_accumulator_t empty_result =
+		hxfor_each(m.begin(), m.begin(), hxfor_each_test_accumulator_t{7});
+	EXPECT_EQ(empty_result.total, 7);
 }
 
 TEST(hxexchange_test, move_only_type) {

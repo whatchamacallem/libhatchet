@@ -105,6 +105,9 @@ public:
 	template<typename ptr_deleter_t_>
 	hxattr_nodiscard bool is_allocator(const hxptr<T_, ptr_deleter_t_>& ptr_) const noexcept;
 
+	/// Returns the capacity of the pool.
+	hxattr_nodiscard hxsize_t max_size(void) const { return this->capacity(); }
+
 	/// Destructs `*p` and returns its slot to the free list.
 	/// - `p` : A non-null pointer previously returned by `allocate`.
 	void release(T_* p_) noexcept hxattr_nonnull(2);

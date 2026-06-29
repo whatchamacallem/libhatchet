@@ -186,6 +186,7 @@ TEST_F(hxflat_set_test_f, construct_static_empty) {
 	EXPECT_TRUE(s.empty());
 	EXPECT_EQ(s.size(), 0);
 	EXPECT_EQ(s.capacity(), 1);
+	EXPECT_EQ(s.max_size(), 1);
 	EXPECT_FALSE(s.full());
 }
 
@@ -195,8 +196,10 @@ TEST_F(hxflat_set_test_f, construct_dynamic_empty) {
 	EXPECT_TRUE(s.empty());
 	EXPECT_EQ(s.size(), 0);
 	EXPECT_EQ(s.capacity(), 0);
+	EXPECT_EQ(s.max_size(), 0);
 	s.reserve(8);
 	EXPECT_EQ(s.capacity(), 8);
+	EXPECT_EQ(s.max_size(), 8);
 }
 
 TEST_F(hxflat_set_test_f, reserve_static_exact) {

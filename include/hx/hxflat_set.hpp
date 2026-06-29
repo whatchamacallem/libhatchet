@@ -174,6 +174,9 @@ public:
 	/// - `key` : The key to search for.
 	hxattr_nodiscard const key_t_* lower_bound(const key_t_& key_) const;
 
+	/// Returns the capacity of the set.
+	hxattr_nodiscard hxsize_t max_size(void) const { return this->capacity(); }
+
 	/// Allocates storage for `cap` keys. When `capacity` is fixed, `cap` must
 	/// equal `capacity`. Reallocation is not allowed.
 	/// - `cap` : The number of elements to allocate storage for.

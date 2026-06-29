@@ -350,6 +350,9 @@ public:
 	/// - `key` : The key to search for.
 	hxattr_nodiscard iterator lower_bound(const key_t_& key_);
 
+	/// Returns the capacity of the map.
+	hxattr_nodiscard hxsize_t max_size(void) const { return this->capacity(); }
+
 	/// Allocates storage for `cap` keys and values. When `capacity` is fixed,
 	/// `cap` must equal `capacity`. Reallocation is not allowed.
 	/// - `cap` : The number of elements to allocate storage for.

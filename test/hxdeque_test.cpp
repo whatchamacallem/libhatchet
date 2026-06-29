@@ -58,6 +58,7 @@ TEST(hxdeque_test, static_ctor_empty_state) {
 	const hxdeque<int, 4> d;
 	EXPECT_EQ(d.size(), 0);
 	EXPECT_EQ(d.capacity(), 4);
+	EXPECT_EQ(d.max_size(), 4);
 	EXPECT_TRUE(d.empty());
 	EXPECT_FALSE(d.full());
 }
@@ -67,6 +68,7 @@ TEST(hxdeque_test, dynamic_ctor_empty_state) {
 	const hxdeque<int> d(4);
 	EXPECT_EQ(d.size(), 0);
 	EXPECT_EQ(d.capacity(), 4);
+	EXPECT_EQ(d.max_size(), 4);
 	EXPECT_TRUE(d.empty());
 	EXPECT_FALSE(d.full());
 }

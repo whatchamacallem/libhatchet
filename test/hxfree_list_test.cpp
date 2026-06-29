@@ -149,6 +149,7 @@ TEST_F(hxfree_list_test_f, dynamic_reserve_establishes_capacity) {
 	pool.reserve(3);
 	EXPECT_EQ(pool.size(), (hxsize_t)3);
 	EXPECT_EQ(pool.capacity(), (hxsize_t)3);
+	EXPECT_EQ(pool.max_size(), (hxsize_t)3);
 }
 
 TEST_F(hxfree_list_test_f, dynamic_allocate_after_reserve) {

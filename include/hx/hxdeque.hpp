@@ -92,6 +92,9 @@ public:
 	/// Returns `true` if the deque is at capacity.
 	hxattr_nodiscard bool full(void) const;
 
+	/// Returns the capacity of the deque.
+	hxattr_nodiscard hxsize_t max_size(void) const { return this->capacity(); }
+
 	/// Removes and destroys the back element.
 	void pop_back(void) noexcept;
 
