@@ -21,15 +21,15 @@ HX_NS_BEGIN_
 // In this version the file is a POSIX fd stored directly as intptr_t. -1
 // represents closed or hxdev_null; valid fds are ≥ 0.
 
-hxfile hxin(hxfile::in, static_cast<intptr_t>(STDIN_FILENO));
-hxfile hxout(hxfile::out, static_cast<intptr_t>(STDOUT_FILENO));
+hxfile hxin(hxfile::open_mode_in, static_cast<intptr_t>(STDIN_FILENO));
+hxfile hxout(hxfile::open_mode_out, static_cast<intptr_t>(STDOUT_FILENO));
 #ifndef __wasm__
-hxfile hxerr(hxfile::out, static_cast<intptr_t>(STDERR_FILENO));
+hxfile hxerr(hxfile::open_mode_out, static_cast<intptr_t>(STDERR_FILENO));
 #else
 // Don't use stdout with the default index.js provided by the emsdk.
-hxfile hxerr(hxfile::out, static_cast<intptr_t>(STDOUT_FILENO));
+hxfile hxerr(hxfile::open_mode_out, static_cast<intptr_t>(STDOUT_FILENO));
 #endif
-hxfile hxdev_null(hxfile::out, static_cast<intptr_t>(-1));
+hxfile hxdev_null(hxfile::open_mode_out, static_cast<intptr_t>(-1));
 
 hxfile::hxfile(void) {
 	::memset(static_cast<void*>(this), 0x00, sizeof *this);
@@ -86,14 +86,14 @@ bool hxfile::openv_(uint8_t mode, const char* filename, va_list args) {
 	m_open_mode_ = mode;
 
 	int flags = 0;
-	switch (static_cast<int>(mode) & (hxfile::in | hxfile::out)) {
-	case hxfile::none:
+	switch (static_cast<int>(mode) & (hxfile::open_mode_in | hxfile::open_mode_out)) {
+	case hxfile::open_mode_none:
 		m_fail_ = true;
 		return false;
-	case hxfile::in:
+	case hxfile::open_mode_in:
 		flags = O_RDONLY;
 		break;
-	case hxfile::out:
+	case hxfile::open_mode_out:
 		flags = O_WRONLY | O_CREAT | O_TRUNC;
 		break;
 	default:
@@ -105,7 +105,7 @@ bool hxfile::openv_(uint8_t mode, const char* filename, va_list args) {
 	hxassertmsg(len >= 0 && len < HX_MAX_LINE, "vsnprintf"); (void)len;
 
 	const int fd = ::open(line_buf, flags, 0666u);
-	hxassert_hard((fd >= 0) || ((mode & hxfile::skip_asserts) != 0u),
+	hxassert_hard((fd >= 0) || ((mode & hxfile::open_mode_asserts) == 0u),
 		"open %s: %s", line_buf, ::strerror(errno));
 
 	m_fail_ = (fd < 0);
@@ -137,7 +137,7 @@ void hxfile::clear(void) {
 size_t hxfile::get_pos(void) const {
 	hxassertmsg(m_file_pimpl_ >= 0, "invalid_file");
 	const off_t result = ::lseek(static_cast<int>(m_file_pimpl_), 0, SEEK_CUR);
-	hxassertmsg(result >= 0 || ((m_open_mode_ & hxfile::skip_asserts) != 0u), "seek_failed");
+	hxassertmsg(result >= 0 || ((m_open_mode_ & hxfile::open_mode_asserts) == 0u), "seek_failed");
 	if(result < 0) {
 		// m_fail_ = true; // Files that do not support lseek do not set m_fail_.
 		return 0u;
@@ -148,7 +148,7 @@ size_t hxfile::get_pos(void) const {
 bool hxfile::set_pos(size_t position) {
 	hxassertmsg(m_file_pimpl_ >= 0, "invalid_file");
 	const off_t result = ::lseek(static_cast<int>(m_file_pimpl_), static_cast<off_t>(position), SEEK_SET);
-	hxassertmsg(result >= 0 || ((m_open_mode_ & hxfile::skip_asserts) != 0u), "seek_failed");
+	hxassertmsg(result >= 0 || ((m_open_mode_ & hxfile::open_mode_asserts) == 0u), "seek_failed");
 	m_fail_ = (result < 0);
 	if(!m_fail_) {
 		m_eof_ = false;
@@ -157,8 +157,8 @@ bool hxfile::set_pos(size_t position) {
 }
 
 size_t hxfile::read(void* bytes, size_t buffer_size, size_t byte_count) {
-	hxassertmsg(((m_open_mode_ & hxfile::in) != 0u) && (m_file_pimpl_ >= 0), "invalid_file");
-	hxassert_hard(byte_count <= buffer_size || ((m_open_mode_ & hxfile::skip_asserts) != 0u),
+	hxassertmsg(((m_open_mode_ & hxfile::open_mode_in) != 0u) && (m_file_pimpl_ >= 0), "invalid_file");
+	hxassert_hard(byte_count <= buffer_size || ((m_open_mode_ & hxfile::open_mode_asserts) == 0u),
 		"read %zu overflows %zu", byte_count, buffer_size);
 
 	if(byte_count > buffer_size) {
@@ -179,7 +179,7 @@ size_t hxfile::read(void* bytes, size_t buffer_size, size_t byte_count) {
 		total += static_cast<size_t>(last_n);
 	}
 
-	hxassertmsg(total == byte_count || ((m_open_mode_ & hxfile::skip_asserts) != 0u),
+	hxassertmsg(total == byte_count || ((m_open_mode_ & hxfile::open_mode_asserts) == 0u),
 		"read expected %zu != actual %zu %s", byte_count, total,
 		(last_n < 0) ? ::strerror(errno) : "");
 
@@ -191,7 +191,7 @@ size_t hxfile::read(void* bytes, size_t buffer_size, size_t byte_count) {
 }
 
 size_t hxfile::write(const void* bytes, size_t byte_count) {
-	hxassertmsg((m_open_mode_ & hxfile::out) != 0u, "invalid_file");
+	hxassertmsg((m_open_mode_ & hxfile::open_mode_out) != 0u, "invalid_file");
 
 	if(m_file_pimpl_ < 0) {
 		// Writing to hxdev_null (-1) is a no-op.
@@ -211,7 +211,7 @@ size_t hxfile::write(const void* bytes, size_t byte_count) {
 		total += static_cast<size_t>(n);
 	}
 
-	hxassertmsg(total == byte_count || ((m_open_mode_ & hxfile::skip_asserts) != 0u),
+	hxassertmsg(total == byte_count || ((m_open_mode_ & hxfile::open_mode_asserts) == 0u),
 		"write expected %zu != actual %zu: %s", byte_count, total, ::strerror(errno));
 
 	m_fail_ = (total != byte_count);
@@ -219,67 +219,14 @@ size_t hxfile::write(const void* bytes, size_t byte_count) {
 }
 
 bool hxfile::flush(void) {
-	hxassertmsg((m_open_mode_ & hxfile::out) != 0u, "invalid_file");
+	hxassertmsg((m_open_mode_ & hxfile::open_mode_out) != 0u, "invalid_file");
 	// POSIX bypasses userspace buffering so there is nothing to flush.
 	return true;
 }
 
-// read() is a system call and so it is not tracked by the memory sanitizer.
-#if defined __clang__
-__attribute__((no_sanitize("memory")))
-#endif
-bool hxfile::getline(char* buffer, int buffer_size) {
-	hxassertmsg(((m_open_mode_ & hxfile::in) != 0u) && (m_file_pimpl_ >= 0), "invalid_file");
-
-	// Same as fgets. Not perfect.
-	if(buffer_size <= 1) {
-		if(buffer_size == 1) {
-			buffer[0] = '\0';
-		}
-		return true;
-	}
-
-	int written = 0;
-	char line_buf[HX_MAX_LINE];
-
-	for(;;) {
-		ssize_t bytes_read = 0;
-		do {
-			bytes_read = ::read(static_cast<int>(m_file_pimpl_), line_buf, HX_MAX_LINE - 1u);
-		} while(bytes_read < 0 && errno == EINTR);
-
-		if(bytes_read <= 0) {
-			buffer[written] = '\0';
-			if(written > 0 && bytes_read == 0) {
-				return true;
-			}
-			m_fail_ = true;
-			m_eof_ = (bytes_read == 0);
-			return false;
-		}
-
-		const char* const nl = static_cast<const char*>(::memchr(line_buf, '\n', static_cast<size_t>(bytes_read)));
-		const ssize_t line_end = nl ? static_cast<ssize_t>(nl - line_buf + 1) : bytes_read;
-		const int copy_len = (line_end < static_cast<ssize_t>(buffer_size - 1 - written)) ?
-			static_cast<int>(line_end) : buffer_size - 1 - written;
-		::memcpy(buffer + written, line_buf, static_cast<size_t>(copy_len));
-		written += copy_len;
-
-		if(nl || written == buffer_size - 1) {
-			if(static_cast<ssize_t>(copy_len) < bytes_read) {
-				const off_t seek_result = ::lseek(static_cast<int>(m_file_pimpl_),
-					static_cast<off_t>(copy_len) - static_cast<off_t>(bytes_read), SEEK_CUR);
-				hxassert_hard(seek_result >= 0, "lseek: %s", ::strerror(errno)); (void)seek_result;
-			}
-			buffer[written] = '\0';
-			return true;
-		}
-	}
-}
-
 // See vsnprintf for the rationale for truncating output at HX_MAX_LINE.
 bool hxfile::print(const char* format, ...) {
-	hxassertmsg((m_open_mode_ & hxfile::out) != 0u, "invalid_file");
+	hxassertmsg((m_open_mode_ & hxfile::open_mode_out) != 0u, "invalid_file");
 
 	if(m_file_pimpl_ < 0) {
 		return true;
@@ -291,7 +238,8 @@ bool hxfile::print(const char* format, ...) {
 	const int len = ::vsnprintf(line_buf, HX_MAX_LINE + 1u, format, args);
 	va_end(args);
 
-	hxassert_hard(len >= 0, "vsnprintf %s", ::strerror(errno));
+	hxassert_hard(len >= 0 || ((m_open_mode_ & hxfile::open_mode_asserts) == 0u),
+		"vsnprintf %s", ::strerror(errno));
 	if(len < 0) {
 		m_fail_ = true;
 		return false;
@@ -310,7 +258,8 @@ bool hxfile::print(const char* format, ...) {
 		}
 		written += static_cast<size_t>(n);
 	}
-	hxassert_hard(written == to_write, "write %s", ::strerror(errno));
+	hxassert_hard(written == to_write || ((m_open_mode_ & hxfile::open_mode_asserts) == 0u),
+		"write %s", ::strerror(errno));
 
 	if(written != to_write) {
 		m_fail_ = true;
@@ -323,7 +272,7 @@ bool hxfile::print(const char* format, ...) {
 // the fd to provide a buffer for vsscanf. Unconsumed bytes are not returned to
 // the fd; interleaved read()/scan() calls must account for this.
 int hxfile::scan(const char* format, ...) {
-	hxassertmsg(((m_open_mode_ & hxfile::in) != 0u) && (m_file_pimpl_ >= 0), "invalid_file");
+	hxassertmsg(((m_open_mode_ & hxfile::open_mode_in) != 0u) && (m_file_pimpl_ >= 0), "invalid_file");
 
 	char line_buf[HX_MAX_LINE];
 	const ssize_t bytes_read = ::read(static_cast<int>(m_file_pimpl_), line_buf, HX_MAX_LINE - 1u);
@@ -338,7 +287,7 @@ int hxfile::scan(const char* format, ...) {
 	const int items_scanned = ::vsscanf(line_buf, format, args);
 	va_end(args);
 
-	hxassert_hard(items_scanned != EOF || ((m_open_mode_ & hxfile::skip_asserts) != 0u),
+	hxassert_hard(items_scanned != EOF || ((m_open_mode_ & hxfile::open_mode_asserts) == 0u),
 		"vsscanf %s", ::strerror(errno));
 
 	if(items_scanned == EOF) {

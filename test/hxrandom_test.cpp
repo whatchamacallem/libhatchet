@@ -104,6 +104,31 @@ TEST(hxrandom_test, read_exactly_eight_bytes) {
 	EXPECT_EQ(buf[8], 0xefu);
 }
 
+TEST(hxrandom_test, read_void_pointer_matches_byte_pointer) {
+	uint32_t words[3] = { 0xefefefefu, 0xefefefefu, 0xefefefefu };
+	hxrandom rng(0x55aa33u);
+	void* const bytes = words;
+	rng.read(bytes, 9);
+	uint8_t expected[12];
+	for(hxsize_t i = 0; i < 12; ++i) { expected[i] = 0xefu; }
+	hxrandom verifier(0x55aa33u);
+	verifier.read(expected, 9);
+	const uint8_t* actual = reinterpret_cast<const uint8_t*>(words);
+	for(hxsize_t i = 0; i < 12; ++i) {
+		EXPECT_EQ(actual[i], expected[i]);
+	}
+}
+
+TEST(hxrandom_test, read_void_pointer_zero_count_no_advance) {
+	uint8_t buf[1] = { 0xefu };
+	hxrandom rng(0x9090u);
+	void* const bytes = buf;
+	rng.read(bytes, 0);
+	EXPECT_EQ(buf[0], 0xefu);
+	hxrandom verifier(0x9090u);
+	EXPECT_EQ(rng.u32(), verifier.u32());
+}
+
 TEST(hxrandom_test, f01_bounds) {
 	hxrandom rng(99999u);
 	float max_val = 0.0f;

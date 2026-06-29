@@ -50,6 +50,22 @@ TEST(hxkey_function, equal_identical_content_different_address) {
 	EXPECT_TRUE(hxkey_equal(static_cast<const char*>(a), static_cast<const char*>(b)));
 }
 
+TEST(hxkey_function, equal_const_char_and_char_overload) {
+	char mutable_equal[] = "match";
+	char mutable_differ[] = "matci";
+	const char* immutable = "match";
+	EXPECT_TRUE(hxkey_equal(immutable, mutable_equal));
+	EXPECT_FALSE(hxkey_equal(immutable, mutable_differ));
+}
+
+TEST(hxkey_function, equal_char_and_const_char_overload) {
+	char mutable_equal[] = "match";
+	char mutable_differ[] = "matci";
+	const char* immutable = "match";
+	EXPECT_TRUE(hxkey_equal(mutable_equal, immutable));
+	EXPECT_FALSE(hxkey_equal(mutable_differ, immutable));
+}
+
 TEST(hxkey_function, equal_strings_differing_in_last_char) {
 	const char* a = "ab0";
 	const char* b = "ab1";
@@ -73,6 +89,26 @@ TEST(hxkey_function, less_equal_strings_is_not_less) {
 	char a[] = "same";
 	char b[] = "same";
 	EXPECT_FALSE(hxkey_less(static_cast<const char*>(a), static_cast<const char*>(b)));
+}
+
+TEST(hxkey_function, less_const_char_and_char_overload) {
+	char mutable_a[] = "a";
+	char mutable_b[] = "b";
+	const char* immutable_a = "a";
+	const char* immutable_b = "b";
+	EXPECT_TRUE(hxkey_less(immutable_a, mutable_b));
+	EXPECT_FALSE(hxkey_less(immutable_b, mutable_a));
+	EXPECT_FALSE(hxkey_less(immutable_a, mutable_a));
+}
+
+TEST(hxkey_function, less_char_and_const_char_overload) {
+	char mutable_a[] = "a";
+	char mutable_b[] = "b";
+	const char* immutable_a = "a";
+	const char* immutable_b = "b";
+	EXPECT_TRUE(hxkey_less(mutable_a, immutable_b));
+	EXPECT_FALSE(hxkey_less(mutable_b, immutable_a));
+	EXPECT_FALSE(hxkey_less(mutable_a, immutable_a));
 }
 
 TEST(hxkey_function, less_adjacent_chars_ordered_correctly) {

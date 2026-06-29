@@ -141,6 +141,7 @@
         "nojekyll",
         "NOLINT",
         "Noname",
+        "noncode",
         "nostdinc",
         "ntfs",
         "nullptr",

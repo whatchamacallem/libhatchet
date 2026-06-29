@@ -139,6 +139,27 @@ TEST_F(hxradix_sort_test_f, radix_sort_boundary_33) {
 	test_range_and_type<uint32_t>(33u, 0xffu, 0u);
 }
 
+TEST_F(hxradix_sort_test_f, key_set_overwrites_value) {
+	hxradix_sort_key<uint32_t, uint32_t> k(1u, 10u);
+	EXPECT_EQ(k.get_value(), 10u);
+	k.set(2u, 20u);
+	EXPECT_EQ(k.get_value(), 20u);
+	const hxradix_sort_key<uint32_t, uint32_t>& ck = k;
+	EXPECT_EQ(ck.get_value(), 20u);
+	EXPECT_EQ(ck.get_modified_key(), 2u);
+}
+
+TEST_F(hxradix_sort_test_f, key_set_preserves_relative_order) {
+	hxradix_sort_key<int32_t, uint32_t> low(-1, 100u);
+	const hxradix_sort_key<int32_t, uint32_t> high(1, 200u);
+	EXPECT_TRUE(low < high);
+	EXPECT_FALSE(high < low);
+	low.set(2, 300u);
+	EXPECT_FALSE(low < high);
+	EXPECT_TRUE(high < low);
+	EXPECT_EQ(low.get_value(), 300u);
+}
+
 TEST_F(hxradix_sort_test_f, two_elements_sorted) {
 	const hxsystem_allocator_scope scope2(hxsystem_allocator_stack_0);
 	hxvector<hxradix_sort_key<uint32_t, uint32_t>> rs;

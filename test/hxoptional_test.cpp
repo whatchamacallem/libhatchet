@@ -13,24 +13,20 @@ int hxs_test_ctor_count = 0;
 int hxs_test_dtor_count = 0;
 struct hxtest_optional_counted_t {
 	explicit hxtest_optional_counted_t(int v) : value(v) { ++hxs_test_ctor_count; }
-	hxtest_optional_counted_t(const hxtest_optional_counted_t& o)
-		: value(o.value) { ++hxs_test_ctor_count; }
+	hxtest_optional_counted_t(const hxtest_optional_counted_t& o) = delete;
 	hxtest_optional_counted_t(hxtest_optional_counted_t&& o) noexcept
 		: value(o.value) { ++hxs_test_ctor_count; }
 	~hxtest_optional_counted_t(void) { ++hxs_test_dtor_count; }
-	hxtest_optional_counted_t& operator=(const hxtest_optional_counted_t& o) {
-		value = o.value; return *this;
-	}
+	hxtest_optional_counted_t& operator=(const hxtest_optional_counted_t& o) = delete;
+	// GCOVR_EXCL_START
 	hxtest_optional_counted_t& operator=(hxtest_optional_counted_t&& o) noexcept {
+		hxassert_hard(false, "unused_overload");
 		value = o.value; return *this;
 	}
-	bool operator==(const hxtest_optional_counted_t& o) const {
-		return value == o.value;
-	}
+	// GCOVR_EXCL_STOP
+	bool operator==(const hxtest_optional_counted_t& o) const = delete;
 #if HX_CPLUSPLUS < 202002L
-	bool operator!=(const hxtest_optional_counted_t& o) const {
-		return value != o.value;
-	}
+	bool operator!=(const hxtest_optional_counted_t& o) const = delete;
 #endif
 	int value;
 };
@@ -44,6 +40,12 @@ hxoptional<hxtest_optional_counted_t> hxtest_make_counted(bool engaged, int v = 
 }
 } // namespace
 
+TEST(hxoptional_test, nullopt_constructs_disengaged) {
+	const hxoptional<int> o = hxnullopt;
+	EXPECT_FALSE((bool)o);
+	EXPECT_TRUE(o == hxnullopt);
+}
+
 TEST(hxoptional_test, default_construction_is_disengaged) {
 	const hxoptional<int> o;
 	EXPECT_FALSE((bool)o);
@@ -53,10 +55,10 @@ TEST(hxoptional_test, default_construction_is_disengaged) {
 }
 
 TEST(hxoptional_test, value_construction_is_engaged) {
-	const hxoptional<int> o = hxtest_make_int(true, 42);
+	const hxoptional<int> o = hxtest_make_int(true, 34);
 	EXPECT_TRUE((bool)o);
 	EXPECT_TRUE(o.has_value());
-	EXPECT_EQ(*o, 42);
+	EXPECT_EQ(*o, 34);
 }
 
 TEST(hxoptional_test, copy_construction_from_disengaged) {
@@ -107,6 +109,12 @@ TEST(hxoptional_test, arrow_operator_accesses_methods) {
 	EXPECT_EQ(o->value, 4);
 	o->value = 8;
 	EXPECT_EQ(o->value, 8);
+}
+
+TEST(hxoptional_test, const_arrow_operator_accesses_fields) {
+	const hxoptional<hxtest_optional_counted_t> o = hxtest_make_counted(true, 4);
+	EXPECT_EQ(o->value, 4);
+	EXPECT_EQ(&o->value, &(*o).value);
 }
 
 TEST(hxoptional_test, copy_assign_engaged_to_disengaged) {
@@ -252,8 +260,8 @@ TEST(hxoptional_test, swap) {
 }
 
 TEST(hxoptional_test, value_returns_reference) {
-	hxoptional<int> o = hxtest_make_int(true, 42);
-	EXPECT_EQ(o.value(), 42);
+	hxoptional<int> o = hxtest_make_int(true, 34);
+	EXPECT_EQ(o.value(), 34);
 	o.value() = 99;
 	EXPECT_EQ(o.value(), 99);
 	const hxoptional<int> co = hxtest_make_int(true, 10);
@@ -274,10 +282,10 @@ TEST(hxoptional_test, converting_copy_construction_from_disengaged) {
 }
 
 TEST(hxoptional_test, converting_copy_construction_from_engaged) {
-	const hxoptional<int> a = hxtest_make_int(true, 42);
+	const hxoptional<int> a = hxtest_make_int(true, 34);
 	const hxoptional<long> b(a);
 	EXPECT_TRUE((bool)b);
-	EXPECT_EQ(*b, 42);
+	EXPECT_EQ(*b, 34);
 }
 
 TEST(hxoptional_test, converting_move_construction_from_disengaged) {
@@ -296,9 +304,9 @@ TEST(hxoptional_test, converting_move_construction_from_engaged) {
 
 TEST(hxoptional_test, emplace) {
 	hxoptional<hxtest_optional_counted_t> o = hxtest_make_counted(false);
-	o.emplace(42);
+	o.emplace(34);
 	EXPECT_TRUE((bool)o);
-	EXPECT_EQ(o->value, 42);
+	EXPECT_EQ(o->value, 34);
 	hxs_test_dtor_count = 0;
 	o.emplace(2);
 	EXPECT_EQ(hxs_test_dtor_count, 1);
@@ -356,12 +364,12 @@ TEST(hxoptional_test, swap_both_disengaged_noop) {
 }
 
 TEST(hxoptional_test, swap_engaged_with_disengaged_boundary) {
-	hxoptional<int> a = hxtest_make_int(true, 42);
+	hxoptional<int> a = hxtest_make_int(true, 34);
 	hxoptional<int> b = hxtest_make_int(false);
 	b.swap(a);
 	EXPECT_FALSE((bool)a);
 	EXPECT_TRUE((bool)b);
-	EXPECT_EQ(*b, 42);
+	EXPECT_EQ(*b, 34);
 }
 
 TEST(hxoptional_test, value_or_engaged_zero) {

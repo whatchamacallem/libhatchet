@@ -22,6 +22,20 @@ TEST(hxbitset_test, default_ctor_zero_initializes) {
 	}
 }
 
+TEST(hxbitset_test, default_ctor_resets_dirty_storage) {
+	typedef hxbitset<sizeof(size_t) * 8u + 1u> bitset_t;
+	alignas(bitset_t) unsigned char storage[sizeof(bitset_t)];
+	volatile unsigned char* dirty = storage;
+	for(size_t i = 0u; i < sizeof(bitset_t); ++i) {
+		dirty[i] = 0xffu;
+	}
+	const bitset_t* b = ::new(static_cast<void*>(storage)) bitset_t;
+	EXPECT_TRUE(b->none());
+	for(size_t i = 0u; i < bitset_t::size(); ++i) {
+		EXPECT_FALSE((*b)[i]);
+	}
+}
+
 TEST(hxbitset_test, copy_ctor_duplicates_bits) {
 	hxbitset<sizeof(size_t) * 8u + 3u> src;
 	src.set(0u);
@@ -49,14 +63,17 @@ TEST(hxbitset_test, assignment_copies_bits) {
 }
 
 TEST(hxbitset_test, size_t_ctor_initializes_from_value) {
-	const hxbitset<sizeof(size_t) * 8u> b(static_cast<size_t>(1u));
+	const volatile size_t one = 1u;
+	const hxbitset<sizeof(size_t) * 8u> b(static_cast<size_t>(one));
 	EXPECT_TRUE(b[0u]);
 	EXPECT_FALSE(b[1u]);
-	const hxbitset<sizeof(size_t) * 8u> b2(~static_cast<size_t>(0u));
+	const volatile size_t all_bits = ~static_cast<size_t>(0u);
+	const hxbitset<sizeof(size_t) * 8u> b2(static_cast<size_t>(all_bits));
 	EXPECT_TRUE(b2.all());
-	const hxbitset<sizeof(size_t) * 8u> b3(static_cast<size_t>(0u));
+	const volatile size_t zero = 0u;
+	const hxbitset<sizeof(size_t) * 8u> b3(static_cast<size_t>(zero));
 	EXPECT_TRUE(b3.none());
-	const size_t high_bit = static_cast<size_t>(1u) << (sizeof(size_t) * 8u - 1u);
+	const size_t high_bit = static_cast<size_t>(one) << (sizeof(size_t) * 8u - 1u);
 	const hxbitset<sizeof(size_t) * 8u> b4(high_bit);
 	EXPECT_TRUE(b4[sizeof(size_t) * 8u - 1u]);
 	EXPECT_FALSE(b4[sizeof(size_t) * 8u - 2u]);

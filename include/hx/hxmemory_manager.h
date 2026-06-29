@@ -66,11 +66,11 @@ typedef unsigned int hxalignment_t;
 #if HX_CPLUSPLUS >= 202002L
 /// `hxalignment` - The default alignment. Allows for storing things like
 /// pointers. This alignment should work for most types.
-inline constexpr hxalignment_t hxalignment = static_cast<hxalignment_t>(alignof(size_t));
+inline constexpr hxalignment_t hxalignment = static_cast<hxalignment_t>(alignof(max_align_t ));
 #elif HX_CPLUSPLUS
-#define hxalignment static_cast<hxalignment_t>(alignof(size_t))
+#define hxalignment static_cast<hxalignment_t>(alignof(max_align_t ))
 #else
-#define hxalignment (hxalignment_t)_Alignof(size_t)
+#define hxalignment (hxalignment_t)_Alignof(max_align_t )
 #endif
 
 /// `hxsystem_allocator_t` - This is extendable by the application.
@@ -156,6 +156,15 @@ constexpr void* operator new[](size_t, void* ptr_) noexcept { return ptr_; }
 #else
 inline void* operator new(size_t, void* ptr_) noexcept { return ptr_; }
 inline void* operator new[](size_t, void* ptr_) noexcept { return ptr_; }
+#endif
+
+#if (HX_PROVIDE_NEW_DELETE) != -1
+// Provide these for constant evaluation/consteval. Link errors may still result.
+// Use HX_PROVIDE_NEW_DELETE=-1 when compiling a module to prevent declaration.
+void* operator new(size_t size_) hxattr_nodiscard;
+void* operator new[](size_t size_) hxattr_nodiscard;
+void operator delete(void* ptr_) noexcept;
+void operator delete[](void* ptr_) noexcept;
 #endif
 #endif
 
@@ -265,18 +274,20 @@ public:
 	operator bool(void) const { return false; }
 };
 
-#if HX_CPLUSPLUS >= 201402L && ((HX_USE_LIBCXX) || (HX_PROVIDE_NEW_DELETE))
+#if HX_CPLUSPLUS >= 201402L
 /// `hxconsteval_delete` - A `constexpr`-compatible deleter that uses `::delete`.
 /// Required for `consteval` contexts where `hxdefault_delete` cannot be used
 /// because `hxdelete` calls `hxfree` which is not `constexpr`.
 class hxconsteval_delete {
 public:
+// GCOVR_EXCL_START
 	/// Deletes the object using `::delete`.
 	template <typename T_>
 	constexpr void operator()(T_* t_) const { ::delete t_; }
 
 	/// Always returns true, indicating the deleter is valid.
 	constexpr operator bool(void) const { return true; }
+// GCOVR_EXCL_STOP
 };
 #endif
 /// \cond HIDDEN

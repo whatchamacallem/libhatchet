@@ -20,11 +20,12 @@ set -eu
 export POSIXLY_CORRECT=1
 
 if [ ! -f build/build.ninja ]; then
-	rm -rf build
+	rm -rf ./build; mkdir ./build
 	if [ "${1:-}" != "--headless" ]; then
 		cmake -S . -B build -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 	else
-		cmake -S . -B build -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON >/dev/null
+		cmake -S . -B build -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON >build/testcmake.sh.log 2>&1 \
+			|| { echo "cmake failed:"; cat build/testcmake.sh.log; exit 1; }
 	fi
 else
 	echo "Found build/build.ninja..."
@@ -33,7 +34,8 @@ fi
 if [ "${1:-}" != "--headless" ]; then
 	ninja -C build
 else
-	ninja -C build >/dev/null
+	ninja -C build >build/testcmake.sh.log 2>&1 \
+		|| { echo "ninja failed:"; cat build/testcmake.sh.log; exit 1; }
 fi
 
 echo "Run build/hxtest with GDB..."

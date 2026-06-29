@@ -58,8 +58,8 @@ public:
 	bool operator<(const hxtest_iter_api_t& other) const { return m_pointer < other.m_pointer; }
 	bool operator>(const hxtest_iter_api_t& other) const { return m_pointer > other.m_pointer; }
 	bool operator<=(const hxtest_iter_api_t& other) const { return m_pointer <= other.m_pointer; }
-	bool operator>=(const hxtest_iter_api_t& other) const { return m_pointer >= other.m_pointer; }
 private:
+	bool operator>=(const hxtest_iter_api_t& other) const = delete;
 	hxtest_iter_api_t(int null) = delete;
 	hxtest_iter_api_t(hxnullptr_t null) = delete;
 	void operator[](int index) const = delete;
@@ -155,7 +155,9 @@ public:
 			--hxs_remaining;
 			return true;
 		}
+		// GCOVR_EXCL_START
 		return false;
+		// GCOVR_EXCL_STOP
 	}
 private:
 	hxtest_skip_asserts(const hxtest_skip_asserts&) = delete;

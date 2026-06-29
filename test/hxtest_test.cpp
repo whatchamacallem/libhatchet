@@ -79,6 +79,27 @@ TEST(hxtest_test, float_eq) {
 	const float tenth = 1.0f / 10.0f;
 	ASSERT_FLOAT_EQ(tenth * 10.0f, 1.0f);
 	ASSERT_FLOAT_EQ(a * a, 0.01f);
+
+	const float negative = -1.0f / 3.0f;
+	ASSERT_FLOAT_EQ(-(third + third + third), negative + negative + negative);
+	ASSERT_FLOAT_EQ(-a - b, -c);
+
+	EXPECT_FLOAT_EQ(-1.0f, -1.0f);
+	EXPECT_FLOAT_EQ(1.0f, 1.0f);
+
+	const uint32_t one_bits = 0x3f800000u;
+	float lo = 0.0f; ::memcpy(&lo, &one_bits, sizeof lo);
+	const uint32_t near_bits = one_bits + 4u;
+	float near = 0.0f; ::memcpy(&near, &near_bits, sizeof near);
+	EXPECT_FLOAT_EQ(lo, near);
+	EXPECT_FLOAT_EQ(near, lo);
+
+	const uint32_t neg_lo_bits = 0x80000000u | one_bits;
+	float neg_lo = 0.0f; ::memcpy(&neg_lo, &neg_lo_bits, sizeof neg_lo);
+	const uint32_t neg_near_bits = 0x80000000u | near_bits;
+	float neg_near = 0.0f; ::memcpy(&neg_near, &neg_near_bits, sizeof neg_near);
+	EXPECT_FLOAT_EQ(neg_lo, neg_near);
+	EXPECT_FLOAT_EQ(neg_near, neg_lo);
 }
 
 TEST(hxtest_test, double_eq) {
@@ -93,6 +114,27 @@ TEST(hxtest_test, double_eq) {
 	const double tenth = 1.0 / 10.0;
 	ASSERT_DOUBLE_EQ(tenth * 10.0, 1.0);
 	ASSERT_DOUBLE_EQ(a * a, 0.01);
+
+	const double negative = -1.0 / 3.0;
+	ASSERT_DOUBLE_EQ(-(third + third + third), negative + negative + negative);
+	ASSERT_DOUBLE_EQ(-a - b, -c);
+
+	EXPECT_DOUBLE_EQ(-1.0, -1.0);
+	EXPECT_DOUBLE_EQ(1.0, 1.0);
+
+	const uint64_t one_bits = 0x3ff0000000000000ull;
+	double lo = 0.0; ::memcpy(&lo, &one_bits, sizeof lo);
+	const uint64_t near_bits = one_bits + 4ull;
+	double near = 0.0; ::memcpy(&near, &near_bits, sizeof near);
+	EXPECT_DOUBLE_EQ(lo, near);
+	EXPECT_DOUBLE_EQ(near, lo);
+
+	const uint64_t neg_lo_bits = 0x8000000000000000ull | one_bits;
+	double neg_lo = 0.0; ::memcpy(&neg_lo, &neg_lo_bits, sizeof neg_lo);
+	const uint64_t neg_near_bits = 0x8000000000000000ull | near_bits;
+	double neg_near = 0.0; ::memcpy(&neg_near, &neg_near_bits, sizeof neg_near);
+	EXPECT_DOUBLE_EQ(neg_lo, neg_near);
+	EXPECT_DOUBLE_EQ(neg_near, neg_lo);
 }
 
 TEST(hxtest_test, all_tests) {
@@ -130,4 +172,33 @@ TEST(hxtest_error_handling, add_failure_at) {
 TEST(hxtest_error_handling, nothing_asserted) {
 	hxlog_warning("EXPECTING_TEST_FAILURE");
 }
+
+TEST(hxtest_error_handling, float_eq_inf_left) {
+	hxlog_warning("EXPECTING_TEST_FAILURE");
+	const uint32_t inf_bits = 0x7f800000u;
+	float inf = 0.0f; ::memcpy(&inf, &inf_bits, sizeof inf);
+	EXPECT_FLOAT_EQ(inf, 1.0f);
+}
+
+TEST(hxtest_error_handling, float_eq_inf_right) {
+	hxlog_warning("EXPECTING_TEST_FAILURE");
+	const uint32_t inf_bits = 0x7f800000u;
+	float inf = 0.0f; ::memcpy(&inf, &inf_bits, sizeof inf);
+	EXPECT_FLOAT_EQ(1.0f, inf);
+}
+
+TEST(hxtest_error_handling, double_eq_inf_left) {
+	hxlog_warning("EXPECTING_TEST_FAILURE");
+	const uint64_t inf_bits = 0x7ff0000000000000ull;
+	double inf = 0.0; ::memcpy(&inf, &inf_bits, sizeof inf);
+	EXPECT_DOUBLE_EQ(inf, 1.0);
+}
+
+TEST(hxtest_error_handling, double_eq_inf_right) {
+	hxlog_warning("EXPECTING_TEST_FAILURE");
+	const uint64_t inf_bits = 0x7ff0000000000000ull;
+	double inf = 0.0; ::memcpy(&inf, &inf_bits, sizeof inf);
+	EXPECT_DOUBLE_EQ(1.0, inf);
+}
+
 #endif

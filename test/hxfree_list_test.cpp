@@ -50,8 +50,8 @@ TEST_F(hxfree_list_test_f, allocate_returns_nonnull) {
 
 TEST_F(hxfree_list_test_f, allocate_constructs_value) {
 	hxfree_list<hxtest_object, 1> pool;
-	auto p = pool.allocate(42);
-	EXPECT_EQ(p->id, (int32_t)42);
+	auto p = pool.allocate(34);
+	EXPECT_EQ(p->id, (int32_t)34);
 }
 
 TEST_F(hxfree_list_test_f, release_raw_increments_size_by_one) {
@@ -249,7 +249,7 @@ TEST_F(hxfree_list_test_f, construct_with_deleter_instance_stores_deleter) {
 			hxs_ptr_stateful_delete_tag = m_tag;
 			hxdelete(p);
 		}
-		operator bool(void) const { return true; }
+		operator bool(void) const = delete;
 		int m_tag;
 	};
 

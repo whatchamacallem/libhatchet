@@ -8,21 +8,20 @@
 
 HX_NS_USE
 
-TEST(hxmemory_manager_test, hxnew_forward) {
-	struct hxtest_move_only {
-		explicit hxtest_move_only(int v) : value(v), move_count(0) { }
-		hxtest_move_only(hxtest_move_only&& other) noexcept
-			: value(other.value), move_count(other.move_count + 1) { }
-		hxtest_move_only(const hxtest_move_only&) = delete;
-		int value;
-		int move_count;
-	};
-	hxtest_move_only src(42);
-	hxtest_move_only* p = hxnew<hxtest_move_only, hxsystem_allocator_heap>(hxmove(src));
-	ASSERT_EQ(p->value, 42);
-	ASSERT_EQ(p->move_count, 1);
-	hxdelete(p);
+#if HX_CPLUSPLUS >= 202302L
+namespace {
+consteval bool hxtest_consteval_delete_deletes_and_is_true(void) {
+	const hxconsteval_delete deleter;
+	if(!static_cast<bool>(deleter)) { return false; }
+	int* value = ::new int(34);
+	if(*value != 34) { return false; }
+	deleter(value);
+	return true;
 }
+static_assert(hxtest_consteval_delete_deletes_and_is_true(),
+	"hxconsteval_delete must report true and free its argument");
+} // namespace
+#endif // HX_CPLUSPLUS >= 202302L
 
 TEST(hxmemory_manager_test, hxnew_forward_move_count_is_exactly_one) {
 	struct hxtest_count_moves {
@@ -41,14 +40,66 @@ TEST(hxmemory_manager_test, hxnew_forward_move_count_is_exactly_one) {
 	hxdelete(p);
 }
 
-TEST(hxmemory_manager_test, hxnew) {
+TEST(hxmemory_manager_test, new_delete) {
 	unsigned int* t = new unsigned int(3);
 	hxassert_always(t, "new");
 	*t = 0xdeadbeefu;
 	delete t;
-	t = hxnullptr;
+	t = hxnull;
 	delete t;
+
+	unsigned int* u = new unsigned int[1]{33u};
+	hxassert_always(u, "new[]");
+	u[0] = 0xdeadbeefu;
+	delete[] u;
+	u = hxnullptr;
+	delete[] u;
+
+	hxdelete(t);
+	hxdelete(u);
 	SUCCEED();
+}
+
+TEST(hxmemory_manager_test, hxmalloc_allocator_alignment_args_heap) {
+#if HX_USE_MEMORY_MANAGER
+	void* aligned = hxmalloc(8u, hxsystem_allocator_heap, 64u);
+	hxassert_always(aligned, "hxmalloc");
+	EXPECT_EQ(reinterpret_cast<uintptr_t>(aligned) & 63u, 0u);
+	hxfree(aligned);
+#endif
+
+	void* defaulted = hxmalloc(8u, hxsystem_allocator_heap);
+	hxassert_always(defaulted, "hxmalloc");
+	EXPECT_EQ(reinterpret_cast<uintptr_t>(defaulted)
+		& (static_cast<uintptr_t>(hxalignment) - 1u), 0u);
+	hxfree(defaulted);
+}
+
+TEST(hxmemory_manager_test, hxmalloc_allocator_alignment_args_stack) {
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
+#if HX_USE_MEMORY_MANAGER
+	void* aligned = hxmalloc(8u, hxsystem_allocator_stack_0, 64u);
+	hxassert_always(aligned, "hxmalloc");
+	EXPECT_EQ(reinterpret_cast<uintptr_t>(aligned) & 63u, 0u);
+	hxfree(aligned);
+#endif
+
+	void* defaulted = hxmalloc(8u, hxsystem_allocator_stack_0);
+	hxassert_always(defaulted, "hxmalloc");
+	EXPECT_EQ(reinterpret_cast<uintptr_t>(defaulted)
+		& (static_cast<uintptr_t>(hxalignment) - 1u), 0u);
+	hxfree(defaulted);
+}
+
+TEST(hxmemory_manager_test, placement_new_array_returns_buffer) {
+	alignas(unsigned int) unsigned char buffer[4u * sizeof(unsigned int)];
+	unsigned int* p = static_cast<unsigned int*>(
+		operator new[](sizeof(buffer), static_cast<void*>(buffer)));
+	EXPECT_EQ(static_cast<void*>(p), static_cast<void*>(buffer));
+	p[0] = 0xdeadbeefu;
+	p[3] = 0xfeedface;
+	EXPECT_EQ(p[0], 0xdeadbeefu);
+	EXPECT_EQ(p[3], 0xfeedface);
 }
 
 TEST(hxmemory_manager_test, bytes) {

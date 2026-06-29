@@ -10,6 +10,7 @@ HX_NS_USE
 #if HX_CPLUSPLUS >= 202302L
 namespace {
 
+// GCOVR_EXCL_START
 consteval bool hxtest_hxconstexpr_list_consteval_integration(void) {
 	struct hxtest_node_t : hxconstexpr_list_node {
 		constexpr explicit hxtest_node_t(int v) : value(v) { }
@@ -112,6 +113,7 @@ consteval bool hxtest_hxconstexpr_list_consteval_integration(void) {
 	list.clear();
 	return true;
 }
+// GCOVR_EXCL_STOP
 
 static_assert(hxtest_hxconstexpr_list_consteval_integration(),
 	"hxconstexpr_list consteval: integration test must pass");

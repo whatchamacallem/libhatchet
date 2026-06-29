@@ -169,7 +169,9 @@ TEST(hxtask_queue_test, predicates_cover_all_any_erase) {
 	public:
 		void configure(bool* f, bool* c) { executed_flag = f; cancelled_flag = c; }
 		bool execute(hxtask_queue*) override { *executed_flag = true; return true; }
-		void on_cancel(hxtask_queue*) override { *cancelled_flag = true; }
+		// GCOVR_EXCL_START
+		void on_cancel(hxtask_queue*) override { hxassert_hard(false, "unused_overload"); }
+		// GCOVR_EXCL_STOP
 	private:
 		bool* executed_flag = hxnull;
 		bool* cancelled_flag = hxnull;
@@ -403,7 +405,9 @@ TEST(hxtask_queue_test, erase_if_count_boundaries) {
 	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	class hxtask_queue_test_nop_task_t : public hxtask {
 	public:
-		bool execute(hxtask_queue*) override { return true; }
+		// GCOVR_EXCL_START
+		bool execute(hxtask_queue*) override { hxassert_hard(false, "unused_overload"); return true; }
+		// GCOVR_EXCL_STOP
 	};
 	hxtask_queue_test_nop_task_t t0, t1, t2, t3, t4;
 	hxtask_queue q(5, 0);
@@ -468,7 +472,9 @@ TEST(hxtask_queue_test, canceling_task_without_on_cancel_override) {
 	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	class hxtask_queue_test_default_cancel_t : public hxtask {
 	public:
-		bool execute(hxtask_queue*) override { executed = true; return true; }
+		// GCOVR_EXCL_START
+		bool execute(hxtask_queue*) override { hxassert_hard(false, "unused_overload"); return true; }
+		// GCOVR_EXCL_STOP
 		bool executed = false;
 	};
 	hxtask_queue_test_default_cancel_t t0;

@@ -355,12 +355,7 @@ const T_* hxvector<T_, capacity_>::find(const T_& value_) const {
 
 template<hxvector_concept_ T_, hxsize_t capacity_>
 T_* hxvector<T_, capacity_>::find(const T_& value_) {
-	for(T_* it_ = this->data(), *const end_ = m_end_; it_ != end_; ++it_) {
-		if(hxkey_equal(*it_, value_)) {
-			return it_;
-		}
-	}
-	return m_end_;
+	return const_cast<T_*>(const_cast<const hxvector<T_, capacity_>*>(this)->find(value_));
 }
 
 template<hxvector_concept_ T_, hxsize_t capacity_>

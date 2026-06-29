@@ -106,6 +106,7 @@ void hxtest_::condition_check_(bool condition, const char* file, size_t line, co
 		if(is_assert) {
 			// ASSERT_* macros halt the test suite on failure. Always log and exit
 			// regardless of the message limit so control flow never continues.
+// GCOVR_EXCL_START
 			hxlog_handler(hxlog_level_assert, "test_fail %s.%s", m_current_test_->suite_(), m_current_test_->case_());
 			hxlog_handler(hxlog_level_assert, "test_fail_at %s(%zu): %s", file, line, message);
 			hxlog_handler(hxlog_level_assert, "test_assert_fail ❌");
@@ -113,6 +114,7 @@ void hxtest_::condition_check_(bool condition, const char* file, size_t line, co
 				m_pass_count_, m_fail_count_ + 1, m_total_assert_count_);
 			hxbreakpoint();
 			hxexit(EXIT_FAILURE);
+// GCOVR_EXCL_STOP
 		}
 
 		if(m_assert_count_ > max_fail_messages_) {
@@ -169,8 +171,10 @@ int hxtest_::run_all_tests_(const char* test_suite_filter) {
 				// Expect the test to use another scope to reset the stack if needed.
 				hxmemory_manager_stats stats = hxmemory_manager_utilization(true, false);
 				if(stats.allocations_outstanding != 0u || stats.bytes_outstanding != 0u) {
+// GCOVR_EXCL_START
 					this->condition_check_(false, (*it)->file_(), (*it)->line_(),
 						"test_leaks All tests must reset the temp stack.", true);
+// GCOVR_EXCL_STOP
 				}
 			}
 #ifdef __cpp_exceptions
@@ -198,12 +202,14 @@ int hxtest_::run_all_tests_(const char* test_suite_filter) {
 	hxlog_console("[==========] skipped %d tests. failed %d assertions.\n",
 		m_num_test_cases_ - m_pass_count_ - m_fail_count_, m_total_assert_count_);
 
-	hxwarn_msg(m_pass_count_ + m_fail_count_, "nothing_tested");
+// GCOVR_EXCL_START
+	hxassert_always(m_pass_count_ + m_fail_count_, "nothing_tested");
 
 	if(m_pass_count_ != 0 && m_fail_count_ == 0) {
 		// This is Google Test style. If only it were green.
 		hxlog_handler(hxlog_level_console, "[  PASSED  ] %d test%s.\n", m_pass_count_,
 			((m_pass_count_ != 1) ? "s" : ""));
+// GCOVR_EXCL_STOP
 	}
 	else {
 		hxlog_handler(hxlog_level_console, "%d FAILED TEST%s ❌\n", m_fail_count_,

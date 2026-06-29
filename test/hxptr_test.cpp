@@ -22,7 +22,7 @@ struct hxtest_ptr_custom_deleter_t {
 		++hxs_test_custom_deleter_count;
 		hxdelete(ptr);
 	}
-	operator bool(void) const { return true; }
+	operator bool(void) const = delete;
 };
 } // namespace
 
@@ -36,10 +36,10 @@ TEST(hxptr_test, default_construction_is_null) {
 
 TEST(hxptr_test, construct_from_pointer) {
 	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
-	const hxptr<int> p(hxnew<int>(42));
+	const hxptr<int> p(hxnew<int>(34));
 	EXPECT_TRUE((bool)p);
 	EXPECT_NE(p.get(), static_cast<int*>(hxnull));
-	EXPECT_EQ(*p, 42);
+	EXPECT_EQ(*p, 34);
 	EXPECT_FALSE(p == hxnullptr);
 	EXPECT_TRUE(p != hxnullptr);
 }
@@ -74,8 +74,8 @@ TEST(hxptr_test, move_construction_transfers_ownership) {
 	hxptr<hxtest_ptr_counted_t> a(hxnew<hxtest_ptr_counted_t>(3));
 	const hxtest_ptr_counted_t* const raw = a.get();
 	const hxptr<hxtest_ptr_counted_t> b(hxmove(a));
-	EXPECT_EQ(a.get(), (hxtest_ptr_counted_t*)hxnull); // NOLINT(clang-analyzer-cplusplus.Move)
-	EXPECT_FALSE((bool)a); // NOLINT(clang-analyzer-cplusplus.Move)
+	EXPECT_EQ(a.get(), (hxtest_ptr_counted_t*)hxnull);
+	EXPECT_FALSE((bool)a);
 	EXPECT_EQ(b.get(), raw);
 	EXPECT_TRUE((bool)b);
 	EXPECT_EQ(hxs_ptr_test_destructor_count, 0);
@@ -90,7 +90,7 @@ TEST(hxptr_test, move_assignment_transfers_ownership) {
 	b = hxmove(a);
 	EXPECT_EQ(hxs_ptr_test_destructor_count, 1);
 	EXPECT_EQ(b.get(), raw_a);
-	EXPECT_EQ(a.get(), (hxtest_ptr_counted_t*)hxnull); // NOLINT(clang-analyzer-cplusplus.Move)
+	EXPECT_EQ(a.get(), (hxtest_ptr_counted_t*)hxnull);
 }
 
 TEST(hxptr_test, move_assign_from_null_deletes_owned) {
@@ -154,6 +154,14 @@ TEST(hxptr_test, equality_operators_compare_address) {
 	EXPECT_FALSE(b != c);
 }
 
+TEST(hxptr_test, not_equal_nullptr_distinguishes_null_and_owned) {
+	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
+	const hxptr<hxtest_ptr_counted_t> empty;
+	EXPECT_FALSE(empty != hxnullptr);
+	const hxptr<hxtest_ptr_counted_t> owned = hxmake_ptr<hxtest_ptr_counted_t>(0);
+	EXPECT_TRUE(owned != hxnullptr);
+}
+
 TEST(hxptr_test, custom_deleter_called_on_destruction) {
 	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
 	hxs_ptr_test_destructor_count = 0;
@@ -198,9 +206,9 @@ TEST(hxptr_test, make_ptr_constructs_and_owns) {
 	hxs_ptr_test_destructor_count = 0;
 	{
 		const hxptr<hxtest_ptr_counted_t> p =
-			hxmake_ptr<hxtest_ptr_counted_t>(42);
+			hxmake_ptr<hxtest_ptr_counted_t>(34);
 		EXPECT_TRUE((bool)p);
-		EXPECT_EQ(p->value, 42);
+		EXPECT_EQ(p->value, 34);
 		EXPECT_EQ(hxs_ptr_test_destructor_count, 0);
 	}
 	EXPECT_EQ(hxs_ptr_test_destructor_count, 1);
@@ -261,7 +269,7 @@ TEST(hxptr_test, move_construction_source_is_exactly_null) {
 	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
 	hxptr<hxtest_ptr_counted_t> a = hxmake_ptr<hxtest_ptr_counted_t>(9);
 	const hxptr<hxtest_ptr_counted_t> b(hxmove(a));
-	EXPECT_EQ(a.get(), static_cast<hxtest_ptr_counted_t*>(hxnull)); // NOLINT(clang-analyzer-cplusplus.Move)
+	EXPECT_EQ(a.get(), static_cast<hxtest_ptr_counted_t*>(hxnull));
 	EXPECT_TRUE((bool)b);
 }
 

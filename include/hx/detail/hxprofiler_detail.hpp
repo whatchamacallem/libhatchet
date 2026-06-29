@@ -64,10 +64,6 @@ public:
 	void write_to_chrome_tracing_(const char* filename) hxattr_nonnull(2);
 #endif
 
-	// For testing.
-	hxsize_t records_size_(void) { return m_records.size(); }
-	void records_clear_(void) { m_records.clear(); }
-
 private:
 	class hxprofiler_record_ {
 	public:

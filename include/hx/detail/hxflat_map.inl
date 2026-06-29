@@ -53,7 +53,7 @@ template<typename key_t_, typename mapped_t_, typename compare_t_, bool multi_t_
 inline const key_t_& hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capacity_>::const_iterator::key(void) const {
 	hxassertmsg(m_map_ != hxnull && static_cast<size_t>(m_index_) < static_cast<size_t>(m_map_->m_size_),
 		"invalid_iterator");
-	return m_map_->m_keys_.data()[m_index_];
+	return m_map_->m_keys_.data()[m_index_]; // NOLINT(clang-analyzer-security.ArrayBound)
 }
 
 template<typename key_t_, typename mapped_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>

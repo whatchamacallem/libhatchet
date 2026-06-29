@@ -47,7 +47,7 @@ bool run_all_tests(const char* test_suite_filter) {
 #endif
 
 #if HX_TEST_ERROR_HANDLING
-	const int hxs_expected_failures = 4;
+	const int hxs_expected_failures = 8;
 	hxassert_always(tests_failing == hxs_expected_failures,
 		"unexpected_failures Expected exactly %d tests to fail...", hxs_expected_failures);
 	if(tests_failing == hxs_expected_failures) {
@@ -80,9 +80,11 @@ int test_main(int argc, char**argv) {
 			is_ok = is_ok && hxconsole_exec_line(argv[i]);
 		}
 	}
+	// GCOVR_EXCL_START
 	else {
 		is_ok = run_all_tests(hxnull);
 	}
+	// GCOVR_EXCL_STOP
 #else // !HX_USE_CONSOLE
 	(void)argc; (void)argv;
 	is_ok = run_all_tests(hxnull);
@@ -112,5 +114,6 @@ int main(int argc, char**argv) {
 	GTEST_FLAG_SET(break_on_failure, true);
 #endif
 #endif
+	// Calling hxexit would break coverage.
 	return test_main(argc, argv);
 }

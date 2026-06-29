@@ -31,7 +31,9 @@ template<typename U_> struct hxis_hxoptional_<hxoptional<U_>> : hxtrue_t { };
 /// `hxnullopt_t` - A tag type used to construct a disengaged `hxoptional`.
 struct hxnullopt_t {
 	/// Explicit constructor prevents implicit construction from `{}`.
+// GCOVR_EXCL_START
 	explicit constexpr hxnullopt_t(int) { }
+// GCOVR_EXCL_STOP
 };
 
 /// `hxnullopt` - A sentinel value of type `hxnullopt_t` representing a

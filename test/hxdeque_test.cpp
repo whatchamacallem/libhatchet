@@ -17,45 +17,22 @@ class hxdeque_test_f : public testing::Test {
 public:
 	class hxtest_object {
 	public:
-		hxtest_object(void) {
-			++hxs_deque_current->m_constructed;
-			id = hxs_deque_current->m_next_id--;
-			moved_from = false;
-		}
+		hxtest_object(void) = delete;
 		explicit hxtest_object(int32_t x) {
 			++hxs_deque_current->m_constructed;
 			id = x;
 			moved_from = false;
-		}
-		hxtest_object(const hxtest_object& x) {
-			++hxs_deque_current->m_constructed;
-			id = x.id;
-			moved_from = false;
-		}
-		hxtest_object(hxtest_object&& x) noexcept {
-			++hxs_deque_current->m_constructed;
-			id = x.id;
-			moved_from = false;
-			x.id = 0xefef;
-			x.moved_from = true;
 		}
 		~hxtest_object(void) {
 			++hxs_deque_current->m_destructed;
 			id = 0xefef;
 			moved_from = true;
 		}
-		void operator=(const hxtest_object& x) {
-			id = x.id;
-			moved_from = false;
-		}
-		hxtest_object& operator=(hxtest_object&& x) noexcept {
-			id = x.id;
-			moved_from = false;
-			x.id = 0xefef;
-			x.moved_from = true;
-			return *this;
-		}
-		bool operator==(int32_t x) const { return id == x; }
+		hxtest_object(const hxtest_object&) = delete;
+		hxtest_object(hxtest_object&&) = delete;
+		void operator=(const hxtest_object&) = delete;
+		hxtest_object& operator=(hxtest_object&&) = delete;
+		bool operator==(int32_t) const = delete;
 		int32_t id;
 		bool moved_from;
 	};
@@ -162,8 +139,8 @@ TEST(hxdeque_test, ring_wraparound_push_front_pop_back) {
 
 TEST_F(hxdeque_test_f, emplace_back_constructs_in_place) {
 	hxdeque<hxtest_object, 4> d;
-	d.emplace_back(42);
-	EXPECT_EQ(d.back().id, 42);
+	d.emplace_back(34);
+	EXPECT_EQ(d.back().id, 34);
 	EXPECT_FALSE(d.back().moved_from);
 	EXPECT_EQ(d.size(), 1);
 	EXPECT_EQ(m_constructed, 1);
@@ -235,6 +212,18 @@ TEST(hxdeque_test, const_operator_index) {
 	const hxdeque<int, 4>& cd = d;
 	EXPECT_EQ(cd[0], 3);
 	EXPECT_EQ(cd[1], 6);
+}
+
+TEST(hxdeque_test, at_const_and_non_const) {
+	hxdeque<int, 4> d;
+	d.push_back(3);
+	d.push_back(6);
+	d.at(0) = 30;
+	EXPECT_EQ(d.at(0), 30);
+	EXPECT_EQ(d.at(1), 6);
+	const hxdeque<int, 4>& cd = d;
+	EXPECT_EQ(cd.at(0), 30);
+	EXPECT_EQ(cd.at(1), 6);
 }
 
 TEST(hxdeque_test, operator_index_after_wraparound) {
@@ -390,13 +379,13 @@ TEST(hxdeque_test, single_element_capacity) {
 	hxdeque<int, 1> d;
 	EXPECT_TRUE(d.empty());
 	EXPECT_EQ(d.capacity(), 1);
-	d.push_back(42);
+	d.push_back(34);
 	EXPECT_TRUE(d.full());
-	EXPECT_EQ(d.front(), 42);
-	EXPECT_EQ(d.back(), 42);
+	EXPECT_EQ(d.front(), 34);
+	EXPECT_EQ(d.back(), 34);
 	int v = 0;
 	v = d.front(); d.pop_front();
-	EXPECT_EQ(v, 42);
+	EXPECT_EQ(v, 34);
 	EXPECT_TRUE(d.empty());
 }
 

@@ -31,6 +31,24 @@ TEST(hxlist_test, empty_on_construction) {
 	EXPECT_EQ(list.begin(), list.end());
 }
 
+TEST(hxlist_test, default_constructed_iterators) {
+	hxtest_list_node_t a(1);
+	hxlist<hxtest_list_node_t, hxdo_not_delete> list;
+	list.push_back(&a);
+	const hxlist<hxtest_list_node_t, hxdo_not_delete>::const_iterator cd1;
+	const hxlist<hxtest_list_node_t, hxdo_not_delete>::const_iterator cd2;
+	EXPECT_TRUE(cd1 == cd2);
+	EXPECT_FALSE(cd1 == list.begin());
+	hxlist<hxtest_list_node_t, hxdo_not_delete>::iterator d1;
+	const hxlist<hxtest_list_node_t, hxdo_not_delete>::iterator d2;
+	EXPECT_TRUE(d1 == d2);
+	EXPECT_FALSE(d1 == list.begin());
+	d1 = list.begin();
+	EXPECT_TRUE(d1 == list.begin());
+	EXPECT_EQ(d1->value, 1);
+	list.release_all();
+}
+
 TEST(hxlist_test, push_back_and_iterate) {
 	hxlist<hxtest_list_node_t, hxdo_not_delete> list;
 	hxtest_list_node_t a(1), b(2), c(3);
@@ -61,6 +79,61 @@ TEST(hxlist_test, push_back_two_nodes_order) {
 	EXPECT_EQ(&list.back(), &b);
 	EXPECT_EQ(&*ia, &a);
 	EXPECT_EQ(&*ib, &b);
+	list.release_all();
+}
+
+TEST(hxlist_test, const_front_and_back) {
+	hxtest_list_node_t a(10), b(20);
+	hxlist<hxtest_list_node_t, hxdo_not_delete> list;
+	list.push_back(&a);
+	list.push_back(&b);
+	const hxlist<hxtest_list_node_t, hxdo_not_delete>& clist = list;
+	EXPECT_EQ(&clist.front(), &a);
+	EXPECT_EQ(&clist.back(), &b);
+	EXPECT_EQ(clist.front().value, 10);
+	EXPECT_EQ(clist.back().value, 20);
+	list.release_all();
+}
+
+TEST(hxlist_test, const_begin_end_iteration) {
+	hxtest_list_node_t a(1), b(2), c(3);
+	hxlist<hxtest_list_node_t, hxdo_not_delete> list;
+	list.push_back(&a);
+	list.push_back(&b);
+	list.push_back(&c);
+	const hxlist<hxtest_list_node_t, hxdo_not_delete>& clist = list;
+	int expected = 1;
+	hxsize_t count = 0;
+	for(hxlist<hxtest_list_node_t, hxdo_not_delete>::const_iterator it = clist.begin();
+			it != clist.end(); ++it) {
+		EXPECT_EQ(it->value, expected++);
+		++count;
+	}
+	EXPECT_EQ(count, 3);
+	EXPECT_EQ(expected, 4);
+	list.release_all();
+}
+
+TEST(hxlist_test, cbegin_cend_iteration) {
+	hxtest_list_node_t a(1), b(2), c(3);
+	hxlist<hxtest_list_node_t, hxdo_not_delete> list;
+	list.push_back(&a);
+	list.push_back(&b);
+	list.push_back(&c);
+	const hxlist<hxtest_list_node_t, hxdo_not_delete>& clist = list;
+	EXPECT_EQ(clist.cbegin()->value, 1);
+	EXPECT_TRUE(clist.cbegin() != clist.cend());
+	EXPECT_TRUE(clist.cend() == clist.end());
+	EXPECT_TRUE(clist.cbegin() == clist.begin());
+	int expected = 1;
+	hxsize_t count = 0;
+	for(hxlist<hxtest_list_node_t, hxdo_not_delete>::const_iterator it = clist.cbegin();
+			it != clist.cend(); ++it) {
+		EXPECT_EQ(it->value, expected++);
+		++count;
+	}
+	EXPECT_EQ(count, 3);
+	EXPECT_EQ(expected, 4);
 	list.release_all();
 }
 
@@ -237,6 +310,27 @@ TEST(hxlist_test, erase_with_default_deleter_calls_destructor) {
 	EXPECT_EQ(hxs_list_test_destructor_count, 3);
 }
 
+TEST(hxlist_test, insert_overloads_taking_hxptr_rvalue) {
+	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
+	hxs_list_test_destructor_count = 0;
+	hxlist<hxtest_list_counted_node_t> list;
+	list.push_back(hxptr<hxtest_list_counted_node_t>(hxnew<hxtest_list_counted_node_t>(2)));
+	list.push_front(hxptr<hxtest_list_counted_node_t>(hxnew<hxtest_list_counted_node_t>(1)));
+	list.insert(--list.end(),
+		hxptr<hxtest_list_counted_node_t>(hxnew<hxtest_list_counted_node_t>(3)));
+	list.insert_after(list.begin(),
+		hxptr<hxtest_list_counted_node_t>(hxnew<hxtest_list_counted_node_t>(4)));
+	const int expected[] = { 1, 4, 3, 2 };
+	hxsize_t idx = 0;
+	for(const hxtest_list_counted_node_t& n : list) {
+		EXPECT_EQ(n.value, expected[idx++]);
+	}
+	EXPECT_EQ(idx, 4);
+	EXPECT_EQ(list.size(), 4);
+	list.clear();
+	EXPECT_EQ(hxs_list_test_destructor_count, 4);
+}
+
 TEST(hxlist_test, erase_with_do_not_delete_override) {
 	hxs_list_test_destructor_count = 0;
 	hxtest_list_counted_node_t a(1);
@@ -250,7 +344,7 @@ TEST(hxlist_test, erase_with_do_not_delete_override) {
 TEST(hxlist_test, erase_with_custom_deleter_override) {
 	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
 	hxs_test_custom_deleter_count = 0;
-	hxptr<hxtest_list_counted_node_t> n(hxnew<hxtest_list_counted_node_t>(42));
+	hxptr<hxtest_list_counted_node_t> n(hxnew<hxtest_list_counted_node_t>(34));
 	hxlist<hxtest_list_counted_node_t, hxdo_not_delete> list;
 	list.push_back(n.release());
 	list.erase(list.begin(), hxtest_list_custom_deleter_t());

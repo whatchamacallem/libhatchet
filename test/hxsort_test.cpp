@@ -158,8 +158,8 @@ TEST(hxsort_test, hxsort_empty_range) {
 }
 
 TEST(hxbinary_search_test, single_element_hit_and_miss) {
-	const int arr[1] = { 42 };
-	const int* result = hxbinary_search(arr, arr + 1, 42);
+	const int arr[1] = { 34 };
+	const int* result = hxbinary_search(arr, arr + 1, 34);
 	EXPECT_EQ(result, arr);
 	result = hxbinary_search(arr, arr + 1, 40);
 	EXPECT_EQ(result, arr + 1);

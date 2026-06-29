@@ -249,14 +249,7 @@ const T_* hxarray<T_, capacity_>::find(const T_& value_) const {
 
 template<hxarray_concept_ T_, hxsize_t capacity_>
 T_* hxarray<T_, capacity_>::find(const T_& value_) {
-	T_* it_ = this->data();
-	T_*const end_ = it_ + this->capacity();
-	for(; it_ != end_; ++it_) {
-		if(hxkey_equal(*it_, value_)) {
-			return it_;
-		}
-	}
-	return end_;
+	return const_cast<T_*>(const_cast<const hxarray<T_, capacity_>*>(this)->find(value_));
 }
 
 template<hxarray_concept_ T_, hxsize_t capacity_>

@@ -20,8 +20,13 @@ public:
 	hxcondition_variable* condition_variable;
 	bool* ready;
 	int* woken;
+	hxcondition_variable* handshake;
+	int* waiting;
 	hxthread_test_parameters_t(hxmutex* m, hxcondition_variable* cv, bool* r, int* w)
-		: mutex(m), condition_variable(cv), ready(r), woken(w) { }
+		: mutex(m), condition_variable(cv), ready(r), woken(w), handshake(hxnull), waiting(hxnull) { }
+	hxthread_test_parameters_t(hxmutex* m, hxcondition_variable* cv, bool* r, int* w,
+			hxcondition_variable* h, int* g)
+		: mutex(m), condition_variable(cv), ready(r), woken(w), handshake(h), waiting(g) { }
 };
 class hxthread_test_predicate_wait_for_zero {
 public:
@@ -37,6 +42,8 @@ hxthread::return_t hxthread_test_func_increment(hxthread_test_simple_parameters_
 hxthread::return_t hxthread_test_func_notify_one(hxthread_test_parameters_t* parameters) {
 	hxunique_lock lock(*parameters->mutex);
 	while(!*parameters->ready) {
+		++(*parameters->waiting);
+		parameters->handshake->notify_one();
 		const bool wait_result = parameters->condition_variable->wait(lock);
 		hxassert_always(wait_result, "wait"); (void)wait_result;
 	};
@@ -45,6 +52,8 @@ hxthread::return_t hxthread_test_func_notify_one(hxthread_test_parameters_t* par
 hxthread::return_t hxthread_test_func_notify_all(hxthread_test_parameters_t* parameters) {
 	hxunique_lock lock(*parameters->mutex);
 	while(!*parameters->ready) {
+		++(*parameters->waiting);
+		parameters->handshake->notify_one();
 		const bool wait_result = parameters->condition_variable->wait(lock);
 		hxassert_always(wait_result, "wait"); (void)wait_result;
 	}
@@ -61,6 +70,8 @@ hxthread::return_t hxthread_test_func_lock_unlock_multiple(hxthread_test_paramet
 hxthread::return_t hxthread_test_func_wait_notify_sequence(hxthread_test_parameters_t* parameters) {
 	hxunique_lock lock(*parameters->mutex);
 	while(!*parameters->ready) {
+		++(*parameters->waiting);
+		parameters->handshake->notify_one();
 		const bool wait_result = parameters->condition_variable->wait(lock);
 		hxassert_always(wait_result, "wait"); (void)wait_result;
 	}
@@ -142,35 +153,51 @@ TEST(hxthread_test_condition_variable, wait_predicate) {
 TEST(hxthread_test_condition_variable, notify_one_wakes_waiter) {
 	hxmutex mutex;
 	hxcondition_variable condition_variable;
+	hxcondition_variable handshake;
 	bool ready = false;
-	hxthread_test_parameters_t parameters(&mutex, &condition_variable, &ready, hxnull);
+	int waiting = 0;
+	hxthread_test_parameters_t parameters(&mutex, &condition_variable, &ready, hxnull,
+		&handshake, &waiting);
 	hxthread thread(hxthread_test_func_notify_one, &parameters);
 	{
-		const hxunique_lock lock(mutex);
+		hxunique_lock lock(mutex);
+		while(waiting == 0) {
+			const bool wait_result = handshake.wait(lock);
+			hxassert_always(wait_result, "wait"); (void)wait_result;
+		}
 		ready = true;
 		condition_variable.notify_one();
 	}
 	thread.join();
-	SUCCEED();
+	EXPECT_EQ(waiting, 1);
 }
 
 TEST(hxthread_test_condition_variable, notify_all_wakes_waiters) {
 	hxmutex mutex;
 	hxcondition_variable condition_variable;
+	hxcondition_variable handshake;
 	bool ready = false;
 	int woken = 0;
-	hxthread_test_parameters_t parameters_tuple1(&mutex, &condition_variable, &ready, &woken);
-	hxthread_test_parameters_t parameters_tuple2(&mutex, &condition_variable, &ready, &woken);
+	int waiting = 0;
+	hxthread_test_parameters_t parameters_tuple1(&mutex, &condition_variable, &ready, &woken,
+		&handshake, &waiting);
+	hxthread_test_parameters_t parameters_tuple2(&mutex, &condition_variable, &ready, &woken,
+		&handshake, &waiting);
 	hxthread thread1(hxthread_test_func_notify_all, &parameters_tuple1);
 	hxthread thread2(hxthread_test_func_notify_all, &parameters_tuple2);
 	{
-		const hxunique_lock lock(mutex);
+		hxunique_lock lock(mutex);
+		while(waiting < 2) {
+			const bool wait_result = handshake.wait(lock);
+			hxassert_always(wait_result, "wait"); (void)wait_result;
+		}
 		ready = true;
 		condition_variable.notify_all();
 	}
 	thread1.join();
 	thread2.join();
 	EXPECT_EQ(woken, 2);
+	EXPECT_EQ(waiting, 2);
 }
 
 TEST(hxthread_test_thread, start_and_join) {
@@ -237,16 +264,23 @@ TEST(hxthread_test_unique_lock, multiple_locks) {
 TEST(hxthread_test_condition_variable, wait_notify_sequence) {
 	hxmutex mutex;
 	hxcondition_variable condition_variable;
+	hxcondition_variable handshake;
 	bool ready = false;
-	hxthread_test_parameters_t parameters(&mutex, &condition_variable, &ready, hxnull);
+	int waiting = 0;
+	hxthread_test_parameters_t parameters(&mutex, &condition_variable, &ready, hxnull,
+		&handshake, &waiting);
 	hxthread thread(hxthread_test_func_wait_notify_sequence, &parameters);
 	{
-		const hxunique_lock lock(mutex);
+		hxunique_lock lock(mutex);
+		while(waiting == 0) {
+			const bool wait_result = handshake.wait(lock);
+			hxassert_always(wait_result, "wait"); (void)wait_result;
+		}
 		ready = true;
 		condition_variable.notify_one();
 	}
 	thread.join();
-	SUCCEED();
+	EXPECT_EQ(waiting, 1);
 }
 
 TEST(hxthread_test_thread, multiple_thread_start_join) {
@@ -278,17 +312,25 @@ TEST(hxthread_test_thread, single_thread_increment_is_exactly_one) {
 TEST(hxthread_test_condition_variable, notify_all_single_waiter) {
 	hxmutex mutex;
 	hxcondition_variable condition_variable;
+	hxcondition_variable handshake;
 	bool ready = false;
 	int woken = 0;
-	hxthread_test_parameters_t parameters(&mutex, &condition_variable, &ready, &woken);
+	int waiting = 0;
+	hxthread_test_parameters_t parameters(&mutex, &condition_variable, &ready, &woken,
+		&handshake, &waiting);
 	hxthread thread(hxthread_test_func_notify_all, &parameters);
 	{
-		const hxunique_lock lock(mutex);
+		hxunique_lock lock(mutex);
+		while(waiting == 0) {
+			const bool wait_result = handshake.wait(lock);
+			hxassert_always(wait_result, "wait"); (void)wait_result;
+		}
 		ready = true;
 		condition_variable.notify_all();
 	}
 	thread.join();
 	EXPECT_EQ(woken, 1);
+	EXPECT_EQ(waiting, 1);
 }
 
 TEST(hxthread_test_mutex, single_thread_lock_unlock_count) {

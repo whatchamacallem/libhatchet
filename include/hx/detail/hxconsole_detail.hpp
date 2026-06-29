@@ -80,6 +80,7 @@ template<> const char* hxconsole_parse_arg_<const char*>(const char* str_, char*
 
 // Argument labels for usage strings.
 
+// GCOVR_EXCL_START
 template<typename arg_t_> constexpr const char* hxconsole_arg_label_() = delete;
 template<> constexpr const char* hxconsole_arg_label_<float>() { return "f32"; }
 template<> constexpr const char* hxconsole_arg_label_<double>() { return "f64"; }
@@ -96,6 +97,7 @@ template<> constexpr const char* hxconsole_arg_label_<unsigned long>() { return 
 template<> constexpr const char* hxconsole_arg_label_<long long>() { return "i64"; }
 template<> constexpr const char* hxconsole_arg_label_<unsigned long long>() { return "u64"; }
 template<> constexpr const char* hxconsole_arg_label_<const char*>() { return "char*"; }
+// GCOVR_EXCL_STOP
 
 // Prints id (or "usage:") followed by a null terminated array of labels.
 void hxconsole_usage_(const char* id_, const char* const* labels_);
@@ -194,11 +196,12 @@ public:
 			*m_var_ = val_;
 			return true;
 		}
-		hxlog_handler(hxlog_level_console, "parse error at: %s\n", str_);
+		hxlog_handler(hxlog_level_console, "parse_error: %s\n", str_);
+		usage_(hxnull);
 		return false;
 	}
 
-	void usage_(const char* id_) override {
+	void usage_(const char* id_=hxnull) override {
 		static constexpr const char* labels_[] = { "<optional-value>", hxnull };
 		hxconsole_usage_(id_, labels_);
 	}

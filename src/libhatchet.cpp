@@ -55,8 +55,10 @@ hxattr_weak int __cxa_guard_acquire(guard_t* guard) {
 
 	uint8_t expected = 0;
 	while (!__atomic_compare_exchange_n(status, &expected, 1, false, __ATOMIC_ACQ_REL, __ATOMIC_ACQUIRE)) {
+// GCOVR_EXCL_START
 		if (expected == 2) { return 0; }
 		expected = 0;
+// GCOVR_EXCL_STOP
 	}
 	return 1;
 }
@@ -65,6 +67,7 @@ hxattr_weak void __cxa_guard_release(guard_t* guard) {
 	__atomic_store_n(reinterpret_cast<uint8_t*>(guard), 2, __ATOMIC_RELEASE);
 }
 
+// GCOVR_EXCL_START
 hxattr_weak void __cxa_guard_abort(guard_t* guard) {
 	__atomic_store_n(reinterpret_cast<uint8_t*>(guard), 0, __ATOMIC_RELEASE);
 }
@@ -76,6 +79,7 @@ hxattr_weak void __cxa_deleted_virtual(void) {
 hxattr_weak void __cxa_pure_virtual(void) {
 	hxassert_hard(0, "__cxa_pure_virtual");
 }
+// GCOVR_EXCL_STOP
 
 #endif
 
@@ -86,10 +90,12 @@ hxattr_weak void __cxa_pure_virtual(void) {
 
 void __sanitizer_report_error_summary(const char *error_summary); // NOLINT(bugprone-reserved-identifier)
 
+// GCOVR_EXCL_START
 hxattr_weak void __sanitizer_report_error_summary(const char *error_summary) { // NOLINT(bugprone-reserved-identifier)
 	// A clickable message has already been printed to standard output.
 	hxbreakpoint(); (void)error_summary;
 }
+// GCOVR_EXCL_STOP
 
 // -- libhatchet ---------------------------------------------------------------
 // Initialization, shutdown, exit, assert, and logging.
@@ -184,9 +190,11 @@ hxattr_weak hxattr_noexcept bool hxassert_handler(const char* file, size_t line)
 	if(hxg_assert_handler != hxnull && hxg_assert_handler()) {
 		return true;
 	}
+// GCOVR_EXCL_START
 	hxlog_handler(hxlog_level_assert, "breakpoint %s(%zu)", f, line);
 	// Return to hxbreakpoint at the calling line.
 	return false;
+// GCOVR_EXCL_STOP
 }
 #else
 hxattr_weak hxattr_noexcept void hxassert_handler(void) {
@@ -198,7 +206,8 @@ hxattr_weak hxattr_noexcept void hxassert_handler(void) {
 }
 #endif
 
-// Make sure error messages are reported.
+// Make sure error messages are reported. Does not support coverage testing.
+// GCOVR_EXCL_START
 hxattr_noreturn hxattr_weak hxattr_noexcept void hxexit(int status) {
 #if HX_USE_FILE_IO
 	hxout.flush();
@@ -208,5 +217,6 @@ hxattr_noreturn hxattr_weak hxattr_noexcept void hxexit(int status) {
 #endif
 	::_Exit(status);
 }
+// GCOVR_EXCL_STOP
 
 } // extern "C"

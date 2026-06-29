@@ -76,7 +76,7 @@ void hxprofiler_internal_::write_to_chrome_tracing_(const char* filename) {
 #endif
 	m_is_started_ = false;
 
-	hxfile f(hxfile::out, "%s", filename);
+	hxfile f(hxfile::open_mode_out, "%s", filename);
 
 	f.print("[\n");
 	if(!m_records.empty()) {

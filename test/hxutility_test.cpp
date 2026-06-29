@@ -107,8 +107,8 @@ hxutility_test_forward hxutility_test_forward_through_template(T&& value) {
 } // namespace
 
 TEST(hxutility_test, hxabs_double) {
-	const double negative = -42.75;
-	const double positive = 42.75;
+	const double negative = -34.75;
+	const double positive = 34.75;
 	EXPECT_DOUBLE_EQ(hxabs(negative), positive);
 	EXPECT_DOUBLE_EQ(hxabs(positive), positive);
 	EXPECT_DOUBLE_EQ(hxabs(-0.0), -0.0);
@@ -191,6 +191,32 @@ TEST(hxutility_test, hxswap_memcpy) {
 	EXPECT_EQ(first.second, 4);
 	EXPECT_EQ(second.first, 1);
 	EXPECT_EQ(second.second, 2);
+}
+
+TEST(hxutility_test, hxswap_exchanges_values) {
+	int a = 7;
+	int b = 11;
+	hxswap(a, b);
+	EXPECT_EQ(a, 11);
+	EXPECT_EQ(b, 7);
+}
+
+TEST(hxutility_test, hxswap_uses_move) {
+	struct hxutility_test_move_record_t {
+		int32_t id;
+		int32_t moves;
+		hxutility_test_move_record_t(int32_t i) : id(i), moves(0) { }
+		hxutility_test_move_record_t(hxutility_test_move_record_t&& x) noexcept
+			: id(x.id), moves(x.moves + 1) { x.id = -1; }
+		void operator=(hxutility_test_move_record_t&& x) noexcept {
+			id = x.id; moves = x.moves + 1; x.id = -1;
+		}
+	} a(5), b(9);
+	hxswap(a, b);
+	EXPECT_EQ(a.id, 9);
+	EXPECT_EQ(b.id, 5);
+	EXPECT_TRUE(a.moves > 0);
+	EXPECT_TRUE(b.moves > 0);
 }
 
 TEST(hxutility_test, hxisspace) {

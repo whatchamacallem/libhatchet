@@ -219,17 +219,49 @@ bool hxconsole_help(void) {
 
 #if HX_USE_FILE_IO
 bool hxconsole_exec_file(hxfile& file) {
+	file.disable_asserts();
+
+	// POSIX would require a system call per-character otherwise.
 	char line_buf[HX_MAX_LINE];
 	bool result = true;
-	while(result && file.getline(line_buf)) {
-		result = hxconsole_exec_line(line_buf);
+	hxsize_t carried = 0;
+
+	while(result) {
+		const size_t want = static_cast<size_t>(HX_MAX_LINE - 1 - carried);
+		const size_t got = file.read(line_buf + carried, want, want);
+		hxassertmsg(got <= want, "read_overrun %zu %zu", got, want);
+		const hxsize_t filled = carried + static_cast<hxsize_t>(got);
+
+		hxsize_t line_begin = 0;
+		for(hxsize_t i = carried; result && i < filled; ++i) {
+			if(line_buf[i] == '\n') {
+				line_buf[i] = '\0';
+				result = hxconsole_exec_line(line_buf + line_begin);
+				line_begin = i + 1;
+			}
+		}
+
+		carried = filled - line_begin;
+		if(file.eof() || carried >= (HX_MAX_LINE - 1)) {
+			if(result && carried != 0) {
+				line_buf[line_begin + carried] = '\0'; // NOLINT(clang-analyzer-security.ArrayBound)
+				result = hxconsole_exec_line(line_buf + line_begin);
+			}
+			if(file.eof()) {
+				break;
+			}
+			carried = 0;
+		}
+		else {
+			::memmove(line_buf, line_buf + line_begin, static_cast<size_t>(carried));
+		}
 	}
 	return result;
 }
 
 bool hxconsole_exec_filename(const char* filename) {
 	// Please don't assert.
-	hxfile file(hxfile::in|hxfile::skip_asserts, "%s", filename);
+	hxfile file(hxfile::open_mode_in, "%s", filename);
 	hxwarn_msg(file, "cannot open: %s", filename);
 	if(file) {
 		const bool is_ok = hxconsole_exec_file(file);

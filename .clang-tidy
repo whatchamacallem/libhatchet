@@ -33,6 +33,9 @@
 # between pointers with differing levels of indirection. This is a consequence
 # of writing memory allocators.
 #
+# -clang-analyzer-cplusplus.Move: Flags use-after-move. The test suite checks
+# that move has been performed correctly in a lot of places.
+#
 # -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling: Annex K
 # of the C11 standard was never widely implemented. This is not a portable
 # expectation.
@@ -104,6 +107,7 @@ Checks: >
   -bugprone-implicit-widening-of-multiplication-result,
   -bugprone-multi-level-implicit-pointer-conversion,
   -bugprone-sizeof-expression,
+  -clang-analyzer-cplusplus.Move,
   -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
   -performance-enum-size,
   -performance-no-int-to-ptr,

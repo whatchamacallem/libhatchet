@@ -44,7 +44,8 @@ bool hxconsole_help(void);
 #if HX_USE_FILE_IO
 class hxfile;
 /// `hxconsole_exec_file` - Executes a configuration file that is opened for
-/// reading. Ignores blank lines and comments that start with `#`.
+/// reading. Ignores blank lines and comments that start with `#`. Disables
+/// asserts so that EOF is allowed.
 /// - `file` : A file containing commands.
 bool hxconsole_exec_file(hxfile& file_);
 

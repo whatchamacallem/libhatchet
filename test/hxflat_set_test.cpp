@@ -239,10 +239,10 @@ TEST_F(hxflat_set_test_f, insert_unique_maintains_sorted_order) {
 
 TEST_F(hxflat_set_test_f, insert_unique_move) {
 	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, false, 1> s;
-	hxtest_object v(42);
+	hxtest_object v(34);
 	const hxtest_object* it = s.insert(hxmove(v));
 	EXPECT_TRUE(it != hxnull);
-	EXPECT_EQ(it->id, 42);
+	EXPECT_EQ(it->id, 34);
 	EXPECT_TRUE(v.moved_from);
 }
 
@@ -722,8 +722,8 @@ TEST_F(hxflat_set_test_f, move_assign_transfers_elements) {
 		EXPECT_TRUE(b.find(hxtest_object(10)) != hxnull);
 		EXPECT_TRUE(b.find(hxtest_object(20)) != hxnull);
 		EXPECT_TRUE(b.find(hxtest_object(30)) != hxnull);
-		EXPECT_EQ(a.size(), 0); // NOLINT(clang-analyzer-cplusplus.Move)
-		EXPECT_EQ(a.capacity(), 1); // NOLINT(clang-analyzer-cplusplus.Move)
+		EXPECT_EQ(a.size(), 0);
+		EXPECT_EQ(a.capacity(), 1);
 	}
 	EXPECT_EQ(m_constructed, m_destructed);
 }
@@ -742,8 +742,8 @@ TEST_F(hxflat_set_test_f, move_constructor_transfers_elements) {
 		EXPECT_EQ(dst.find(hxtest_object(10))->id, 10);
 		EXPECT_EQ(dst.find(hxtest_object(20))->id, 20);
 		EXPECT_EQ(dst.find(hxtest_object(30))->id, 30);
-		EXPECT_EQ(src.size(), 0); // NOLINT(clang-analyzer-cplusplus.Move)
-		EXPECT_EQ(src.capacity(), 0); // NOLINT(clang-analyzer-cplusplus.Move)
+		EXPECT_EQ(src.size(), 0);
+		EXPECT_EQ(src.capacity(), 0);
 	}
 	EXPECT_EQ(m_constructed, m_destructed);
 }

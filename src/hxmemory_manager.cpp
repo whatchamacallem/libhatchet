@@ -28,7 +28,7 @@ hxattr_allocator(free) hxattr_hot hxattr_noexcept static void* hxmalloc_checked_
 	return t;
 }
 
-#if HX_PROVIDE_NEW_DELETE
+#if (HX_PROVIDE_NEW_DELETE) == 1
 // Forward declare for C++11.
 hxattr_hot void operator delete(void* ptr, size_t) noexcept;
 hxattr_hot void operator delete[](void* ptr, size_t) noexcept;
@@ -39,6 +39,8 @@ hxattr_hot void* operator new(size_t size) {
 hxattr_hot void* operator new[](size_t size) {
 	return hxmalloc_checked_(size);
 }
+// GCOVR_EXCL_START
+// It is unspecified which of these functions is called.
 hxattr_hot void operator delete(void* ptr) noexcept {
 	::free(ptr);
 }
@@ -51,6 +53,7 @@ hxattr_hot void operator delete[](void* ptr) noexcept {
 hxattr_hot void operator delete[](void* ptr, size_t) noexcept {
 	::free(ptr);
 }
+// GCOVR_EXCL_STOP
 #endif
 
 // HX_USE_MEMORY_MANAGER. See hxsettings.h.
@@ -166,12 +169,10 @@ public:
 		// Bytes are not tracked because there is no allocation header to examine on free.
 		return t;
 #else
-		// hxmemory_allocation_header has an hxalignment alignment requirement as well.
-		alignment = hxmax(alignment, hxalignment);
-		const uintptr_t alignment_mask = static_cast<uintptr_t>(alignment - 1u);
+		const size_t alignment_mask = static_cast<size_t>(alignment) - 1u;
 
-		// Place header immediately before aligned allocation.
-		const size_t total = size + sizeof(hxmemory_allocation_header) + static_cast<size_t>(alignment_mask);
+		// Place header immediately before aligned allocation. malloc is aligned.
+		const size_t total = size + sizeof(hxmemory_allocation_header) + alignment_mask;
 		hxassertmsg(total > size, "allocation_error size overflow %zu", size);
 		const uintptr_t actual = reinterpret_cast<uintptr_t>(hxmalloc_checked_(total));
 		const uintptr_t aligned = (actual + sizeof(hxmemory_allocation_header) + alignment_mask) & ~alignment_mask;

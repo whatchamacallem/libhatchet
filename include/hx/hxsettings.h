@@ -300,8 +300,9 @@
 #endif
 
 #if !defined HX_PROVIDE_NEW_DELETE
-/// `HX_PROVIDE_NEW_DELETE` - Provide new/delete when the std library is absent
-/// unless overridden.
+/// `HX_PROVIDE_NEW_DELETE` - Provides a new/delete implementation when the std
+/// library is absent unless overridden. Use HX_PROVIDE_NEW_DELETE=-1 when
+/// compiling a module to prevent declaration.
 #define HX_PROVIDE_NEW_DELETE !(HX_USE_LIBCXX)
 #endif
 

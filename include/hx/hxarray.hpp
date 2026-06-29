@@ -316,7 +316,8 @@ bool hxkey_less(const hxarray<T_, capacity_>& x_, const hxarray<T_, capacity_>& 
 template<typename T_>
 void hxswap(hxarray<T_, hxallocator_dynamic_capacity>& x_,
 			hxarray<T_, hxallocator_dynamic_capacity>& y_) noexcept {
-	x_.swap(y_);
+	// hxarray has a dynamic allocator that allows memcpy.
+	hxswap_memcpy(x_, y_);
 }
 
 #endif // HX_CPLUSPLUS >= 202002L

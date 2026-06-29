@@ -51,7 +51,7 @@ hxinline_constexpr char hxendl[] = "\n";
 /// `with open(filename, mode) as f:`.
 ///
 /// ```cpp
-/// if(hxfile f=hxfile(hxfile::in|hxfile::skip_asserts, "pkg%d.bin", i)) {
+/// if(hxfile f=hxfile(hxfile::open_mode_in, "pkg%d.bin", i)) {
 ///   f >> manifest; // binary read.
 ///   // ...
 /// }
@@ -69,18 +69,17 @@ public:
 	/// appending to an existing file is not implemented.
 	enum open_mode : uint8_t {
 		/// No flags.
-		none = 0u,
+		open_mode_none = 0u,
 		/// Open for binary reading. e.g., `"rb"`.
-		in = 1u,
+		open_mode_in = 1u,
 		/// Open for binary writing. Replaces any existing file with an empty
-		/// one even if `in` is used at the same time. e.g., `"wb"`.
-		out = 2u,
-		/// By default, any unexpected failure results in an assert. To allow
-		/// reasonably unforeseen asserts to be skipped, set skip_asserts. Bad
-		/// parameters (e.g., writing to a file that is not open, was not opened
-		/// to be written to, or providing a null buffer) will still result in
-		/// assertions.
-		skip_asserts = 4u
+		/// one even if `open_mode_in` is used at the same time. e.g., `"wb"`.
+		open_mode_out = 2u,
+		/// By default, any unexpected failure is reported only through the
+		/// failure flag. To assert on reasonably unforeseen failures, set
+		/// `open_mode_asserts`. Bad parameters (e.g., providing a null buffer)
+		/// will still result in assertions regardless of this flag.
+		open_mode_asserts = 4u
 	};
 
 	/// Default-constructs as a closed file.
@@ -147,6 +146,9 @@ public:
 	/// Returns the current open mode of the file.
 	hxattr_nodiscard uint8_t mode(void) const { return m_open_mode_; }
 
+	/// Clears the `open_mode_asserts` flag.
+	void disable_asserts(void) { m_open_mode_ &= ~open_mode::open_mode_asserts; }
+
 	/// Returns the current position in the file if open, 0 otherwise. FILE*
 	/// implementation requires a 64-bit long to support 64-bit files.
 	hxattr_nodiscard size_t get_pos(void) const;
@@ -175,10 +177,12 @@ public:
 	/// `hxdev_null`. Does not reset the failure flag to false on success.
 	bool flush(void) hxattr_hot;
 
+#if (HX_USE_FILE_IO) != 2
 	/// Reads a `\n` or `EOF` terminated character sequence. Allowed to fail on
-	/// `EOF` without needing to be `hxfile::skip_asserts`. Encountering `EOF`
-	/// also sets the failure flag. Automatically determines the size of the
-	/// provided char array.
+	/// `EOF` without needing `hxfile::open_mode_asserts` to be unset.
+	/// Encountering `EOF` also sets the failure flag. Automatically determines
+	/// the size of the provided char array. NOTE: Not available in the POSIX
+	/// version.
 	/// - `buffer` : Reference to a char array where the line will be stored.
 	template<size_t buffer_size_>
 	bool getline(char(&buffer_)[buffer_size_]) {
@@ -186,12 +190,14 @@ public:
 	}
 
 	/// Reads a `\n` or `EOF` terminated character sequence. Allowed to fail on
-	/// `EOF` without needing to be `hxfile::skip_asserts`. Encountering `EOF`
-	/// also sets the failure flag.
+	/// `EOF` without needing `hxfile::open_mode_asserts` to be unset.
+	/// Encountering `EOF` also sets the failure flag. NOTE: Not available in
+	/// the POSIX version.
 	/// - `buffer` : Non-null pointer to a char array where the line will be
 	///   stored.
 	/// - `buffer_size` : Size of the buffer array.
 	bool getline(char* buffer_, int buffer_size_) hxattr_nonnull(2) hxattr_hot;
+#endif // (HX_USE_FILE_IO) != 2
 
 	/// Writes a formatted UTF-8 string to the file. Uses `printf` conventions.
 	/// Formatting and writing will be skipped when using `hxdev_null`. Does not
@@ -201,9 +207,10 @@ public:
 	bool print(const char* format_, ...) hxattr_printf(2, 3) hxattr_hot;
 
 	/// Reads a formatted UTF-8 string from the file. Uses `scanf` conventions.
-	/// Returns the same value as `scanf`. Use `hxfile::skip_asserts` to read until `EOF`.
-	/// Parse errors will set `fail` to true. Will set the failure flag and check `EOF`
-	/// on a return value of `EOF` from `vfscanf`. Returns a negative value on `EOF`.
+	/// Returns the same value as `scanf`. Omit `hxfile::open_mode_asserts` to
+	/// read until `EOF`. Parse errors will set `fail` to true. Will set the
+	/// failure flag and check `EOF` on a return value of `EOF` from `vfscanf`.
+	/// Returns a negative value on `EOF`.
 	/// - `format` : Non-null `scanf`-style format string.
 	/// - `...` : Additional arguments that satisfy the format string.
 	int scan(const char* format_, ...) hxattr_scanf(2, 3) hxattr_hot;

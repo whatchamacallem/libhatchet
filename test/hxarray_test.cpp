@@ -124,6 +124,8 @@ TEST(hxarray_test, hxarray_iteration) {
 	EXPECT_EQ(index, 5);
 	EXPECT_EQ(ca.cbegin(), ca.begin());
 	EXPECT_EQ(ca.cend(), ca.end());
+	EXPECT_EQ(ca[0], 1);
+	EXPECT_EQ(ca[4], 5);
 }
 
 TEST(hxarray_test, hxarray_get) {
@@ -197,6 +199,11 @@ TEST(hxarray_test, hxarray_all_of_any_of) {
 	}));
 	EXPECT_EQ(any_calls, 4);
 	EXPECT_FALSE(a.any_of([](const int& value) { return value < 0; }));
+	const hxarray<int, 5>& ca = a;
+	EXPECT_TRUE(ca.all_of([](const int& x) { return x > 0; }));
+	EXPECT_FALSE(ca.all_of([](const int& x) { return x < 95; }));
+	EXPECT_TRUE(ca.any_of([](const int& x) { return x == 94; }));
+	EXPECT_FALSE(ca.any_of([](const int& value) { return value < 0; }));
 }
 
 TEST(hxarray_test, hxarray_all_of_any_of_last_element) {
@@ -518,8 +525,33 @@ TEST_F(hxarray_test_f, hxarray_dynamic_move_constructor) {
 		for(hxsize_t i = 0; i < 3; ++i) {
 			EXPECT_FALSE(dst[i].moved_from);
 		}
-		EXPECT_EQ(src.size(), 0); // NOLINT(clang-analyzer-cplusplus.Move)
-		EXPECT_EQ(src.capacity(), 0); // NOLINT(clang-analyzer-cplusplus.Move)
+		EXPECT_EQ(src.size(), 0);
+		EXPECT_EQ(src.capacity(), 0);
 	}
 	EXPECT_EQ(m_constructed, m_destructed);
 }
+
+#if HX_CPLUSPLUS >= 202002L
+TEST_F(hxarray_test_f, hxswap_exchanges_dynamic_contents) {
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
+	{
+		hxarray<hxtest_object, hxallocator_dynamic_capacity> a;
+		a.reserve(2);
+		a[0] = hxtest_object(1);
+		a[1] = hxtest_object(2);
+		hxarray<hxtest_object, hxallocator_dynamic_capacity> b;
+		b.reserve(3);
+		b[0] = hxtest_object(3);
+		b[1] = hxtest_object(4);
+		b[2] = hxtest_object(5);
+		hxswap(a, b);
+		EXPECT_EQ(a.size(), 3);
+		EXPECT_EQ(a[0].id, 3);
+		EXPECT_EQ(a[2].id, 5);
+		EXPECT_EQ(b.size(), 2);
+		EXPECT_EQ(b[0].id, 1);
+		EXPECT_EQ(b[1].id, 2);
+	}
+	EXPECT_EQ(m_constructed, m_destructed);
+}
+#endif // HX_CPLUSPLUS >= 202002L

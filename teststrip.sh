@@ -17,7 +17,9 @@ set -eu
 
 export POSIXLY_CORRECT=1
 
-BUILD="-DHX_USE_LIBCXX=0 -DHX_HARDENING_MODE=HX_HARDENING_MODE_NONE \
+# Proves test suite can run without non-placement ::new() and ::delete. This is
+# because there may be no general purpose allocator at all.
+BUILD="-DHX_USE_LIBCXX=0 -DHX_PROVIDE_NEW_DELETE=0 -DHX_HARDENING_MODE=HX_HARDENING_MODE_NONE \
     -DHX_USE_LOGGING=1 -DHX_USE_THREADS=11"
 
 ERRORS="-Wall -Wextra -pedantic-errors -Werror -Wfatal-errors -Wcast-qual   \

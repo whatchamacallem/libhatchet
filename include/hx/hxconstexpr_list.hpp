@@ -88,12 +88,14 @@ public:
 	/// `const_iterator` - Bidirectional iterator over const nodes.
 	class const_iterator {
 	public:
+		// GCOVR_EXCL_START
 		/// Constructs an iterator that must not be incremented or dereferenced.
 		hxconstexpr const_iterator(void) : m_current_node_(hxnull)
 #if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
 			, m_sentinel_(hxnull)
 #endif
 		{ }
+		// GCOVR_EXCL_STOP
 
 		/// Advances to the next node and returns this iterator.
 		hxconstexpr const_iterator& operator++(void);
@@ -148,8 +150,10 @@ public:
 	/// `iterator` - Bidirectional iterator over mutable nodes.
 	class iterator : public const_iterator {
 	public:
+		// GCOVR_EXCL_START
 		/// Constructs an iterator that must not be incremented or dereferenced.
 		hxconstexpr iterator(void) { }
+		// GCOVR_EXCL_STOP
 
 		/// Advances to the next node and returns this iterator.
 		hxconstexpr iterator& operator++(void) { const_iterator::operator++(); return *this; }

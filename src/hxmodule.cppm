@@ -56,8 +56,9 @@ module;
 #error HX_USE_GOOGLE_TEST is set and Google Test 1.15.2 does not compile as a module.
 #endif
 
-// Modules are not allowed to override globals.
-#define HX_PROVIDE_NEW_DELETE 0
+// Modules are not allowed to override globals. HX_PROVIDE_NEW_DELETE=-1 is used
+// when compiling a module to prevent declaration.
+#define HX_PROVIDE_NEW_DELETE -1
 
 // Out of line declarations (.inl files) have to be outside the export block.
 #ifdef HX_USE_NAMESPACE

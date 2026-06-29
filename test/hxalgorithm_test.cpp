@@ -266,7 +266,7 @@ TEST(hxminmax_test, first_of_equal_minima_and_maxima) {
 }
 
 TEST(hxminmax_test, single_element_returns_begin_for_both) {
-	const int ints[1] = { 42 };
+	const int ints[1] = { 34 };
 	const hxminmax_result<const int*> result = hxminmax(ints, ints + 1);
 	EXPECT_EQ(result.min, ints);
 	EXPECT_EQ(result.max, ints);
@@ -406,9 +406,9 @@ TEST(hxfind_if_test, iterator_support) {
 }
 
 TEST(hxexchange_test, move_only_type) {
-	hxtest_ref_tracker_t a(42);
+	hxtest_ref_tracker_t a(34);
 	const hxtest_ref_tracker_t old = hxexchange(a, hxtest_ref_tracker_t(99));
-	EXPECT_EQ(old.value, 42);
+	EXPECT_EQ(old.value, 34);
 	EXPECT_EQ(a.value, 99);
 }
 
