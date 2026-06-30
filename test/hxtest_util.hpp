@@ -28,12 +28,14 @@ public:
 		hxassert(this != &other);
 		return value < other.value;
 	}
+	bool operator==(const hxtest_ref_tracker_t& other) const {
+		return value == other.value;
+	}
 	int value;
 private:
 	hxtest_ref_tracker_t() = delete;
 	hxtest_ref_tracker_t(const hxtest_ref_tracker_t&) = delete;
 	hxtest_ref_tracker_t& operator=(const hxtest_ref_tracker_t&) = delete;
-	bool operator==(const hxtest_ref_tracker_t&) const = delete;
 	bool operator!=(const hxtest_ref_tracker_t&) const = delete;
 	bool operator>(const hxtest_ref_tracker_t&) const = delete;
 	bool operator>=(const hxtest_ref_tracker_t&) const = delete;
@@ -253,6 +255,7 @@ bool hxtest_check_rand_iter_api(iterator_t first, iterator_t last) {
 	const ptrdiff_t distance = second - first;
 	bool ok = (forward == second) && (backward == first);
 	ok = ok && (distance == ptrdiff_t{1}) && (first < second);
+	ok = ok && (first[ptrdiff_t{1}] == *second) && (first[ptrdiff_t{0}] == *first);
 	ok = ok && (first != last) && (second != last);
 	return ok;
 }

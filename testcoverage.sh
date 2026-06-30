@@ -45,17 +45,19 @@ if [ -z "$HX_HEADLESS" ]; then
     set -o xtrace
 fi
 
+# Uncalled functions are kept because dead code in a template library is missing
+# line coverage waiting to bite.
 HX_COVERAGE="--coverage -O0 -g -fprofile-update=atomic -fno-inline -fkeep-static-functions"
 HX_COVERAGE_CXX="$HX_COVERAGE -fno-elide-constructors -fkeep-inline-functions"
 
-gcc -I"$HX_DIR"/include $HX_COVERAGE -DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG \
+gcc -I"$HX_DIR"/include $HX_COVERAGE -DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG        \
     -std=c99 -Wall -Werror -Wfatal-errors -pthread -c "$HX_DIR"/test/*.c
 
 g++ -I"$HX_DIR"/include $HX_COVERAGE_CXX -DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG    \
     -DHX_TEST_ERROR_HANDLING=1 -DHX_USE_CONSOLE=2 -DHX_USE_PROFILER=1 -DHX_USE_LIBCXX=0 \
     -std=c++23 -Wall -Werror -Wextra -Wfatal-errors -fno-exceptions -Wno-c2y-extensions \
-    -Wno-unknown-warning-option -pthread -lpthread -nostdinc++ \
-    "$HX_DIR"/src/*.cpp "$HX_DIR"/test/*.cpp *.o -o hxtest
+    -Wno-unknown-warning-option -pthread -lpthread -nostdinc++ "$HX_DIR"/src/*.cpp      \
+    "$HX_DIR"/test/*.cpp *.o -o hxtest
 
 if [ -z "$HX_HEADLESS" ]; then
     echo runtests | ./hxtest help execstdin
@@ -65,11 +67,11 @@ fi
 
 mkdir -p "$HX_TARGET"
 
-gcovr --gcov-executable "$HX_GCOV" --gcov-object-directory . --decisions --calls    \
-    --exclude-throw-branches --exclude-unreachable-branches --exclude-noncode-lines \
-    --exclude-lines-by-pattern '.*hxassert.*' --exclude-branches-by-pattern         \
-    '.*hxassert.*' --html-details "${HX_TARGET}coverage_details.html"               \
-    --html-self-contained --txt-metric branch --print-summary --root "$HX_DIR" .
+gcovr --gcov-executable "$HX_GCOV" --gcov-object-directory . --exclude-throw-branches   \
+    --exclude-unreachable-branches --exclude-noncode-lines --exclude-lines-by-pattern   \
+    '.*hxassert.*' --exclude-branches-by-pattern '.*hxassert.*' --html-details          \
+    "${HX_TARGET}coverage_details.html" --html-self-contained --txt-metric branch       \
+    --print-summary --fail-under-line 100 --root "$HX_DIR" .
 
 { set +o xtrace; } 2> /dev/null
 

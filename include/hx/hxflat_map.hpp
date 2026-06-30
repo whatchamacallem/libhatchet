@@ -181,7 +181,8 @@ public:
 		iterator operator-(hxsize_t n_) const { iterator t_(*this); t_ -= n_; return t_; }
 
 		/// Returns the signed distance from `x` to this position.
-		using const_iterator::operator-;
+		/// - `x` : The iterator to subtract.
+		hxsize_t operator-(const const_iterator& x_) const { return const_iterator::operator-(x_); }
 
 		/// Returns a copy of the iterator offset by `n` positions.
 		/// - `n` : The offset from this position.
