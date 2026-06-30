@@ -4,7 +4,7 @@
 
 #include <hx/hxutility.h>
 #include <hx/hxtest.hpp>
-#include "test_trackers.hpp"
+#include "./hxtest_util.hpp"
 
 HX_NS_USE
 

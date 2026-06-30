@@ -180,17 +180,16 @@ bool hxvector<T_, capacity_>::any_of(callable_t_&& fn_) {
 }
 
 template<hxvector_concept_ T_, hxsize_t capacity_>
-template<typename iter_t_>
-void hxvector<T_, capacity_>::assign(iter_t_ begin_, iter_t_ end_) noexcept {
+template<typename iterator_t_>
+void hxvector<T_, capacity_>::assign(iterator_t_ begin_, iterator_t_ end_) noexcept {
 	hxassert_hard((end_ - begin_) >= 0, "invalid_iterator");
 	this->reserve(static_cast<hxsize_t>(end_ - begin_));
-	T_* it0_ = this->data();
-	this->destruct_(it0_, m_end_);
-	iter_t_ it1_(begin_); // begin_ may be a reference.
-	while(it1_ != end_) {
-		::new(it0_++) T_(*it1_++);
+	T_* it_ = this->data();
+	this->destruct_(it_, m_end_);
+	while(begin_ != end_) {
+		::new(it_++) T_(*begin_++);
 	}
-	m_end_ = it0_;
+	m_end_ = it_;
 }
 
 #if HX_CPLUSPLUS >= 202002L

@@ -6,7 +6,7 @@
 #include <hx/hxhash_table.hpp>
 #include <hx/hxhash_table_nodes.hpp>
 #include <hx/hxlist.hpp>
-#include "test_trackers.hpp"
+#include "./hxtest_util.hpp"
 
 HX_NS_USE
 

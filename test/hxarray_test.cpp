@@ -3,7 +3,7 @@
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
 #include <hx/hxarray.hpp>
-#include "test_trackers.hpp"
+#include "./hxtest_util.hpp"
 #if HX_USE_LIBCXX
 #include <utility>
 #endif

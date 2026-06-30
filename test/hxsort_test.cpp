@@ -6,7 +6,7 @@
 #include <hx/hxrandom.hpp>
 #include <hx/hxvector.hpp>
 #include <hx/hxtest.hpp>
-#include "test_trackers.hpp"
+#include "./hxtest_util.hpp"
 
 HX_NS_USE
 
@@ -238,34 +238,45 @@ static void do_sort_iter_case(const sort_callback_t& sort_callback) {
 		}
 	};
 	reset();
-	sort_callback(hxtest_iter_api_t(values), hxtest_iter_api_t(values), hxtest_value_less);
+	sort_callback(hxtest_rand_iter_api_t(values), hxtest_rand_iter_api_t(values), hxtest_value_less);
 	expect_values(initial_values);
 	reset();
-	sort_callback(hxtest_iter_api_t(values), hxtest_iter_api_t(values + 1), hxtest_value_less);
+	sort_callback(hxtest_rand_iter_api_t(values), hxtest_rand_iter_api_t(values + 1), hxtest_value_less);
 	expect_values(initial_values);
 	reset();
-	sort_callback(hxtest_iter_api_t(values), hxtest_iter_api_t(values + 2), hxtest_value_less);
+	sort_callback(hxtest_rand_iter_api_t(values), hxtest_rand_iter_api_t(values + 2), hxtest_value_less);
 	expect_values(expected_two);
 	reset();
-	sort_callback(hxtest_iter_api_t(values), hxtest_iter_api_t(values + 5), hxtest_value_less);
+	sort_callback(hxtest_rand_iter_api_t(values), hxtest_rand_iter_api_t(values + 5), hxtest_value_less);
 	expect_values(expected_sorted);
 	reset();
-	sort_callback(hxtest_iter_api_t(values), hxtest_iter_api_t(values + 5), hxtest_value_greater);
+	sort_callback(hxtest_rand_iter_api_t(values), hxtest_rand_iter_api_t(values + 5), hxtest_value_greater);
 	expect_values(expected_descending);
-	sort_callback(hxtest_iter_api_t(values), hxtest_iter_api_t(values + 5), hxtest_value_less);
+	sort_callback(hxtest_rand_iter_api_t(values), hxtest_rand_iter_api_t(values + 5), hxtest_value_less);
 	expect_values(expected_sorted);
 }
 
 TEST(hxsort_test, iterator_support) {
-	do_sort_iter_case([](hxtest_iter_api_t begin, hxtest_iter_api_t end, const auto& less) {
+	do_sort_iter_case([](hxtest_rand_iter_api_t begin, hxtest_rand_iter_api_t end, const auto& less) {
 		hxinsertion_sort(begin, end, less);
 	});
-	do_sort_iter_case([](hxtest_iter_api_t begin, hxtest_iter_api_t end, const auto& less) {
+	do_sort_iter_case([](hxtest_rand_iter_api_t begin, hxtest_rand_iter_api_t end, const auto& less) {
 		hxheapsort(begin, end, less);
 	});
-	do_sort_iter_case([](hxtest_iter_api_t begin, hxtest_iter_api_t end, const auto& less) {
+	do_sort_iter_case([](hxtest_rand_iter_api_t begin, hxtest_rand_iter_api_t end, const auto& less) {
 		hxsort(begin, end, less);
 	});
+}
+
+TEST(hxsort_test, iterator_api_types) {
+	hxtest_ref_tracker_t values[2] = {
+		hxtest_ref_tracker_t(0),
+		hxtest_ref_tracker_t(1)
+	};
+	EXPECT_TRUE(hxtest_check_forward_iter_api(
+		hxtest_forward_iter_api_t(values), hxtest_forward_iter_api_t(values + 2)));
+	EXPECT_TRUE(hxtest_check_rand_iter_api(
+		hxtest_rand_iter_api_t(values), hxtest_rand_iter_api_t(values + 2)));
 }
 #endif // HX_CPLUSPLUS >= 201402L
 #if HX_CPLUSPLUS >= 202302L

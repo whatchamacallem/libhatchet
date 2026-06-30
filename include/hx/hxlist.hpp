@@ -102,7 +102,6 @@ public:
 		/// Post-decrement: retreats to the previous node and returns the prior
 		/// position.
 		const_iterator operator--(int);
-
 		/// Returns `true` if both iterators point to the same node.
 		/// - `x` : The iterator to compare against.
 		bool operator==(const const_iterator& x_) const;
@@ -157,7 +156,6 @@ public:
 		iterator& operator--(void) { const_iterator::operator--(); return *this; }
 		/// Post-decrement: retreats to the previous node and returns the prior position.
 		iterator operator--(int);
-
 		/// Returns a mutable reference to the current node.
 		node_t_& operator*(void) const {
 			hxassertmsg(this->m_current_node_ != hxnull

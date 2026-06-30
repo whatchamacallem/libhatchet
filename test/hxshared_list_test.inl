@@ -518,6 +518,18 @@ TEST(hxlist_test, const_iterator_post_increment_and_decrement) {
 	list.release_all();
 }
 
+TEST(hxlist_test, conforms_to_bidirectional_iter_api) {
+	hxtest_list_node_t a(1), b(2), c(3);
+	hxlist<hxtest_list_node_t, hxdo_not_delete> list;
+	list.push_back(&a);
+	list.push_back(&b);
+	list.push_back(&c);
+	EXPECT_TRUE(hxtest_check_bidirectional_iter_api(list.begin(), list.end()));
+	const hxlist<hxtest_list_node_t, hxdo_not_delete>& clist = list;
+	EXPECT_TRUE(hxtest_check_bidirectional_iter_api(clist.begin(), clist.end()));
+	list.release_all();
+}
+
 TEST(hxlist_node_test, copy_move_construct_and_assign) {
 	const hxtest_list_node_t a(1), b(2), c(3), d(4);
 	hxlist<hxtest_list_node_t, hxdo_not_delete> list;

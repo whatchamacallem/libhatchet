@@ -4,7 +4,7 @@
 
 #include <hx/hxflat_map.hpp>
 #include <hx/hxmemory_manager.h>
-#include "test_trackers.hpp"
+#include "./hxtest_util.hpp"
 
 HX_NS_USE
 
@@ -1040,6 +1040,16 @@ TEST_F(hxflat_map_test_f, copy_constructor_lifecycle) {
 		}
 	}
 	EXPECT_EQ(m_constructed, m_destructed);
+}
+
+TEST_F(hxflat_map_test_f, implements_rand_iter_api) {
+	hxflat_map<int, int, hxkey_less_t<int>, false, 4> m;
+	m.insert(1, 10);
+	m.insert(2, 20);
+	m.insert(3, 30);
+	const hxflat_map<int, int, hxkey_less_t<int>, false, 4>& cm = m;
+	EXPECT_TRUE(hxtest_check_rand_iter_api(m.begin(), m.end()));
+	EXPECT_TRUE(hxtest_check_rand_iter_api(cm.begin(), cm.end()));
 }
 
 #if HX_CPLUSPLUS >= 202002L

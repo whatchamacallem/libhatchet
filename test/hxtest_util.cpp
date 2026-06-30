@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-#include "test_trackers.hpp"
+#include "./hxtest_util.hpp"
 
 // -- hxtest_object_fixture ----------------------------------------------------
 

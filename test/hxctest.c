@@ -3,8 +3,8 @@
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
 #include <hx/hxutility.h>
-#include "hxctest.h"
 #include <stdio.h>
+#include "./hxctest.h"
 
 bool hxctest_libhatchet_h(void) {
 	hxlog("Smoke testing from C: hxlog %d, ", 1);

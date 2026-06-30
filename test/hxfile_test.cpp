@@ -5,7 +5,7 @@
 #include <hx/hxfile.hpp>
 #include <hx/hxutility.h>
 #include <hx/hxtest.hpp>
-#include "test_trackers.hpp"
+#include "./hxtest_util.hpp"
 
 #if HX_USE_FILE_IO
 #if defined __GNUC__

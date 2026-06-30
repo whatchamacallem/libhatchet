@@ -4,7 +4,7 @@
 
 #include <hx/hxvector.hpp>
 #include <hx/hxsort.hpp>
-#include "test_trackers.hpp"
+#include "./hxtest_util.hpp"
 #include <limits.h>
 #if HX_USE_LIBCXX
 #include <utility>

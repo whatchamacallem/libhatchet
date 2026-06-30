@@ -121,8 +121,7 @@ void hxpartition_sort_(iterator_t_ begin_, iterator_t_ end_, const less_t_& less
 	// last pivot. This is an end iterator that goes left.
 	iterator_t_ gt_ = back_ - hxsize_t{1};
 
-	hxassert(lt_ <= gt_); // Provides an optimization hint.
-	for(iterator_t_ i_ = lt_; i_ <= gt_; ) {
+	for(iterator_t_ i_ = lt_; !(gt_ < i_); ) {
 		if(less_(*i_, *begin_)) {
 			// Swap into less-than range and extend it. Values in [lt, i) are
 			// mid range, so the value swapped to i is already classified.
@@ -169,7 +168,7 @@ void hxpartition_sort_(iterator_t_ begin_, iterator_t_ end_, const less_t_& less
 // `hxintro_sort_` calls itself recursively until it hits its depth limit.
 template<typename iterator_t_, typename less_t_> hxattr_hot hxconstexpr
 void hxintro_sort_(iterator_t_ begin_, iterator_t_ end_, const less_t_& less_, int depth_) {
-	hxassertmsg(begin_ <= end_, "range_error hxsort");
+	hxassertmsg(!(end_ < begin_), "range_error hxsort");
 
 	if((end_ - begin_) <= hxpartition_sort_cutoff_) {
 		hxinsertion_sort<iterator_t_>(begin_, end_, less_);

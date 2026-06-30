@@ -180,6 +180,9 @@ public:
 		/// - `n` : The number of positions to retreat.
 		iterator operator-(hxsize_t n_) const { iterator t_(*this); t_ -= n_; return t_; }
 
+		/// Returns the signed distance from `x` to this position.
+		using const_iterator::operator-;
+
 		/// Returns a copy of the iterator offset by `n` positions.
 		/// - `n` : The offset from this position.
 		iterator operator[](hxsize_t n_) const { return operator+(n_); }

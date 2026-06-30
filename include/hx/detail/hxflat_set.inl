@@ -281,6 +281,11 @@ inline bool hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::less(
 	return size0_ < size1_;
 }
 
+// gcc with -O2 and a sanitizer loses track of the lo_ < hi_ guard.
+#if !defined __clang__ && defined __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
 template<typename key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
 inline auto hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::lower_bound_(
 		const key_t_& key_) const -> key_t_* {
@@ -299,6 +304,9 @@ inline auto hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::lower_bound_(
 	}
 	return const_cast<key_t_*>(keys_) + lo_;
 }
+#if !defined __clang__ && defined __GNUC__
+#pragma GCC diagnostic pop
+#endif
 
 HX_END_INL_
 #endif // HX_DOXYGEN_PARSER

@@ -4,7 +4,7 @@
 
 #include <hx/hxflat_set.hpp>
 #include <hx/hxmemory_manager.h>
-#include "test_trackers.hpp"
+#include "./hxtest_util.hpp"
 
 HX_NS_USE
 
@@ -794,6 +794,17 @@ TEST_F(hxflat_set_test_f, copy_constructor_lifecycle) {
 		}
 	}
 	EXPECT_EQ(m_constructed, m_destructed);
+}
+
+TEST_F(hxflat_set_test_f, implements_rand_iter_api) {
+	hxflat_set<int, hxkey_less_t<int>, false, 4> s;
+	s.insert(1);
+	s.insert(2);
+	s.insert(3);
+	typedef hxflat_set<int, hxkey_less_t<int>, false, 4> set_t;
+	const set_t& cs = s;
+	EXPECT_TRUE(hxtest_check_rand_iter_api<set_t::iterator>(s.begin(), s.end()));
+	EXPECT_TRUE(hxtest_check_rand_iter_api<set_t::const_iterator>(cs.begin(), cs.end()));
 }
 
 #if HX_CPLUSPLUS >= 202002L

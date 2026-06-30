@@ -103,7 +103,6 @@ function_t_ hxfor_each(iterator_t_ begin_, iterator_t_ end_, function_t_ functio
 template<typename iterator_t_, typename output_iterator_t_, typename less_t_> hxattr_hot hxconstexpr
 output_iterator_t_ hxmerge(iterator_t_ begin0_, iterator_t_ end0_, iterator_t_ begin1_, iterator_t_ end1_,
 		output_iterator_t_&& output_, const less_t_& less_) noexcept {
-	hxassertmsg(begin0_ <= end0_ && begin1_ <= end1_, "invalid_iterator");
 	hxrestrict_t<iterator_t_> src0_(begin0_);
 	hxrestrict_t<iterator_t_> src1_(begin1_);
 	hxrestrict_t<output_iterator_t_> output_r_(output_);
@@ -188,11 +187,9 @@ hxminmax_result<iterator_t_> hxminmax(iterator_t_ begin_, iterator_t_ end_) {
 template<typename iterator_t_, typename output_iterator_t_, typename less_t_> hxattr_hot hxconstexpr
 output_iterator_t_ hxset_difference(iterator_t_ begin0_, iterator_t_ end0_, iterator_t_ begin1_,
 		iterator_t_ end1_, output_iterator_t_&& output_, const less_t_& less_) noexcept {
-	hxassertmsg(begin0_ <= end0_ && begin1_ <= end1_, "invalid_iterator");
 	hxrestrict_t<iterator_t_> src0_(begin0_);
 	hxrestrict_t<iterator_t_> src1_(begin1_);
 	hxrestrict_t<output_iterator_t_> output_r_(output_);
-
 	while(src0_ != end0_ && src1_ != end1_) {
 		if(less_(*src0_, *src1_)) {
 			*output_r_ = hxmove(*src0_);
@@ -237,11 +234,9 @@ output_iterator_t_ hxset_difference(iterator_t_ begin0_, iterator_t_ end0_, iter
 template<typename iterator_t_, typename output_iterator_t_, typename less_t_> hxattr_hot hxconstexpr
 output_iterator_t_ hxset_intersection(iterator_t_ begin0_, iterator_t_ end0_, iterator_t_ begin1_,
 		iterator_t_ end1_, output_iterator_t_&& output_, const less_t_& less_) noexcept {
-	hxassertmsg(begin0_ <= end0_ && begin1_ <= end1_, "invalid_iterator");
 	hxrestrict_t<iterator_t_> src0_(begin0_);
 	hxrestrict_t<iterator_t_> src1_(begin1_);
 	hxrestrict_t<output_iterator_t_> output_r_(output_);
-
 	while(src0_ != end0_ && src1_ != end1_) {
 		if(less_(*src0_, *src1_)) {
 			++src0_;
@@ -282,11 +277,9 @@ output_iterator_t_ hxset_intersection(iterator_t_ begin0_, iterator_t_ end0_, it
 template<typename iterator_t_, typename output_iterator_t_, typename less_t_> hxattr_hot hxconstexpr
 output_iterator_t_ hxset_union(iterator_t_ begin0_, iterator_t_ end0_, iterator_t_ begin1_,
 		iterator_t_ end1_, output_iterator_t_&& output_, const less_t_& less_) noexcept {
-	hxassertmsg(begin0_ <= end0_ && begin1_ <= end1_, "invalid_iterator");
 	hxrestrict_t<iterator_t_> src0_(begin0_);
 	hxrestrict_t<iterator_t_> src1_(begin1_);
 	hxrestrict_t<output_iterator_t_> output_r_(output_);
-
 	while(src0_ != end0_ && src1_ != end1_) {
 		const bool take1_ = less_(*src1_, *src0_);
 		const bool less0_ = less_(*src0_, *src1_);
@@ -296,7 +289,6 @@ output_iterator_t_ hxset_union(iterator_t_ begin0_, iterator_t_ end0_, iterator_
 		src0_ = src0_ + static_cast<ptrdiff_t>(!take1_);
 		src1_ = src1_ + static_cast<ptrdiff_t>(!less0_);
 	}
-
 	while(src0_ != end0_) {
 		*output_r_ = hxmove(*src0_);
 		++output_r_; ++src0_;

@@ -5,6 +5,8 @@
 #include <hx/hxconstexpr_list.hpp>
 #include <hx/hxtest.hpp>
 
+#include "./hxtest_util.hpp"
+
 HX_NS_USE
 
 #if HX_CPLUSPLUS >= 202302L
@@ -129,4 +131,4 @@ hxattr_noinline static void hxtest_gdb_break_hxconstexpr_list(void) { }
 #define hxtest_list_counted_node_t hxtest_const_list_counted_node_t
 #define hxtest_list_node_t hxtest_const_list_node_t
 
-#include "hxshared_list_test.inl"
+#include "./hxshared_list_test.inl"

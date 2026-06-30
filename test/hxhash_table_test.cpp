@@ -6,6 +6,8 @@
 #include <hx/hxhash_table.hpp>
 #include <hx/hxtest.hpp>
 
+#include "./hxtest_util.hpp"
+
 HX_NS_USE
 
 hxattr_noinline static void hxtest_gdb_break_hxhash_table(void) { }
@@ -617,6 +619,19 @@ TEST_F(hxhash_table_test_f, extract_interior_node_keeps_others) {
 	EXPECT_NE(table.find(1), hxnullptr);
 	EXPECT_NE(table.find(5), hxnullptr);
 	EXPECT_EQ(table.find(3), hxnullptr);
+}
+
+TEST(hxhash_table_node_integer_test, conforms_to_forward_iter_api) {
+	using table_t = hxhash_table<hxhash_table_node_integer<int32_t>, hxdo_not_delete, false, 4>;
+	hxhash_table_node_integer<int32_t> a(1), b(2), c(3);
+	table_t table;
+	table.insert(hxptr<hxhash_table_node_integer<int32_t>, hxdo_not_delete>(&a));
+	table.insert(hxptr<hxhash_table_node_integer<int32_t>, hxdo_not_delete>(&b));
+	table.insert(hxptr<hxhash_table_node_integer<int32_t>, hxdo_not_delete>(&c));
+	EXPECT_TRUE(hxtest_check_forward_iter_api(table.begin(), table.end()));
+	const table_t& const_table = table;
+	EXPECT_TRUE(hxtest_check_forward_iter_api(const_table.begin(), const_table.end()));
+	table.release_all();
 }
 
 TEST(hxhash_table_node_integer_test, copy_move_construct_and_assign) {

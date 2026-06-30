@@ -6,7 +6,6 @@
 #include <hx/hxconsole.hpp>
 #include <hx/hxfile.hpp>
 #include <hx/hxtest.hpp>
-#include "hxctest.h"
 
 HX_NS_USE
 

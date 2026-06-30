@@ -5,8 +5,10 @@
 #include <hx/hxlist.hpp>
 #include <hx/hxtest.hpp>
 
+#include "./hxtest_util.hpp"
+
 HX_NS_USE
 
 hxattr_noinline static void hxtest_gdb_break_hxlist(void) { }
 
-#include "hxshared_list_test.inl"
+#include "./hxshared_list_test.inl"

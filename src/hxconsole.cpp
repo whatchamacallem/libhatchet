@@ -107,7 +107,7 @@ template<> const char* hxconsole_parse_arg_<const char*>(const char* str_, char*
 
 void hxconsole_usage_(const char* id, const char* const* labels) {
 	hxlog_handler(hxlog_level_console, "%s", (id != hxnull) ? id : "usage:");
-	for(const char* const* hxrestrict label = labels; *label != hxnull; ++label) {
+	for(const char* const* label = labels; *label != hxnull; ++label) {
 		hxlog_handler(hxlog_level_console, " %s", *label);
 	}
 	hxlog_handler(hxlog_level_console, "\n");

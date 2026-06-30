@@ -3,7 +3,8 @@
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
 #include <hx/hxtest.hpp>
-#include "hxctest.h"
+#include "./hxctest.h"
+#include "./hxtest_util.hpp"
 
 HX_NS_USE
 

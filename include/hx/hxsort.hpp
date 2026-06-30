@@ -28,8 +28,6 @@ template<typename iterator_t_, typename value_t_, typename less_t_> hxattr_hot h
 iterator_t_ hxbinary_search(iterator_t_ begin_, iterator_t_ end_, const value_t_& value_, const less_t_& less_) {
 	// don't operate on null pointer args. unallocated containers have this.
 	if(begin_ == end_) { return end_; }
-	hxassertmsg(begin_ < end_, "invalid_iterator"); // Provides an optimization hint.
-
 	iterator_t_ first_ = begin_;
 	iterator_t_ last_ = end_;
 	while(first_ < last_) {
@@ -64,11 +62,8 @@ iterator_t_ hxbinary_search(iterator_t_ begin_, iterator_t_ end_, const value_t_
 /// ordering relationship.
 template<typename iterator_t_, typename less_t_> hxattr_hot hxconstexpr
 void hxinsertion_sort(iterator_t_ begin_, iterator_t_ end_, const less_t_& less_) {
-	hxassertmsg(begin_ <= end_, "invalid_iterator");
-
 	// Address sanitizer: Avoids adding 1 to null iterators.
 	if(begin_ == end_) { return; }
-
 	for(iterator_t_ i_ = begin_, j_ = begin_ + ptrdiff_t{1}; j_ < end_; i_ = j_, ++j_) {
 		if(less_(*j_, *i_)) {
 			// Move construct. Use hxmove instead of hxswap because it should be
@@ -98,13 +93,11 @@ void hxinsertion_sort(iterator_t_ begin_, iterator_t_ end_) {
 template<typename iterator_t_, typename less_t_> hxattr_hot hxconstexpr
 void hxheapsort(iterator_t_ begin_, iterator_t_ end_, const less_t_& less_) {
 	if(begin_ == end_) { return; } // Prevents UB.
-
 	// This is std::make_heap.
 	hxdetail_::hxmake_heap_<iterator_t_>(begin_, end_, less_);
-
 	// Swaps the largest values to the end of the array. These two implement
 	// std::pop_heap.
-	for(iterator_t_ it_ = end_ - ptrdiff_t{1}; it_ > begin_; --it_) {
+	for(iterator_t_ it_ = end_ - ptrdiff_t{1}; begin_ < it_; --it_) {
 		hxswap(*begin_, *it_);
 		hxdetail_::hxheapsort_heapify_<iterator_t_>(begin_, begin_, it_, less_);
 	}

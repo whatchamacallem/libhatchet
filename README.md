@@ -106,7 +106,9 @@ system allocators.
   keyword wherever appropriate. See `<hx/hxalgorithm.hpp>` for standard
   algorithms and `<hx/hxsort.hpp>` for comparison based sorting and lookup.
   Radix sorting with `<hx/hxradix_sort.hpp>` is recommended for Θ(n) sorting.
-  Less common functions have been omitted to reduce compile time.
+  Less common functions have been omitted to reduce compile time. Random
+  access iterators are required for a lot of things but the only relational
+  operator used is `<`.
 
 - **Performance Focus**: This is systems code. Everything should be optimized
   and cache-coherent without causing code bloat. This codebase avoids exceptions
