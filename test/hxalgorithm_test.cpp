@@ -324,15 +324,15 @@ TEST(hxbinary_search_test, two_element_boundary) {
 
 TEST(hxminmax_test, iterator_support) {
 	hxtest_ref_tracker_t values[4] = { hxtest_ref_tracker_t(30), hxtest_ref_tracker_t(10), hxtest_ref_tracker_t(40), hxtest_ref_tracker_t(20) };
-	const hxtest_rand_iter_api_t begin(values);
-	const hxtest_rand_iter_api_t end(values + 4);
-	const hxminmax_result<hxtest_rand_iter_api_t> result =
+	const hxtest_forward_iter_api_t begin(values);
+	const hxtest_forward_iter_api_t end(values + 4);
+	const hxminmax_result<hxtest_forward_iter_api_t> result =
 		hxminmax(begin, end, hxtest_value_less);
 	EXPECT_NE(result.min, end);
 	EXPECT_EQ((*result.min).value, 10);
 	EXPECT_NE(result.max, end);
 	EXPECT_EQ((*result.max).value, 40);
-	const hxminmax_result<hxtest_rand_iter_api_t> empty_result =
+	const hxminmax_result<hxtest_forward_iter_api_t> empty_result =
 		hxminmax(begin, begin, hxtest_value_less);
 	EXPECT_EQ(empty_result.min, begin);
 	EXPECT_EQ(empty_result.max, begin);
@@ -367,10 +367,11 @@ TEST(hxunique_test, simple_case) {
 		hxtest_ref_tracker_t(1), hxtest_ref_tracker_t(1), hxtest_ref_tracker_t(2), hxtest_ref_tracker_t(3),
 		hxtest_ref_tracker_t(3), hxtest_ref_tracker_t(3), hxtest_ref_tracker_t(4)
 	};
-	const hxtest_rand_iter_api_t begin(values);
-	const hxtest_rand_iter_api_t new_end =
-		hxunique(begin, begin + ptrdiff_t{7}, hxtest_value_equal);
-	EXPECT_EQ(new_end, begin + ptrdiff_t{4});
+	const hxtest_forward_iter_api_t begin(values);
+	const hxtest_forward_iter_api_t end(values + 7);
+	const hxtest_forward_iter_api_t new_end =
+		hxunique(begin, end, hxtest_value_equal);
+	EXPECT_EQ(new_end, hxtest_forward_iter_api_t(values + 4));
 	EXPECT_EQ(values[0].value, 1);
 	EXPECT_EQ(values[1].value, 2);
 	EXPECT_EQ(values[2].value, 3);

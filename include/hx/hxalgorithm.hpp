@@ -6,7 +6,8 @@
 /// \file
 /// Searching and set utilities for libhatchet. Includes support for callables
 /// when defining custom key operations. Otherwise `T::operator<(const T&)` and
-/// `T::operator==(const T&)` are used.
+/// `T::operator==(const T&)` are used. The other relational operators are
+/// not used.
 ///
 /// See `hxsort.hpp` for sorting algorithms including `hxinsertion_sort`,
 /// `hxheapsort` and `hxsort`. `hxbinary_search` is also over there.
@@ -23,11 +24,12 @@
 HX_NS_BEGIN_
 
 /// `hxall_of` - Returns true if the `predicate` callable returns true for every
-/// element in `[begin, end)`. Returns true for an empty range.
-template<typename iterator_t_, typename predicate_t_> hxattr_hot hxattr_nodiscard hxconstexpr
-bool hxall_of(iterator_t_ begin_, iterator_t_ end_, const predicate_t_& predicate_) {
+/// element in `[begin, end)`. Returns true for an empty range. Requires a
+/// `forward-iterator`.
+template<typename iterator_t_, typename fn_t_> hxattr_hot hxattr_nodiscard hxconstexpr
+bool hxall_of(iterator_t_ begin_, iterator_t_ end_, fn_t_&& fn_) {
 	for(; begin_ != end_; ++begin_) {
-		if(!predicate_(*begin_)) {
+		if(!hxforward<fn_t_>(fn_)(*begin_)) {
 			return false;
 		}
 	}
@@ -36,10 +38,11 @@ bool hxall_of(iterator_t_ begin_, iterator_t_ end_, const predicate_t_& predicat
 
 /// `hxany_of` - Returns true if the `predicate` callable returns true for at
 /// least one element in `[begin, end)`. Returns false for an empty range.
-template<typename iterator_t_, typename predicate_t_> hxattr_hot hxattr_nodiscard hxconstexpr
-bool hxany_of(iterator_t_ begin_, iterator_t_ end_, const predicate_t_& predicate_) {
+/// Requires a `forward-iterator`.
+template<typename iterator_t_, typename fn_t_> hxattr_hot hxattr_nodiscard hxconstexpr
+bool hxany_of(iterator_t_ begin_, iterator_t_ end_, fn_t_&& fn_) {
 	for(; begin_ != end_; ++begin_) {
-		if(predicate_(*begin_)) {
+		if(hxforward<fn_t_>(fn_)(*begin_)) {
 			return true;
 		}
 	}
@@ -47,12 +50,12 @@ bool hxany_of(iterator_t_ begin_, iterator_t_ end_, const predicate_t_& predicat
 }
 
 /// `hxcount_if` - Returns the number of elements in `[begin, end)` for which
-/// the `predicate` callable returns true.
-template<typename iterator_t_, typename predicate_t_> hxattr_hot hxattr_nodiscard hxconstexpr
-hxsize_t hxcount_if(iterator_t_ begin_, iterator_t_ end_, const predicate_t_& predicate_) {
+/// the `predicate` callable returns true. Requires a `forward-iterator`.
+template<typename iterator_t_, typename fn_t_> hxattr_hot hxattr_nodiscard hxconstexpr
+hxsize_t hxcount_if(iterator_t_ begin_, iterator_t_ end_, fn_t_&& fn_) {
 	hxsize_t count_ = hxsize_t{0};
 	for(; begin_ != end_; ++begin_) {
-		if(predicate_(*begin_)) {
+		if(hxforward<fn_t_>(fn_)(*begin_)) {
 			++count_;
 		}
 	}
@@ -71,11 +74,11 @@ T_ hxexchange(T_& obj_, U_&& new_value_) noexcept {
 
 /// `hxfind_if` - Returns an iterator to the first element in `[begin, end)` for
 /// which the `predicate` callable returns true. Returns `end` if no element
-/// matches.
-template<typename iterator_t_, typename predicate_t_> hxattr_hot hxattr_nodiscard hxconstexpr
-iterator_t_ hxfind_if(iterator_t_ begin_, iterator_t_ end_, const predicate_t_& predicate_) {
+/// matches. Requires a `forward-iterator`.
+template<typename iterator_t_, typename fn_t_> hxattr_hot hxattr_nodiscard hxconstexpr
+iterator_t_ hxfind_if(iterator_t_ begin_, iterator_t_ end_, fn_t_&& fn_) {
 	for(; begin_ != end_; ++begin_) {
-		if(predicate_(*begin_)) {
+		if(hxforward<fn_t_>(fn_)(*begin_)) {
 			return begin_;
 		}
 	}
@@ -84,13 +87,13 @@ iterator_t_ hxfind_if(iterator_t_ begin_, iterator_t_ end_, const predicate_t_& 
 
 /// `hxfor_each` - Applies the `function` callable to each element in `[begin,
 /// end)` in order. Returns the `function` callable after it has been applied to
-/// every element.
-template<typename iterator_t_, typename function_t_> hxattr_hot hxconstexpr
-function_t_ hxfor_each(iterator_t_ begin_, iterator_t_ end_, function_t_ function_) {
+/// every element. Requires a `forward-iterator`.
+template<typename iterator_t_, typename fn_t_> hxattr_hot hxconstexpr
+fn_t_ hxfor_each(iterator_t_ begin_, iterator_t_ end_, fn_t_&& fn_) {
 	for(; begin_ != end_; ++begin_) {
-		function_(*begin_);
+		hxforward<fn_t_>(fn_)(*begin_);
 	}
-	return function_;
+	return fn_;
 }
 
 /// `hxmerge` - Performs a stable merge of two ordered ranges `[begin0, end0)`
@@ -99,7 +102,8 @@ function_t_ hxfor_each(iterator_t_ begin_, iterator_t_ end_, function_t_ functio
 /// ranges. Passing a hxvector as an output iterator like this `hxmerge<const
 /// int*, hxvector<int>&>(...)` will append to the array. Assumes both `[begin0,
 /// end0)` and `[begin1, end1)` are ordered by the `less` callable. Returns an
-/// output iterator positioned one past the last element written.
+/// output iterator positioned one past the last element written. Requires a
+/// `random-iterator`.
 template<typename iterator_t_, typename output_iterator_t_, typename less_t_> hxattr_hot hxconstexpr
 output_iterator_t_ hxmerge(iterator_t_ begin0_, iterator_t_ end0_, iterator_t_ begin1_, iterator_t_ end1_,
 		output_iterator_t_&& output_, const less_t_& less_) noexcept {
@@ -131,7 +135,7 @@ output_iterator_t_ hxmerge(iterator_t_ begin0_, iterator_t_ end0_, iterator_t_ b
 /// end1)` are ordered by `hxless(a,b)`.  Passing a hxvector as an output
 /// iterator like this `hxmerge<const int*, hxvector<int>&>(...)` will append to
 /// the array. Returns an output iterator positioned one past the last element
-/// written.
+/// written. Requires a `random-iterator`.
 template<typename iterator_t_, typename output_iterator_t_> hxattr_hot hxconstexpr
 output_iterator_t_ hxmerge(iterator_t_ begin0_, iterator_t_ end0_, iterator_t_ begin1_,
 		iterator_t_ end1_, output_iterator_t_&& output_) noexcept {
@@ -153,24 +157,24 @@ public:
 /// `max` equal `end` for an empty range. When multiple elements compare equal
 /// and minimal, the first is returned. When multiple elements compare equal and
 /// maximal, the first is returned. The `less` callable defines the less-than
-/// ordering relationship.
+/// ordering relationship. Requires a `forward-iterator`.
 template<typename iterator_t_, typename less_t_> hxattr_hot hxattr_nodiscard hxconstexpr
 hxminmax_result<iterator_t_> hxminmax(iterator_t_ begin_, iterator_t_ end_, const less_t_& less_) {
-	if(begin_ == end_) { return hxminmax_result<iterator_t_>{end_, end_}; }
 	hxminmax_result<iterator_t_> result_{begin_, begin_};
-	for(iterator_t_ it_ = begin_ + ptrdiff_t{1}; it_ != end_; ++it_) {
-		if(less_(*it_, *result_.min)) {
-			result_.min = it_;
+	if(begin_ == end_) { return result_; }
+	for(++begin_; begin_ != end_; ++begin_) {
+		if(less_(*begin_, *result_.min)) {
+			result_.min = begin_;
 		}
-		else if(less_(*result_.max, *it_)) {
-			result_.max = it_;
+		else if(less_(*result_.max, *begin_)) {
+			result_.max = begin_;
 		}
 	}
 	return result_;
 }
 
 /// `hxminmax` (specialization) - An overload of `hxminmax` that uses
-/// `hxkey_less` over the range `[begin, end)`.
+/// `hxkey_less` over the range `[begin, end)`. Requires a `forward-iterator`.
 template<typename iterator_t_> hxattr_hot hxattr_nodiscard hxconstexpr
 hxminmax_result<iterator_t_> hxminmax(iterator_t_ begin_, iterator_t_ end_) {
 	return hxminmax<iterator_t_>(begin_, end_, hxkey_less_t<decltype(*begin_)>{});
@@ -183,7 +187,8 @@ hxminmax_result<iterator_t_> hxminmax(iterator_t_ begin_, iterator_t_ end_) {
 /// are move-assigned into the output. Passing a hxvector as an output iterator
 /// like this `hxset_difference<const int*, hxvector<int>&>(...)` will append to
 /// the array. Assumes both ranges are ordered by the `less` callable. Returns
-/// an output iterator positioned one past the last element written.
+/// an output iterator positioned one past the last element written. Requires a
+/// `random-iterator`.
 template<typename iterator_t_, typename output_iterator_t_, typename less_t_> hxattr_hot hxconstexpr
 output_iterator_t_ hxset_difference(iterator_t_ begin0_, iterator_t_ end0_, iterator_t_ begin1_,
 		iterator_t_ end1_, output_iterator_t_&& output_, const less_t_& less_) noexcept {
@@ -191,16 +196,14 @@ output_iterator_t_ hxset_difference(iterator_t_ begin0_, iterator_t_ end0_, iter
 	hxrestrict_t<iterator_t_> src1_(begin1_);
 	hxrestrict_t<output_iterator_t_> output_r_(output_);
 	while(src0_ != end0_ && src1_ != end1_) {
-		if(less_(*src0_, *src1_)) {
+		const bool lt_ = less_(*src0_, *src1_);
+		const bool gt_ = less_(*src1_, *src0_);
+		if(lt_) {
 			*output_r_ = hxmove(*src0_);
-			++output_r_; ++src0_;
+			++output_r_;
 		}
-		else if(less_(*src1_, *src0_)) {
-			++src1_;
-		}
-		else {
-			++src0_; ++src1_;
-		}
+		src0_ = src0_ + static_cast<ptrdiff_t>(!gt_);
+		src1_ = src1_ + static_cast<ptrdiff_t>(!lt_);
 	}
 	while(src0_ != end0_) {
 		*output_r_ = hxmove(*src0_);
@@ -215,7 +218,7 @@ output_iterator_t_ hxset_difference(iterator_t_ begin0_, iterator_t_ end0_, iter
 /// The input arrays must not overlap the destination array. Passing a hxvector
 /// as an output iterator like this `hxset_difference<const int*,
 /// hxvector<int>&>(...)` will append to the array. Returns an output iterator
-/// positioned one past the last element written.
+/// positioned one past the last element written. Requires a `random-iterator`.
 template<typename iterator_t_, typename output_iterator_t_> hxattr_hot hxconstexpr
 output_iterator_t_ hxset_difference(iterator_t_ begin0_, iterator_t_ end0_, iterator_t_ begin1_,
 		iterator_t_ end1_, output_iterator_t_&& output_) noexcept {
@@ -230,7 +233,8 @@ output_iterator_t_ hxset_difference(iterator_t_ begin0_, iterator_t_ end0_, iter
 /// move-assigned into the output. Passing a hxvector as an output iterator like
 /// this `hxset_intersection<const int*, hxvector<int>&>(...)` will append to
 /// the array. Assumes both ranges are ordered by the `less` callable. Returns
-/// an output iterator positioned one past the last element written.
+/// an output iterator positioned one past the last element written. Requires a
+/// `random-iterator`.
 template<typename iterator_t_, typename output_iterator_t_, typename less_t_> hxattr_hot hxconstexpr
 output_iterator_t_ hxset_intersection(iterator_t_ begin0_, iterator_t_ end0_, iterator_t_ begin1_,
 		iterator_t_ end1_, output_iterator_t_&& output_, const less_t_& less_) noexcept {
@@ -238,16 +242,14 @@ output_iterator_t_ hxset_intersection(iterator_t_ begin0_, iterator_t_ end0_, it
 	hxrestrict_t<iterator_t_> src1_(begin1_);
 	hxrestrict_t<output_iterator_t_> output_r_(output_);
 	while(src0_ != end0_ && src1_ != end1_) {
-		if(less_(*src0_, *src1_)) {
-			++src0_;
-		}
-		else if(less_(*src1_, *src0_)) {
-			++src1_;
-		}
-		else {
+		const bool lt_ = less_(*src0_, *src1_);
+		const bool gt_ = less_(*src1_, *src0_);
+		if(!lt_ && !gt_) {
 			*output_r_ = hxmove(*src0_);
-			++output_r_; ++src0_; ++src1_;
+			++output_r_;
 		}
+		src0_ = src0_ + static_cast<ptrdiff_t>(!gt_);
+		src1_ = src1_ + static_cast<ptrdiff_t>(!lt_);
 	}
 	return output_r_;
 }
@@ -258,7 +260,7 @@ output_iterator_t_ hxset_intersection(iterator_t_ begin0_, iterator_t_ end0_, it
 /// arrays must not overlap the destination array. Passing a hxvector as an
 /// output iterator like this `hxset_intersection<const int*,
 /// hxvector<int>&>(...)` will append to the array. Returns an output iterator
-/// positioned one past the last element written.
+/// positioned one past the last element written. Requires a `random-iterator`.
 template<typename iterator_t_, typename output_iterator_t_> hxattr_hot hxconstexpr
 output_iterator_t_ hxset_intersection(iterator_t_ begin0_, iterator_t_ end0_, iterator_t_ begin1_,
 		iterator_t_ end1_, output_iterator_t_&& output_) noexcept {
@@ -274,6 +276,7 @@ output_iterator_t_ hxset_intersection(iterator_t_ begin0_, iterator_t_ end0_, it
 /// iterator like this `hxset_union<const int*, hxvector<int>&>(...)` will
 /// append to the array. Assumes both ranges are ordered by the `less` callable.
 /// Returns an output iterator positioned one past the last element written.
+/// Requires a `random-iterator`.
 template<typename iterator_t_, typename output_iterator_t_, typename less_t_> hxattr_hot hxconstexpr
 output_iterator_t_ hxset_union(iterator_t_ begin0_, iterator_t_ end0_, iterator_t_ begin1_,
 		iterator_t_ end1_, output_iterator_t_&& output_, const less_t_& less_) noexcept {
@@ -307,6 +310,7 @@ output_iterator_t_ hxset_union(iterator_t_ begin0_, iterator_t_ end0_, iterator_
 /// destination array. Passing a hxvector as an output iterator like this
 /// `hxset_union<const int*, hxvector<int>&>(...)` will append to the array.
 /// Returns an output iterator positioned one past the last element written.
+/// Requires a `random-iterator`.
 template<typename iterator_t_, typename output_iterator_t_> hxattr_hot hxconstexpr
 output_iterator_t_ hxset_union(iterator_t_ begin0_, iterator_t_ end0_, iterator_t_ begin1_,
 		iterator_t_ end1_, output_iterator_t_&& output_) noexcept {
@@ -319,22 +323,27 @@ output_iterator_t_ hxset_union(iterator_t_ begin0_, iterator_t_ end0_, iterator_
 /// using move-assignment. Returns an iterator to the new end of the range.
 /// Elements past the returned iterator are in a valid but unspecified state.
 /// The range must be sorted to remove all duplicates. The `equal` callable
-/// returns true when two elements are considered equal.
+/// returns true when two elements are considered equal. Requires a
+/// `forward-iterator`.
 template<typename iterator_t_, typename equal_t_> hxattr_hot hxattr_nodiscard hxconstexpr
 iterator_t_ hxunique(iterator_t_ begin_, iterator_t_ end_, const equal_t_& equal_) noexcept {
 	if(begin_ == end_) { return end_; }
 	iterator_t_ dst_ = begin_;
-	for(iterator_t_ src_ = begin_ + ptrdiff_t{1}; src_ != end_; ++src_) {
-		if(!equal_(*dst_, *src_)) {
+	for(++begin_; begin_ != end_; ++begin_, ++dst_) {
+		if(equal_(*dst_, *begin_)) { break; }
+	}
+	if(begin_ == end_) { return end_; }
+	for(++begin_; begin_ != end_; ++begin_) {
+		if(!equal_(*dst_, *begin_)) {
 			++dst_;
-			*dst_ = hxmove(*src_);
+			*dst_ = hxmove(*begin_);
 		}
 	}
-	return dst_ + ptrdiff_t{1};
+	return ++dst_;
 }
 
 /// `hxunique` (specialization) - An overload of `hxunique` that uses
-/// `hxkey_equal` over the range `[begin, end)`.
+/// `hxkey_equal` over the range `[begin, end)`. Requires a `forward-iterator`.
 template<typename iterator_t_> hxattr_hot hxattr_nodiscard hxconstexpr
 iterator_t_ hxunique(iterator_t_ begin_, iterator_t_ end_) noexcept {
 	return hxunique<iterator_t_>(begin_, end_, hxkey_equal_t<decltype(*begin_)>{});

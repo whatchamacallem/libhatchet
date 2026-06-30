@@ -5,6 +5,9 @@
 
 /// \file
 /// Standard sorting utilities. For scalar key sorting see `hxradix_sort.hpp`.
+/// Includes support for callables when defining custom key operations.
+/// Otherwise `T::operator<(const T&)` and `T::operator==(const T&)` are used.
+/// The other relational operators are not used.
 
 #include "libhatchet.h"
 
@@ -23,7 +26,7 @@ HX_NS_BEGIN_
 /// `[first, last)`. Returns `end` if the value is not found. Unsorted data will
 /// lead to errors. Non-unique values will be selected arbitrarily. The `less`
 /// callable returns true if the first argument is ordered before (i.e., is less
-/// than) the second.
+/// than) the second. Requires a `random-iterator`.
 template<typename iterator_t_, typename value_t_, typename less_t_> hxattr_hot hxattr_nodiscard hxconstexpr
 iterator_t_ hxbinary_search(iterator_t_ begin_, iterator_t_ end_, const value_t_& value_, const less_t_& less_) {
 	// don't operate on null pointer args. unallocated containers have this.
@@ -46,7 +49,8 @@ iterator_t_ hxbinary_search(iterator_t_ begin_, iterator_t_ end_, const value_t_
 }
 
 /// `hxbinary_search` (specialization) - An overload of `hxbinary_search` that
-/// searches for `value` in the range `[begin, end)` using `hxkey_less`.
+/// searches for `value` in the range `[begin, end)` using `hxkey_less`. Requires
+/// a `random-iterator`.
 template<typename iterator_t_, typename value_t_> hxattr_hot hxattr_nodiscard hxconstexpr
 iterator_t_ hxbinary_search(iterator_t_ begin_, iterator_t_ end_, const value_t_& value_) {
 	return hxbinary_search<iterator_t_>(begin_, end_, value_,
@@ -59,16 +63,13 @@ iterator_t_ hxbinary_search(iterator_t_ begin_, iterator_t_ end_, const value_t_
 /// is undefined. Declare your copy constructor and assignment operator
 /// `noexcept` or turn off exceptions. All of `T::T(&&)`, `T::~T()` and
 /// `T::operator=(T&&)` are used. The `less` callable defines the less-than
-/// ordering relationship.
+/// ordering relationship. Requires a `random-iterator`.
 template<typename iterator_t_, typename less_t_> hxattr_hot hxconstexpr
 void hxinsertion_sort(iterator_t_ begin_, iterator_t_ end_, const less_t_& less_) {
 	// Address sanitizer: Avoids adding 1 to null iterators.
 	if(begin_ == end_) { return; }
 	for(iterator_t_ i_ = begin_, j_ = begin_ + ptrdiff_t{1}; j_ < end_; i_ = j_, ++j_) {
 		if(less_(*j_, *i_)) {
-			// Move construct. Use hxmove instead of hxswap because it should be
-			// more efficient for simple types. Complex types will require an
-			// T::operator=(T&&) to be efficient.
 			auto t_ = hxmove(*j_);
 			*j_ = hxmove(*i_);
 			while(begin_ < i_ && less_(t_, *(i_ - ptrdiff_t{1}))) {
@@ -81,7 +82,8 @@ void hxinsertion_sort(iterator_t_ begin_, iterator_t_ end_, const less_t_& less_
 }
 
 /// `hxinsertion_sort` (specialization) - An overload of `hxinsertion_sort` over
-/// the range `[begin, end)` that uses `hxkey_less`.
+/// the range `[begin, end)` that uses `hxkey_less`. Requires a
+/// `random-iterator`.
 template<typename iterator_t_> hxattr_hot hxconstexpr
 void hxinsertion_sort(iterator_t_ begin_, iterator_t_ end_) {
 	hxinsertion_sort<iterator_t_>(begin_, end_, hxkey_less_t<decltype(*begin_)>{});
@@ -89,14 +91,11 @@ void hxinsertion_sort(iterator_t_ begin_, iterator_t_ end_) {
 
 /// `hxheapsort` - Sorts the elements in the range `[begin, end)` using the
 /// heapsort algorithm. The `less` callable defines the less-than ordering
-/// relationship.
+/// relationship. Requires a `random-iterator`.
 template<typename iterator_t_, typename less_t_> hxattr_hot hxconstexpr
 void hxheapsort(iterator_t_ begin_, iterator_t_ end_, const less_t_& less_) {
 	if(begin_ == end_) { return; } // Prevents UB.
-	// This is std::make_heap.
 	hxdetail_::hxmake_heap_<iterator_t_>(begin_, end_, less_);
-	// Swaps the largest values to the end of the array. These two implement
-	// std::pop_heap.
 	for(iterator_t_ it_ = end_ - ptrdiff_t{1}; begin_ < it_; --it_) {
 		hxswap(*begin_, *it_);
 		hxdetail_::hxheapsort_heapify_<iterator_t_>(begin_, begin_, it_, less_);
@@ -104,7 +103,7 @@ void hxheapsort(iterator_t_ begin_, iterator_t_ end_, const less_t_& less_) {
 }
 
 /// `hxheapsort` (specialization) - An overload of `hxheapsort` over the range
-/// `[begin, end)` that uses `hxkey_less`.
+/// `[begin, end)` that uses `hxkey_less`. Requires a `random-iterator`.
 template<typename iterator_t_> hxattr_hot hxconstexpr
 void hxheapsort(iterator_t_ begin_, iterator_t_ end_) {
 	hxheapsort<iterator_t_>(begin_, end_, hxkey_less_t<decltype(*begin_)>{});
@@ -113,7 +112,8 @@ void hxheapsort(iterator_t_ begin_, iterator_t_ end_) {
 /// `hxsort` - A general purpose sort routine using `T::T(&&)`, `T::~T()`,
 /// `T::operator=(&&)`, the `hxswap` overloads and a `less` callable which
 /// defaults to `hxkey_less`. Sorts the range `[begin, end)`. This version is
-/// intended for sorting large numbers of small objects.
+/// intended for sorting large numbers of small objects. Requires a
+/// `random-iterator`.
 template<typename iterator_t_, typename less_t_> hxattr_hot hxconstexpr
 void hxsort(iterator_t_ begin_, iterator_t_ end_, const less_t_& less_) {
 	// hxlog2i(0) is undefined but unused in this case.
@@ -122,7 +122,7 @@ void hxsort(iterator_t_ begin_, iterator_t_ end_, const less_t_& less_) {
 
 /// `hxsort` (specialization) - An overload of `hxsort` over the range `[begin,
 /// end)` that uses `hxkey_less`. This version is intended for sorting large
-/// numbers of small objects.
+/// numbers of small objects. Requires a `random-iterator`.
 template<typename iterator_t_> hxattr_hot hxconstexpr
 void hxsort(iterator_t_ begin_, iterator_t_ end_) {
 	// hxlog2i(0) is undefined but unused in this case.
