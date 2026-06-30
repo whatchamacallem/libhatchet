@@ -10,9 +10,9 @@
 
 #include "libhatchet.h"
 
-// HX_USE_MODULE allows including macros in addition to the hx module.
-#if HX_USE_MODULE
-#error Header does not provide macros only.
+// HX_USE_MACROS_WITH_MODULE allows including macros alongside the module.
+#if HX_USE_MACROS_WITH_MODULE
+#error Header does not provide macros alone.
 #endif
 #if (HX_USE_THREADS) != 0 && (HX_USE_THREADS) != 1 && (HX_USE_THREADS) != 11
 #error HX_USE_THREADS must be 0, 1 or 11. 11 is for using <threads.h>.

@@ -8,9 +8,9 @@
 
 #include "libhatchet.h"
 
-// HX_USE_MODULE allows including macros in addition to the hx module.
-#if HX_USE_MODULE
-#error Header does not provide macros only.
+// HX_USE_MACROS_WITH_MODULE allows including macros alongside the module.
+#if HX_USE_MACROS_WITH_MODULE
+#error Header does not provide macros alone.
 #endif
 
 #include "hxallocator.hpp"
@@ -202,14 +202,9 @@ private:
 	/// \cond HIDDEN
 	template<typename, typename, bool, hxsize_t> friend class hxflat_set;
 
-	struct lower_bound_result_ {
-		key_t_* pos_;
-		key_t_* hxrestrict keys_; // Avoids reloading data().
-	};
-
 	template<typename key_u_>
 	const key_t_* insert_at_(key_t_* pos_, key_u_&& key_) noexcept;
-	lower_bound_result_ lower_bound_(const key_t_& key_) const;
+	key_t_* lower_bound_(const key_t_& key_) const;
 
 	// 1 past the last element.
 	key_t_* m_end_;

@@ -8,9 +8,9 @@
 
 #include "libhatchet.h"
 
-// HX_USE_MODULE allows including macros in addition to the hx module.
-#if HX_USE_MODULE
-#error Header does not provide macros only.
+// HX_USE_MACROS_WITH_MODULE allows including macros alongside the module.
+#if HX_USE_MACROS_WITH_MODULE
+#error Header does not provide macros alone.
 #endif
 
 #include "hxutility.h"
@@ -30,10 +30,10 @@ template<typename U_> struct hxis_hxoptional_<hxoptional<U_>> : hxtrue_t { };
 
 /// `hxnullopt_t` - A tag type used to construct a disengaged `hxoptional`.
 struct hxnullopt_t {
-	/// Explicit constructor prevents implicit construction from `{}`.
-// GCOVR_EXCL_START
+	// GCOVR_EXCL_START
+	/// Explicit constructor prevents implicit construction from `{ }`.
 	explicit constexpr hxnullopt_t(int) { }
-// GCOVR_EXCL_STOP
+	// GCOVR_EXCL_STOP
 };
 
 /// `hxnullopt` - A sentinel value of type `hxnullopt_t` representing a

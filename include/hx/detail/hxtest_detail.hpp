@@ -28,24 +28,21 @@ public:
 	virtual const char* suite_() const = 0;
 	virtual const char* case_() const = 0;
 	virtual const char* file_() const = 0;
-	virtual size_t line_() const = 0;
+	virtual int line_() const = 0;
 };
+
+// Use -DHX_TEST_MAX_CASES=N to raise the limit.
+#if !defined HX_TEST_MAX_CASES
+	hxinline_constexpr hxsize_t HX_TEST_MAX_CASES = 1024;
+#endif
 
 // hxtest_ - Internal. The test tracking and dispatching singleton.
 class hxtest_ {
 public:
-	enum {
-#if !defined HX_TEST_MAX_CASES
-		// Use -DHX_TEST_MAX_CASES=N to raise the limit.
-		HX_TEST_MAX_CASES = 1024,
-#endif
-		max_fail_messages_ = 5
-	};
-
-	enum test_state_t_ : uint8_t {
-		test_state_nothing_asserted_,
-		test_state_pass_,
-		test_state_fail_
+	enum class test_state_ : uint8_t {
+		nothing_asserted_,
+		pass_,
+		fail_
 	};
 
 	hxtest_(void);
@@ -57,8 +54,8 @@ public:
 	void add_test_(hxtest_case_interface_* fn_) hxattr_nonnull(2);
 
 	// Assert callback used by macros.
-	void condition_check_(bool condition_, const char* file_, size_t line_,
-							 const char* message_, bool is_assert_) hxattr_nonnull(3,5);
+	void condition_check_(bool condition_, const char* file_, int line_,
+		const char* message_, bool is_assert_) hxattr_nonnull(3,5);
 
 	// Run tests. test_suite_filter_ must match exactly.
 	int run_all_tests_(const char* test_suite_filter_=hxnull);
@@ -70,7 +67,7 @@ private:
 	hxtest_case_interface_* m_test_cases_[HX_TEST_MAX_CASES];
 	int m_num_test_cases_;
 	hxtest_case_interface_* m_current_test_;
-	test_state_t_ m_test_state_;
+	test_state_ m_test_state_;
 	int m_pass_count_;
 	int m_fail_count_;
 	int m_total_assert_count_;

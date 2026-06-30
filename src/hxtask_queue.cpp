@@ -14,7 +14,7 @@ public:
 	hxtask_wait_for_tasks_(hxtask_queue* q) : m_q(q) { }
 	bool operator()(void) const {
 		return !m_q->m_tasks_.empty()
-			|| m_q->m_queue_run_level_ == hxtask_queue::run_level_stopped_;
+			|| m_q->m_queue_run_level_ == hxtask_queue::run_level_::stopped_;
 	}
 	hxtask_queue* m_q;
 };
@@ -26,7 +26,7 @@ class hxtask_wait_for_completion_ {
 public:
 	hxtask_wait_for_completion_(hxtask_queue* q) : m_q(q) { }
 	bool operator()(void) const {
-		hxassertmsg(m_q->m_queue_run_level_ == hxtask_queue::run_level_running_,
+		hxassertmsg(m_q->m_queue_run_level_ == hxtask_queue::run_level_::running_,
 			"threading_error");
 		return m_q->m_tasks_.empty() && m_q->m_executing_count_ == 0;
 	}
@@ -37,7 +37,7 @@ public:
 // Should abort if exceptions are enabled and the thread pool cannot be created.
 hxtask_queue::hxtask_queue(hxsize_t task_queue_size, hxsize_t thread_pool_size)
 #if HX_USE_THREADS
-	: m_queue_run_level_(run_level_running_)
+	: m_queue_run_level_(run_level_::running_)
 	, m_thread_pool_size_(thread_pool_size)
 	, m_threads_(hxnull)
 	, m_executing_count_(0)
@@ -59,8 +59,8 @@ hxtask_queue::hxtask_queue(hxsize_t task_queue_size, hxsize_t thread_pool_size)
 hxtask_queue::~hxtask_queue(void) {
 #if HX_USE_THREADS
 	if(m_thread_pool_size_ > 0) {
-		thread_task_loop_(this, thread_mode_stopping_);
-		hxassertmsg(m_queue_run_level_ == run_level_stopped_, "threading_error");
+		thread_task_loop_(this, thread_mode_::stopping_);
+		hxassertmsg(m_queue_run_level_ == run_level_::stopped_, "threading_error");
 
 		for(hxsize_t i = m_thread_pool_size_; i-- != 0;) {
 			m_threads_[i].join();
@@ -86,7 +86,7 @@ void hxtask_queue::enqueue(hxtask* task, int priority) {
 #if HX_USE_THREADS
 	if(m_thread_pool_size_ > 0) {
 		const hxunique_lock lock(m_mutex_);
-		hxassert_hard(m_queue_run_level_ == run_level_running_, "stopped_queue");
+		hxassert_hard(m_queue_run_level_ == run_level_::running_, "stopped_queue");
 		m_tasks_.push_heap(entry);
 		m_cond_var_new_tasks_.notify_one();
 	}
@@ -101,7 +101,7 @@ void hxtask_queue::wait_for_all(void) {
 #if HX_USE_THREADS
 	if(m_thread_pool_size_ > 0) {
 		// Contribute current thread and request waiting until completion.
-		thread_task_loop_(this, thread_mode_waiting_);
+		thread_task_loop_(this, thread_mode_::waiting_);
 	}
 	else
 #endif
@@ -120,11 +120,11 @@ void hxtask_queue::wait_for_all(void) {
 
 #if HX_USE_THREADS
 hxthread::return_t hxtask_queue::thread_task_loop_entry_(hxtask_queue* q) {
-	thread_task_loop_(q, thread_mode_pool_);
+	thread_task_loop_(q, thread_mode_::pool_);
 	return hxnull;
 }
 
-void hxtask_queue::thread_task_loop_(hxtask_queue* q, thread_mode_t_ mode) {
+void hxtask_queue::thread_task_loop_(hxtask_queue* q, thread_mode_ mode) {
 	hxtask* task = hxnull;
 	for(;;) {
 		{
@@ -140,8 +140,8 @@ void hxtask_queue::thread_task_loop_(hxtask_queue* q, thread_mode_t_ mode) {
 				}
 			}
 
-			// Workers wait for a next task or run_level_stopped_.
-			if(mode == thread_mode_pool_) {
+			// Workers wait for a next task or run_level_::stopped_.
+			if(mode == thread_mode_::pool_) {
 				// Use a predicate to handle spurious wakeups.
 				q->m_cond_var_new_tasks_.wait(lk, hxtask_wait_for_tasks_(q));
 			}
@@ -156,7 +156,7 @@ void hxtask_queue::thread_task_loop_(hxtask_queue* q, thread_mode_t_ mode) {
 				// Nothing left for worker threads to do. Pool threads exit when
 				// stopped. Waiting threads still have work to do before leaving.
 
-				if(mode == thread_mode_pool_) {
+				if(mode == thread_mode_::pool_) {
 					return;
 				}
 				else {
@@ -167,8 +167,8 @@ void hxtask_queue::thread_task_loop_(hxtask_queue* q, thread_mode_t_ mode) {
 
 					// All tasks are now considered complete. The workers can be
 					// released if the queue is shutting down.
-					if(mode == thread_mode_stopping_) {
-						q->m_queue_run_level_ = run_level_stopped_;
+					if(mode == thread_mode_::stopping_) {
+						q->m_queue_run_level_ = run_level_::stopped_;
 						q->m_cond_var_new_tasks_.notify_all();
 
 						// This triggers a release assert in any unexpected waiting threads.

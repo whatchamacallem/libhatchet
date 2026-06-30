@@ -314,7 +314,7 @@ bool hxarray<T_, capacity_>::less(const hxarray& x_) const {
 	const hxsize_t n_ = this->capacity();
 	const hxsize_t nx_ = x_.capacity();
 	const hxsize_t min_ = n_ < nx_ ? n_ : nx_;
-	for(const T_* hxrestrict it0_ = this->data(), *hxrestrict it1_ = x_.data(), *const end_ = it0_ + min_;
+	for(const T_* it0_ = this->data(), *it1_ = x_.data(), *const end_ = it0_ + min_;
 			it0_ != end_; ++it0_, ++it1_) {
 		if(!hxkey_equal(*it0_, *it1_)) {
 			return hxkey_less(*it0_, *it1_);

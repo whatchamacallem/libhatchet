@@ -18,7 +18,7 @@
 #include "libhatchet.h"
 
 #if HX_USE_CONSOLE
-#if !(HX_USE_MODULE)
+#if !(HX_USE_MACROS_WITH_MODULE)
 
 #include <limits.h>
 #include "hxutility.h"
@@ -56,7 +56,7 @@ bool hxconsole_exec_filename(const char* filename_) hxattr_nonnull(1);
 #endif // HX_USE_FILE_IO
 
 HX_NS_END_
-#endif // !HX_USE_MODULE
+#endif // !HX_USE_MACROS_WITH_MODULE
 
 /// `hxconsole_command` - Registers a function using a global constructor. Use
 /// in a global scope. The command uses the same name and arguments as the

@@ -13,9 +13,9 @@
 
 #include "libhatchet.h"
 
-// HX_USE_MODULE allows including macros in addition to the hx module.
-#if HX_USE_MODULE
-#error Header does not provide macros only.
+// HX_USE_MACROS_WITH_MODULE allows including macros alongside the module.
+#if HX_USE_MACROS_WITH_MODULE
+#error Header does not provide macros alone.
 #endif
 
 #include "hxkey.hpp"
@@ -26,8 +26,8 @@ HX_NS_BEGIN_
 /// element in `[begin, end)`. Returns true for an empty range.
 template<typename iterator_t_, typename predicate_t_> hxattr_hot hxattr_nodiscard hxconstexpr
 bool hxall_of(iterator_t_ begin_, iterator_t_ end_, const predicate_t_& predicate_) {
-	for(hxrestrict_t<iterator_t_> it_(begin_); it_ != end_; ++it_) {
-		if(!predicate_(*it_)) {
+	for(; begin_ != end_; ++begin_) {
+		if(!predicate_(*begin_)) {
 			return false;
 		}
 	}
@@ -38,8 +38,8 @@ bool hxall_of(iterator_t_ begin_, iterator_t_ end_, const predicate_t_& predicat
 /// least one element in `[begin, end)`. Returns false for an empty range.
 template<typename iterator_t_, typename predicate_t_> hxattr_hot hxattr_nodiscard hxconstexpr
 bool hxany_of(iterator_t_ begin_, iterator_t_ end_, const predicate_t_& predicate_) {
-	for(hxrestrict_t<iterator_t_> it_(begin_); it_ != end_; ++it_) {
-		if(predicate_(*it_)) {
+	for(; begin_ != end_; ++begin_) {
+		if(predicate_(*begin_)) {
 			return true;
 		}
 	}
@@ -51,8 +51,8 @@ bool hxany_of(iterator_t_ begin_, iterator_t_ end_, const predicate_t_& predicat
 template<typename iterator_t_, typename predicate_t_> hxattr_hot hxattr_nodiscard hxconstexpr
 hxsize_t hxcount_if(iterator_t_ begin_, iterator_t_ end_, const predicate_t_& predicate_) {
 	hxsize_t count_ = hxsize_t{0};
-	for(iterator_t_ it_ = begin_; it_ != end_; ++it_) {
-		if(predicate_(*it_)) {
+	for(; begin_ != end_; ++begin_) {
+		if(predicate_(*begin_)) {
 			++count_;
 		}
 	}
@@ -74,9 +74,9 @@ T_ hxexchange(T_& obj_, U_&& new_value_) noexcept {
 /// matches.
 template<typename iterator_t_, typename predicate_t_> hxattr_hot hxattr_nodiscard hxconstexpr
 iterator_t_ hxfind_if(iterator_t_ begin_, iterator_t_ end_, const predicate_t_& predicate_) {
-	for(iterator_t_ it_ = begin_; it_ != end_; ++it_) {
-		if(predicate_(*it_)) {
-			return it_;
+	for(; begin_ != end_; ++begin_) {
+		if(predicate_(*begin_)) {
+			return begin_;
 		}
 	}
 	return end_;
@@ -87,8 +87,8 @@ iterator_t_ hxfind_if(iterator_t_ begin_, iterator_t_ end_, const predicate_t_& 
 /// every element.
 template<typename iterator_t_, typename function_t_> hxattr_hot hxconstexpr
 function_t_ hxfor_each(iterator_t_ begin_, iterator_t_ end_, function_t_ function_) {
-	for(hxrestrict_t<iterator_t_> it_(begin_); it_ != end_; ++it_) {
-		function_(*it_);
+	for(; begin_ != end_; ++begin_) {
+		function_(*begin_);
 	}
 	return function_;
 }
@@ -108,14 +108,12 @@ output_iterator_t_ hxmerge(iterator_t_ begin0_, iterator_t_ end0_, iterator_t_ b
 	hxrestrict_t<iterator_t_> src1_(begin1_);
 	hxrestrict_t<output_iterator_t_> output_r_(output_);
 	while(src0_ != end0_ && src1_ != end1_) {
-		if(less_(*src1_, *src0_)) {
-			*output_r_ = hxmove(*src1_);
-			++output_r_; ++src1_;
-		}
-		else {
-			*output_r_ = hxmove(*src0_);
-			++output_r_; ++src0_;
-		}
+		const bool take1_ = less_(*src1_, *src0_);
+		const hxrestrict_t<iterator_t_> sel_ = take1_ ? src1_ : src0_;
+		*output_r_ = hxmove(*sel_);
+		++output_r_;
+		src1_ = src1_ + static_cast<ptrdiff_t>(take1_);
+		src0_ = src0_ + static_cast<ptrdiff_t>(!take1_);
 	}
 	while(src0_ != end0_) {
 		*output_r_ = hxmove(*src0_);
@@ -290,18 +288,13 @@ output_iterator_t_ hxset_union(iterator_t_ begin0_, iterator_t_ end0_, iterator_
 	hxrestrict_t<output_iterator_t_> output_r_(output_);
 
 	while(src0_ != end0_ && src1_ != end1_) {
-		if(less_(*src1_, *src0_)) {
-			*output_r_ = hxmove(*src1_);
-			++output_r_; ++src1_;
-		}
-		else if(less_(*src0_, *src1_)) {
-			*output_r_ = hxmove(*src0_);
-			++output_r_; ++src0_;
-		}
-		else {
-			*output_r_ = hxmove(*src0_);
-			++output_r_; ++src0_; ++src1_;
-		}
+		const bool take1_ = less_(*src1_, *src0_);
+		const bool less0_ = less_(*src0_, *src1_);
+		const hxrestrict_t<iterator_t_> sel_ = take1_ ? src1_ : src0_;
+		*output_r_ = hxmove(*sel_);
+		++output_r_;
+		src0_ = src0_ + static_cast<ptrdiff_t>(!take1_);
+		src1_ = src1_ + static_cast<ptrdiff_t>(!less0_);
 	}
 
 	while(src0_ != end0_) {

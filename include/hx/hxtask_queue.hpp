@@ -8,9 +8,9 @@
 
 #include "libhatchet.h"
 
-// HX_USE_MODULE allows including macros in addition to the hx module.
-#if HX_USE_MODULE
-#error Header does not provide macros only.
+// HX_USE_MACROS_WITH_MODULE allows including macros alongside the module.
+#if HX_USE_MACROS_WITH_MODULE
+#error Header does not provide macros alone.
 #endif
 
 #include "hxvector.hpp"
@@ -143,20 +143,20 @@ private:
 	friend class hxtask_wait_for_completion_;
 	template<hxsize_t> friend class hxtask_dag_node;
 
-	enum thread_mode_t_ : uint8_t {
-		thread_mode_pool_,
-		thread_mode_waiting_,
-		thread_mode_stopping_
+	enum class thread_mode_ : uint8_t {
+		pool_,
+		waiting_,
+		stopping_
 	};
-	enum run_level_t_ : uint32_t {
-		run_level_running_ = 0x00c0ffeeu,
-		run_level_stopped_ = 0xdeadbeefu
+	enum class run_level_ : uint32_t {
+		running_ = 0x00c0ffeeu,
+		stopped_ = 0xdeadbeefu
 	};
 
 	static hxthread::return_t thread_task_loop_entry_(hxtask_queue* q_);
-	static void thread_task_loop_(hxtask_queue* q_, thread_mode_t_ mode_);
+	static void thread_task_loop_(hxtask_queue* q_, thread_mode_ mode_);
 
-	run_level_t_ m_queue_run_level_;
+	run_level_ m_queue_run_level_;
 	hxsize_t m_thread_pool_size_;
 	hxthread* m_threads_;
 	mutable hxmutex m_mutex_;

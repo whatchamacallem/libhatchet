@@ -6,7 +6,7 @@
 // instead of individual `#include` directives. `<hx/libhatchet.h>`,
 // `<hx/hxconsole.hpp>`, `<hx/hxprofiler.hpp>` and `<hx/hxtest.hpp>` may be
 // included separately in the same translation unit in order to use their macros
-// as long as `HX_USE_MODULE=1`.
+// as long as `HX_USE_MACROS_WITH_MODULE=1`.
 
 module;
 #include <errno.h>

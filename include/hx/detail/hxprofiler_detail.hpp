@@ -13,13 +13,13 @@
 
 #if !(HX_USE_PROFILER)
 #define HX_PROFILE_ONLY_(x_) ((void)0)
-#if !(HX_USE_MODULE)
+#if !(HX_USE_MACROS_WITH_MODULE)
 inline HX_NS_PREFIX_ hxcycles_t HX_NS_PREFIX_ hxtime_sample_cycles(void) { return 0; }
 #endif
 #else // HX_USE_PROFILER
 #define HX_PROFILE_ONLY_(x_) x_
 
-#if !(HX_USE_MODULE)
+#if !(HX_USE_MACROS_WITH_MODULE)
 
 #if defined __wasm__
 // from "emscripten/emscripten.h"
@@ -125,6 +125,6 @@ private:
 
 } // hxdetail_
 HX_NS_END_
-#endif // !(HX_USE_MODULE)
+#endif // !(HX_USE_MACROS_WITH_MODULE)
 #endif // HX_USE_PROFILER
 #endif // HX_DOXYGEN_PARSER

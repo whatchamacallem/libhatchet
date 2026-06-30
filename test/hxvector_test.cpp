@@ -24,14 +24,14 @@ bool hxvector_test_is_max_heap(const array_t& heap) {
 	for(hxsize_t parent = 0; parent != size; ++parent) {
 		const hxsize_t left = (parent << 1) + 1;
 		const hxsize_t right = left + 1;
-// GCOVR_EXCL_START
+		// GCOVR_EXCL_START
 		if(left < size && hxkey_less(heap[parent], heap[left])) {
 			return false;
 		}
 		if(right < size && hxkey_less(heap[parent], heap[right])) {
 			return false;
 		}
-// GCOVR_EXCL_STOP
+		// GCOVR_EXCL_STOP
 	}
 	return true;
 }

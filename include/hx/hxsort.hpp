@@ -8,9 +8,9 @@
 
 #include "libhatchet.h"
 
-// HX_USE_MODULE allows including macros in addition to the hx module.
-#if HX_USE_MODULE
-#error Header does not provide macros only.
+// HX_USE_MACROS_WITH_MODULE allows including macros alongside the module.
+#if HX_USE_MACROS_WITH_MODULE
+#error Header does not provide macros alone.
 #endif
 
 #include "hxkey.hpp"
@@ -69,16 +69,14 @@ void hxinsertion_sort(iterator_t_ begin_, iterator_t_ end_, const less_t_& less_
 	// Address sanitizer: Avoids adding 1 to null iterators.
 	if(begin_ == end_) { return; }
 
-	// This pointer is the sole owner of the output array.
-	const hxrestrict_t<iterator_t_> begin_r_(begin_);
-	for(iterator_t_ i_ = begin_r_, j_ = begin_r_ + ptrdiff_t{1}; j_ < end_; i_ = j_, ++j_) {
+	for(iterator_t_ i_ = begin_, j_ = begin_ + ptrdiff_t{1}; j_ < end_; i_ = j_, ++j_) {
 		if(less_(*j_, *i_)) {
 			// Move construct. Use hxmove instead of hxswap because it should be
 			// more efficient for simple types. Complex types will require an
 			// T::operator=(T&&) to be efficient.
 			auto t_ = hxmove(*j_);
 			*j_ = hxmove(*i_);
-			while(begin_r_ < i_ && less_(t_, *(i_ - ptrdiff_t{1}))) {
+			while(begin_ < i_ && less_(t_, *(i_ - ptrdiff_t{1}))) {
 				*i_ = hxmove(*(i_ - ptrdiff_t{1}));
 				--i_;
 			}
@@ -101,11 +99,11 @@ template<typename iterator_t_, typename less_t_> hxattr_hot hxconstexpr
 void hxheapsort(iterator_t_ begin_, iterator_t_ end_, const less_t_& less_) {
 	if(begin_ == end_) { return; } // Prevents UB.
 
-	// This is std::make_heap with __restrict added to pointers.
+	// This is std::make_heap.
 	hxdetail_::hxmake_heap_<iterator_t_>(begin_, end_, less_);
 
 	// Swaps the largest values to the end of the array. These two implement
-	// std::pop_heap with __restrict added as well.
+	// std::pop_heap.
 	for(iterator_t_ it_ = end_ - ptrdiff_t{1}; it_ > begin_; --it_) {
 		hxswap(*begin_, *it_);
 		hxdetail_::hxheapsort_heapify_<iterator_t_>(begin_, begin_, it_, less_);

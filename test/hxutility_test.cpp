@@ -82,12 +82,12 @@ static_assert(sizeof(hxrestrict_t<int*>) == sizeof(int*),
 
 namespace {
 
-enum hxutility_test_forward {
-	hxutility_test_forward_none,
-	hxutility_test_forward_lvalue,
-	hxutility_test_forward_const_lvalue,
-	hxutility_test_forward_rvalue,
-	hxutility_test_forward_const_rvalue
+enum class hxutility_test_forward {
+	none,
+	lvalue,
+	const_lvalue,
+	rvalue,
+	const_rvalue
 };
 class hxutility_test_forward_t {
 public:
@@ -96,10 +96,10 @@ public:
 
 hxutility_test_forward_t hxutility_test_forward_make_forwarded() { return { 11 }; }
 hxutility_test_forward_t hxutility_test_forward_make_const_forwarded() { return { 13 }; }
-hxutility_test_forward hxutility_test_forward_detect(hxutility_test_forward_t&) { return hxutility_test_forward_lvalue; }
-hxutility_test_forward hxutility_test_forward_detect(const hxutility_test_forward_t&) { return hxutility_test_forward_const_lvalue; }
-hxutility_test_forward hxutility_test_forward_detect(hxutility_test_forward_t&&) { return hxutility_test_forward_rvalue; }
-hxutility_test_forward hxutility_test_forward_detect(const hxutility_test_forward_t&&) { return hxutility_test_forward_const_rvalue; }
+hxutility_test_forward hxutility_test_forward_detect(hxutility_test_forward_t&) { return hxutility_test_forward::lvalue; }
+hxutility_test_forward hxutility_test_forward_detect(const hxutility_test_forward_t&) { return hxutility_test_forward::const_lvalue; }
+hxutility_test_forward hxutility_test_forward_detect(hxutility_test_forward_t&&) { return hxutility_test_forward::rvalue; }
+hxutility_test_forward hxutility_test_forward_detect(const hxutility_test_forward_t&&) { return hxutility_test_forward::const_rvalue; }
 template<typename T>
 hxutility_test_forward hxutility_test_forward_through_template(T&& value) {
 	return hxutility_test_forward_detect(hxforward<T>(value));
@@ -115,22 +115,22 @@ TEST(hxutility_test, hxabs_double) {
 }
 
 TEST(hxutility_test, hxforward) {
-	EXPECT_EQ(hxutility_test_forward_rvalue,
+	EXPECT_EQ(hxutility_test_forward::rvalue,
 		hxutility_test_forward_detect(hxforward<hxutility_test_forward_t>(hxutility_test_forward_make_forwarded())));
-	EXPECT_EQ(hxutility_test_forward_const_rvalue,
+	EXPECT_EQ(hxutility_test_forward::const_rvalue,
 		hxutility_test_forward_detect(hxforward<const hxutility_test_forward_t>(hxutility_test_forward_make_const_forwarded())));
 	hxutility_test_forward_t lvalue = { 7 };
-	EXPECT_EQ(hxutility_test_forward_lvalue, hxutility_test_forward_through_template(lvalue));
+	EXPECT_EQ(hxutility_test_forward::lvalue, hxutility_test_forward_through_template(lvalue));
 	const hxutility_test_forward_t const_lvalue = { 9 };
-	EXPECT_EQ(hxutility_test_forward_const_lvalue,
+	EXPECT_EQ(hxutility_test_forward::const_lvalue,
 		hxutility_test_forward_through_template(const_lvalue));
-	EXPECT_EQ(hxutility_test_forward_rvalue,
+	EXPECT_EQ(hxutility_test_forward::rvalue,
 		hxutility_test_forward_through_template(hxutility_test_forward_make_forwarded()));
 	hxutility_test_forward_t movable_value = { 17 };
-	EXPECT_EQ(hxutility_test_forward_rvalue,
+	EXPECT_EQ(hxutility_test_forward::rvalue,
 		hxutility_test_forward_through_template(hxmove(movable_value)));
 	const hxutility_test_forward_t const_movable_value = { 19 };
-	EXPECT_EQ(hxutility_test_forward_const_rvalue,
+	EXPECT_EQ(hxutility_test_forward::const_rvalue,
 		hxutility_test_forward_through_template(hxmove(const_movable_value)));
 }
 

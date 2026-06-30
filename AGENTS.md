@@ -103,6 +103,7 @@ with `hxs_`. Prefix calls to the C standard library with `::` to indicate they
 are in the global namespace. Use `src_` and `dst_` for source and destination
 iterators.
 
+Use scoped enums for private symbols and unscoped enums for public symbols.
 Prefix all calls to methods in header files with `this->`.
 
 ## Optimization

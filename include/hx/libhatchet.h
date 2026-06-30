@@ -33,10 +33,10 @@
 
 /// `int LIBHATCHET_VER` - One digit major, and two digit minor and patch
 /// versions.
-#define LIBHATCHET_VER 14404
+#define LIBHATCHET_VER 14405
 
 /// `LIBHATCHET_TAG` - Major, minor and patch version tag name.
-#define LIBHATCHET_TAG "v1.44.4"
+#define LIBHATCHET_TAG "v1.44.5"
 
 #if !defined HX_HARDENING_MODE
 /// `HX_HARDENING_MODE` - Library hardening level. See the README.md for levels.
@@ -69,7 +69,7 @@
 #define hxnull 0
 
 #include "hxsettings.h"
-#if !(HX_USE_MODULE)
+#if !(HX_USE_MACROS_WITH_MODULE)
 #include "hxmemory_manager.h"
 #endif
 
@@ -180,7 +180,7 @@
 #define hxassert_hard(x_, ...) ((void)0)
 #endif
 
-#if !(HX_USE_MODULE)
+#if !(HX_USE_MACROS_WITH_MODULE)
 #if HX_CPLUSPLUS
 
 /// `hxsize_t` - A signed size type, same as `ssize_t` or `ptrdiff_t`. Use on a
@@ -295,4 +295,4 @@ hxattr_noexcept constexpr void hxlog_handler_(enum hxlog_level_t level_, const c
 #endif // HX_CPLUSPLUS < 202302L
 /// \endcond
 
-#endif // !HX_USE_MODULE
+#endif // !HX_USE_MACROS_WITH_MODULE

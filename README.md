@@ -48,21 +48,24 @@ system allocators.
   widely packaged: <https://musl.libc.org/>. No other C++ runtime or C++ code is
   required. pthreads or C99's `<thread.h>` may be used for threading, which are
   widely implemented standards. See `.clang-tidy` for a discussion of linting
-  rules and portability concerns.
+  rules and portability concerns. All public symbols (aside from methods and
+  fields) start with either `HX` or `hx`. All non-public symbols in the headers
+  end with an underscore. A subset of the Google Test macros is also optionally
+  provided.
 
 - **Profiling System**: Uses processor cycle sampling to create a hierarchical
   timeline capture compatible with Chrome's `about://tracing` viewer (navigation
   uses W, A, S, and D keys). One line of assembly may be needed for uncommon
   hardware.
 
-- **Memory Management**: Supports various allocation semantics, particularly
-  valuable for applications where crashing from memory fragmentation is
-  unacceptable. If you have a lot of temporary allocations, this system
-  reasonably offers 30% memory and 30% performance improvements with minor
-  modifications to your code. Complex applications are supported using an array
-  of variable sized stacks. Fancy tools like heaptrack can be used by disabling
-  the memory manager with `-DHX_USE_MEMORY_MANAGER=0`. Leak tracking is also
-  built in.
+- **Memory Management**: Fast and deterministic. Supports various allocation
+  semantics, particularly valuable for applications where crashing from memory
+  fragmentation is unacceptable. If you have a lot of temporary allocations,
+  this system reasonably offers 30% memory and 30% performance improvements
+  overall with just a few RAII scopes added. Complex applications are supported
+  using an array of variable sized stacks. Fancy tools like heaptrack can also
+  be used by disabling the memory manager with `-DHX_USE_MEMORY_MANAGER=0`. Leak
+  tracking is provided.
 
 - **Console**: Provides an embedded command processor with automatic C++
   function binding using templates. Useful for interactive target debugging
@@ -99,14 +102,16 @@ system allocators.
   debuggers and most code editors to display container contents in a
   human-readable format.
 
-- **Algorithms**: `hxradix_sort` is provided for Θ(n) sorting. See
-  `<hx/hxalgorithm.hpp>` for standard algorithms and comparison based sorting and
-  lookup.
+- **Algorithms**: This implementation is designed to use the `__restrict`
+  keyword wherever appropriate. See `<hx/hxalgorithm.hpp>` for standard
+  algorithms and `<hx/hxsort.hpp>` for comparison based sorting and lookup.
+  Radix sorting with `<hx/hxradix_sort.hpp>` is recommended for Θ(n) sorting.
+  Less common functions have been omitted to reduce compile time.
 
-- **Performance Focus**: This is systems code. Everything has to be well
-  optimized and cache-coherent without causing code bloat. This codebase avoids
-  exceptions and RTTI for efficiency. Exceptions will be caught by the test
-  driver and the console if they are enabled.
+- **Performance Focus**: This is systems code. Everything should be optimized
+  and cache-coherent without causing code bloat. This codebase avoids exceptions
+  and RTTI for efficiency. Exceptions will be caught by the test driver and the
+  console if they are enabled and make it that far.
 
 - **C99 Compatibility**: Logging, asserts, and memory management are available
   in plain C99 via `<hx/libhatchet.h>`.

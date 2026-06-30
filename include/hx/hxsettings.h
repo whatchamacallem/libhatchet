@@ -236,12 +236,12 @@
 #define hxif_constexpr if
 #endif
 
-#if !defined HX_USE_MODULE
-/// `HX_USE_MODULE` - Setting `-DHX_USE_MODULE=1` when using modules (e.g.
+#if !defined HX_USE_MACROS_WITH_MODULE
+/// `HX_USE_MACROS_WITH_MODULE` - Setting `-DHX_USE_MACROS_WITH_MODULE=1` when using modules (e.g.
 /// `import hx;`) will allow the macros in `<hx/libhatchet.h>`,
 /// `<hx/hxconsole.hpp>`, `<hx/hxprofiler.hpp>` and `<hx/hxtest.hpp>` to be
 /// textually included alongside `import hx;`. See `src/hxmodule.cppm`.
-#define HX_USE_MODULE 0
+#define HX_USE_MACROS_WITH_MODULE 0
 #endif
 
 #if !defined HX_USE_CONSOLE
@@ -379,7 +379,7 @@ HX_CHECK_USE_(HX_USE_GOOGLE_TEST)
 HX_CHECK_USE_(HX_USE_LIBCXX)
 HX_CHECK_USE_(HX_USE_LOGGING)
 HX_CHECK_USE_(HX_USE_MEMORY_MANAGER)
-HX_CHECK_USE_(HX_USE_MODULE)
+HX_CHECK_USE_(HX_USE_MACROS_WITH_MODULE)
 HX_CHECK_USE_(HX_USE_PROFILER)
 HX_CHECK_USE_(HX_USE_THREADS)
 #endif
@@ -414,7 +414,7 @@ HX_CHECK_USE_(HX_USE_NAMESPACE)
 #endif
 /// \endcond
 
-#if !(HX_USE_MODULE)
+#if !(HX_USE_MACROS_WITH_MODULE)
 #if HX_CPLUSPLUS
 extern "C" {
 #endif
@@ -440,4 +440,4 @@ void hxsettings_construct_(void);
 #if HX_CPLUSPLUS
 } // extern "C"
 #endif
-#endif // HX_USE_MODULE
+#endif // HX_USE_MACROS_WITH_MODULE

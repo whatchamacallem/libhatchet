@@ -55,10 +55,10 @@ hxattr_weak int __cxa_guard_acquire(guard_t* guard) {
 
 	uint8_t expected = 0;
 	while (!__atomic_compare_exchange_n(status, &expected, 1, false, __ATOMIC_ACQ_REL, __ATOMIC_ACQUIRE)) {
-// GCOVR_EXCL_START
+		// GCOVR_EXCL_START
 		if (expected == 2) { return 0; }
 		expected = 0;
-// GCOVR_EXCL_STOP
+		// GCOVR_EXCL_STOP
 	}
 	return 1;
 }
@@ -190,11 +190,11 @@ hxattr_weak hxattr_noexcept bool hxassert_handler(const char* file, size_t line)
 	if(hxg_assert_handler != hxnull && hxg_assert_handler()) {
 		return true;
 	}
-// GCOVR_EXCL_START
+	// GCOVR_EXCL_START
 	hxlog_handler(hxlog_level_assert, "breakpoint %s(%zu)", f, line);
 	// Return to hxbreakpoint at the calling line.
 	return false;
-// GCOVR_EXCL_STOP
+	// GCOVR_EXCL_STOP
 }
 #else
 hxattr_weak hxattr_noexcept void hxassert_handler(void) {

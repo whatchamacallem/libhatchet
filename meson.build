@@ -48,7 +48,8 @@ if get_option('build_module')
 	# headers re-included from the module purview and -fmodule-output=@OUTPUT1@
 	# to produce hx.pcm alongside the object file. Consumers find it via
 	# -fprebuilt-module-path pointing at the build root. Does not declare
-	# HX_USE_MODULE=1. That is for accessing macros alongside the module.
+	# HX_USE_MACROS_WITH_MODULE=1. That is for accessing macros alongside the
+	# module.
 
 	_hxcpp = meson.get_compiler('cpp')
 	_hxis_clang = _hxcpp.get_id() == 'clang'

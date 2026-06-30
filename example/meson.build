@@ -3,7 +3,7 @@
 # This file is licensed under the terms of the LICENSE.md file.
 
 if get_option('build_module')
-	# DHX_USE_MODULE=1 allows accessing macros from certain headers.
+	# DHX_USE_MACROS_WITH_MODULE=1 allows accessing macros from certain headers.
 	_module_consumer_args = _hxis_clang ? [] : ['-fmodules-ts']
 
 	_example_obj = custom_target('hxexample',
@@ -13,7 +13,7 @@ if get_option('build_module')
 		command : _hxcpp.cmd_array() + get_option('cpp_args') + hxwarning_args
 			+ hxmodule_include_args + hxmodule_search_args + _module_consumer_args
 			+ [
-				'-DHX_USE_MODULE=1',
+				'-DHX_USE_MACROS_WITH_MODULE=1',
 				'-c', '@INPUT@', '-o', '@OUTPUT@',
 			],
 	)

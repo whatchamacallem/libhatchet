@@ -19,7 +19,7 @@
 /// | `hxprofiler_write_to_chrome_tracing` | Writes captured samples to Chrome tracing JSON. |
 
 #include "libhatchet.h"
-#if !(HX_USE_MODULE)
+#if !(HX_USE_MACROS_WITH_MODULE)
 
 // These are always included so the build doesn't break when the profiler is
 // turned off.
@@ -53,7 +53,7 @@ inline hxcycles_t hxtime_sample_cycles(void);
 
 HX_NS_END_
 
-#endif // !HX_USE_MODULE
+#endif // !HX_USE_MACROS_WITH_MODULE
 
 /// `hxprofile_scope(const char* label_string_literal)` - Declares an RAII-style
 /// profiling sample. WARNING: A pointer to `label_string_literal` is kept.

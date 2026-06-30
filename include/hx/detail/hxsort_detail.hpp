@@ -17,17 +17,16 @@ void hxheapsort(iterator_t_ begin_, iterator_t_ end_, const less_t_& less_);
 
 namespace hxdetail_ {
 
-enum : hxsize_t { hxpartition_sort_cutoff_ = 32 };
+hxinline_constexpr hxsize_t hxpartition_sort_cutoff_ = 32;
 
 // Restores the heap property by pushing the current value down until it is not
 // less than its children.
 template<typename iterator_t_, typename less_t_> hxattr_hot hxconstexpr
 void hxheapsort_heapify_(const iterator_t_ begin_, iterator_t_ current_,
 		const iterator_t_ end_, const less_t_& less_) {
-	hxrestrict_t<iterator_t_> current_r_(current_);
 	const hxsize_t size_ = end_ - begin_;
 	for(;;) {
-		const hxsize_t left_idx_ = ((current_r_ - begin_) << 1) + hxsize_t{1};
+		const hxsize_t left_idx_ = ((current_ - begin_) << 1) + hxsize_t{1};
 		if(left_idx_ >= size_) {
 			return;
 		}
@@ -39,19 +38,19 @@ void hxheapsort_heapify_(const iterator_t_ begin_, iterator_t_ current_,
 			next_ = right_;
 		}
 
-		if(!less_(*current_r_, *next_)) {
+		if(!less_(*current_, *next_)) {
 			return;
 		}
 
-		hxswap(*current_r_, *next_);
-		current_r_ = next_;
+		hxswap(*current_, *next_);
+		current_ = next_;
 	}
 }
 
 // `hxmake_heap_` - Converts the range `[begin, end)` into a max heap using the
 // provided comparator. Should work well for mostly heapified data.
 template<typename iterator_t_, typename less_t_> hxattr_hot hxconstexpr
-void hxmake_heap_(hxrestrict_t<iterator_t_> begin_, iterator_t_ end_, const less_t_& less_) {
+void hxmake_heap_(iterator_t_ begin_, iterator_t_ end_, const less_t_& less_) {
 	for(iterator_t_ heap_end_ = begin_ + hxsize_t{1}; heap_end_ < end_; ) {
 		iterator_t_ node_ = heap_end_;
 		++heap_end_;
@@ -79,7 +78,7 @@ void hxmake_heap_(hxrestrict_t<iterator_t_> begin_, iterator_t_ end_, const less
 // intended to sort ranges over a minimum length before calling back to the
 // `sort_callback` parameter.
 template<typename iterator_t_, typename less_t_, typename sort_callback_t_>  hxattr_hot hxconstexpr
-void hxpartition_sort_(hxrestrict_t<iterator_t_> begin_, iterator_t_ end_, const less_t_& less_,
+void hxpartition_sort_(iterator_t_ begin_, iterator_t_ end_, const less_t_& less_,
 						const sort_callback_t_& sort_callback_, int depth_) {
 	hxassertmsg((end_ - begin_) > hxpartition_sort_cutoff_, "range_error Use hxinsertion_sort.");
 	const hxsize_t length_ = end_ - begin_;

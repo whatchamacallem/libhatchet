@@ -280,14 +280,14 @@ public:
 /// because `hxdelete` calls `hxfree` which is not `constexpr`.
 class hxconsteval_delete {
 public:
-// GCOVR_EXCL_START
+	// GCOVR_EXCL_START
 	/// Deletes the object using `::delete`.
 	template <typename T_>
 	constexpr void operator()(T_* t_) const { ::delete t_; }
 
 	/// Always returns true, indicating the deleter is valid.
 	constexpr operator bool(void) const { return true; }
-// GCOVR_EXCL_STOP
+	// GCOVR_EXCL_STOP
 };
 #endif
 /// \cond HIDDEN

@@ -16,7 +16,7 @@
 #include <stdio.h>
 #include <math.h>
 
-#if defined HX_USE_MODULE && (HX_USE_MODULE)
+#if defined HX_USE_MACROS_WITH_MODULE && (HX_USE_MACROS_WITH_MODULE)
 import hx;
 #else
 #include <hx/hxarray.hpp>
@@ -24,10 +24,10 @@ import hx;
 #include <hx/hxtask_queue.hpp>
 #endif
 
-// These provide macros when HX_USE_MODULE=1.
+// These provide macros when HX_USE_MACROS_WITH_MODULE=1.
 #include <hx/hxconsole.hpp>
 #include <hx/hxprofiler.hpp>
-// Unused. Included to make sure it compiles with HX_USE_MODULE=1.
+// Unused. Included to make sure it compiles with HX_USE_MACROS_WITH_MODULE=1.
 #include <hx/hxtest.hpp>
 
 namespace {

@@ -10,14 +10,13 @@ HX_NS_USE
 
 namespace {
 
+hxinline_constexpr hxsize_t hxs_max_pool = 8;
+hxinline_constexpr hxsize_t hxs_max_tasks = 20;
+
 class hxtask_queue_test_f :
 	public testing::Test
 {
 public:
-	enum : uint8_t {
-		max_pool = 8,
-		max_tasks = 20
-	};
 	class hxtask_test_t : public hxtask {
 	public:
 		hxtask_test_t() : m_exec_count(0), m_reenqueue_count(0) { }
@@ -40,7 +39,7 @@ public:
 
 TEST_F(hxtask_queue_test_f, nop) {
 	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
-	for(hxsize_t i = 0; i <= max_pool; ++i) {
+	for(hxsize_t i = 0; i <= hxs_max_pool; ++i) {
 		{
 				const hxtask_queue q(1, i);
 		}
@@ -54,12 +53,12 @@ TEST_F(hxtask_queue_test_f, nop) {
 
 TEST_F(hxtask_queue_test_f, multiple) {
 	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
-	for(hxsize_t i = 0; i <= max_pool; ++i) {
-		for(hxsize_t j = 1; j < max_tasks; ++j) {
-			hxtask_test_t tasks0[max_tasks];
-			hxtask_test_t tasks1[max_tasks];
+	for(hxsize_t i = 0; i <= hxs_max_pool; ++i) {
+		for(hxsize_t j = 1; j < hxs_max_tasks; ++j) {
+			hxtask_test_t tasks0[hxs_max_tasks];
+			hxtask_test_t tasks1[hxs_max_tasks];
 		{
-			hxtask_queue q(max_tasks, i);
+			hxtask_queue q(hxs_max_tasks, i);
 			for(hxsize_t k = 0; k <= j; ++k) {
 				q.enqueue(&tasks0[k]);
 			}
@@ -73,9 +72,9 @@ TEST_F(hxtask_queue_test_f, multiple) {
 				EXPECT_EQ(tasks0[k].get_exec_count(), 1);
 				EXPECT_EQ(tasks1[k].get_exec_count(), 1);
 			}
-			hxtask_test_t tasks2[max_tasks];
+			hxtask_test_t tasks2[hxs_max_tasks];
 			{
-				hxtask_queue q(max_tasks, i);
+				hxtask_queue q(hxs_max_tasks, i);
 				for(hxsize_t k = 0; k <= j; ++k) {
 					q.enqueue(&tasks2[k]);
 				}
@@ -89,12 +88,12 @@ TEST_F(hxtask_queue_test_f, multiple) {
 
 TEST_F(hxtask_queue_test_f, multiple_reenqueuing) {
 	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
-	for(hxsize_t i = 0; i <= max_pool; ++i) {
-		for(hxsize_t j = 1; j < max_tasks; ++j) {
-			hxtask_test_t tasks0[max_tasks];
-			hxtask_test_t tasks1[max_tasks];
+	for(hxsize_t i = 0; i <= hxs_max_pool; ++i) {
+		for(hxsize_t j = 1; j < hxs_max_tasks; ++j) {
+			hxtask_test_t tasks0[hxs_max_tasks];
+			hxtask_test_t tasks1[hxs_max_tasks];
 			{
-				hxtask_queue q(max_tasks, i);
+				hxtask_queue q(hxs_max_tasks, i);
 				for(hxsize_t k = 0; k <= j; ++k) {
 					tasks0[k].set_reenqueue_count(k);
 					q.enqueue(&tasks0[k]);
@@ -109,9 +108,9 @@ TEST_F(hxtask_queue_test_f, multiple_reenqueuing) {
 				EXPECT_EQ(tasks0[k].get_exec_count(), (k + 1));
 				EXPECT_EQ(tasks1[k].get_exec_count(), (k + 1));
 			}
-			hxtask_test_t tasks2[max_tasks];
+			hxtask_test_t tasks2[hxs_max_tasks];
 			{
-				hxtask_queue q(max_tasks, i);
+				hxtask_queue q(hxs_max_tasks, i);
 				for(hxsize_t k = 0; k <= j; ++k) {
 					tasks2[k].set_reenqueue_count(k);
 					q.enqueue(&tasks2[k]);

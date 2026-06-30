@@ -49,7 +49,7 @@
 ///   | `SUCCEED(void)` | Marks the current test as successful without any checks. |
 ///   | `FAIL(void)` | WARNING. Calls `return`. Marks the current test as failed. |
 ///   | `ADD_FAILURE(void)` | Adds a non-fatal failure at the current location. |
-///   | `ADD_FAILURE_AT(const char* file, size_t line)` | Adds a non-fatal failure at the specified location. |
+///   | `ADD_FAILURE_AT(const char* file, int line)` | Adds a non-fatal failure at the specified location. |
 ///   | `EXPECT_TRUE(bool x)` | Requires that the condition is true. |
 ///   | `EXPECT_FALSE(bool x)` | Requires that the condition is false. |
 ///   | `EXPECT_EQ(T a, T b)` | Requires `a == b`. |
@@ -86,7 +86,7 @@
 #include <gtest/gtest.h>
 #else
 
-#if !(HX_USE_MODULE)
+#if !(HX_USE_MACROS_WITH_MODULE)
 
 #include "detail/hxtest_detail.hpp"
 
@@ -118,7 +118,7 @@ protected:
 };
 
 } // namespace testing
-#endif // !HX_USE_MODULE
+#endif // !HX_USE_MACROS_WITH_MODULE
 
 /// \cond HIDDEN
 // `HX_TEST_NAME_` - Macro for concatenating three arguments into one name.
@@ -137,7 +137,7 @@ protected:
 		virtual const char* suite_(void) const override { return #suite_name_; } \
 		virtual const char* case_(void) const override { return #case_name_; } \
 		virtual const char* file_(void) const override { return __FILE__; } \
-		virtual size_t line_(void) const override { return __LINE__; } \
+		virtual int line_(void) const override { return __LINE__; } \
 	} static HX_TEST_NAME_(hxs_test_, suite_name_, case_name_); \
 	void HX_TEST_NAME_(hxtest_, suite_name_, case_name_)::run_test_(void)
 
@@ -155,7 +155,7 @@ protected:
 		virtual const char* suite_(void) const override { return #suite_fixture_; } \
 		virtual const char* case_(void) const override { return #case_name_; } \
 		virtual const char* file_(void) const override { return __FILE__; } \
-		virtual size_t line_(void) const override { return __LINE__; } \
+		virtual int line_(void) const override { return __LINE__; } \
 	} static HX_TEST_NAME_(hxs_test_f_, suite_fixture_, case_name_); \
 	void HX_TEST_NAME_(hxtest_f_, suite_fixture_, case_name_)::hxtest_case_subclass_::hxrun_test_f_(void)
 
@@ -172,9 +172,9 @@ protected:
 #define FAIL() do { HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_(false, __FILE__, __LINE__, "FAIL()", false); return; } while (0)
 /// `void ADD_FAILURE(void)` - Adds a non-fatal failure at the current location.
 #define ADD_FAILURE() HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_(false, __FILE__, __LINE__, "ADD_FAILURE()", false)
-/// `void ADD_FAILURE_AT(const char*, size_t)` - Adds a non-fatal failure at the
-/// specified location.
-#define ADD_FAILURE_AT(file_, line_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_(false, (file_), static_cast<size_t>(line_), "ADD_FAILURE_AT()", false)
+/// `void ADD_FAILURE_AT(const char*, int)` - Adds a non-fatal failure at the
+/// specified file and line.
+#define ADD_FAILURE_AT(file_, line_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_(false, (file_), static_cast<int>(line_), "ADD_FAILURE_AT()", false)
 
 /// `void EXPECT_TRUE(bool)` - Requires that the condition is true.
 #define EXPECT_TRUE(x_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_((x_), __FILE__, __LINE__, #x_, false)

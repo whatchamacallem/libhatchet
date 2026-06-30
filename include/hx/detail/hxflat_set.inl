@@ -92,7 +92,7 @@ inline hxsize_t hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::capacity(vo
 
 template<typename key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
 inline void hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::clear(void) noexcept {
-	key_t_* hxrestrict it_ = this->data();
+	key_t_* it_ = this->data();
 	const key_t_* const end_ = m_end_;
 	m_end_ = this->data();
 	for(; it_ != end_; ++it_) {
@@ -103,13 +103,13 @@ inline void hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::clear(void) noe
 template<typename key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
 inline hxsize_t hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::count(const key_t_& key_) const {
 	const compare_t_ comp_;
-	const lower_bound_result_ r_ = this->lower_bound_(key_);
+	const key_t_* const pos_ = this->lower_bound_(key_);
 	const key_t_* const end_ = m_end_;
 	if(!multi_t_) {
-		return (r_.pos_ < end_ && !comp_(key_, *r_.pos_)) ? 1 : 0;
+		return (pos_ < end_ && !comp_(key_, *pos_)) ? 1 : 0;
 	}
 	hxsize_t total_ = 0;
-	for(const key_t_* it_ = r_.pos_; it_ != end_ && !comp_(key_, *it_); ++it_) {
+	for(const key_t_* it_ = pos_; it_ != end_ && !comp_(key_, *it_); ++it_) {
 		++total_;
 	}
 	return total_;
@@ -118,21 +118,21 @@ inline hxsize_t hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::count(const
 template<typename key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
 inline hxsize_t hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::erase(const key_t_& key_) noexcept {
 	const compare_t_ comp_;
-	const lower_bound_result_ r_ = this->lower_bound_(key_);
+	key_t_* const pos_ = this->lower_bound_(key_);
 	key_t_* end_ = m_end_;
 	if(!multi_t_) {
-		if(r_.pos_ >= end_ || comp_(key_, *r_.pos_)) { return 0; }
-		this->erase(r_.pos_);
+		if(pos_ >= end_ || comp_(key_, *pos_)) { return 0; }
+		this->erase(pos_);
 		return 1;
 	}
-	key_t_* hi_ptr_ = r_.pos_;
+	key_t_* hi_ptr_ = pos_;
 	while(hi_ptr_ != end_ && !comp_(key_, *hi_ptr_)) {
 		++hi_ptr_;
 	}
-	const hxsize_t count_ = static_cast<hxsize_t>(hi_ptr_ - r_.pos_);
+	const hxsize_t count_ = static_cast<hxsize_t>(hi_ptr_ - pos_);
 	if(count_ == 0) { return 0; }
 
-	key_t_* hxrestrict dst_ = r_.pos_;
+	key_t_* hxrestrict dst_ = pos_;
 	for(key_t_* src_ = hi_ptr_; src_ != end_; ++dst_, ++src_) {
 		*dst_ = hxmove(*src_);
 	}
@@ -148,9 +148,9 @@ template<typename key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_
 inline auto hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::erase(const key_t_* pos_) noexcept -> const key_t_* {
 	hxassertmsg(pos_ != hxnull && static_cast<size_t>(pos_ - this->data()) < static_cast<size_t>(m_end_ - this->data()),
 		"invalid_iterator");
-	key_t_* hxrestrict k_ = const_cast<key_t_*>(pos_);
+	key_t_* const k_ = const_cast<key_t_*>(pos_);
 	key_t_* const end_ = m_end_ - 1;
-	for(key_t_* it_ = k_; it_ != end_; ++it_) {
+	for(key_t_* hxrestrict it_ = k_; it_ != end_; ++it_) {
 		*it_ = hxmove(*(it_ + 1));
 	}
 	end_->key_t_::~key_t_();
@@ -162,9 +162,9 @@ template<typename key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_
 inline auto hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::find(const key_t_& key_) const
 		-> const key_t_* {
 	const compare_t_ comp_;
-	const lower_bound_result_ r_ = this->lower_bound_(key_);
-	if(r_.pos_ < m_end_ && !comp_(key_, *r_.pos_)) {
-		return r_.pos_;
+	const key_t_* const pos_ = this->lower_bound_(key_);
+	if(pos_ < m_end_ && !comp_(key_, *pos_)) {
+		return pos_;
 	}
 	return hxnull;
 }
@@ -172,31 +172,31 @@ inline auto hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::find(const key_
 template<typename key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
 inline auto hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::insert(const key_t_& key_) noexcept -> const key_t_* {
 	const compare_t_ comp_;
-	const lower_bound_result_ r_ = this->lower_bound_(key_);
+	key_t_* const pos_ = this->lower_bound_(key_);
 	hxif_constexpr(!multi_t_) {
-		if(r_.pos_ < m_end_ && !comp_(key_, *r_.pos_)) {
-			return r_.pos_;
+		if(pos_ < m_end_ && !comp_(key_, *pos_)) {
+			return pos_;
 		}
 	}
-	return this->insert_at_(r_.pos_, key_);
+	return this->insert_at_(pos_, key_);
 }
 
 template<typename key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
 inline auto hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::insert(key_t_&& key_) noexcept -> const key_t_* {
 	const compare_t_ comp_;
-	const lower_bound_result_ r_ = this->lower_bound_(key_);
+	key_t_* const pos_ = this->lower_bound_(key_);
 	hxif_constexpr(!multi_t_) {
-		if(r_.pos_ < m_end_ && !comp_(key_, *r_.pos_)) {
-			return r_.pos_;
+		if(pos_ < m_end_ && !comp_(key_, *pos_)) {
+			return pos_;
 		}
 	}
-	return this->insert_at_(r_.pos_, hxmove(key_));
+	return this->insert_at_(pos_, hxmove(key_));
 }
 
 template<typename key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
 inline auto hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::lower_bound(const key_t_& key_) const
 		-> const key_t_* {
-	return this->lower_bound_(key_).pos_;
+	return this->lower_bound_(key_);
 }
 
 template<typename key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
@@ -219,9 +219,9 @@ template<typename key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_
 inline auto hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::upper_bound(const key_t_& key_) const
 		-> const key_t_* {
 	const compare_t_ comp_;
-	const lower_bound_result_ r_ = this->lower_bound_(key_);
+	const key_t_* const pos_ = this->lower_bound_(key_);
 	const key_t_* const end_ = m_end_;
-	const key_t_* it_ = r_.pos_;
+	const key_t_* it_ = pos_;
 	if(!multi_t_) {
 		if(it_ < end_ && !comp_(key_, *it_)) { ++it_; }
 		return it_;
@@ -258,8 +258,8 @@ inline bool hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::equal(
 		const hxflat_set<key_t_, compare_t_, multi_t_, capacity_x_>& x_) const {
 	const hxsize_t size_ = static_cast<hxsize_t>(m_end_ - this->data());
 	if(size_ != static_cast<hxsize_t>(x_.m_end_ - x_.data())) { return false; }
-	const key_t_* hxrestrict k0_ = this->data();
-	const key_t_* hxrestrict k1_ = x_.data();
+	const key_t_* k0_ = this->data();
+	const key_t_* k1_ = x_.data();
 	for(hxsize_t i_ = 0; i_ < size_; ++i_) {
 		if(!hxkey_equal(k0_[i_], k1_[i_])) { return false; }
 	}
@@ -273,8 +273,8 @@ inline bool hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::less(
 	const hxsize_t size0_ = static_cast<hxsize_t>(m_end_ - this->data());
 	const hxsize_t size1_ = static_cast<hxsize_t>(x_.m_end_ - x_.data());
 	const hxsize_t size_ = hxmin(size0_, size1_);
-	const key_t_* hxrestrict k0_ = this->data();
-	const key_t_* hxrestrict k1_ = x_.data();
+	const key_t_* k0_ = this->data();
+	const key_t_* k1_ = x_.data();
 	for(hxsize_t i_ = 0; i_ < size_; ++i_) {
 		if(!hxkey_equal(k0_[i_], k1_[i_])) { return hxkey_less(k0_[i_], k1_[i_]); }
 	}
@@ -283,9 +283,9 @@ inline bool hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::less(
 
 template<typename key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
 inline auto hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::lower_bound_(
-		const key_t_& key_) const -> lower_bound_result_ {
+		const key_t_& key_) const -> key_t_* {
 	const compare_t_ comp_;
-	const key_t_* hxrestrict keys_ = this->data();
+	const key_t_* keys_ = this->data();
 	hxsize_t lo_ = 0;
 	hxsize_t hi_ = static_cast<hxsize_t>(m_end_ - keys_);
 	while(lo_ < hi_) {
@@ -297,7 +297,7 @@ inline auto hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::lower_bound_(
 			hi_ = mid_;
 		}
 	}
-	return { const_cast<key_t_*>(keys_) + lo_, const_cast<key_t_* hxrestrict>(keys_) };
+	return const_cast<key_t_*>(keys_) + lo_;
 }
 
 HX_END_INL_

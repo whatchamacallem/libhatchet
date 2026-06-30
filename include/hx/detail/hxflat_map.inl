@@ -170,13 +170,14 @@ inline void hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capacity_>::clea
 template<typename key_t_, typename mapped_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
 inline hxsize_t hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capacity_>::count(const key_t_& key_) const {
 	const compare_t_ comp_;
-	const lower_bound_result_ r_ = this->lower_bound_(key_);
+	const hxsize_t index_ = this->lower_bound_(key_);
 	const hxsize_t size_ = m_size_;
+	const key_t_* hxrestrict keys_ = m_keys_.data();
 	if(!multi_t_) {
-		return (r_.index_ < size_ && !comp_(key_, r_.keys_[r_.index_])) ? 1 : 0;
+		return (index_ < size_ && !comp_(key_, keys_[index_])) ? 1 : 0;
 	}
 	hxsize_t total_ = 0;
-	for(hxsize_t i_ = r_.index_; i_ < size_ && !comp_(key_, r_.keys_[i_]); ++i_) {
+	for(hxsize_t i_ = index_; i_ < size_ && !comp_(key_, keys_[i_]); ++i_) {
 		++total_;
 	}
 	return total_;
@@ -188,10 +189,10 @@ inline bool hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capacity_>::equa
 		const hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capacity_x_>& x_) const {
 	const hxsize_t size_ = m_size_;
 	if(size_ != x_.m_size_) { return false; }
-	const key_t_* hxrestrict k0_ = m_keys_.data();
-	const key_t_* hxrestrict k1_ = x_.m_keys_.data();
-	const mapped_t_* hxrestrict v0_ = m_values_.data();
-	const mapped_t_* hxrestrict v1_ = x_.m_values_.data();
+	const key_t_* k0_ = m_keys_.data();
+	const key_t_* k1_ = x_.m_keys_.data();
+	const mapped_t_* v0_ = m_values_.data();
+	const mapped_t_* v1_ = x_.m_values_.data();
 	for(hxsize_t i_ = 0; i_ < size_; ++i_) {
 		if(!hxkey_equal(k0_[i_], k1_[i_]) || !hxkey_equal(v0_[i_], v1_[i_])) { return false; }
 	}
@@ -201,25 +202,25 @@ inline bool hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capacity_>::equa
 template<typename key_t_, typename mapped_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
 inline hxsize_t hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capacity_>::erase(const key_t_& key_) noexcept {
 	const compare_t_ comp_;
-	const lower_bound_result_ r_ = this->lower_bound_(key_);
+	const hxsize_t index_ = this->lower_bound_(key_);
 	const hxsize_t size_ = m_size_;
+	key_t_* hxrestrict k_ = m_keys_.data();
 	if(!multi_t_) {
-		if(r_.index_ >= size_ || comp_(key_, r_.keys_[r_.index_])) { return 0; }
-		this->erase(iterator(this, r_.index_));
+		if(index_ >= size_ || comp_(key_, k_[index_])) { return 0; }
+		this->erase(iterator(this, index_));
 		return 1;
 	}
-	key_t_* hxrestrict k_ = r_.keys_;
 	mapped_t_* hxrestrict v_ = m_values_.data();
-	hxsize_t hi_ = r_.index_;
+	hxsize_t hi_ = index_;
 	while(hi_ < size_ && !comp_(key_, k_[hi_])) {
 		++hi_;
 	}
-	const hxsize_t count_ = hi_ - r_.index_;
+	const hxsize_t count_ = hi_ - index_;
 	if(count_ == 0) { return 0; }
 	const hxsize_t tail_ = size_ - hi_;
 	for(hxsize_t i_ = 0; i_ < tail_; ++i_) {
-		k_[r_.index_ + i_] = hxmove(k_[hi_ + i_]);
-		v_[r_.index_ + i_] = hxmove(v_[hi_ + i_]);
+		k_[index_ + i_] = hxmove(k_[hi_ + i_]);
+		v_[index_ + i_] = hxmove(v_[hi_ + i_]);
 	}
 	const hxsize_t new_size_ = size_ - count_;
 	for(hxsize_t i_ = new_size_; i_ < size_; ++i_) {
@@ -253,9 +254,9 @@ inline auto hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capacity_>::eras
 template<typename key_t_, typename mapped_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
 inline const mapped_t_* hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capacity_>::find(const key_t_& key_) const {
 	const compare_t_ comp_;
-	const lower_bound_result_ r_ = this->lower_bound_(key_);
-	if(r_.index_ < m_size_ && !comp_(key_, r_.keys_[r_.index_])) {
-		return m_values_.data() + r_.index_;
+	const hxsize_t index_ = this->lower_bound_(key_);
+	if(index_ < m_size_ && !comp_(key_, m_keys_.data()[index_])) {
+		return m_values_.data() + index_;
 	}
 	return hxnull;
 }
@@ -280,26 +281,26 @@ template<typename key_t_, typename mapped_t_, typename compare_t_, bool multi_t_
 inline auto hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capacity_>::insert(
 		const key_t_& key_, const mapped_t_& mapped_) noexcept -> iterator {
 	const compare_t_ comp_;
-	const lower_bound_result_ r_ = this->lower_bound_(key_);
+	const hxsize_t index_ = this->lower_bound_(key_);
 	hxif_constexpr(!multi_t_) {
-		if(r_.index_ < m_size_ && !comp_(key_, r_.keys_[r_.index_])) {
-			return iterator(this, r_.index_);
+		if(index_ < m_size_ && !comp_(key_, m_keys_.data()[index_])) {
+			return iterator(this, index_);
 		}
 	}
-	return this->insert_at_(r_.index_, key_, mapped_);
+	return this->insert_at_(index_, key_, mapped_);
 }
 
 template<typename key_t_, typename mapped_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
 inline auto hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capacity_>::insert(
 		const key_t_& key_, mapped_t_&& mapped_) noexcept -> iterator {
 	const compare_t_ comp_;
-	const lower_bound_result_ r_ = this->lower_bound_(key_);
+	const hxsize_t index_ = this->lower_bound_(key_);
 	hxif_constexpr(!multi_t_) {
-		if(r_.index_ < m_size_ && !comp_(key_, r_.keys_[r_.index_])) {
-			return iterator(this, r_.index_);
+		if(index_ < m_size_ && !comp_(key_, m_keys_.data()[index_])) {
+			return iterator(this, index_);
 		}
 	}
-	return this->insert_at_(r_.index_, key_, hxmove(mapped_));
+	return this->insert_at_(index_, key_, hxmove(mapped_));
 }
 
 template<typename key_t_, typename mapped_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
@@ -307,10 +308,10 @@ template<hxsize_t capacity_x_>
 inline bool hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capacity_>::less(
 		const hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capacity_x_>& x_) const {
 	const hxsize_t size_ = hxmin(m_size_, x_.m_size_);
-	const key_t_* hxrestrict k0_ = m_keys_.data();
-	const key_t_* hxrestrict k1_ = x_.m_keys_.data();
-	const mapped_t_* hxrestrict v0_ = m_values_.data();
-	const mapped_t_* hxrestrict v1_ = x_.m_values_.data();
+	const key_t_* k0_ = m_keys_.data();
+	const key_t_* k1_ = x_.m_keys_.data();
+	const mapped_t_* v0_ = m_values_.data();
+	const mapped_t_* v1_ = x_.m_values_.data();
 	for(hxsize_t i_ = 0; i_ < size_; ++i_) {
 		if(!hxkey_equal(k0_[i_], k1_[i_])) { return hxkey_less(k0_[i_], k1_[i_]); }
 		if(!hxkey_equal(v0_[i_], v1_[i_])) { return hxkey_less(v0_[i_], v1_[i_]); }
@@ -321,13 +322,13 @@ inline bool hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capacity_>::less
 template<typename key_t_, typename mapped_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
 inline auto hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capacity_>::lower_bound(const key_t_& key_) const
 		-> const_iterator {
-	return const_iterator(this, this->lower_bound_(key_).index_);
+	return const_iterator(this, this->lower_bound_(key_));
 }
 
 template<typename key_t_, typename mapped_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
 inline auto hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capacity_>::lower_bound(const key_t_& key_)
 		-> iterator {
-	return iterator(this, this->lower_bound_(key_).index_);
+	return iterator(this, this->lower_bound_(key_));
 }
 
 template<typename key_t_, typename mapped_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
@@ -350,14 +351,14 @@ template<typename key_t_, typename mapped_t_, typename compare_t_, bool multi_t_
 inline auto hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capacity_>::upper_bound(const key_t_& key_) const
 		-> const_iterator {
 	const compare_t_ comp_;
-	const lower_bound_result_ r_ = this->lower_bound_(key_);
 	const hxsize_t size_ = m_size_;
-	hxsize_t lo_ = r_.index_;
+	const key_t_* hxrestrict keys_ = m_keys_.data();
+	hxsize_t lo_ = this->lower_bound_(key_);
 	if(!multi_t_) {
-		if(lo_ < size_ && !comp_(key_, r_.keys_[lo_])) { ++lo_; }
+		if(lo_ < size_ && !comp_(key_, keys_[lo_])) { ++lo_; }
 		return const_iterator(this, lo_);
 	}
-	while(lo_ < size_ && !comp_(key_, r_.keys_[lo_])) {
+	while(lo_ < size_ && !comp_(key_, keys_[lo_])) {
 		++lo_;
 	}
 	return const_iterator(this, lo_);
@@ -396,10 +397,10 @@ inline auto hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capacity_>::inse
 }
 
 template<typename key_t_, typename mapped_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
-inline auto hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capacity_>::lower_bound_(
-		const key_t_& key_) const -> lower_bound_result_ {
+inline hxsize_t hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capacity_>::lower_bound_(
+		const key_t_& key_) const {
 	const compare_t_ comp_;
-	const key_t_* hxrestrict keys_ = m_keys_.data();
+	const key_t_* keys_ = m_keys_.data();
 	hxsize_t lo_ = 0;
 	hxsize_t hi_ = m_size_;
 	while(lo_ < hi_) {
@@ -411,7 +412,7 @@ inline auto hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capacity_>::lowe
 			hi_ = mid_;
 		}
 	}
-	return { lo_, const_cast<key_t_* hxrestrict>(keys_) };
+	return lo_;
 }
 
 HX_END_INL_

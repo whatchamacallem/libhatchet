@@ -258,7 +258,7 @@ bool hxvector<T_, capacity_>::equal(const hxvector<T_, capacity_x_>& x_) const {
 	if(this->size() != x_.size()) {
 		return false;
 	}
-	for(const T_*hxrestrict it0_ = this->data(), *hxrestrict it1_ = x_.data(), *const end_ = m_end_;
+	for(const T_*it0_ = this->data(), *it1_ = x_.data(), *const end_ = m_end_;
 			it0_ != end_; ++it0_, ++it1_) {
 		if(!hxkey_equal(*it0_, *it1_)) {
 			return false;
