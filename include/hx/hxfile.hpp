@@ -146,8 +146,11 @@ public:
 	/// Returns the current open mode of the file.
 	hxattr_nodiscard uint8_t mode(void) const { return m_open_mode_; }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wconversion"
 	/// Clears the `open_mode_asserts` flag.
 	void disable_asserts(void) { m_open_mode_ &= ~open_mode::open_mode_asserts; }
+#pragma GCC diagnostic pop
 
 	/// Returns the current position in the file if open, 0 otherwise. FILE*
 	/// implementation requires a 64-bit long to support 64-bit files.

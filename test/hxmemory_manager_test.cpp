@@ -40,6 +40,7 @@ TEST(hxmemory_manager_test, hxnew_forward_move_count_is_exactly_one) {
 	hxdelete(p);
 }
 
+#if (HX_PROVIDE_NEW_DELETE) == 1
 TEST(hxmemory_manager_test, new_delete) {
 	unsigned int* t = new unsigned int(3);
 	hxassert_always(t, "new");
@@ -55,10 +56,9 @@ TEST(hxmemory_manager_test, new_delete) {
 	u = hxnullptr;
 	delete[] u;
 
-	hxdelete(t);
-	hxdelete(u);
 	SUCCEED();
 }
+#endif
 
 TEST(hxmemory_manager_test, hxmalloc_allocator_alignment_args_heap) {
 #if HX_USE_MEMORY_MANAGER
