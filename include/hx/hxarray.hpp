@@ -122,13 +122,13 @@ public:
 	///   return value == 10;
 	/// }));
 	/// ```
-	/// - `fn` : A callable returning boolean. `!all_of(x)` -> `any_not(x)`.
+	/// - `callable` : A callable returning boolean. `!all_of(x)` -> `any_not(x)`.
 	template<typename callable_t_>
-	hxattr_nodiscard bool all_of(callable_t_&& fn_) const;
+	hxattr_nodiscard bool all_of(callable_t_&& callable_) const;
 
 	/// A non-const version of `all_of`.
 	template<typename callable_t_>
-	bool all_of(callable_t_&& fn_);
+	bool all_of(callable_t_&& callable_);
 
 	/// Returns true if the predicate returns true for any element and false
 	/// otherwise. Will stop iterating when the predicate returns true. e.g.,
@@ -138,13 +138,13 @@ public:
 	///   return value == 10;
 	/// }));
 	/// ```
-	/// - `fn` : A callable returning boolean. `!any_of(x)` -> `none_of(x)`.
+	/// - `callable` : A callable returning boolean. `!any_of(x)` -> `none_of(x)`.
 	template<typename callable_t_>
-	hxattr_nodiscard bool any_of(callable_t_&& fn_) const;
+	hxattr_nodiscard bool any_of(callable_t_&& callable_) const;
 
 	/// A non-const version of `any_of`.
 	template<typename callable_t_>
-	bool any_of(callable_t_&& fn_);
+	bool any_of(callable_t_&& callable_);
 
 	/// Assigns elements from a range defined by random access iterators.
 	/// `iter_t::operator-` is required.
@@ -222,22 +222,22 @@ public:
 
 	/// Finds the first element for which the predicate returns true. Returns
 	/// `end()` if no element matches.
-	/// - `fn` : A callable returning boolean.
+	/// - `callable` : A callable returning boolean.
 	template<typename callable_t_>
-	hxattr_nodiscard const T_* find_if(callable_t_&& fn_) const;
+	hxattr_nodiscard const T_* find_if(callable_t_&& callable_) const;
 
 	/// Non-const version of `find_if`.
 	template<typename callable_t_>
-	hxattr_nodiscard T_* find_if(callable_t_&& fn_);
+	hxattr_nodiscard T_* find_if(callable_t_&& callable_);
 
 	/// Calls a function, lambda, or `std::function` on each element.
-	/// - `fn` : A callable.
+	/// - `callable` : A callable.
 	template<typename callable_t_>
-	void for_each(callable_t_&& fn_) const;
+	void for_each(callable_t_&& callable_) const;
 
 	/// Non-const version of `for_each`.
 	template<typename callable_t_>
-	void for_each(callable_t_&& fn_);
+	void for_each(callable_t_&& callable_);
 
 	/// Returns a `const T*` to the element at `index` or `hxnull` otherwise.
 	/// - `index` : The 0-based offset of the element.

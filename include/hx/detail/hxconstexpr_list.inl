@@ -240,14 +240,14 @@ inline hxconstexpr void hxconstexpr_list<node_t_, deleter_t_>::release_all(void)
 }
 
 template<typename node_t_, typename deleter_t_>
-template<typename predicate_t_>
-inline hxconstexpr hxsize_t hxconstexpr_list<node_t_, deleter_t_>::remove_if(predicate_t_ predicate_) noexcept {
+template<typename callable_t_>
+inline hxconstexpr hxsize_t hxconstexpr_list<node_t_, deleter_t_>::remove_if(callable_t_&& callable_) noexcept {
 	hxsize_t count_ = 0;
 	hxconstexpr_list_node* n_ = m_sentinel_.m_list_next_;
 	while(n_ != &m_sentinel_) {
 		hxconstexpr_list_node* next_ = n_->m_list_next_;
 		node_t_* node_ = static_cast<node_t_*>(n_);
-		if(predicate_(*node_)) {
+		if(hxforward<callable_t_>(callable_)(*node_)) {
 			this->extract_(n_);
 			m_deleter_(node_);
 			++count_;

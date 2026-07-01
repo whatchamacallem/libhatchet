@@ -306,11 +306,11 @@ public:
 	/// elsewhere or have already been freed.
 	void release_all(void);
 
-	/// Removes all nodes for which `predicate` returns true, invoking the
+	/// Removes all nodes for which predicate returns true, invoking the
 	/// stored deleter on each removed node.
-	/// - `predicate` : A callable taking a `node_t` reference, returning bool.
-	template<typename predicate_t_>
-	hxsize_t remove_if(predicate_t_ predicate_) noexcept;
+	/// - `callable` : A callable taking a `node_t` reference, returning bool.
+	template<typename callable_t_>
+	hxsize_t remove_if(callable_t_&& callable_) noexcept;
 
 	/// Reverses the order of nodes in the list in-place. WARNING: Iterators are
 	/// invalidated.

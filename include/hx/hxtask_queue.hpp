@@ -52,21 +52,21 @@ public:
 	/// Waits for all queued and executing tasks to complete before destruction.
 	~hxtask_queue(void);
 
-	/// Locks the queue and calls `fn` on each task. Returns true if the
+	/// Locks the queue and calls `callable` on each task. Returns true if the
 	/// predicate returns true for every element and false otherwise. Will stop
 	/// iterating when the predicate returns false. Use `for_each` to modify
 	/// priorities.
-	/// - `fn` : A callable returning boolean. `!all_of(x)` -> `any_not(x)`.
+	/// - `callable` : A callable returning boolean. `!all_of(x)` -> `any_not(x)`.
 	template<typename callable_t_>
-	hxattr_nodiscard bool all_of(callable_t_&& fn_) const;
+	hxattr_nodiscard bool all_of(callable_t_&& callable_) const;
 
-	/// Locks the queue and calls `fn` on each task. Returns true if the
+	/// Locks the queue and calls `callable` on each task. Returns true if the
 	/// predicate returns true for any element and false otherwise. Will stop
 	/// iterating when the predicate returns true. Use `for_each` to modify
 	/// priorities.
-	/// - `fn` : A callable returning boolean. `!any_of(x)` -> `none_of(x)`.
+	/// - `callable` : A callable returning boolean. `!any_of(x)` -> `none_of(x)`.
 	template<typename callable_t_>
-	hxattr_nodiscard bool any_of(callable_t_&& fn_) const;
+	hxattr_nodiscard bool any_of(callable_t_&& callable_) const;
 
 	/// Returns true if the task was found and removed. Calls `on_cancel` on the
 	/// task if found. Thread-safe. Returns false if the task is already
@@ -90,26 +90,26 @@ public:
 	/// - `priority` : Optional priority for scheduling. Higher values run sooner.
 	void enqueue(hxtask* task_, int priority_=0) hxattr_nonnull(2);
 
-	/// Locks the queue and calls `fn` on each task. Removes queued tasks for
-	/// which `fn` evaluates true. Does not call `on_cancel` on each. Returns
+	/// Locks the queue and calls `callable` on each task. Removes queued tasks for
+	/// which `callable` evaluates true. Does not call `on_cancel` on each. Returns
 	/// the number of records removed. The `record_t&` passed to `erase_if` may
 	/// be modified and the tasks will be re-prioritized according to their new
 	/// priorities.
-	/// - `fn` : Predicate accepting a `record_t&`.
+	/// - `callable` : Predicate accepting a `record_t&`.
 	template<typename callable_t_>
-	hxsize_t erase_if(callable_t_&& fn_) noexcept;
+	hxsize_t erase_if(callable_t_&& callable_) noexcept;
 
-	/// Locks the queue and calls `fn` on each task record.
-	/// - `fn` : callable accepting a `const record_t&`.
+	/// Locks the queue and calls `callable` on each task record.
+	/// - `callable` : callable accepting a `const record_t&`.
 	template<typename callable_t_>
-	void for_each(callable_t_&& fn_) const;
+	void for_each(callable_t_&& callable_) const;
 
 	/// Non-const version of `for_each`. This version will perform `make_heap`
-	/// on the queue after calling `fn` on each task record. The `record_t&`
+	/// on the queue after calling `callable` on each task record. The `record_t&`
 	/// passed to `for_each` may be modified and the tasks will be
 	/// re-prioritized according to their new priorities.
 	template<typename callable_t_>
-	void for_each(callable_t_&& fn_) noexcept;
+	void for_each(callable_t_&& callable_) noexcept;
 
 	/// Returns true if the queue capacity has been reached.
 	hxattr_nodiscard bool full(void) const;

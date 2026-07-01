@@ -137,9 +137,9 @@ hxarray_back_inserter_<hxvector<T_, capacity_>> hxvector<T_, capacity_>::operato
 
 template<hxvector_concept_ T_, hxsize_t capacity_>
 template<typename callable_t_>
-bool hxvector<T_, capacity_>::all_of(callable_t_&& fn_) const {
+bool hxvector<T_, capacity_>::all_of(callable_t_&& callable_) const {
 	for(const T_* it_ = this->data(), *const end_ = m_end_; it_ != end_; ++it_) {
-		if(!hxforward<callable_t_>(fn_)(*it_)) {
+		if(!hxforward<callable_t_>(callable_)(*it_)) {
 			return false;
 		}
 	}
@@ -148,9 +148,9 @@ bool hxvector<T_, capacity_>::all_of(callable_t_&& fn_) const {
 
 template<hxvector_concept_ T_, hxsize_t capacity_>
 template<typename callable_t_>
-bool hxvector<T_, capacity_>::all_of(callable_t_&& fn_) {
+bool hxvector<T_, capacity_>::all_of(callable_t_&& callable_) {
 	for(T_* it_ = this->data(), *const end_ = m_end_; it_ != end_; ++it_) {
-		if(!hxforward<callable_t_>(fn_)(*it_)) {
+		if(!hxforward<callable_t_>(callable_)(*it_)) {
 			return false;
 		}
 	}
@@ -159,9 +159,9 @@ bool hxvector<T_, capacity_>::all_of(callable_t_&& fn_) {
 
 template<hxvector_concept_ T_, hxsize_t capacity_>
 template<typename callable_t_>
-bool hxvector<T_, capacity_>::any_of(callable_t_&& fn_) const {
+bool hxvector<T_, capacity_>::any_of(callable_t_&& callable_) const {
 	for(const T_* it_ = this->data(), *const end_ = m_end_; it_ != end_; ++it_) {
-		if(hxforward<callable_t_>(fn_)(*it_)) {
+		if(hxforward<callable_t_>(callable_)(*it_)) {
 			return true;
 		}
 	}
@@ -170,9 +170,9 @@ bool hxvector<T_, capacity_>::any_of(callable_t_&& fn_) const {
 
 template<hxvector_concept_ T_, hxsize_t capacity_>
 template<typename callable_t_>
-bool hxvector<T_, capacity_>::any_of(callable_t_&& fn_) {
+bool hxvector<T_, capacity_>::any_of(callable_t_&& callable_) {
 	for(T_* it_ = this->data(), *const end_ = m_end_; it_ != end_; ++it_) {
-		if(hxforward<callable_t_>(fn_)(*it_)) {
+		if(hxforward<callable_t_>(callable_)(*it_)) {
 			return true;
 		}
 	}
@@ -284,12 +284,12 @@ void hxvector<T_, capacity_>::erase(hxsize_t index_) noexcept {
 
 template<hxvector_concept_ T_, hxsize_t capacity_>
 template<typename callable_t_>
-hxsize_t hxvector<T_, capacity_>::erase_if_unordered(callable_t_&& fn_) noexcept {
+hxsize_t hxvector<T_, capacity_>::erase_if_unordered(callable_t_&& callable_) noexcept {
 	hxsize_t removed_ = 0;
 	const T_* const begin_ = this->data();
 	T_* hxrestrict end_ = m_end_;
 	for(T_* hxrestrict it_ = end_; it_-- != begin_;) {
-		if(hxforward<callable_t_>(fn_)(*it_)) {
+		if(hxforward<callable_t_>(callable_)(*it_)) {
 			if(it_ != --end_) {
 				*it_ = hxmove(*end_);
 			}
@@ -303,11 +303,11 @@ hxsize_t hxvector<T_, capacity_>::erase_if_unordered(callable_t_&& fn_) noexcept
 
 template<hxvector_concept_ T_, hxsize_t capacity_>
 template<typename callable_t_>
-hxsize_t hxvector<T_, capacity_>::erase_if_heap(callable_t_&& fn_) noexcept {
+hxsize_t hxvector<T_, capacity_>::erase_if_heap(callable_t_&& callable_) noexcept {
 	T_* hxrestrict src_ = this->data();
 	T_* hxrestrict dst_ = src_;
 	for(const T_*const end_ = m_end_; src_ != end_; ++src_) {
-		if(!hxforward<callable_t_>(fn_)(*src_)) {
+		if(!hxforward<callable_t_>(callable_)(*src_)) {
 			// Survivor: move into the next free slot, or leave in place.
 			if(src_ != dst_) {
 				*dst_ = hxmove(*src_);
@@ -359,9 +359,9 @@ T_* hxvector<T_, capacity_>::find(const T_& value_) {
 
 template<hxvector_concept_ T_, hxsize_t capacity_>
 template<typename callable_t_>
-const T_* hxvector<T_, capacity_>::find_if(callable_t_&& fn_) const {
+const T_* hxvector<T_, capacity_>::find_if(callable_t_&& callable_) const {
 	for(const T_* it_ = this->data(), *const end_ = m_end_; it_ != end_; ++it_) {
-		if(hxforward<callable_t_>(fn_)(*it_)) {
+		if(hxforward<callable_t_>(callable_)(*it_)) {
 			return it_;
 		}
 	}
@@ -370,9 +370,9 @@ const T_* hxvector<T_, capacity_>::find_if(callable_t_&& fn_) const {
 
 template<hxvector_concept_ T_, hxsize_t capacity_>
 template<typename callable_t_>
-T_* hxvector<T_, capacity_>::find_if(callable_t_&& fn_) {
+T_* hxvector<T_, capacity_>::find_if(callable_t_&& callable_) {
 	for(T_* it_ = this->data(), *const end_ = m_end_; it_ != end_; ++it_) {
-		if(hxforward<callable_t_>(fn_)(*it_)) {
+		if(hxforward<callable_t_>(callable_)(*it_)) {
 			return it_;
 		}
 	}
@@ -381,17 +381,17 @@ T_* hxvector<T_, capacity_>::find_if(callable_t_&& fn_) {
 
 template<hxvector_concept_ T_, hxsize_t capacity_>
 template<typename callable_t_>
-void hxvector<T_, capacity_>::for_each(callable_t_&& fn_) const {
+void hxvector<T_, capacity_>::for_each(callable_t_&& callable_) const {
 	for(const T_* it_ = this->data(), *const end_ = m_end_; it_ != end_; ++it_) {
-		hxforward<callable_t_>(fn_)(*it_);
+		hxforward<callable_t_>(callable_)(*it_);
 	}
 }
 
 template<hxvector_concept_ T_, hxsize_t capacity_>
 template<typename callable_t_>
-void hxvector<T_, capacity_>::for_each(callable_t_&& fn_) {
+void hxvector<T_, capacity_>::for_each(callable_t_&& callable_) {
 	for(T_* it_ = this->data(), *const end_ = m_end_; it_ != end_; ++it_) {
-		hxforward<callable_t_>(fn_)(*it_);
+		hxforward<callable_t_>(callable_)(*it_);
 	}
 }
 
@@ -409,9 +409,9 @@ T_& hxvector<T_, capacity_>::front(void) {
 
 template<hxvector_concept_ T_, hxsize_t capacity_>
 template<typename callable_t_>
-void hxvector<T_, capacity_>::generate_n(hxsize_t size_, callable_t_&& fn_) noexcept {
+void hxvector<T_, capacity_>::generate_n(hxsize_t size_, callable_t_&& callable_) noexcept {
 	while(size_--) {
-		::new(this->push_back_unconstructed_()) T_(hxforward<callable_t_>(fn_)());
+		::new(this->push_back_unconstructed_()) T_(hxforward<callable_t_>(callable_)());
 	}
 }
 

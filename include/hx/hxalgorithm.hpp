@@ -23,26 +23,26 @@
 
 HX_NS_BEGIN_
 
-/// `hxall_of` - Returns true if the `predicate` callable returns true for every
+/// `hxall_of` - Returns true if the predicate `callable` returns true for every
 /// element in `[begin, end)`. Returns true for an empty range. Requires a
 /// `forward-iterator`.
-template<typename iterator_t_, typename fn_t_> hxattr_hot hxattr_nodiscard hxconstexpr
-bool hxall_of(iterator_t_ begin_, iterator_t_ end_, fn_t_&& fn_) {
+template<typename iterator_t_, typename callable_t_> hxattr_hot hxattr_nodiscard hxconstexpr
+bool hxall_of(iterator_t_ begin_, iterator_t_ end_, callable_t_&& callable_) {
 	for(; begin_ != end_; ++begin_) {
-		if(!hxforward<fn_t_>(fn_)(*begin_)) {
+		if(!hxforward<callable_t_>(callable_)(*begin_)) {
 			return false;
 		}
 	}
 	return true;
 }
 
-/// `hxany_of` - Returns true if the `predicate` callable returns true for at
+/// `hxany_of` - Returns true if the predicate `callable` returns true for at
 /// least one element in `[begin, end)`. Returns false for an empty range.
 /// Requires a `forward-iterator`.
-template<typename iterator_t_, typename fn_t_> hxattr_hot hxattr_nodiscard hxconstexpr
-bool hxany_of(iterator_t_ begin_, iterator_t_ end_, fn_t_&& fn_) {
+template<typename iterator_t_, typename callable_t_> hxattr_hot hxattr_nodiscard hxconstexpr
+bool hxany_of(iterator_t_ begin_, iterator_t_ end_, callable_t_&& callable_) {
 	for(; begin_ != end_; ++begin_) {
-		if(hxforward<fn_t_>(fn_)(*begin_)) {
+		if(hxforward<callable_t_>(callable_)(*begin_)) {
 			return true;
 		}
 	}
@@ -50,12 +50,12 @@ bool hxany_of(iterator_t_ begin_, iterator_t_ end_, fn_t_&& fn_) {
 }
 
 /// `hxcount_if` - Returns the number of elements in `[begin, end)` for which
-/// the `predicate` callable returns true. Requires a `forward-iterator`.
-template<typename iterator_t_, typename fn_t_> hxattr_hot hxattr_nodiscard hxconstexpr
-hxsize_t hxcount_if(iterator_t_ begin_, iterator_t_ end_, fn_t_&& fn_) {
+/// the predicate `callable` returns true. Requires a `forward-iterator`.
+template<typename iterator_t_, typename callable_t_> hxattr_hot hxattr_nodiscard hxconstexpr
+hxsize_t hxcount_if(iterator_t_ begin_, iterator_t_ end_, callable_t_&& callable_) {
 	hxsize_t count_ = hxsize_t{0};
 	for(; begin_ != end_; ++begin_) {
-		if(hxforward<fn_t_>(fn_)(*begin_)) {
+		if(hxforward<callable_t_>(callable_)(*begin_)) {
 			++count_;
 		}
 	}
@@ -73,27 +73,27 @@ T_ hxexchange(T_& obj_, U_&& new_value_) noexcept {
 }
 
 /// `hxfind_if` - Returns an iterator to the first element in `[begin, end)` for
-/// which the `predicate` callable returns true. Returns `end` if no element
+/// which the predicate `callable` returns true. Returns `end` if no element
 /// matches. Requires a `forward-iterator`.
-template<typename iterator_t_, typename fn_t_> hxattr_hot hxattr_nodiscard hxconstexpr
-iterator_t_ hxfind_if(iterator_t_ begin_, iterator_t_ end_, fn_t_&& fn_) {
+template<typename iterator_t_, typename callable_t_> hxattr_hot hxattr_nodiscard hxconstexpr
+iterator_t_ hxfind_if(iterator_t_ begin_, iterator_t_ end_, callable_t_&& callable_) {
 	for(; begin_ != end_; ++begin_) {
-		if(hxforward<fn_t_>(fn_)(*begin_)) {
+		if(hxforward<callable_t_>(callable_)(*begin_)) {
 			return begin_;
 		}
 	}
 	return end_;
 }
 
-/// `hxfor_each` - Applies the `function` callable to each element in `[begin,
-/// end)` in order. Returns the `function` callable after it has been applied to
-/// every element. Requires a `forward-iterator`.
-template<typename iterator_t_, typename fn_t_> hxattr_hot hxconstexpr
-fn_t_ hxfor_each(iterator_t_ begin_, iterator_t_ end_, fn_t_&& fn_) {
+/// `hxfor_each` - Applies the `callable` to each element in `[begin, end)` in
+/// order. Returns the `callable` after it has been applied to every element.
+/// Requires a `forward-iterator`.
+template<typename iterator_t_, typename callable_t_> hxattr_hot hxconstexpr
+callable_t_ hxfor_each(iterator_t_ begin_, iterator_t_ end_, callable_t_&& callable_) {
 	for(; begin_ != end_; ++begin_) {
-		hxforward<fn_t_>(fn_)(*begin_);
+		hxforward<callable_t_>(callable_)(*begin_);
 	}
-	return fn_;
+	return callable_;
 }
 
 /// `hxmerge` - Performs a stable merge of two ordered ranges `[begin0, end0)`

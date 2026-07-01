@@ -108,9 +108,9 @@ T_& hxarray<T_, capacity_>::operator[](hxsize_t index_) {
 
 template<hxarray_concept_ T_, hxsize_t capacity_>
 template<typename callable_t_>
-bool hxarray<T_, capacity_>::all_of(callable_t_&& fn_) const {
+bool hxarray<T_, capacity_>::all_of(callable_t_&& callable_) const {
 	for(const T_* it_ = this->data(), *const end_ = it_ + this->capacity(); it_ != end_; ++it_) {
-		if(!hxforward<callable_t_>(fn_)(*it_)) {
+		if(!hxforward<callable_t_>(callable_)(*it_)) {
 			return false;
 		}
 	}
@@ -119,9 +119,9 @@ bool hxarray<T_, capacity_>::all_of(callable_t_&& fn_) const {
 
 template<hxarray_concept_ T_, hxsize_t capacity_>
 template<typename callable_t_>
-bool hxarray<T_, capacity_>::all_of(callable_t_&& fn_) {
+bool hxarray<T_, capacity_>::all_of(callable_t_&& callable_) {
 	for(T_* it_ = this->data(), *const end_ = it_ + this->capacity(); it_ != end_; ++it_) {
-		if(!hxforward<callable_t_>(fn_)(*it_)) {
+		if(!hxforward<callable_t_>(callable_)(*it_)) {
 			return false;
 		}
 	}
@@ -130,9 +130,9 @@ bool hxarray<T_, capacity_>::all_of(callable_t_&& fn_) {
 
 template<hxarray_concept_ T_, hxsize_t capacity_>
 template<typename callable_t_>
-bool hxarray<T_, capacity_>::any_of(callable_t_&& fn_) const {
+bool hxarray<T_, capacity_>::any_of(callable_t_&& callable_) const {
 	for(const T_* it_ = this->data(), *const end_ = it_ + this->capacity(); it_ != end_; ++it_) {
-		if(hxforward<callable_t_>(fn_)(*it_)) {
+		if(hxforward<callable_t_>(callable_)(*it_)) {
 			return true;
 		}
 	}
@@ -141,9 +141,9 @@ bool hxarray<T_, capacity_>::any_of(callable_t_&& fn_) const {
 
 template<hxarray_concept_ T_, hxsize_t capacity_>
 template<typename callable_t_>
-bool hxarray<T_, capacity_>::any_of(callable_t_&& fn_) {
+bool hxarray<T_, capacity_>::any_of(callable_t_&& callable_) {
 	for(T_* it_ = this->data(), *const end_ = it_ + this->capacity(); it_ != end_; ++it_) {
-		if(hxforward<callable_t_>(fn_)(*it_)) {
+		if(hxforward<callable_t_>(callable_)(*it_)) {
 			return true;
 		}
 	}
@@ -251,11 +251,11 @@ T_* hxarray<T_, capacity_>::find(const T_& value_) {
 
 template<hxarray_concept_ T_, hxsize_t capacity_>
 template<typename callable_t_>
-const T_* hxarray<T_, capacity_>::find_if(callable_t_&& fn_) const {
+const T_* hxarray<T_, capacity_>::find_if(callable_t_&& callable_) const {
 	const T_* it_ = this->data();
 	const T_*const end_ = it_ + this->capacity();
 	for(; it_ != end_; ++it_) {
-		if(hxforward<callable_t_>(fn_)(*it_)) {
+		if(hxforward<callable_t_>(callable_)(*it_)) {
 			return it_;
 		}
 	}
@@ -264,11 +264,11 @@ const T_* hxarray<T_, capacity_>::find_if(callable_t_&& fn_) const {
 
 template<hxarray_concept_ T_, hxsize_t capacity_>
 template<typename callable_t_>
-T_* hxarray<T_, capacity_>::find_if(callable_t_&& fn_) {
+T_* hxarray<T_, capacity_>::find_if(callable_t_&& callable_) {
 	T_* it_ = this->data();
 	T_*const end_ = it_ + this->capacity();
 	for(; it_ != end_; ++it_) {
-		if(hxforward<callable_t_>(fn_)(*it_)) {
+		if(hxforward<callable_t_>(callable_)(*it_)) {
 			return it_;
 		}
 	}
@@ -277,17 +277,17 @@ T_* hxarray<T_, capacity_>::find_if(callable_t_&& fn_) {
 
 template<hxarray_concept_ T_, hxsize_t capacity_>
 template<typename callable_t_>
-void hxarray<T_, capacity_>::for_each(callable_t_&& fn_) const {
+void hxarray<T_, capacity_>::for_each(callable_t_&& callable_) const {
 	for(const T_* it_ = this->data(), *end_ = it_ + this->capacity(); it_ != end_; ++it_) {
-		hxforward<callable_t_>(fn_)(*it_);
+		hxforward<callable_t_>(callable_)(*it_);
 	}
 }
 
 template<hxarray_concept_ T_, hxsize_t capacity_>
 template<typename callable_t_>
-void hxarray<T_, capacity_>::for_each(callable_t_&& fn_) {
+void hxarray<T_, capacity_>::for_each(callable_t_&& callable_) {
 	for(T_* it_ = this->data(), *const end_ = it_ + this->capacity(); it_ != end_; ++it_) {
-		hxforward<callable_t_>(fn_)(*it_);
+		hxforward<callable_t_>(callable_)(*it_);
 	}
 }
 

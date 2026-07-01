@@ -11,15 +11,15 @@
 HX_BEGIN_INL_
 
 template<typename callable_t_>
-bool hxtask_queue::all_of(callable_t_&& fn_) const {
+bool hxtask_queue::all_of(callable_t_&& callable_) const {
 	hxtask_queue_lock_;
-	return m_tasks_.all_of(hxforward<callable_t_>(fn_));
+	return m_tasks_.all_of(hxforward<callable_t_>(callable_));
 }
 
 template<typename callable_t_>
-bool hxtask_queue::any_of(callable_t_&& fn_) const {
+bool hxtask_queue::any_of(callable_t_&& callable_) const {
 	hxtask_queue_lock_;
-	return m_tasks_.any_of(hxforward<callable_t_>(fn_));
+	return m_tasks_.any_of(hxforward<callable_t_>(callable_));
 }
 
 inline bool hxtask_queue::cancel(hxtask* task_) noexcept {
@@ -57,9 +57,9 @@ inline bool hxtask_queue::empty(void) const {
 }
 
 template<typename callable_t_>
-hxsize_t hxtask_queue::erase_if(callable_t_&& fn_) noexcept {
+hxsize_t hxtask_queue::erase_if(callable_t_&& callable_) noexcept {
 	hxtask_queue_lock_;
-	const hxsize_t erased_ = m_tasks_.erase_if_unordered(hxforward<callable_t_>(fn_));
+	const hxsize_t erased_ = m_tasks_.erase_if_unordered(hxforward<callable_t_>(callable_));
 	// Restore the heap property all at once. Allows erase_if to modify priority
 	// at the same time even when nothing is erased.
 	hxdetail_::hxmake_heap_(m_tasks_.begin(), m_tasks_.end(), hxkey_less_t<record_t>{});
@@ -72,15 +72,15 @@ hxsize_t hxtask_queue::erase_if(callable_t_&& fn_) noexcept {
 }
 
 template<typename callable_t_>
-void hxtask_queue::for_each(callable_t_&& fn_) const {
+void hxtask_queue::for_each(callable_t_&& callable_) const {
 	hxtask_queue_lock_;
-	m_tasks_.for_each(hxforward<callable_t_>(fn_));
+	m_tasks_.for_each(hxforward<callable_t_>(callable_));
 }
 
 template<typename callable_t_>
-void hxtask_queue::for_each(callable_t_&& fn_) noexcept {
+void hxtask_queue::for_each(callable_t_&& callable_) noexcept {
 	hxtask_queue_lock_;
-	m_tasks_.for_each(hxforward<callable_t_>(fn_));
+	m_tasks_.for_each(hxforward<callable_t_>(callable_));
 
 	hxdetail_::hxmake_heap_(m_tasks_.begin(), m_tasks_.end(), hxkey_less_t<record_t>{});
 }

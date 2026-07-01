@@ -296,10 +296,10 @@ public:
 
 	/// Waits until the predicate returns true.
 	/// - `lock` : The unique lock to use for waiting.
-	/// - `pred` : Predicate function to check.
-	template<typename predicate_t_>
-	void wait(hxunique_lock& lock_, predicate_t_ pred_) {
-		while(!pred_()) {
+	/// - `callable` : Predicate function to check.
+	template<typename callable_t_>
+	void wait(hxunique_lock& lock_, callable_t_&& callable_) {
+		while(!hxforward<callable_t_>(callable_)()) {
 			// Failure is undefined as per the standard.
 			const bool wait_result = this->wait(lock_);
 			hxassertmsg(wait_result, "wait"); (void)wait_result;

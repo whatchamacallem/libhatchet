@@ -276,8 +276,8 @@ inline void hxlist<node_t_, deleter_t_>::release_all(void) {
 }
 
 template<typename node_t_, typename deleter_t_>
-template<typename predicate_t_>
-inline hxsize_t hxlist<node_t_, deleter_t_>::remove_if(predicate_t_ predicate_) noexcept {
+template<typename callable_t_>
+inline hxsize_t hxlist<node_t_, deleter_t_>::remove_if(callable_t_&& callable_) noexcept {
 	hxsize_t count_ = 0;
 	hxlist_node* prev_ = &m_sentinel_;
 	hxlist_node* current_ = reinterpret_cast<hxlist_node*>(
@@ -286,7 +286,7 @@ inline hxsize_t hxlist<node_t_, deleter_t_>::remove_if(predicate_t_ predicate_) 
 		hxlist_node* next_ = reinterpret_cast<hxlist_node*>(
 			reinterpret_cast<intptr_t>(prev_) ^ current_->m_list_link_);
 		node_t_* node_ = static_cast<node_t_*>(current_);
-		if(predicate_(*node_)) {
+		if(hxforward<callable_t_>(callable_)(*node_)) {
 			this->extract_(prev_, current_);
 			m_deleter_(node_);
 			++count_;
