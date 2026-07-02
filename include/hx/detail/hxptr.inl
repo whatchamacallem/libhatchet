@@ -16,7 +16,7 @@ hxconstexpr hxptr<T_, deleter_t_>::hxptr(T_* ptr_, deleter_t_ deleter_) noexcept
 
 template<typename T_, typename deleter_t_>
 hxconstexpr hxptr<T_, deleter_t_>::hxptr(hxptr&& other_) noexcept
-		: m_ptr_(other_.m_ptr_), m_deleter_(other_.m_deleter_) {
+		: m_ptr_(other_.m_ptr_), m_deleter_(hxmove(other_.m_deleter_)) {
 	other_.m_ptr_ = hxnull;
 }
 
@@ -34,7 +34,7 @@ hxconstexpr hxptr<T_, deleter_t_>& hxptr<T_, deleter_t_>::operator=(hxptr&& othe
 		m_deleter_(m_ptr_);
 	}
 	m_ptr_ = other_.m_ptr_;
-	m_deleter_ = other_.m_deleter_;
+	m_deleter_ = hxmove(other_.m_deleter_);
 	other_.m_ptr_ = hxnull;
 	return *this;
 }
@@ -96,9 +96,8 @@ hxconstexpr void hxptr<T_, deleter_t_>::reset(T_* ptr_) noexcept {
 
 template<typename T_, typename deleter_t_>
 hxconstexpr void hxptr<T_, deleter_t_>::swap(hxptr& other_) noexcept {
-	T_* tmp_ = m_ptr_;
-	m_ptr_ = other_.m_ptr_;
-	other_.m_ptr_ = tmp_;
+	hxswap(m_ptr_, other_.m_ptr_);
+	hxswap(m_deleter_, other_.m_deleter_);
 }
 
 HX_END_INL_

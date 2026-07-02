@@ -89,10 +89,7 @@ inline auto hxlist<node_t_, deleter_t_>::iterator::operator--(int) -> iterator {
 
 template<typename node_t_, typename deleter_t_>
 inline hxlist<node_t_, deleter_t_>::hxlist(deleter_t_ deleter_)
-		: m_deleter_(deleter_) {
-	m_size_ = 0;
-	m_sentinel_.m_list_link_ = 0; // sentinel: prev=self ^ next=self = 0
-	m_tail_ = &m_sentinel_;
+		: m_deleter_(deleter_), m_size_(0), m_tail_(&m_sentinel_) {
 }
 
 template<typename node_t_, typename deleter_t_>
@@ -221,10 +218,15 @@ inline auto hxlist<node_t_, deleter_t_>::insert(
 template<typename node_t_, typename deleter_t_>
 inline hxptr<node_t_, deleter_t_> hxlist<node_t_, deleter_t_>::pop_back(void) {
 	hxassert_hard(!this->empty(), "empty_list");
-	hxlist_node* node_ = m_tail_;
-	hxlist_node* prev_ = reinterpret_cast<hxlist_node*>(
+	hxlist_node* const node_ = m_tail_;
+	hxlist_node* const prev_ = reinterpret_cast<hxlist_node*>(
 		reinterpret_cast<intptr_t>(&m_sentinel_) ^ node_->m_list_link_);
-	this->extract_(prev_, node_);
+	prev_->m_list_link_ ^=
+		reinterpret_cast<intptr_t>(node_) ^ reinterpret_cast<intptr_t>(&m_sentinel_);
+	m_sentinel_.m_list_link_ ^=
+		reinterpret_cast<intptr_t>(node_) ^ reinterpret_cast<intptr_t>(prev_);
+	m_tail_ = prev_;
+	--m_size_;
 	return hxptr<node_t_, deleter_t_>(static_cast<node_t_*>(node_), m_deleter_);
 }
 
@@ -278,23 +280,29 @@ inline void hxlist<node_t_, deleter_t_>::release_all(void) {
 template<typename node_t_, typename deleter_t_>
 template<typename callable_t_>
 inline hxsize_t hxlist<node_t_, deleter_t_>::remove_if(callable_t_&& callable_) noexcept {
-	hxsize_t count_ = 0;
+	hxsize_t size_ = m_size_;
 	hxlist_node* prev_ = &m_sentinel_;
 	hxlist_node* current_ = reinterpret_cast<hxlist_node*>(
 		reinterpret_cast<intptr_t>(m_tail_) ^ m_sentinel_.m_list_link_);
 	while(current_ != &m_sentinel_) {
-		hxlist_node* next_ = reinterpret_cast<hxlist_node*>(
+		hxlist_node* const next_ = reinterpret_cast<hxlist_node*>(
 			reinterpret_cast<intptr_t>(prev_) ^ current_->m_list_link_);
-		node_t_* node_ = static_cast<node_t_*>(current_);
+		node_t_* const node_ = static_cast<node_t_*>(current_);
 		if(hxforward<callable_t_>(callable_)(*node_)) {
-			this->extract_(prev_, current_);
+			prev_->m_list_link_ ^=
+				reinterpret_cast<intptr_t>(current_) ^ reinterpret_cast<intptr_t>(next_);
+			next_->m_list_link_ ^=
+				reinterpret_cast<intptr_t>(current_) ^ reinterpret_cast<intptr_t>(prev_);
+			--size_;
 			m_deleter_(node_);
-			++count_;
 		} else {
 			prev_ = current_;
 		}
 		current_ = next_;
 	}
+	m_tail_ = prev_;
+	const hxsize_t count_ = m_size_ - size_;
+	m_size_ = size_;
 	return count_;
 }
 

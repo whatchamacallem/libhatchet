@@ -70,10 +70,7 @@ private:
 	// The key used for sorting. May not be preserved in a usable form.
 	uint32_t m_key_;
 	union {
-		// The value associated with the key. Reinterpreted as a void* during
-		// sorting.
 		value_t_ m_value_;
-
 		// Forces m_value_ to occupy the same space as a void*.
 		void* m_void_ptr_;
 	};

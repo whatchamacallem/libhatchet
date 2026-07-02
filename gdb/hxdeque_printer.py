@@ -23,13 +23,12 @@ from typing import Iterator, Tuple
 #	template<typename T_, hxsize_t capacity_=hxallocator_dynamic_capacity>
 #	class hxdeque : private hxallocator<T_, capacity_> {
 #		// ...
-#		hxsize_t m_mask_;   // capacity - 1
-#		hxsize_t m_head_;   // index of front element
-#		hxsize_t m_tail_;   // index one past back element
-#		hxsize_t m_count_;  // number of elements
+#		size_t m_head_;  // free running offset of front element
+#		size_t m_tail_;  // free running offset one past back element
 #	};
 #
-# Elements are stored at indices (m_head_ + i) & m_mask_ for i in [0, m_count_).
+# The offsets wrap modulo the size_t range. Elements are stored at indices
+# (m_head_ + i) & (capacity - 1) for i in [0, m_tail_ - m_head_).
 #
 
 class hxdeque_printer:
@@ -44,12 +43,18 @@ class hxdeque_printer:
 
 	def to_string(self) -> str:
 		try:
-			count: int = int(self.val['m_count_'])
-			mask: int = int(self.val['m_mask_'])
-			capacity: int = mask + 1 if mask != 0 else 0
-
-			if self.val['m_count_'].is_optimized_out:
+			if self.val['m_head_'].is_optimized_out:
 				return '<optimized out>'
+
+			head: int = int(self.val['m_head_'])
+			tail: int = int(self.val['m_tail_'])
+			wrap: int = 1 << (8 * self.val['m_head_'].type.sizeof)
+			count: int = (tail - head) % wrap
+
+			capacity: int = int(self.val.type.template_argument(1))
+			if capacity == 0:
+				capacity = int(self.val['m_capacity_'])
+			mask: int = capacity - 1
 
 			if capacity <= 0:
 				return '<unallocated>'
@@ -65,7 +70,7 @@ class hxdeque_printer:
 			self._count = count
 			self._capacity = capacity
 			self._mask = mask
-			self._head = int(self.val['m_head_'])
+			self._head = head
 			self._data_addr = data_addr
 			self._elem_type = elem_type
 

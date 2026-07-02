@@ -76,14 +76,13 @@ public:
 	/// Returns the hash value computed for `key`. Hash values are not required
 	/// to be unique.
 	/// - `key` : The key to hash.
-	static hxhash_t hash_value(key_t_ key_) { return hxkey_hash(key_); }
+	static hxhash_t hash_value(const key_t_& key_) { return hxkey_hash(key_); }
 
 private:
 	hxhash_table_set_node(void) = delete;
-	// Deleted for being bug prone and pointless.
+	// Deleted for being bug prone.
 	hxhash_table_set_node& operator=(const hxhash_table_set_node& n_) = delete;
 
-	// The hash table uses m_hash_next_ to implement an embedded linked list.
 	hxhash_table_set_node* m_hash_next_;
 	key_t_ m_key_;
 	hxhash_t m_hash_;
@@ -194,7 +193,8 @@ public:
 	{
 	public:
 		/// Constructs an iterator pointing to the end of the hash table.
-		const_iterator(void) : m_hash_table_(hxnull), m_next_index_(0), m_current_node_(hxnull) { }
+		const_iterator(void) : m_next_bucket_(hxnull), m_bucket_end_(hxnull),
+			m_current_node_(hxnull) { }
 
 		/// Advances the iterator to the next element.
 		const_iterator& operator++(void);
@@ -222,16 +222,12 @@ public:
 		friend class hxhash_table;
 		const_iterator(const hxhash_table* table_);
 		const_iterator(const hxhash_table* table_, node_t_* node_);
-
-		// Advance the iterator to the next non-empty bucket.
 		void next_bucket(void);
 
-		hxhash_table* m_hash_table_;
-		// hxsize_t avoids zero-extension on 64-bit in next_bucket loop
-		hxsize_t m_next_index_;
+		node_t_** m_next_bucket_;
+		node_t_** m_bucket_end_;
 
 	protected:
-		// Used by const_iterator.
 		/// \cond HIDDEN
 		node_t_* m_current_node_;
 		/// \endcond
@@ -302,7 +298,7 @@ public:
 
 	/// Counts the number of nodes with the given key.
 	/// - `key` : The key to count occurrences of in the hash table.
-	hxattr_nodiscard hxsize_t count(const typename node_t_::key_t& key_) const;
+	hxattr_nodiscard hxattr_hot hxsize_t count(const typename node_t_::key_t& key_) const;
 
 	/// `emplace` - Returns an iterator to the node constructed with `hxnew`.
 	/// The table must have `multi_t` set to `true`.
@@ -350,13 +346,13 @@ public:
 	/// The previous object is non-const as it may be modified.
 	/// - `key` : The key to search for in the hash table.
 	/// - `previous` : A previously found `node_t` with the same key, or hxnull.
-	hxattr_nodiscard node_t_* find(
+	hxattr_nodiscard hxattr_hot node_t_* find(
 		const typename node_t_::key_t& key_, const node_t_* previous_=hxnull);
 
 	/// `const` version of `find`.
 	/// - `key` : The key to search for in the hash table.
 	/// - `previous` : A previously found `node_t` with the same key, or hxnull.
-	hxattr_nodiscard const node_t_* find(
+	hxattr_nodiscard hxattr_hot const node_t_* find(
 		const typename node_t_::key_t& key_, const node_t_* previous_=hxnull) const;
 
 	/// `insert` - Returns an iterator to the inserted node. When `multi_t` is
@@ -412,12 +408,10 @@ public:
 private:
 	static_assert(table_size_bits_ < hxhash_bits, "Hash bits must be [0..hxhash_bits).");
 
-	// Not ideal.
+	// Deleted for being bug prone.
 	hxhash_table(const hxhash_table&) = delete;
 
-	// Pointer to head of singly-linked list for key's hash value.
 	node_t_** get_bucket_head_(hxhash_t hash_);
-
 	const node_t_*const* get_bucket_head_(hxhash_t hash_) const;
 
 	deleter_t_ m_deleter_;

@@ -24,11 +24,11 @@ HX_NS_BEGIN_
 /// because elements are shifted to maintain order. This design keeps keys
 /// cache-friendly and avoids heap overhead per element.
 ///
-/// When `multi_t` is `false` duplicate keys are rejected and `insert` returns
-/// a pointer to the existing element. When `multi_t` is `true` duplicate keys
-/// are always inserted. `compare_t` must be a callable with signature
-/// `bool(const key_t_&, const key_t_&)` returning true when the first argument
-/// is ordered before the second. It defaults to `hxkey_less_t`.
+/// When `multi_t` is `false` duplicate keys are rejected and `insert` returns a
+/// pointer to the existing element. When `multi_t` is `true` duplicate keys are
+/// always inserted. `compare_t` must be a callable with signature `bool(const
+/// key_t_&, const key_t_&)` returning true when the first argument is ordered
+/// before the second. It defaults to `hxkey_less_t`.
 ///
 /// When `capacity` is `hxallocator_dynamic_capacity` storage must be allocated
 /// by calling `reserve` before inserting elements. Otherwise the array is
@@ -63,7 +63,8 @@ public:
 	/// `capacity` is `hxallocator_dynamic_capacity`.
 	explicit hxflat_set(void);
 
-	/// Copy constructs from another `hxflat_set`. Requires `x.size()` ≤ `capacity()`.
+	/// Copy constructs from another `hxflat_set`. Requires `x.size()` ≤
+	/// `capacity()`.
 	/// - `x` : A non-temporary `hxflat_set<key_t, compare_t, multi_t, capacity>`.
 	hxflat_set(const hxflat_set& x_) noexcept;
 
@@ -75,8 +76,8 @@ public:
 	/// Destructs the set and destroys all keys.
 	~hxflat_set(void) noexcept;
 
-	/// Assigns the contents of `x` to this set. Clears this set then copies
-	/// all elements from `x`. Requires `x.size()` ≤ `capacity()`.
+	/// Assigns the contents of `x` to this set. Clears this set then copies all
+	/// elements from `x`. Requires `x.size()` ≤ `capacity()`.
 	/// - `x` : The set to copy from.
 	void operator=(const hxflat_set& x_) noexcept;
 
@@ -115,7 +116,8 @@ public:
 	/// - `key` : The key to count.
 	hxattr_nodiscard hxsize_t count(const key_t_& key_) const;
 
-	/// Returns a pointer to a const and potentially uninitialized array of `key_t`.
+	/// Returns a pointer to a const and potentially uninitialized array of
+	/// `key_t`.
 	const key_t_* data(void) const { return hxallocator<key_t_, capacity_>::data(); }
 
 	/// Returns a pointer to a potentially uninitialized array of `key_t`.
@@ -154,8 +156,7 @@ public:
 	/// Inserts a key. When `multi_t` is `false` and a matching key already
 	/// exists, returns a const pointer to the existing element without
 	/// inserting. Otherwise inserts in sorted order and returns a const pointer
-	/// to the new
-	/// element.
+	/// to the new element.
 	/// - `key` : The key to insert.
 	const key_t_* insert(const key_t_& key_) noexcept;
 
@@ -204,9 +205,7 @@ private:
 
 	template<typename key_u_>
 	const key_t_* insert_at_(key_t_* pos_, key_u_&& key_) noexcept;
-	key_t_* lower_bound_(const key_t_& key_) const;
 
-	// 1 past the last element.
 	key_t_* m_end_;
 	/// \endcond
 };

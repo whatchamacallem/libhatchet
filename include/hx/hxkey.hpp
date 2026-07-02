@@ -39,9 +39,7 @@ using hxcstring_ = char*;
 /// - `to_t` : The target type.
 template<typename from_t_, typename to_t_>
 concept hxconvertible_to = requires(from_t_ (&&from_)()) {
-	// from_ is an unexecuted function pointer used to provide a from_t_&&. This
-	// is what the standard does and avoids requiring other operators.
-    requires requires { static_cast<to_t_>(from_()); };
+	requires requires { static_cast<to_t_>(from_()); };
 };
 
 /// `hxsame_as` - A concept that requires two types to be the same. Used with the
@@ -63,7 +61,7 @@ template<typename A_, typename B_>
 requires requires(const A_& a_, const B_& b_) { { a_ == b_ } -> hxconvertible_to<bool>; }
 #endif
 hxattr_nodiscard constexpr bool hxkey_equal(const A_& a_, const B_& b_) {
-    return a_ == b_;
+	return a_ == b_;
 }
 
 /// `hxkey_equal(const char*, const char*)` - Returns true if two C strings are
@@ -71,16 +69,16 @@ hxattr_nodiscard constexpr bool hxkey_equal(const A_& a_, const B_& b_) {
 /// - `a` : The first C string.
 /// - `b` : The second C string.
 hxattr_nodiscard inline bool hxkey_equal(const hxcstring_const_& a_, const hxcstring_const_& b_) {
-    return ::strcmp(a_, b_) == 0;
+	return ::strcmp(a_, b_) == 0;
 }
 hxattr_nodiscard inline bool hxkey_equal(const hxcstring_const_& a_, const hxcstring_& b_) {
-    return ::strcmp(a_, b_) == 0;
+	return ::strcmp(a_, b_) == 0;
 }
 hxattr_nodiscard inline bool hxkey_equal(const hxcstring_& a_, const hxcstring_const_& b_) {
-    return ::strcmp(a_, b_) == 0;
+	return ::strcmp(a_, b_) == 0;
 }
 hxattr_nodiscard inline bool hxkey_equal(const hxcstring_& a_, const hxcstring_& b_) {
-    return ::strcmp(a_, b_) == 0;
+	return ::strcmp(a_, b_) == 0;
 }
 
 /// `hxkey_equal_t<T>` - A `constexpr` callable that invokes `hxkey_equal`.
@@ -106,7 +104,7 @@ template<typename A_, typename B_>
 requires requires(const A_& a_, const B_& b_) { { a_ < b_ } -> hxconvertible_to<bool>; }
 #endif
 hxattr_nodiscard constexpr bool hxkey_less(const A_& a_, const B_& b_) {
-    return a_ < b_;
+	return a_ < b_;
 }
 
 /// `hxkey_less(const char*, const char*)` - Returns true if the first C string
@@ -115,16 +113,16 @@ hxattr_nodiscard constexpr bool hxkey_less(const A_& a_, const B_& b_) {
 /// - `a` : The first C string.
 /// - `b` : The second C string.
 hxattr_nodiscard inline bool hxkey_less(const hxcstring_const_& a_, const hxcstring_const_& b_) {
-    return ::strcmp(a_, b_) < 0;
+	return ::strcmp(a_, b_) < 0;
 }
 hxattr_nodiscard inline bool hxkey_less(const hxcstring_const_& a_, const hxcstring_& b_) {
-    return ::strcmp(a_, b_) < 0;
+	return ::strcmp(a_, b_) < 0;
 }
 hxattr_nodiscard inline bool hxkey_less(const hxcstring_& a_, const hxcstring_const_& b_) {
-    return ::strcmp(a_, b_) < 0;
+	return ::strcmp(a_, b_) < 0;
 }
 hxattr_nodiscard inline bool hxkey_less(const hxcstring_& a_, const hxcstring_& b_) {
-    return ::strcmp(a_, b_) < 0;
+	return ::strcmp(a_, b_) < 0;
 }
 
 /// `hxkey_less_t<T>` - A `constexpr` callable that invokes `hxkey_less`.
@@ -149,12 +147,12 @@ hxinline_constexpr hxhash_t hxhash_prime5_ = hxhash_t{0x165667B1u};
 
 // xxhash32 avalanche: x ^= x >> 15, x *= prime2, x ^= x >> 13, x *= prime3, x ^= x >> 16.
 hxattr_nodiscard inline hxhash_t hxhash_avalanche_(hxhash_t x_) {
-    x_ ^= x_ >> 15u;
-    x_ *= hxhash_prime2_;
-    x_ ^= x_ >> 13u;
-    x_ *= hxhash_prime3_;
-    x_ ^= x_ >> 16u;
-    return x_;
+	x_ ^= x_ >> 15u;
+	x_ *= hxhash_prime2_;
+	x_ ^= x_ >> 13u;
+	x_ *= hxhash_prime3_;
+	x_ ^= x_ >> 16u;
+	return x_;
 }
 /// \endcond
 
@@ -165,24 +163,24 @@ hxattr_nodiscard inline hxhash_t hxhash_avalanche_(hxhash_t x_) {
 /// - `x` : The input value.
 template<typename T_>
 hxattr_nodiscard inline hxhash_t hxkey_hash(T_ x_) {
-    // xxhash32 short-input path: seed=0, length=4, single 4-byte word mix then avalanche.
-    hxhash_t h_ = hxhash_prime5_ + hxhash_t{4u};
-    h_ += static_cast<hxhash_t>(x_) * hxhash_prime3_;
-    h_  = ((h_ << 17u) | (h_ >> 15u)) * hxhash_prime4_;
-    return hxhash_avalanche_(h_);
+	// xxhash32 short-input path: seed=0, length=4, single 4-byte word mix then avalanche.
+	hxhash_t h_ = hxhash_prime5_ + hxhash_t{4u};
+	h_ += static_cast<hxhash_t>(x_) * hxhash_prime3_;
+	h_  = ((h_ << 17u) | (h_ >> 15u)) * hxhash_prime4_;
+	return hxhash_avalanche_(h_);
 }
 
-/// `hxkey_hash(const char*)` - Returns the xxhash32 of a C string. Uses the
-/// xxhash32 byte-by-byte short-input path with seed 0.
+/// `hxkey_hash(const char*)` - Returns the xxhash32 style hash of a C string.
+/// Mixes each byte with the xxhash32 primes in a single pass and applies the
+/// xxhash32 avalanche.
 /// - `s` : The C string.
 hxattr_nodiscard hxattr_hot inline hxhash_t hxkey_hash(const char* s_) {
-    // xxhash32 short-input init: seed=0, length known upfront.
-    hxhash_t h_ = hxhash_prime5_ + static_cast<hxhash_t>(::strlen(s_));
-    while(*s_ != '\0') {
-        h_ += static_cast<hxhash_t>(static_cast<unsigned char>(*s_++)) * hxhash_prime5_;
-        h_ = ((h_ << 11u) | (h_ >> 21u)) * hxhash_prime1_;
-    }
-    return hxhash_avalanche_(h_);
+	hxhash_t h_ = hxhash_prime5_;
+	while(*s_ != '\0') {
+		h_ += static_cast<hxhash_t>(static_cast<unsigned char>(*s_++)) * hxhash_prime5_;
+		h_ = ((h_ << 11u) | (h_ >> 21u)) * hxhash_prime1_;
+	}
+	return hxhash_avalanche_(h_);
 }
 
 HX_NS_END_

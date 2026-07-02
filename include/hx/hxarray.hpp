@@ -288,7 +288,6 @@ public:
 	void sort(void) noexcept;
 
 private:
-	// Destroys elements in the range [begin, end).
 	void destruct_(T_* begin_, T_* end_) noexcept;
 };
 
@@ -316,7 +315,6 @@ bool hxkey_less(const hxarray<T_, capacity_>& x_, const hxarray<T_, capacity_>& 
 template<typename T_>
 void hxswap(hxarray<T_, hxallocator_dynamic_capacity>& x_,
 			hxarray<T_, hxallocator_dynamic_capacity>& y_) noexcept {
-	// hxarray has a dynamic allocator that allows memcpy.
 	hxswap_memcpy(x_, y_);
 }
 

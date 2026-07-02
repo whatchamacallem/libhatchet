@@ -12,10 +12,12 @@ HX_BEGIN_INL_
 
 template<hxfree_list_concept_ T_, hxsize_t capacity_>
 hxfree_list<T_, capacity_>::hxfree_list(void) noexcept {
-	m_free_head_ = hxnull;
-	m_size_ = 0;
 	hxif_constexpr(capacity_ > 0) {
 		this->enqueue_all_(capacity_);
+	}
+	else {
+		m_free_head_ = hxnull;
+		m_size_ = 0;
 	}
 }
 
@@ -51,9 +53,10 @@ hxsize_t hxfree_list<T_, capacity_>::capacity(void) const {
 
 template<hxfree_list_concept_ T_, hxsize_t capacity_>
 bool hxfree_list<T_, capacity_>::is_allocator(const T_* p_) const noexcept {
-	return p_ != hxnull
-		&& static_cast<const void*>(p_) >= static_cast<const void*>(this->data())
-		&& static_cast<const void*>(p_) < static_cast<const void*>(this->data() + this->capacity());
+	// A single unsigned range check that is also false for null.
+	const uintptr_t offset_ = reinterpret_cast<uintptr_t>(p_)
+		- reinterpret_cast<uintptr_t>(this->data());
+	return offset_ < static_cast<uintptr_t>(this->capacity()) * sizeof(T_);
 }
 
 template<hxfree_list_concept_ T_, hxsize_t capacity_>
@@ -106,10 +109,13 @@ hxptr<T_, typename hxfree_list<T_, capacity_>::deleter_t>
 template<hxfree_list_concept_ T_, hxsize_t capacity_>
 void hxfree_list<T_, capacity_>::enqueue_all_(hxsize_t count_) noexcept {
 	slot_* const slots_ = reinterpret_cast<slot_*>(this->data());
-	for(hxsize_t i_ = count_; i_-- != 0u; ) {
-		slots_[i_].next_ = m_free_head_;
-		m_free_head_ = slots_ + i_;
+	slot_* head_ = hxnull;
+	for(slot_* hxrestrict it_ = slots_ + count_; it_ != slots_;) {
+		--it_;
+		it_->next_ = head_;
+		head_ = it_;
 	}
+	m_free_head_ = head_;
 	m_size_ = count_;
 }
 

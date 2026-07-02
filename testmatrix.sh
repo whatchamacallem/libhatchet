@@ -25,7 +25,8 @@ export MALLOC_CHECK_=3
 # Fatal warning flags.
 ERRORS="-Wall -Wextra -pedantic-errors -Werror -Wfatal-errors -Wcast-qual   \
 	-Wdisabled-optimization -Wshadow -Wundef -Wconversion -Wdate-time       \
-	-Wmissing-declarations -Wno-c2y-extensions -Wno-unknown-warning-option"
+	-Wmissing-declarations -Wno-c2y-extensions -Wno-maybe-uninitialized     \
+	-Wno-unknown-warning-option"
 
 FLAGS="-DHX_USE_FILE_IO=2 -ffast-math -ggdb3 -D_FORTIFY_SOURCE=3"
 

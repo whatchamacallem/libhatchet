@@ -87,21 +87,27 @@ inline hxconstexpr hxbitset<bit_count_>& hxbitset<bit_count_>::operator<<=(size_
 	if(count_ == 0u) { return *this; }
 	const size_t word_shift_ = count_ >> s_log2_bits_per_word_;
 	const size_t bit_shift_ = count_ & s_bit_mask_;
+	size_t i_ = s_words_;
 	if(bit_shift_ == 0u) {
-		for(size_t i_ = s_words_; i_-- != 0u; ) {
-			m_data_[i_] = (i_ >= word_shift_) ? m_data_[i_ - word_shift_] : 0u;
+		while(i_ > word_shift_) {
+			--i_;
+			m_data_[i_] = m_data_[i_ - word_shift_];
 		}
 	} else {
-		for(size_t i_ = s_words_; i_-- != 0u; ) {
-			const size_t lo_ = (i_ >= word_shift_)
-				? (m_data_[i_ - word_shift_] << bit_shift_) : 0u;
-			const size_t hi_ = (i_ > word_shift_)
-				? (m_data_[i_ - word_shift_ - 1u] >> (s_bits_per_word_ - bit_shift_)) : 0u;
-			m_data_[i_] = lo_ | hi_;
+		while(i_ > word_shift_ + 1u) {
+			--i_;
+			m_data_[i_] = (m_data_[i_ - word_shift_] << bit_shift_)
+				| (m_data_[i_ - word_shift_ - 1u] >> (s_bits_per_word_ - bit_shift_));
+		}
+		if(i_ > word_shift_) {
+			--i_;
+			m_data_[i_] = m_data_[0] << bit_shift_;
 		}
 	}
+	while(i_ != 0u) {
+		m_data_[--i_] = 0u;
+	}
 	m_data_[s_words_-1u] &= s_trailing_mask_;
-	hxassertmsg((m_data_[s_words_-1u] & ~s_trailing_mask_) == 0u, "trailing_bits_set");
 	return *this;
 }
 
@@ -110,18 +116,23 @@ inline hxconstexpr hxbitset<bit_count_>& hxbitset<bit_count_>::operator>>=(size_
 	if(count_ == 0u) { return *this; }
 	const size_t word_shift_ = count_ >> s_log2_bits_per_word_;
 	const size_t bit_shift_ = count_ & s_bit_mask_;
+	size_t i_ = 0u;
 	if(bit_shift_ == 0u) {
-		for(size_t i_ = 0u; i_ < s_words_; ++i_) {
-			m_data_[i_] = ((i_ + word_shift_) < s_words_) ? m_data_[i_ + word_shift_] : 0u;
+		for(; i_ + word_shift_ < s_words_; ++i_) {
+			m_data_[i_] = m_data_[i_ + word_shift_];
 		}
 	} else {
-		for(size_t i_ = 0u; i_ < s_words_; ++i_) {
-			const size_t lo_ = ((i_ + word_shift_) < s_words_)
-				? (m_data_[i_ + word_shift_] >> bit_shift_) : 0u;
-			const size_t hi_ = ((i_ + word_shift_ + 1u) < s_words_)
-				? (m_data_[i_ + word_shift_ + 1u] << (s_bits_per_word_ - bit_shift_)) : 0u;
-			m_data_[i_] = lo_ | hi_;
+		for(; i_ + word_shift_ + 1u < s_words_; ++i_) {
+			m_data_[i_] = (m_data_[i_ + word_shift_] >> bit_shift_)
+				| (m_data_[i_ + word_shift_ + 1u] << (s_bits_per_word_ - bit_shift_));
 		}
+		if(i_ + word_shift_ < s_words_) {
+			m_data_[i_] = m_data_[i_ + word_shift_] >> bit_shift_;
+			++i_;
+		}
+	}
+	for(; i_ < s_words_; ++i_) {
+		m_data_[i_] = 0u;
 	}
 	hxassertmsg((m_data_[s_words_-1u] & ~s_trailing_mask_) == 0u, "trailing_bits_set");
 	return *this;
@@ -131,31 +142,35 @@ template<size_t bit_count_>
 inline hxconstexpr bool hxbitset<bit_count_>::operator==(const hxbitset& x_) const {
 	hxassertmsg(static_cast<const void*>(this) != static_cast<const void*>(&x_),
 		"invalid_reference");
-	for(const size_t* dst_ = m_data_, * src_ = x_.m_data_, *const end_ = m_data_ + s_words_;
+	size_t difference_ = 0u;
+	const size_t* hxrestrict src_ = x_.m_data_;
+	for(const size_t* hxrestrict dst_ = m_data_, *const end_ = m_data_ + s_words_;
 			dst_ != end_; ++dst_, ++src_) {
-		if(*dst_ != *src_) { return false; }
+		difference_ |= *dst_ ^ *src_;
 	}
-	return true;
+	return difference_ == 0u;
 }
 
 template<size_t bit_count_>
 inline hxconstexpr bool hxbitset<bit_count_>::all(void) const {
 	hxassertmsg((m_data_[s_words_-1u] & ~s_trailing_mask_) == 0u, "trailing_bits_set");
+	size_t missing_ = m_data_[s_words_-1u] ^ s_trailing_mask_;
 	for(const size_t* dst_ = m_data_, *const end_ = m_data_ + (s_words_-1u);
 			dst_ != end_; ++dst_) {
-		if(*dst_ != ~static_cast<size_t>(0u)) { return false; }
+		missing_ |= ~*dst_;
 	}
-	return m_data_[s_words_-1u] == s_trailing_mask_;
+	return missing_ == 0u;
 }
 
 template<size_t bit_count_>
 inline hxconstexpr bool hxbitset<bit_count_>::any(void) const {
 	hxassertmsg((m_data_[s_words_-1u] & ~s_trailing_mask_) == 0u, "trailing_bits_set");
+	size_t bits_ = 0u;
 	for(const size_t* dst_ = m_data_, *const end_ = m_data_ + s_words_;
 			dst_ != end_; ++dst_) {
-		if(*dst_ != 0u) { return true; }
+		bits_ |= *dst_;
 	}
-	return false;
+	return bits_ != 0u;
 }
 
 template<size_t bit_count_>
@@ -214,12 +229,10 @@ inline hxconstexpr hxbitset<bit_count_>& hxbitset<bit_count_>::set(void) {
 template<size_t bit_count_>
 inline hxconstexpr hxbitset<bit_count_>& hxbitset<bit_count_>::set(size_t pos_, bool value_) {
 	hxassert_hard(pos_ < bit_count_, "invalid_index %zu", pos_);
-	const size_t mask_ = static_cast<size_t>(1u) << (pos_ & s_bit_mask_);
-	if(value_) {
-		m_data_[pos_ >> s_log2_bits_per_word_] |= mask_;
-	} else {
-		m_data_[pos_ >> s_log2_bits_per_word_] &= ~mask_;
-	}
+	const size_t shift_ = pos_ & s_bit_mask_;
+	size_t& word_ = m_data_[pos_ >> s_log2_bits_per_word_];
+	word_ = (word_ & ~(static_cast<size_t>(1u) << shift_))
+		| (static_cast<size_t>(value_) << shift_);
 	return *this;
 }
 

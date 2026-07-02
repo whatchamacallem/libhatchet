@@ -56,11 +56,11 @@ public:
 
 	/// Shifts all bits left by `count` positions, filling vacated bits with 0.
 	/// - `count` : Number of positions to shift left.
-	hxconstexpr hxbitset& operator<<=(size_t count_);
+	hxattr_hot hxconstexpr hxbitset& operator<<=(size_t count_);
 
 	/// Shifts all bits right by `count` positions, filling vacated bits with 0.
 	/// - `count` : Number of positions to shift right.
-	hxconstexpr hxbitset& operator>>=(size_t count_);
+	hxattr_hot hxconstexpr hxbitset& operator>>=(size_t count_);
 
 	/// Returns `true` if all bits compare equal to those of `x`.
 	/// - `x` : The `hxbitset` to compare with.

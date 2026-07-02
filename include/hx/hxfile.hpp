@@ -146,11 +146,15 @@ public:
 	/// Returns the current open mode of the file.
 	hxattr_nodiscard uint8_t mode(void) const { return m_open_mode_; }
 
+#if defined __GNUC__
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wconversion"
+#endif
 	/// Clears the `open_mode_asserts` flag.
 	void disable_asserts(void) { m_open_mode_ &= ~open_mode::open_mode_asserts; }
+#if defined __GNUC__
 #pragma GCC diagnostic pop
+#endif
 
 	/// Returns the current position in the file if open, 0 otherwise. FILE*
 	/// implementation requires a 64-bit long to support 64-bit files.
@@ -258,15 +262,13 @@ private:
 	void operator=(const hxfile&) = delete;
 	template<typename T_> hxfile& operator>>(const T_* t_) = delete;
 
-	// Internal function to open a file with a formatted filename and variable
-	// arguments.
 	bool openv_(uint8_t mode_, const char* format_, va_list args_);
 
-	intptr_t m_file_pimpl_; // POSIX fd/FILE* file pointer.
-	uint8_t  m_open_mode_;  // Current open_mode flags.
-	bool     m_owns_;  		// Indicates if the file is owned.
-	bool     m_fail_; 		// Indicates EOF, file errors and user errors.
-	bool     m_eof_;  		// Indicates EOF.
+	intptr_t m_file_pimpl_;
+	uint8_t  m_open_mode_;
+	bool     m_owns_;
+	bool     m_fail_;
+	bool     m_eof_;
 };
 
 HX_NS_END_

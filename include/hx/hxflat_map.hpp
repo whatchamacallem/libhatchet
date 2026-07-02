@@ -27,10 +27,10 @@ HX_NS_BEGIN_
 /// element.
 ///
 /// When `multi_t` is `false` duplicate keys are rejected and `insert` returns
-/// an iterator to the existing element. When `multi_t` is `true` duplicate
-/// keys are always inserted. `compare_t` must be a callable with signature
-/// `bool(const key_t_&, const key_t_&)` returning true when the first
-/// argument is ordered before the second. It defaults to `hxkey_less_t`.
+/// an iterator to the existing element. When `multi_t` is `true` duplicate keys
+/// are always inserted. `compare_t` must be a callable with signature
+/// `bool(const key_t_&, const key_t_&)` returning true when the first argument
+/// is ordered before the second. It defaults to `hxkey_less_t`.
 ///
 /// When `capacity` is `hxallocator_dynamic_capacity` storage must be allocated
 /// by calling `reserve` before inserting elements. Otherwise the arrays are
@@ -215,7 +215,8 @@ public:
 	/// `capacity` is `hxallocator_dynamic_capacity`.
 	explicit hxflat_map(void);
 
-	/// Copy constructs from another `hxflat_map`. Requires `x.size()` ≤ `capacity()`.
+	/// Copy constructs from another `hxflat_map`. Requires `x.size()` ≤
+	/// `capacity()`.
 	/// - `x` : A non-temporary `hxflat_map<key_t, mapped_t, compare_t, multi_t, capacity>`.
 	hxflat_map(const hxflat_map& x_) noexcept;
 
@@ -244,13 +245,13 @@ public:
 	/// - `x` : A temporary map to move from.
 	void operator=(hxflat_map&& x_) noexcept;
 
-	/// Returns a const iterator to the element at `index`. Requires
-	/// `index < size()`.
+	/// Returns a const iterator to the element at `index`. Requires `index <
+	/// size()`.
 	/// - `index` : The 0-based position of the element.
 	hxattr_nodiscard const_iterator operator[](hxsize_t index_) const;
 
-	/// Returns an iterator to the element at `index`. Requires
-	/// `index < size()`.
+	/// Returns an iterator to the element at `index`. Requires `index <
+	/// size()`.
 	/// - `index` : The 0-based position of the element.
 	hxattr_nodiscard iterator operator[](hxsize_t index_);
 
@@ -388,7 +389,6 @@ private:
 
 	template<typename mapped_u_>
 	iterator insert_at_(hxsize_t index_, const key_t_& key_, mapped_u_&& mapped_) noexcept;
-	hxsize_t lower_bound_(const key_t_& key_) const;
 
 	hxsize_t m_size_;
 	hxallocator<key_t_, capacity_> m_keys_;

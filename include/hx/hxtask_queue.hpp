@@ -47,7 +47,7 @@ public:
 	/// Creates a new task queue. `task_queue_size` reserves storage for enqueued
 	/// tasks. `thread_pool_size` determines the size of the worker thread pool.
 	/// A `thread_pool_size` of `0` does not use threads.
-	explicit hxtask_queue(hxsize_t task_queue_size_, hxsize_t thread_pool_size_);
+	explicit hxtask_queue(int32_t task_queue_size_, int32_t thread_pool_size_) noexcept;
 
 	/// Waits for all queued and executing tasks to complete before destruction.
 	~hxtask_queue(void);
@@ -58,7 +58,7 @@ public:
 	/// priorities.
 	/// - `callable` : A callable returning boolean. `!all_of(x)` -> `any_not(x)`.
 	template<typename callable_t_>
-	hxattr_nodiscard bool all_of(callable_t_&& callable_) const;
+	hxattr_nodiscard bool all_of(callable_t_&& callable_) const noexcept;
 
 	/// Locks the queue and calls `callable` on each task. Returns true if the
 	/// predicate returns true for any element and false otherwise. Will stop
@@ -66,7 +66,7 @@ public:
 	/// priorities.
 	/// - `callable` : A callable returning boolean. `!any_of(x)` -> `none_of(x)`.
 	template<typename callable_t_>
-	hxattr_nodiscard bool any_of(callable_t_&& callable_) const;
+	hxattr_nodiscard bool any_of(callable_t_&& callable_) const noexcept;
 
 	/// Returns true if the task was found and removed. Calls `on_cancel` on the
 	/// task if found. Thread-safe. Returns false if the task is already
@@ -88,7 +88,7 @@ public:
 	/// thread pool size is greater than zero.
 	/// - `task` : Non-null pointer to the task to be enqueued for execution.
 	/// - `priority` : Optional priority for scheduling. Higher values run sooner.
-	void enqueue(hxtask* task_, int priority_=0) hxattr_nonnull(2);
+	void enqueue(hxtask* task_, int priority_=0) noexcept hxattr_nonnull(2);
 
 	/// Locks the queue and calls `callable` on each task. Removes queued tasks for
 	/// which `callable` evaluates true. Does not call `on_cancel` on each. Returns
@@ -97,12 +97,12 @@ public:
 	/// priorities.
 	/// - `callable` : Predicate accepting a `record_t&`.
 	template<typename callable_t_>
-	hxsize_t erase_if(callable_t_&& callable_) noexcept;
+	int32_t erase_if(callable_t_&& callable_) noexcept;
 
 	/// Locks the queue and calls `callable` on each task record.
 	/// - `callable` : callable accepting a `const record_t&`.
 	template<typename callable_t_>
-	void for_each(callable_t_&& callable_) const;
+	void for_each(callable_t_&& callable_) const noexcept;
 
 	/// Non-const version of `for_each`. This version will perform `make_heap`
 	/// on the queue after calling `callable` on each task record. The `record_t&`
@@ -116,10 +116,10 @@ public:
 
 	/// Returns the maximum number of tasks that can be queued. This value is
 	/// fixed at construction and does not require locking.
-	hxattr_nodiscard hxsize_t max_size(void) const;
+	hxattr_nodiscard int32_t max_size(void) const;
 
 	/// Returns the number of queued tasks. Thread-safe.
-	hxattr_nodiscard hxsize_t size(void) const;
+	hxattr_nodiscard int32_t size(void) const;
 
 	/// Execute remaining tasks. The thread calling `wait_for_all` executes
 	/// tasks as well. Intended to be called by the thread that owns the queue
@@ -127,7 +127,7 @@ public:
 	/// `enqueue` during `execute` to schedule additional work before
 	/// `wait_for_all` returns. WARNING: Calling `wait_for_all` from inside
 	/// `hxtask::execute` deadlocks permanently.
-	void wait_for_all(void);
+	void wait_for_all(void) noexcept;
 
 private:
 	/// \cond HIDDEN
@@ -139,9 +139,7 @@ private:
 #if HX_USE_THREADS
 #define hxtask_queue_lock_ const hxunique_lock lock_(m_mutex_)
 
-	friend class hxtask_wait_for_tasks_;
-	friend class hxtask_wait_for_completion_;
-	template<hxsize_t> friend class hxtask_dag_node;
+	template<int32_t> friend class hxtask_dag_node;
 
 	enum class thread_mode_ : uint8_t {
 		pool_,
@@ -153,16 +151,16 @@ private:
 		stopped_ = 0xdeadbeefu
 	};
 
-	static hxthread::return_t thread_task_loop_entry_(hxtask_queue* q_);
-	static void thread_task_loop_(hxtask_queue* q_, thread_mode_ mode_);
+	static hxthread::return_t thread_task_loop_entry_(hxtask_queue* q_) noexcept;
+	static void thread_task_loop_(hxtask_queue& q_, thread_mode_ mode_) noexcept;
 
 	run_level_ m_queue_run_level_;
-	hxsize_t m_thread_pool_size_;
+	int32_t m_thread_pool_size_;
+	int32_t m_executing_count_;
 	hxthread* m_threads_;
 	mutable hxmutex m_mutex_;
 	hxcondition_variable m_cond_var_new_tasks_;
 	hxcondition_variable m_cond_var_completion_;
-	int32_t m_executing_count_;
 #else
 #define hxtask_queue_lock_ ((void)0)
 #endif

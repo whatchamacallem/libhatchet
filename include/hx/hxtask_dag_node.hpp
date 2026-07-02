@@ -21,7 +21,7 @@ HX_NS_BEGIN_
 /// `on_completion`, `on_failure`, or `on_cancel` must call the corresponding
 /// `hxtask_dag_node` base method to preserve task propagation.
 /// - `max_successors` : Maximum direct successors per node. Default is 4.
-template<hxsize_t max_successors_=4>
+template<int32_t max_successors_=4>
 class hxtask_dag_node : public hxtask {
 public:
 	/// Constructs a node with no predecessors or successors.
@@ -59,8 +59,8 @@ private:
 
 	void dag_node_completed_(hxtask_queue* q_, bool is_cancelled_);
 
-	hxsize_t  m_predecessor_count_;
-	hxsize_t  m_successor_count_;
+	int32_t m_predecessor_count_;
+	int32_t m_successor_count_;
 	edge_t_ m_successors_[max_successors_];
 };
 

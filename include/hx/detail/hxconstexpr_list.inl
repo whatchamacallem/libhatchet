@@ -109,7 +109,7 @@ inline hxconstexpr auto hxconstexpr_list<node_t_, deleter_t_>::end(void) const -
 
 template<typename node_t_, typename deleter_t_>
 inline hxconstexpr bool hxconstexpr_list<node_t_, deleter_t_>::empty(void) const {
-	return m_sentinel_.m_list_next_ == &m_sentinel_;
+	return m_size_ == 0;
 }
 
 template<typename node_t_, typename deleter_t_>
@@ -118,11 +118,11 @@ inline hxconstexpr void hxconstexpr_list<node_t_, deleter_t_>::clear(
 		const deleter_override_t_& deleter_) noexcept {
 	if(m_size_ != 0) {
 		if(deleter_) {
-			hxconstexpr_list_node* n_ = m_sentinel_.m_list_next_;
-			while(n_ != &m_sentinel_) {
-				hxconstexpr_list_node* next_ = n_->m_list_next_;
-				deleter_(static_cast<node_t_*>(n_));
-				n_ = next_;
+			hxconstexpr_list_node* node_ = m_sentinel_.m_list_next_;
+			while(node_ != &m_sentinel_) {
+				hxconstexpr_list_node* next_ = node_->m_list_next_;
+				deleter_(static_cast<node_t_*>(node_));
+				node_ = next_;
 			}
 		}
 		this->release_all();
@@ -194,7 +194,10 @@ template<typename node_t_, typename deleter_t_>
 inline hxconstexpr hxptr<node_t_, deleter_t_> hxconstexpr_list<node_t_, deleter_t_>::pop_back(void) {
 	hxassert_hard(!this->empty(), "empty_list");
 	node_t_* const ptr_ = static_cast<node_t_*>(m_sentinel_.m_list_prev_);
-	this->extract_(ptr_);
+	hxconstexpr_list_node* const prev_ = ptr_->m_list_prev_;
+	prev_->m_list_next_ = &m_sentinel_;
+	m_sentinel_.m_list_prev_ = prev_;
+	--m_size_;
 	return hxptr<node_t_, deleter_t_>(ptr_, m_deleter_);
 }
 
@@ -202,7 +205,10 @@ template<typename node_t_, typename deleter_t_>
 inline hxconstexpr hxptr<node_t_, deleter_t_> hxconstexpr_list<node_t_, deleter_t_>::pop_front(void) {
 	hxassert_hard(!this->empty(), "empty_list");
 	node_t_* const ptr_ = static_cast<node_t_*>(m_sentinel_.m_list_next_);
-	this->extract_(ptr_);
+	hxconstexpr_list_node* const next_ = ptr_->m_list_next_;
+	m_sentinel_.m_list_next_ = next_;
+	next_->m_list_prev_ = &m_sentinel_;
+	--m_size_;
 	return hxptr<node_t_, deleter_t_>(ptr_, m_deleter_);
 }
 
@@ -242,31 +248,36 @@ inline hxconstexpr void hxconstexpr_list<node_t_, deleter_t_>::release_all(void)
 template<typename node_t_, typename deleter_t_>
 template<typename callable_t_>
 inline hxconstexpr hxsize_t hxconstexpr_list<node_t_, deleter_t_>::remove_if(callable_t_&& callable_) noexcept {
-	hxsize_t count_ = 0;
-	hxconstexpr_list_node* n_ = m_sentinel_.m_list_next_;
-	while(n_ != &m_sentinel_) {
-		hxconstexpr_list_node* next_ = n_->m_list_next_;
-		node_t_* node_ = static_cast<node_t_*>(n_);
-		if(hxforward<callable_t_>(callable_)(*node_)) {
-			this->extract_(n_);
-			m_deleter_(node_);
-			++count_;
+	hxsize_t size_ = m_size_;
+	hxconstexpr_list_node* prev_ = &m_sentinel_;
+	hxconstexpr_list_node* node_ = m_sentinel_.m_list_next_;
+	while(node_ != &m_sentinel_) {
+		hxconstexpr_list_node* const next_ = node_->m_list_next_;
+		node_t_* const n_ = static_cast<node_t_*>(node_);
+		if(hxforward<callable_t_>(callable_)(*n_)) {
+			prev_->m_list_next_ = next_;
+			next_->m_list_prev_ = prev_;
+			--size_;
+			m_deleter_(n_);
+		} else {
+			prev_ = n_;
 		}
-		n_ = next_;
+		node_ = next_;
 	}
+	const hxsize_t count_ = m_size_ - size_;
+	m_size_ = size_;
 	return count_;
 }
 
 template<typename node_t_, typename deleter_t_>
 inline hxconstexpr void hxconstexpr_list<node_t_, deleter_t_>::reverse(void) {
-	hxconstexpr_list_node* n_ = &m_sentinel_;
+	hxconstexpr_list_node* node_ = &m_sentinel_;
 	do {
-		hxconstexpr_list_node* next_ = n_->m_list_next_;
-		n_->m_list_next_ = n_->m_list_prev_;
-		n_->m_list_prev_ = next_;
-		n_ = next_;
-	} while(n_ != &m_sentinel_)
-		/* do */;
+		hxconstexpr_list_node* next_ = node_->m_list_next_;
+		node_->m_list_next_ = node_->m_list_prev_;
+		node_->m_list_prev_ = next_;
+		node_ = next_;
+	} while(node_ != &m_sentinel_);
 }
 
 template<typename node_t_, typename deleter_t_>

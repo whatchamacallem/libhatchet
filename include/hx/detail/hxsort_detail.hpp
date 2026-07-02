@@ -19,56 +19,40 @@ namespace hxdetail_ {
 
 hxinline_constexpr hxsize_t hxpartition_sort_cutoff_ = 32;
 
-// Restores the heap property by pushing the current value down until it is not
-// less than its children.
+// Restores the heap property by sifting the current value down until it is not
+// less than its children. Holds the value in a temporary so that each level
+// costs a single move instead of a swap.
 template<typename iterator_t_, typename less_t_> hxattr_hot hxconstexpr
 void hxheapsort_heapify_(const iterator_t_ begin_, iterator_t_ current_,
 		const iterator_t_ end_, const less_t_& less_) {
 	const hxsize_t size_ = end_ - begin_;
+	auto value_ = hxmove(*current_);
 	for(;;) {
 		const hxsize_t left_idx_ = ((current_ - begin_) << 1) + hxsize_t{1};
 		if(left_idx_ >= size_) {
-			return;
+			break;
 		}
-		iterator_t_ left_ = begin_ + left_idx_;
-
-		iterator_t_ next_ = left_;
-		iterator_t_ right_ = left_ + hxsize_t{1};
+		iterator_t_ next_ = begin_ + left_idx_;
+		const iterator_t_ right_ = next_ + hxsize_t{1};
 		if(right_ < end_ && less_(*next_, *right_)) {
 			next_ = right_;
 		}
-
-		if(!less_(*current_, *next_)) {
-			return;
+		if(!less_(value_, *next_)) {
+			break;
 		}
-
-		hxswap(*current_, *next_);
+		*current_ = hxmove(*next_);
 		current_ = next_;
 	}
+	*current_ = hxmove(value_);
 }
 
 // `hxmake_heap_` - Converts the range `[begin, end)` into a max heap using the
-// provided comparator. Should work well for mostly heapified data.
+// provided comparator and Floyd's linear time bottom-up construction.
 template<typename iterator_t_, typename less_t_> hxattr_hot hxconstexpr
 void hxmake_heap_(iterator_t_ begin_, iterator_t_ end_, const less_t_& less_) {
-	for(iterator_t_ heap_end_ = begin_ + hxsize_t{1}; heap_end_ < end_; ) {
-		iterator_t_ node_ = heap_end_;
-		++heap_end_;
-		iterator_t_ parent_ = begin_ + ((node_ - begin_ - hxsize_t{1}) >> 1);
-		if(less_(*parent_, *node_)) {
-			auto value_ = hxmove(*node_);
-			do {
-				*node_ = hxmove(*parent_);
-				node_ = parent_;
-				if(node_ == begin_) {
-					break;
-				}
-				parent_ = begin_ + ((node_ - begin_ - hxsize_t{1}) >> 1);
-			}
-			while(less_(*parent_, value_))
-				/**/;
-			*node_ = hxmove(value_);
-		}
+	for(hxsize_t i_ = (end_ - begin_) >> 1; i_ > hxsize_t{0}; ) {
+		--i_;
+		hxheapsort_heapify_<iterator_t_>(begin_, begin_ + i_, end_, less_);
 	}
 }
 

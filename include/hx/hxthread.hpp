@@ -47,7 +47,7 @@ public:
 		const int code_ = ::pthread_key_create(&m_key_, 0);
 		hxassert_always(code_ == 0, "pthread_key_create %s", ::strerror(code_)); (void)code_;
 #else
-		m_value_ = (T_)0;
+		m_value_ = T_();
 #endif
 	}
 
@@ -75,10 +75,10 @@ public:
 	void operator=(T_ local_) {
 #if (HX_USE_THREADS) == 11
 		const int code_ = ::tss_set(m_key_, (void*)(intptr_t)local_); // NOLINT(google-readability-casting)
-		hxassert_always(code_ == thrd_success, "tss_set %d", code_); (void)code_;
+		hxassert_hard(code_ == thrd_success, "tss_set %d", code_); (void)code_;
 #elif HX_USE_THREADS
 		const int code_ = ::pthread_setspecific(m_key_, (void*)(intptr_t)local_); // NOLINT(google-readability-casting)
-		hxassert_always(code_ == 0, "pthread_setspecific %s", ::strerror(code_)); (void)code_;
+		hxassert_hard(code_ == 0, "pthread_setspecific %s", ::strerror(code_)); (void)code_;
 #else
 		m_value_ = local_;
 #endif
@@ -185,9 +185,7 @@ public:
 #endif
 
 private:
-	// Deleted copy constructor.
 	hxmutex(const hxmutex&) = delete;
-	// Deleted copy assignment operator.
 	hxmutex& operator=(const hxmutex&) = delete;
 
 #if (HX_USE_THREADS) == 11
@@ -236,9 +234,7 @@ public:
 	hxmutex& mutex(void) { return m_mutex_; }
 
 private:
-	// Deleted copy constructor.
 	hxunique_lock(const hxunique_lock&) = delete;
-	// Deleted copy assignment operator.
 	hxunique_lock& operator=(const hxunique_lock&) = delete;
 	hxmutex& m_mutex_;
 	bool m_owns_;
@@ -299,10 +295,10 @@ public:
 	/// - `callable` : Predicate function to check.
 	template<typename callable_t_>
 	void wait(hxunique_lock& lock_, callable_t_&& callable_) {
-		while(!hxforward<callable_t_>(callable_)()) {
+		while(!callable_()) {
 			// Failure is undefined as per the standard.
-			const bool wait_result = this->wait(lock_);
-			hxassertmsg(wait_result, "wait"); (void)wait_result;
+			const bool wait_result_ = this->wait(lock_);
+			hxassertmsg(wait_result_, "wait"); (void)wait_result_;
 		}
 	}
 
@@ -340,9 +336,7 @@ public:
 #endif
 
 private:
-	// Deleted copy constructor.
 	hxcondition_variable(const hxcondition_variable&) = delete;
-	// Deleted copy assignment operator.
 	hxcondition_variable& operator=(const hxcondition_variable&) = delete;
 
 #if (HX_USE_THREADS) == 11
@@ -365,7 +359,7 @@ public:
 #endif
 
 	/// Default constructor. Thread is not started.
-	hxthread() : m_thread_(), m_started_(false), m_joined_(false) { }
+	hxthread(void) : m_thread_(), m_joinable_(false) { }
 
 	/// Constructs and starts a thread with the given function and argument. Does
 	/// not free the argument. Any function that takes a single pointer and
@@ -375,7 +369,7 @@ public:
 	/// - `parameter` : `T*` to pass to the function.
 	template<typename parameter_t_>
 	explicit hxthread(return_t (*entry_point_)(parameter_t_*), parameter_t_* parameter_)
-			: m_thread_(), m_started_(false), m_joined_(false) {
+			: hxthread() {
 		this->start(entry_point_, parameter_);
 	}
 
@@ -394,9 +388,6 @@ public:
 	void start(return_t (*entry_point_)(parameter_t_*), parameter_t_* parameter_) {
 		hxassertmsg(!this->joinable(), "thread_still_running");
 
-		// Initialize this single threaded as local statics may not be locked.
- 		hxthread_id();
-
 		// Stay on the right side of the C++ standard by avoiding assumptions
 		// about pointer representations. The parameter is being reinterpreted
 		// twice instead of cast once and reinterpreted back.
@@ -413,13 +404,12 @@ public:
 			reinterpret_cast<entry_point_function_t_>(entry_point_), reinterpreted_parameter_);
 		hxassert_always(code_ == 0, "pthread_create %s", ::strerror(code_)); (void)code_;
 #endif
-		m_started_ = true;
-		m_joined_ = false;
+		m_joinable_ = true;
 	}
 
 	/// Returns true if the thread has been started and not yet joined. Callers
 	/// must check the return value before acting on the thread state.
-	hxattr_nodiscard bool joinable(void) const { return m_started_ && !m_joined_; }
+	hxattr_nodiscard bool joinable(void) const { return m_joinable_; }
 
 	/// Joins the thread. Blocks until the thread finishes.
 	void join(void) {
@@ -433,16 +423,13 @@ public:
 		hxassert_always(code_ == 0, "pthread_join %s", ::strerror(code_));
 		(void)code_;
 #endif
-		m_joined_ = true;
+		m_joinable_ = false;
 	}
 
 private:
 	using entry_point_function_t_ = return_t (*)(void*);
 
-	// Deleted copy constructor.
 	hxthread(const hxthread&) = delete;
-
-	// Deleted copy assignment operator.
 	hxthread& operator=(const hxthread&) = delete;
 
 #if (HX_USE_THREADS) == 11
@@ -450,8 +437,7 @@ private:
 #else
 	::pthread_t m_thread_;
 #endif
-	bool m_started_;
-	bool m_joined_;
+	bool m_joinable_;
 };
 
 #endif // HX_USE_THREADS

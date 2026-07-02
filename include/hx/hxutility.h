@@ -252,7 +252,7 @@ hxattr_nodiscard inline int hxlog2i(uint32_t i_) {
 /// `hxabs` - Returns the absolute value of `x` using a `<` comparison.
 /// - `x` : The value to compute the absolute value for.
 template<typename T_>
-hxattr_nodiscard constexpr T_ hxabs(T_ x_) { return ((x_) < T_()) ? (T_() - (x_)) : (x_); }
+hxattr_nodiscard constexpr T_ hxabs(T_ x_) { return (x_ < T_()) ? (T_() - x_) : x_; }
 
 /// `hxclamp` - Returns `x` clamped between the `minimum` and `maximum` using `<`
 /// comparisons.
@@ -293,13 +293,13 @@ constexpr T_&& hxforward(hxremove_reference_t<T_>& x_) {
 /// - `x` : The first value.
 /// - `y` : The second value.
 template<typename T_>
-hxattr_nodiscard constexpr T_ hxmax(T_ x_, T_ y_) { return ((y_) < (x_)) ? (x_) : (y_); }
+hxattr_nodiscard constexpr T_ hxmax(T_ x_, T_ y_) { return (y_ < x_) ? x_ : y_; }
 
 /// `hxmin` - Returns the minimum value of `x` and `y` using a `<` comparison.
 /// - `x` : The first value.
 /// - `y` : The second value.
 template<typename T_>
-hxattr_nodiscard constexpr T_ hxmin(T_ x_, T_ y_) { return ((x_) < (y_)) ? (x_) : (y_); }
+hxattr_nodiscard constexpr T_ hxmin(T_ x_, T_ y_) { return (x_ < y_) ? x_ : y_; }
 
 /// `hxmove` - Implements `std::move`. Converts either a `T&` or a `T&&` to a
 /// `T&&`. Do not specify `T` explicitly as it will not work as expected. This

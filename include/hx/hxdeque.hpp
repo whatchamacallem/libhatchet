@@ -122,17 +122,14 @@ public:
 	hxattr_nodiscard hxsize_t size(void) const;
 
 private:
-	// Hide access to the raw data. This is raw underlying data and would not be
-	// what was expected.
+	// This is raw underlying data and would not be what was expected.
 	using hxallocator<T_, capacity_>::data;
 
 	hxdeque(const hxdeque&) = delete;
 	void operator=(const hxdeque&) = delete;
 
-	hxsize_t m_mask_;
-	hxsize_t m_head_;
-	hxsize_t m_tail_;
-	hxsize_t m_count_;
+	size_t m_head_;
+	size_t m_tail_;
 };
 
 #include "detail/hxdeque.inl"

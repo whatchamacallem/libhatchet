@@ -103,45 +103,42 @@ inline void hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::clear(void) noe
 template<typename key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
 inline hxsize_t hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::count(const key_t_& key_) const {
 	const compare_t_ comp_;
-	const key_t_* const pos_ = this->lower_bound_(key_);
 	const key_t_* const end_ = m_end_;
-	if(!multi_t_) {
+	const key_t_* const pos_ = hxlower_bound(this->data(), end_, key_, comp_);
+	hxif_constexpr(!multi_t_) {
 		return (pos_ < end_ && !comp_(key_, *pos_)) ? 1 : 0;
 	}
-	hxsize_t total_ = 0;
-	for(const key_t_* it_ = pos_; it_ != end_ && !comp_(key_, *it_); ++it_) {
-		++total_;
+	else {
+		return hxupper_bound(pos_, end_, key_, comp_) - pos_;
 	}
-	return total_;
 }
 
 template<typename key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
 inline hxsize_t hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::erase(const key_t_& key_) noexcept {
 	const compare_t_ comp_;
-	key_t_* const pos_ = this->lower_bound_(key_);
 	key_t_* end_ = m_end_;
-	if(!multi_t_) {
+	key_t_* const pos_ = hxlower_bound(this->data(), end_, key_, comp_);
+	hxif_constexpr(!multi_t_) {
 		if(pos_ >= end_ || comp_(key_, *pos_)) { return 0; }
 		this->erase(pos_);
 		return 1;
 	}
-	key_t_* hi_ptr_ = pos_;
-	while(hi_ptr_ != end_ && !comp_(key_, *hi_ptr_)) {
-		++hi_ptr_;
-	}
-	const hxsize_t count_ = static_cast<hxsize_t>(hi_ptr_ - pos_);
-	if(count_ == 0) { return 0; }
+	else {
+		key_t_* const hi_ptr_ = hxupper_bound(pos_, end_, key_, comp_);
+		const hxsize_t count_ = static_cast<hxsize_t>(hi_ptr_ - pos_);
+		if(count_ == 0) { return 0; }
 
-	key_t_* hxrestrict dst_ = pos_;
-	for(key_t_* src_ = hi_ptr_; src_ != end_; ++dst_, ++src_) {
-		*dst_ = hxmove(*src_);
+		key_t_* hxrestrict dst_ = pos_;
+		for(key_t_* src_ = hi_ptr_; src_ != end_; ++dst_, ++src_) {
+			*dst_ = hxmove(*src_);
+		}
+		end_ -= count_;
+		for(key_t_* it_ = end_; it_ != m_end_; ++it_) {
+			it_->key_t_::~key_t_();
+		}
+		m_end_ = end_;
+		return count_;
 	}
-	end_ -= count_;
-	for(key_t_* it_ = end_; it_ != m_end_; ++it_) {
-		it_->key_t_::~key_t_();
-	}
-	m_end_ = end_;
-	return count_;
 }
 
 template<typename key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
@@ -162,8 +159,9 @@ template<typename key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_
 inline auto hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::find(const key_t_& key_) const
 		-> const key_t_* {
 	const compare_t_ comp_;
-	const key_t_* const pos_ = this->lower_bound_(key_);
-	if(pos_ < m_end_ && !comp_(key_, *pos_)) {
+	const key_t_* const end_ = m_end_;
+	const key_t_* const pos_ = hxlower_bound(this->data(), end_, key_, comp_);
+	if(pos_ < end_ && !comp_(key_, *pos_)) {
 		return pos_;
 	}
 	return hxnull;
@@ -172,7 +170,7 @@ inline auto hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::find(const key_
 template<typename key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
 inline auto hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::insert(const key_t_& key_) noexcept -> const key_t_* {
 	const compare_t_ comp_;
-	key_t_* const pos_ = this->lower_bound_(key_);
+	key_t_* const pos_ = hxlower_bound(this->data(), m_end_, key_, comp_);
 	hxif_constexpr(!multi_t_) {
 		if(pos_ < m_end_ && !comp_(key_, *pos_)) {
 			return pos_;
@@ -184,7 +182,7 @@ inline auto hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::insert(const ke
 template<typename key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
 inline auto hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::insert(key_t_&& key_) noexcept -> const key_t_* {
 	const compare_t_ comp_;
-	key_t_* const pos_ = this->lower_bound_(key_);
+	key_t_* const pos_ = hxlower_bound(this->data(), m_end_, key_, comp_);
 	hxif_constexpr(!multi_t_) {
 		if(pos_ < m_end_ && !comp_(key_, *pos_)) {
 			return pos_;
@@ -196,7 +194,9 @@ inline auto hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::insert(key_t_&&
 template<typename key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
 inline auto hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::lower_bound(const key_t_& key_) const
 		-> const key_t_* {
-	return this->lower_bound_(key_);
+	const compare_t_ comp_;
+	const key_t_* const end_ = m_end_;
+	return hxlower_bound(this->data(), end_, key_, comp_);
 }
 
 template<typename key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
@@ -219,17 +219,8 @@ template<typename key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_
 inline auto hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::upper_bound(const key_t_& key_) const
 		-> const key_t_* {
 	const compare_t_ comp_;
-	const key_t_* const pos_ = this->lower_bound_(key_);
 	const key_t_* const end_ = m_end_;
-	const key_t_* it_ = pos_;
-	if(!multi_t_) {
-		if(it_ < end_ && !comp_(key_, *it_)) { ++it_; }
-		return it_;
-	}
-	while(it_ != end_ && !comp_(key_, *it_)) {
-		++it_;
-	}
-	return it_;
+	return hxupper_bound(this->data(), end_, key_, comp_);
 }
 
 template<typename key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
@@ -280,33 +271,6 @@ inline bool hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::less(
 	}
 	return size0_ < size1_;
 }
-
-// gcc with -O2 and a sanitizer loses track of the lo_ < hi_ guard.
-#if !defined __clang__ && defined __GNUC__
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
-#endif
-template<typename key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
-inline auto hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::lower_bound_(
-		const key_t_& key_) const -> key_t_* {
-	const compare_t_ comp_;
-	const key_t_* keys_ = this->data();
-	hxsize_t lo_ = 0;
-	hxsize_t hi_ = static_cast<hxsize_t>(m_end_ - keys_);
-	while(lo_ < hi_) {
-		const hxsize_t mid_ = lo_ + ((hi_ - lo_) >> 1);
-		if(comp_(keys_[mid_], key_)) {
-			lo_ = mid_ + 1;
-		}
-		else {
-			hi_ = mid_;
-		}
-	}
-	return const_cast<key_t_*>(keys_) + lo_;
-}
-#if !defined __clang__ && defined __GNUC__
-#pragma GCC diagnostic pop
-#endif
 
 HX_END_INL_
 #endif // HX_DOXYGEN_PARSER

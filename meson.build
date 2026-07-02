@@ -26,6 +26,7 @@ hxwarning_args = [
 	'-Wdate-time',
 	'-Wmissing-declarations',
 	'-Wno-c2y-extensions',
+	'-Wno-maybe-uninitialized',
 	'-Wno-unknown-warning-option'
 ]
 

@@ -114,9 +114,14 @@ template<hxsize_t capacity_x_>
 void hxvector<T_, capacity_>::operator+=(const hxvector<T_, capacity_x_>& x_) noexcept {
 	hxassertmsg(static_cast<const void*>(this) != static_cast<const void*>(&x_),
 		"invalid_reference");
-	for(const T_* it_ = x_.data(), *const end_ = x_.end(); it_ != end_; ++it_) {
-		::new(this->push_back_unconstructed_()) T_(*it_);
+	const hxsize_t size_x_ = x_.size();
+	hxassert_hard(this->size() + size_x_ <= this->capacity(), "stack_overflow");
+	const T_* hxrestrict src_ = x_.data();
+	T_* hxrestrict dst_ = m_end_;
+	for(const T_*const end_ = src_ + size_x_; src_ != end_; ++src_, ++dst_) {
+		::new(dst_) T_(*src_);
 	}
+	m_end_ = dst_;
 }
 
 template<hxvector_concept_ T_, hxsize_t capacity_>
@@ -124,10 +129,14 @@ template<hxsize_t capacity_x_>
 void hxvector<T_, capacity_>::operator+=(hxvector<T_, capacity_x_>&& x_) noexcept {
 	hxassertmsg(static_cast<const void*>(this) != static_cast<const void*>(&x_),
 		"invalid_reference");
-	// Non-const mutable operation.
-	for(T_* it_ = x_.data(), *const end_ = x_.end(); it_ != end_; ++it_) {
-		::new(this->push_back_unconstructed_()) T_(hxmove(*it_));
+	const hxsize_t size_x_ = x_.size();
+	hxassert_hard(this->size() + size_x_ <= this->capacity(), "stack_overflow");
+	T_* hxrestrict src_ = x_.data();
+	T_* hxrestrict dst_ = m_end_;
+	for(const T_*const end_ = src_ + size_x_; src_ != end_; ++src_, ++dst_) {
+		::new(dst_) T_(hxmove(*src_));
 	}
+	m_end_ = dst_;
 }
 
 template<hxvector_concept_ T_, hxsize_t capacity_>
@@ -184,7 +193,7 @@ template<typename iterator_t_>
 void hxvector<T_, capacity_>::assign(iterator_t_ begin_, iterator_t_ end_) noexcept {
 	hxassert_hard((end_ - begin_) >= 0, "invalid_iterator");
 	this->reserve(static_cast<hxsize_t>(end_ - begin_));
-	T_* it_ = this->data();
+	T_* hxrestrict it_ = this->data();
 	this->destruct_(it_, m_end_);
 	while(begin_ != end_) {
 		::new(it_++) T_(*begin_++);
@@ -204,10 +213,14 @@ template<typename range_t_>
 requires(!hxis_lvalue_reference<range_t_>::value)
 void hxvector<T_, capacity_>::assign_range(range_t_&& range_) noexcept {
 	this->clear();
-	// Sorry, std::begin and std::end may not exist.
+	hxassert_hard(static_cast<hxsize_t>(range_.end() - range_.begin()) <= this->capacity(),
+		"stack_overflow");
+	T_* hxrestrict dst_ = this->data();
+	// Sorry, hxbegin and hxend are not in use.
 	for(auto it_ = range_.begin(), end_ = range_.end(); it_ != end_; ++it_) {
-		::new(this->push_back_unconstructed_()) T_(hxmove(*it_));
+		::new(dst_++) T_(hxmove(*it_));
 	}
+	m_end_ = dst_;
 }
 #endif
 
@@ -269,11 +282,13 @@ bool hxvector<T_, capacity_>::equal(const hxvector<T_, capacity_x_>& x_) const {
 template<hxvector_concept_ T_, hxsize_t capacity_>
 void hxvector<T_, capacity_>::erase(T_* pos_) noexcept {
 	hxassert_hard(pos_ >= this->data() && pos_ < m_end_, "invalid_iterator");
-	while((pos_ + 1) != m_end_) {
-		*pos_ = hxmove(*(pos_ + 1));
+	T_*const end_ = m_end_ - 1;
+	while(pos_ != end_) {
+		*pos_ = hxmove(pos_[1]);
 		++pos_;
 	}
-	(--m_end_)->T_::~T_();
+	end_->T_::~T_();
+	m_end_ = end_;
 }
 
 template<hxvector_concept_ T_, hxsize_t capacity_>
@@ -321,19 +336,21 @@ hxsize_t hxvector<T_, capacity_>::erase_if_heap(callable_t_&& callable_) noexcep
 	const hxsize_t removed_ = m_end_ - dst_;
 	m_end_ = dst_;
 	if(removed_ != 0) {
-		hxdetail_::hxmake_heap_<T_*>(this->data(), m_end_, hxkey_less_t<T_>{});
+		hxdetail_::hxmake_heap_<T_*>(this->data(), dst_, hxkey_less_t<T_>{});
 	}
 	return removed_;
 }
 
 template<hxvector_concept_ T_, hxsize_t capacity_>
 void hxvector<T_, capacity_>::erase_unordered(const T_* pos_) noexcept {
-	hxassert_hard(pos_ >= this->data() && pos_ < m_end_, "invalid_iterator");
-	if(pos_ != --m_end_) {
+	// Prevent reloading end and annotate known not to partially overlap.
+	T_* hxrestrict end_ = --m_end_;
+	hxassert_hard(pos_ >= this->data() && pos_ <= end_, "invalid_iterator");
+	if(pos_ != end_) {
 		// Having a non-const this pointer provides valid write access.
-		*const_cast<T_*>(pos_) = hxmove(*m_end_);
+		*const_cast<T_*>(pos_) = hxmove(*end_);
 	}
-	m_end_->T_::~T_();
+	end_->T_::~T_();
 }
 
 template<hxvector_concept_ T_, hxsize_t capacity_>
@@ -410,9 +427,12 @@ T_& hxvector<T_, capacity_>::front(void) {
 template<hxvector_concept_ T_, hxsize_t capacity_>
 template<typename callable_t_>
 void hxvector<T_, capacity_>::generate_n(hxsize_t size_, callable_t_&& callable_) noexcept {
+	hxassert_hard(this->size() + size_ <= this->capacity(), "stack_overflow");
+	T_* hxrestrict dst_ = m_end_;
 	while(size_--) {
-		::new(this->push_back_unconstructed_()) T_(hxforward<callable_t_>(callable_)());
+		::new(dst_++) T_(hxforward<callable_t_>(callable_)());
 	}
+	m_end_ = dst_;
 }
 
 template<hxvector_concept_ T_, hxsize_t capacity_>
@@ -503,14 +523,15 @@ template<hxvector_concept_ T_, hxsize_t capacity_>
 void hxvector<T_, capacity_>::pop_heap(void) noexcept {
 	hxassert_hard(!this->empty(), "stack_underflow");
 	T_*const begin_ = this->data();
-	--m_end_;
-	if(begin_ == m_end_) {
+	T_*const end_ = m_end_ - 1;
+	m_end_ = end_;
+	if(begin_ == end_) {
 		begin_->T_::~T_();
 		return;
 	}
-	*begin_ = hxmove(*m_end_);
-	m_end_->T_::~T_();
-	hxdetail_::hxheapsort_heapify_(this->data(), begin_, m_end_, hxkey_less_t<T_>{});
+	*begin_ = hxmove(*end_);
+	end_->T_::~T_();
+	hxdetail_::hxheapsort_heapify_(begin_, begin_, end_, hxkey_less_t<T_>{});
 }
 
 template<hxvector_concept_ T_, hxsize_t capacity_>
@@ -520,11 +541,6 @@ T_& hxvector<T_, capacity_>::push_back(args_t_&&... args_) noexcept {
 	return *::new(m_end_++) T_(hxforward<args_t_>(args_)...);
 }
 
-// gcc with -O2 and a sanitizer loses track of the index_ != 0 guard.
-#if !defined __clang__ && defined __GNUC__
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
-#endif
 template<hxvector_concept_ T_, hxsize_t capacity_>
 template<typename ref_t_>
 T_& hxvector<T_, capacity_>::push_heap(ref_t_&& arg_) noexcept {
@@ -555,9 +571,6 @@ T_& hxvector<T_, capacity_>::push_heap(ref_t_&& arg_) noexcept {
 	*node_ = hxforward<ref_t_>(arg_);
 	return *node_;
 }
-#if !defined __clang__ && defined __GNUC__
-#pragma GCC diagnostic pop
-#endif
 
 template<hxvector_concept_ T_, hxsize_t capacity_>
 void hxvector<T_, capacity_>::reserve(hxsize_t size_, hxsystem_allocator_t allocator_,
@@ -571,35 +584,28 @@ void hxvector<T_, capacity_>::reserve(hxsize_t size_, hxsystem_allocator_t alloc
 template<hxvector_concept_ T_, hxsize_t capacity_>
 void hxvector<T_, capacity_>::resize(hxsize_t size_) noexcept {
 	this->reserve(size_);
-	T_*const data_ = this->data();
-	T_* end_ = data_ + size_;
-	if(size_ >= this->size()) {
-		while(m_end_ != end_) {
-			// This version uses a default constructor. Note "T_()" is not being
-			// called. That would default initialize arrays of integers to zero.
-			::new(this->push_back_unconstructed_()) T_;
-		}
+	hxassert_hard(size_ <= this->capacity(), "stack_overflow");
+	T_* it_ = m_end_;
+	T_*const end_ = this->data() + size_;
+	while(it_ < end_) {
+		// Note: "T_()" is not being called. That would default initialize
+		// arrays of integers to zero.
+		::new(it_++) T_;
 	}
-	else {
-		this->destruct_(end_, m_end_);
-	}
+	this->destruct_(end_, it_);
 	m_end_ = end_;
 }
 
 template<hxvector_concept_ T_, hxsize_t capacity_>
 void hxvector<T_, capacity_>::resize(hxsize_t size_, const T_& x_) noexcept {
 	this->reserve(size_);
-	T_*const data_ = this->data();
-	T_* end_ = data_ + size_;
-	if(size_ >= this->size()) {
-		while(m_end_ != end_) {
-			// This version uses a copy constructor.
-			::new(this->push_back_unconstructed_()) T_(x_);
-		}
+	hxassert_hard(size_ <= this->capacity(), "stack_overflow");
+	T_* hxrestrict it_ = m_end_;
+	T_*const end_ = this->data() + size_;
+	while(it_ < end_) {
+		::new(it_++) T_(x_);
 	}
-	else {
-		this->destruct_(end_, m_end_);
-	}
+	this->destruct_(end_, it_);
 	m_end_ = end_;
 }
 
@@ -612,8 +618,6 @@ template<hxvector_concept_ T_, hxsize_t capacity_>
 void hxvector<T_, capacity_>::swap(hxvector& x_) noexcept {
 	static_assert(capacity_ == hxallocator_dynamic_capacity,
 		"Dynamic capacity required for hxvector::swap");
-
-	// hxvector has a dynamic allocator that allows memcpy.
 	hxswap_memcpy(*this, x_);
 }
 

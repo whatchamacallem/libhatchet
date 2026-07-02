@@ -48,11 +48,9 @@ public:
 	}
 private:
 	friend array_t_;
-	// Internal use only.
 	hxarray_back_inserter_(array_t_& x_) : m_x_(x_) { }
 #if HX_CPLUSPLUS >= 201703L
-	// Use `operator=` to add an element and return a reference. Copy elision
-	// is C++17.
+	// Copy elision is C++17.
 	hxarray_back_inserter_(const hxarray_back_inserter_& x_) = delete;
 #endif
 	// No address-of operator. It wouldn't be what was expected.
@@ -555,13 +553,9 @@ public:
 	void swap(hxvector& x_) noexcept;
 
 private:
-	// Returns a pointer for use with placement new.
 	void* push_back_unconstructed_(void);
-
-	// Destroys elements in the range [begin, end).
 	void destruct_(T_* begin_, T_* end_) noexcept;
 
-	// 1 past the last element.
 	T_* m_end_;
 };
 

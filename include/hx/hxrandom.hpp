@@ -65,36 +65,21 @@ public:
 		return base_ + this->u64() % size_;
 	}
 
-	/// Reads a specified number of random bytes into the provided buffer. The
-	/// sequence generated matches a little-endian stream of
-	/// `uint32_t` generated using `u32`.
+	/// Reads a specified number of random bytes into the provided buffer.
+	/// `uint32_t` generated using `u32`. Use `hxsizeof` for a signed count.
 	/// - `bytes` : Non-null pointer to a buffer large enough for `count` bytes.
 	/// - `count` : Number of bytes to read.
 	void read(void* bytes_, hxsize_t count_) hxattr_nonnull(2) {
-		read(static_cast<uint8_t*>(bytes_), count_);
-	}
-
-	/// Reads a specified number of random bytes into the provided buffer. The
-	/// sequence generated matches a little-endian stream of
-	/// `uint32_t` generated using `u32`.
-	/// - `chars` : Non-null pointer to a buffer large enough for `count` bytes.
-	/// - `count` : Number of bytes to read.
-	hxconstexpr void read(uint8_t* chars_, hxsize_t count_) hxattr_nonnull(2) {
-		while(count_>=4) {
+		uint8_t* chars_ = static_cast<uint8_t*>(bytes_);
+		while (count_ >= 4) {
 			const uint32_t x_ = this->u32();
-			*chars_++ = static_cast<uint8_t>(x_);
-			*chars_++ = static_cast<uint8_t>(x_ >> 8);
-			*chars_++ = static_cast<uint8_t>(x_ >> 16);
-			*chars_++ = static_cast<uint8_t>(x_ >> 24);
+			::memcpy(chars_, &x_, 4u);
+			chars_ += 4;
 			count_ -= 4;
 		}
-		if(count_ > 0) {
-			uint32_t x_ = this->u32();
-			do {
-				*chars_++ = static_cast<uint8_t>(x_);
-				x_ >>= 8;
-			} while(--count_ > 0)
-				/* */;
+		if (count_ > 0) {
+			const uint32_t x_ = this->u32();
+			::memcpy(chars_, &x_, static_cast<size_t>(count_));
 		}
 	}
 

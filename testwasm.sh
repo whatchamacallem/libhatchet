@@ -31,7 +31,7 @@ emcc -O2 -fno-exceptions -fno-rtti -fdiagnostics-absolute-paths          \
 	-Werror -Wfatal-errors -DHX_USE_FILE_IO=0 -DHX_USE_MEMORY_MANAGER=0  \
 	-DHX_USE_THREADS=1 -DHX_USE_CONSOLE=1 -Wno-c2y-extensions -pthread   \
 	-sEXIT_RUNTIME=1 -sPTHREAD_POOL_SIZE=4 -sPROXY_TO_PTHREAD -std=c++23 \
-	-I../include *.o ../src/*.cpp ../test/*.cpp -o index.html
+	-flto=auto -I../include *.o ../src/*.cpp ../test/*.cpp -o index.html
 
 if [ "${1:-}" != "--headless" ]; then
 

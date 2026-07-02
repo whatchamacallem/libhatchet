@@ -11,37 +11,37 @@
 HX_BEGIN_INL_
 
 template<typename T_>
-hxoptional<T_>::hxoptional(const hxoptional& other_) noexcept : m_engaged_(false) {
-	if (other_.m_engaged_) {
+hxoptional<T_>::hxoptional(const hxoptional& other_) noexcept : m_engaged_(other_.m_engaged_) {
+	if (m_engaged_) {
 		::new(static_cast<void*>(&m_storage_)) T_(*reinterpret_cast<const T_*>(&other_.m_storage_));
-		m_engaged_ = true;
 	}
 }
 
 template<typename T_>
-hxoptional<T_>::hxoptional(hxoptional&& other_) noexcept : m_engaged_(false) {
-	if (other_.m_engaged_) {
-		::new(static_cast<void*>(&m_storage_)) T_(hxmove(*reinterpret_cast<T_*>(&other_.m_storage_)));
-		m_engaged_ = true;
-		other_.reset();
+hxoptional<T_>::hxoptional(hxoptional&& other_) noexcept : m_engaged_(other_.m_engaged_) {
+	if (m_engaged_) {
+		T_* const src_ = reinterpret_cast<T_*>(&other_.m_storage_);
+		::new(static_cast<void*>(&m_storage_)) T_(hxmove(*src_));
+		src_->T_::~T_();
+		other_.m_engaged_ = false;
 	}
 }
 
 template<typename T_>
 template<typename U_>
-hxoptional<T_>::hxoptional(const hxoptional<U_>& other_) noexcept : m_engaged_(false) {
-	if (other_.has_value()) {
+hxoptional<T_>::hxoptional(const hxoptional<U_>& other_) noexcept
+		: m_engaged_(other_.has_value()) {
+	if (m_engaged_) {
 		::new(static_cast<void*>(&m_storage_)) T_(*other_);
-		m_engaged_ = true;
 	}
 }
 
 template<typename T_>
 template<typename U_>
-hxoptional<T_>::hxoptional(hxoptional<U_>&& other_) noexcept : m_engaged_(false) {
-	if (other_.has_value()) {
+hxoptional<T_>::hxoptional(hxoptional<U_>&& other_) noexcept
+		: m_engaged_(other_.has_value()) {
+	if (m_engaged_) {
 		::new(static_cast<void*>(&m_storage_)) T_(hxmove(*other_));
-		m_engaged_ = true;
 		other_.reset();
 	}
 }
@@ -50,15 +50,14 @@ template<typename T_>
 template<typename U_, hxenable_if_t<
 	!hxis_same<hxremove_cvref_t<U_>, hxoptional<T_>>::value &&
 	!hxdetail_::hxis_hxoptional_<hxremove_cvref_t<U_>>::value, bool>>
-hxoptional<T_>::hxoptional(U_&& value_) noexcept : m_engaged_(false) {
+hxoptional<T_>::hxoptional(U_&& value_) noexcept : m_engaged_(true) {
 	::new(static_cast<void*>(&m_storage_)) T_(hxforward<U_>(value_));
-	m_engaged_ = true;
 }
 
 template<typename T_>
 hxoptional<T_>& hxoptional<T_>::operator=(const hxoptional& other_) noexcept {
 	hxassertmsg(this != &other_, "self_assignment");
-	reset();
+	this->reset();
 	if (other_.m_engaged_) {
 		::new(static_cast<void*>(&m_storage_)) T_(*reinterpret_cast<const T_*>(&other_.m_storage_));
 		m_engaged_ = true;
@@ -69,11 +68,13 @@ hxoptional<T_>& hxoptional<T_>::operator=(const hxoptional& other_) noexcept {
 template<typename T_>
 hxoptional<T_>& hxoptional<T_>::operator=(hxoptional&& other_) noexcept {
 	hxassertmsg(this != &other_, "self_assignment");
-	reset();
+	this->reset();
 	if (other_.m_engaged_) {
-		::new(static_cast<void*>(&m_storage_)) T_(hxmove(*reinterpret_cast<T_*>(&other_.m_storage_)));
+		T_* const src_ = reinterpret_cast<T_*>(&other_.m_storage_);
+		::new(static_cast<void*>(&m_storage_)) T_(hxmove(*src_));
 		m_engaged_ = true;
-		other_.reset();
+		src_->T_::~T_();
+		other_.m_engaged_ = false;
 	}
 	return *this;
 }
@@ -139,10 +140,10 @@ bool hxoptional<T_>::operator!=(const T_& value_) const {
 template<typename T_>
 template<typename... args_t_>
 T_& hxoptional<T_>::emplace(args_t_&&... args_) noexcept {
-	reset();
-	::new(static_cast<void*>(&m_storage_)) T_(hxforward<args_t_>(args_)...);
+	this->reset();
+	T_* const p_ = ::new(static_cast<void*>(&m_storage_)) T_(hxforward<args_t_>(args_)...);
 	m_engaged_ = true;
-	return *reinterpret_cast<T_*>(&m_storage_);
+	return *p_;
 }
 
 template<typename T_>
@@ -155,16 +156,20 @@ void hxoptional<T_>::reset(void) noexcept {
 
 template<typename T_>
 void hxoptional<T_>::swap(hxoptional& other_) noexcept {
+	T_* const l_ = reinterpret_cast<T_*>(&m_storage_);
+	T_* const r_ = reinterpret_cast<T_*>(&other_.m_storage_);
 	if (m_engaged_ && other_.m_engaged_) {
-		hxswap(*reinterpret_cast<T_*>(&m_storage_), *reinterpret_cast<T_*>(&other_.m_storage_));
+		hxswap(*l_, *r_);
 	} else if (m_engaged_) {
-		::new(static_cast<void*>(&other_.m_storage_)) T_(hxmove(*reinterpret_cast<T_*>(&m_storage_)));
+		::new(static_cast<void*>(r_)) T_(hxmove(*l_));
+		l_->T_::~T_();
+		m_engaged_ = false;
 		other_.m_engaged_ = true;
-		reset();
 	} else if (other_.m_engaged_) {
-		::new(static_cast<void*>(&m_storage_)) T_(hxmove(*reinterpret_cast<T_*>(&other_.m_storage_)));
+		::new(static_cast<void*>(l_)) T_(hxmove(*r_));
+		r_->T_::~T_();
 		m_engaged_ = true;
-		other_.reset();
+		other_.m_engaged_ = false;
 	}
 }
 

@@ -10,8 +10,8 @@ HX_NS_USE
 
 namespace {
 
-hxinline_constexpr hxsize_t hxs_max_pool = 8;
-hxinline_constexpr hxsize_t hxs_max_tasks = 20;
+hxinline_constexpr int32_t hxs_max_pool = 8;
+hxinline_constexpr int32_t hxs_max_tasks = 20;
 
 class hxtask_queue_test_f :
 	public testing::Test
@@ -21,25 +21,25 @@ public:
 	public:
 		hxtask_test_t() : m_exec_count(0), m_reenqueue_count(0) { }
 		bool execute(hxtask_queue* q) override {
-			const hxsize_t count = ++m_exec_count;
+			const int32_t count = ++m_exec_count;
 			if(m_reenqueue_count > 0) {
 				--m_reenqueue_count;
 				q->enqueue(this);
 			}
 			return (count & 1) == 0;
 		}
-		hxsize_t get_exec_count(void) const { return m_exec_count; }
-		void set_reenqueue_count(hxsize_t n) { m_reenqueue_count = n; }
+		int32_t get_exec_count(void) const { return m_exec_count; }
+		void set_reenqueue_count(int32_t n) { m_reenqueue_count = n; }
 	private:
-		hxsize_t m_exec_count;
-		hxsize_t m_reenqueue_count;
+		int32_t m_exec_count;
+		int32_t m_reenqueue_count;
 	};
 };
 } // namespace {
 
 TEST_F(hxtask_queue_test_f, nop) {
 	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
-	for(hxsize_t i = 0; i <= hxs_max_pool; ++i) {
+	for(int32_t i = 0; i <= hxs_max_pool; ++i) {
 		{
 				const hxtask_queue q(1, i);
 		}
@@ -53,33 +53,33 @@ TEST_F(hxtask_queue_test_f, nop) {
 
 TEST_F(hxtask_queue_test_f, multiple) {
 	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
-	for(hxsize_t i = 0; i <= hxs_max_pool; ++i) {
-		for(hxsize_t j = 1; j < hxs_max_tasks; ++j) {
+	for(int32_t i = 0; i <= hxs_max_pool; ++i) {
+		for(int32_t j = 1; j < hxs_max_tasks; ++j) {
 			hxtask_test_t tasks0[hxs_max_tasks];
 			hxtask_test_t tasks1[hxs_max_tasks];
 		{
 			hxtask_queue q(hxs_max_tasks, i);
-			for(hxsize_t k = 0; k <= j; ++k) {
+			for(int32_t k = 0; k <= j; ++k) {
 				q.enqueue(&tasks0[k]);
 			}
 			q.wait_for_all();
-			for(hxsize_t k = 0; k <= j; ++k) {
+			for(int32_t k = 0; k <= j; ++k) {
 				q.enqueue(&tasks1[k]);
 				EXPECT_EQ(tasks0[k].get_exec_count(), 1);
 			}
 			}
-			for(hxsize_t k = 0; k <= j; ++k) {
+			for(int32_t k = 0; k <= j; ++k) {
 				EXPECT_EQ(tasks0[k].get_exec_count(), 1);
 				EXPECT_EQ(tasks1[k].get_exec_count(), 1);
 			}
 			hxtask_test_t tasks2[hxs_max_tasks];
 			{
 				hxtask_queue q(hxs_max_tasks, i);
-				for(hxsize_t k = 0; k <= j; ++k) {
+				for(int32_t k = 0; k <= j; ++k) {
 					q.enqueue(&tasks2[k]);
 				}
 			}
-			for(hxsize_t k = 0; k <= j; ++k) {
+			for(int32_t k = 0; k <= j; ++k) {
 				EXPECT_EQ(tasks2[k].get_exec_count(), 1);
 			}
 		}
@@ -88,35 +88,35 @@ TEST_F(hxtask_queue_test_f, multiple) {
 
 TEST_F(hxtask_queue_test_f, multiple_reenqueuing) {
 	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
-	for(hxsize_t i = 0; i <= hxs_max_pool; ++i) {
-		for(hxsize_t j = 1; j < hxs_max_tasks; ++j) {
+	for(int32_t i = 0; i <= hxs_max_pool; ++i) {
+		for(int32_t j = 1; j < hxs_max_tasks; ++j) {
 			hxtask_test_t tasks0[hxs_max_tasks];
 			hxtask_test_t tasks1[hxs_max_tasks];
 			{
 				hxtask_queue q(hxs_max_tasks, i);
-				for(hxsize_t k = 0; k <= j; ++k) {
+				for(int32_t k = 0; k <= j; ++k) {
 					tasks0[k].set_reenqueue_count(k);
 					q.enqueue(&tasks0[k]);
 				}
 				q.wait_for_all();
-				for(hxsize_t k = 0; k <= j; ++k) {
+				for(int32_t k = 0; k <= j; ++k) {
 					tasks1[k].set_reenqueue_count(k);
 					q.enqueue(&tasks1[k]);
 				}
 			}
-			for(hxsize_t k = 0; k <= j; ++k) {
+			for(int32_t k = 0; k <= j; ++k) {
 				EXPECT_EQ(tasks0[k].get_exec_count(), (k + 1));
 				EXPECT_EQ(tasks1[k].get_exec_count(), (k + 1));
 			}
 			hxtask_test_t tasks2[hxs_max_tasks];
 			{
 				hxtask_queue q(hxs_max_tasks, i);
-				for(hxsize_t k = 0; k <= j; ++k) {
+				for(int32_t k = 0; k <= j; ++k) {
 					tasks2[k].set_reenqueue_count(k);
 					q.enqueue(&tasks2[k]);
 				}
 			}
-			for(hxsize_t k = 0; k <= j; ++k) {
+			for(int32_t k = 0; k <= j; ++k) {
 				EXPECT_EQ(tasks2[k].get_exec_count(), (k + 1));
 			}
 		}
@@ -127,7 +127,7 @@ TEST(hxtask_queue_test, priority_ordering_single_threaded) {
 	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	class hxtask_queue_test_task_t : public hxtask {
 	public:
-		void configure(int* o, hxsize_t* i, int p) {
+		void configure(int* o, int32_t* i, int p) {
 			execution_order = o;
 			write_index = i;
 			priority_value = p;
@@ -135,29 +135,29 @@ TEST(hxtask_queue_test, priority_ordering_single_threaded) {
 		bool execute(hxtask_queue*) override {
 			hxassertmsg(execution_order, "priority_task_unconfigured");
 			hxassertmsg(write_index, "priority_task_unconfigured");
-			const hxsize_t slot = (*write_index)++;
+			const int32_t slot = (*write_index)++;
 			execution_order[slot] = priority_value;
 			return true;
 		}
 	private:
 		int* execution_order = hxnull;
-		hxsize_t* write_index = hxnull;
+		int32_t* write_index = hxnull;
 		int priority_value = 0;
 	};
-	const hxsize_t task_count = 5;
+	const int32_t task_count = 5;
 	int execution_order[task_count] = { 0, 0, 0, 0, 0 };
-	hxsize_t write_index = 0;
+	int32_t write_index = 0;
 	hxtask_queue_test_task_t tasks[task_count];
 	const int priorities[task_count] = { 1, 3, -5, 2, 10 };
 	hxtask_queue q(task_count, 0);
-	for(hxsize_t i = 0; i < task_count; ++i) {
+	for(int32_t i = 0; i < task_count; ++i) {
 		tasks[i].configure(execution_order, &write_index, priorities[i]);
 		q.enqueue(&tasks[i], priorities[i]);
 	}
 	q.wait_for_all();
 	EXPECT_EQ(write_index, task_count);
 	const int expected[task_count] = { 10, 3, 2, 1, -5 };
-	for(hxsize_t i = 0; i < task_count; ++i) {
+	for(int32_t i = 0; i < task_count; ++i) {
 		EXPECT_EQ(execution_order[i], expected[i]);
 	}
 }
@@ -178,7 +178,7 @@ TEST(hxtask_queue_test, predicates_cover_all_any_erase) {
 	bool executed_flags[3] = { false, false, false };
 	bool cancelled_flags[3] = { false, false, false };
 	hxtask_queue_test_predicate_task_t tasks[3];
-	for(hxsize_t i = 0; i < 3; ++i) {
+	for(int32_t i = 0; i < 3; ++i) {
 		tasks[i].configure(&executed_flags[i], &cancelled_flags[i]);
 	}
 	hxtask_queue q(3, 0);
@@ -190,7 +190,7 @@ TEST(hxtask_queue_test, predicates_cover_all_any_erase) {
 	EXPECT_TRUE(q.full());
 	EXPECT_TRUE(!q.empty());
 	bool visited[3] = { false, false, false };
-	hxsize_t visit_count = 0;
+	int32_t visit_count = 0;
 	q.for_each([&](hxtask_queue::record_t& record) {
 		++visit_count;
 		if(record.task == &tasks[0]) {
@@ -202,7 +202,7 @@ TEST(hxtask_queue_test, predicates_cover_all_any_erase) {
 		}
 	});
 	EXPECT_EQ(visit_count, 3);
-	for(hxsize_t i = 0; i < 3; ++i) {
+	for(int32_t i = 0; i < 3; ++i) {
 		EXPECT_TRUE(visited[i]);
 	}
 	const bool all_priority_non_negative = q.all_of([](const hxtask_queue::record_t& record) {
@@ -213,7 +213,7 @@ TEST(hxtask_queue_test, predicates_cover_all_any_erase) {
 		return record.priority > 8;
 	});
 	EXPECT_TRUE(any_high_priority);
-	const hxsize_t removed_low_priority = q.erase_if([](const hxtask_queue::record_t& record) {
+	const int32_t removed_low_priority = q.erase_if([](const hxtask_queue::record_t& record) {
 		return record.priority < 4;
 	});
 	EXPECT_EQ(removed_low_priority, 1);
@@ -245,48 +245,48 @@ TEST(hxtask_queue_test, for_each_reschedules_queue) {
 	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	class hxtask_queue_test_reschedule_task_t : public hxtask {
 	public:
-		void configure(hxsize_t i, int* e, hxsize_t* w) {
+		void configure(int32_t i, int* e, int32_t* w) {
 			task_index = i;
 			execution_order = e;
 			write_index = w;
 		}
 		bool execute(hxtask_queue*) override {
-				const hxsize_t slot = (*write_index)++;
+				const int32_t slot = (*write_index)++;
 			execution_order[slot] = static_cast<int>(task_index);
 			return true;
 		}
-		hxsize_t get_index(void) const { return task_index; }
+		int32_t get_index(void) const { return task_index; }
 	private:
-		hxsize_t task_index = 0;
+		int32_t task_index = 0;
 		int* execution_order = hxnull;
-		hxsize_t* write_index = hxnull;
+		int32_t* write_index = hxnull;
 	};
-	const hxsize_t task_count = 4;
+	const int32_t task_count = 4;
 	hxtask_queue_test_reschedule_task_t tasks[task_count];
 	int execution_order[task_count] = { -1, -1, -1, -1 };
-	hxsize_t write_index = 0;
+	int32_t write_index = 0;
 	const int initial_priorities[task_count] = { 0, 0, 0, 0 };
 	const int rescheduled_priorities[task_count] = { 4, -3, 9, 1 };
 	hxtask_queue q(task_count, 0);
-	for(hxsize_t i = 0; i < task_count; ++i) {
+	for(int32_t i = 0; i < task_count; ++i) {
 		tasks[i].configure(i, execution_order, &write_index);
 		q.enqueue(&tasks[i], initial_priorities[i]);
 	}
-	hxsize_t mutate_count = 0;
+	int32_t mutate_count = 0;
 	q.for_each([&](hxtask_queue::record_t& record) {
 		const hxtask_queue_test_reschedule_task_t* const task =
 			static_cast<hxtask_queue_test_reschedule_task_t*>(record.task);
-			const hxsize_t index = task->get_index();
+			const int32_t index = task->get_index();
 		record.priority = rescheduled_priorities[index];
 		++mutate_count;
 	});
 	EXPECT_EQ(mutate_count, task_count);
-	hxsize_t verify_count = 0;
+	int32_t verify_count = 0;
 	const hxtask_queue& const_q = q;
 	const_q.for_each([&](const hxtask_queue::record_t& record) {
 		const hxtask_queue_test_reschedule_task_t* task =
 			static_cast<const hxtask_queue_test_reschedule_task_t*>(record.task);
-			const hxsize_t index = task->get_index();
+			const int32_t index = task->get_index();
 		EXPECT_EQ(record.priority, rescheduled_priorities[index]);
 		++verify_count;
 	});
@@ -303,24 +303,24 @@ TEST(hxtask_queue_test, for_each_reschedules_queue) {
 TEST(hxtask_queue_test, three_threads_three_stacks_stress) {
 	class hxtask_queue_test_stack_stress_task_t : public hxtask {
 	public:
-		void configure(hxsystem_allocator_t a, hxsize_t r) {
+		void configure(hxsystem_allocator_t a, int32_t r) {
 			allocator = a;
 			reenqueue_count = r;
 		}
 		bool execute(hxtask_queue* q) override {
 			{
 				const hxsystem_allocator_scope stack_scope(allocator);
-				const hxsize_t allocation_count = 8;
+				const int32_t allocation_count = 8;
 				const size_t bytes = 16u;
 				hxarray<void*> allocations;
 				allocations.reserve(allocation_count, allocator);
-				for(hxsize_t i = 0; i < allocation_count; ++i) {
+				for(int32_t i = 0; i < allocation_count; ++i) {
 					void* p = hxmalloc(bytes);
 					hxassertmsg(p, "stress_alloc");
 					::memset(p, 0x5a, bytes);
 					allocations[i] = p;
 				}
-				for(hxsize_t i = 0; i < allocation_count; ++i) {
+				for(int32_t i = 0; i < allocation_count; ++i) {
 					hxfree(allocations[i]);
 				}
 			}
@@ -331,23 +331,23 @@ TEST(hxtask_queue_test, three_threads_three_stacks_stress) {
 			}
 			return true;
 		}
-		hxsize_t get_total_exec_count(void) const { return total_exec_count; }
+		int32_t get_total_exec_count(void) const { return total_exec_count; }
 	private:
 		hxsystem_allocator_t allocator = hxsystem_allocator_stack_0;
-		hxsize_t reenqueue_count = 0;
-		hxsize_t total_exec_count = 0;
+		int32_t reenqueue_count = 0;
+		int32_t total_exec_count = 0;
 	};
-	const hxsize_t thread_count = 3;
-	const hxsize_t reenqueue_count = 5;
+	const int32_t thread_count = 3;
+	const int32_t reenqueue_count = 5;
 	hxtask_queue_test_stack_stress_task_t tasks[thread_count];
 	hxtask_queue q(thread_count, thread_count);
-	for(hxsize_t i = 0; i < thread_count; ++i) {
+	for(int32_t i = 0; i < thread_count; ++i) {
 		tasks[i].configure(static_cast<hxsystem_allocator_t>(
 			hxsystem_allocator_stack_0 + i), reenqueue_count);
 		q.enqueue(&tasks[i]);
 	}
 	q.wait_for_all();
-	for(hxsize_t i = 0; i < thread_count; ++i) {
+	for(int32_t i = 0; i < thread_count; ++i) {
 		EXPECT_EQ(tasks[i].get_total_exec_count(), reenqueue_count + 1);
 	}
 }
@@ -357,16 +357,16 @@ TEST(hxtask_queue_test, wait_for_all_with_thread_pool) {
 	class hxtask_queue_test_counter_task_t : public hxtask {
 	public:
 		bool execute(hxtask_queue*) override { ++count; return true; }
-		hxsize_t count = 0;
+		int32_t count = 0;
 	};
-	const hxsize_t task_count = 4;
+	const int32_t task_count = 4;
 	hxtask_queue_test_counter_task_t tasks[task_count];
 	hxtask_queue q(task_count, 2);
-	for(hxsize_t i = 0; i < task_count; ++i) {
+	for(int32_t i = 0; i < task_count; ++i) {
 		q.enqueue(&tasks[i]);
 	}
 	q.wait_for_all();
-	for(hxsize_t i = 0; i < task_count; ++i) {
+	for(int32_t i = 0; i < task_count; ++i) {
 		EXPECT_EQ(tasks[i].count, 1);
 	}
 }
@@ -415,22 +415,22 @@ TEST(hxtask_queue_test, erase_if_count_boundaries) {
 	q.enqueue(&t2, 3);
 	q.enqueue(&t3, 4);
 	q.enqueue(&t4, 5);
-	const hxsize_t removed0 = q.erase_if([](const hxtask_queue::record_t& r) {
+	const int32_t removed0 = q.erase_if([](const hxtask_queue::record_t& r) {
 		return r.priority > 10;
 	});
 	EXPECT_EQ(removed0, 0);
 	EXPECT_EQ(q.size(), 5);
-	const hxsize_t removed1 = q.erase_if([](const hxtask_queue::record_t& r) {
+	const int32_t removed1 = q.erase_if([](const hxtask_queue::record_t& r) {
 		return r.priority < 2;
 	});
 	EXPECT_EQ(removed1, 1);
 	EXPECT_EQ(q.size(), 4);
-	const hxsize_t removed2 = q.erase_if([](const hxtask_queue::record_t& r) {
+	const int32_t removed2 = q.erase_if([](const hxtask_queue::record_t& r) {
 		return r.priority > 4;
 	});
 	EXPECT_EQ(removed2, 1);
 	EXPECT_EQ(q.size(), 3);
-	const hxsize_t removed3 = q.erase_if([](const hxtask_queue::record_t&) {
+	const int32_t removed3 = q.erase_if([](const hxtask_queue::record_t&) {
 		return true;
 	});
 	EXPECT_EQ(removed3, 3);

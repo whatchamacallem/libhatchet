@@ -75,8 +75,7 @@ class hxhash_table_printer:
 				bucket_addr = int(table['m_data_'])
 				if bucket_addr == 0:
 					return '<unallocated>'
-				bits: int = int(table['m_table_size_bits_'])
-				bucket_count = 1 << bits
+				bucket_count = int(table['m_capacity_'])
 
 			node_type: gdb.Type = self.val.type.template_argument(0)
 			ptr_type: gdb.Type = node_type.pointer()

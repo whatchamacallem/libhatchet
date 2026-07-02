@@ -22,30 +22,78 @@ HX_NS_BEGIN_
 
 #include "detail/hxsort_detail.hpp"
 
+/// `hxlower_bound` - Returns the first position in the sorted range `[begin,
+/// end)` where `value` could be inserted without violating the ordering.
+/// Returns `end` if no element is ordered after or equivalent to `value`.
+/// Unsorted data will lead to errors. The `less` callable returns true if the
+/// first argument is ordered before (i.e., is less than) the second. Requires a
+/// `random-iterator`.
+template<typename iterator_t_, typename value_t_, typename less_t_> hxattr_hot hxattr_nodiscard hxconstexpr
+iterator_t_ hxlower_bound(iterator_t_ begin_, iterator_t_ end_, const value_t_& value_, const less_t_& less_) {
+	// Does not dereference null pointer args.
+	hxsize_t count_ = end_ - begin_;
+	while(count_ > hxsize_t{0}) {
+		const hxsize_t step_ = count_ >> 1;
+		const iterator_t_ mid_ = begin_ + step_;
+		if(less_(*mid_, value_)) {
+			begin_ = mid_ + hxsize_t{1};
+			count_ -= step_ + hxsize_t{1};
+		}
+		else {
+			count_ = step_;
+		}
+	}
+	return begin_;
+}
+
+/// `hxlower_bound` (specialization) - An overload of `hxlower_bound` over the
+/// range `[begin, end)` that uses `hxkey_less`. Requires a `random-iterator`.
+template<typename iterator_t_, typename value_t_> hxattr_hot hxattr_nodiscard hxconstexpr
+iterator_t_ hxlower_bound(iterator_t_ begin_, iterator_t_ end_, const value_t_& value_) {
+	return hxlower_bound<iterator_t_>(begin_, end_, value_,
+		hxkey_less_t<decltype(*begin_)>{});
+}
+
+/// `hxupper_bound` - Returns the first position in the sorted range `[begin,
+/// end)` whose element is ordered after `value`. Returns `end` if no such
+/// element exists. Unsorted data will lead to errors. The `less` callable
+/// returns true if the first argument is ordered before (i.e., is less than)
+/// the second. Requires a `random-iterator`.
+template<typename iterator_t_, typename value_t_, typename less_t_> hxattr_hot hxattr_nodiscard hxconstexpr
+iterator_t_ hxupper_bound(iterator_t_ begin_, iterator_t_ end_, const value_t_& value_, const less_t_& less_) {
+	// Does not dereference null pointer args.
+	hxsize_t count_ = end_ - begin_;
+	while(count_ > hxsize_t{0}) {
+		const hxsize_t step_ = count_ >> 1;
+		const iterator_t_ mid_ = begin_ + step_;
+		if(!less_(value_, *mid_)) {
+			begin_ = mid_ + hxsize_t{1};
+			count_ -= step_ + hxsize_t{1};
+		}
+		else {
+			count_ = step_;
+		}
+	}
+	return begin_;
+}
+
+/// `hxupper_bound` (specialization) - An overload of `hxupper_bound` over the
+/// range `[begin, end)` that uses `hxkey_less`. Requires a `random-iterator`.
+template<typename iterator_t_, typename value_t_> hxattr_hot hxattr_nodiscard hxconstexpr
+iterator_t_ hxupper_bound(iterator_t_ begin_, iterator_t_ end_, const value_t_& value_) {
+	return hxupper_bound<iterator_t_>(begin_, end_, value_,
+		hxkey_less_t<decltype(*begin_)>{});
+}
+
 /// `hxbinary_search` - Performs a binary search for `value` in the range
 /// `[first, last)`. Returns `end` if the value is not found. Unsorted data will
-/// lead to errors. Non-unique values will be selected arbitrarily. The `less`
+/// lead to errors. The first of non-unique values is returned. The `less`
 /// callable returns true if the first argument is ordered before (i.e., is less
 /// than) the second. Requires a `random-iterator`.
 template<typename iterator_t_, typename value_t_, typename less_t_> hxattr_hot hxattr_nodiscard hxconstexpr
 iterator_t_ hxbinary_search(iterator_t_ begin_, iterator_t_ end_, const value_t_& value_, const less_t_& less_) {
-	// don't operate on null pointer args. unallocated containers have this.
-	if(begin_ == end_) { return end_; }
-	iterator_t_ first_ = begin_;
-	iterator_t_ last_ = end_;
-	while(first_ < last_) {
-		iterator_t_ mid_ = first_ + ((last_ - first_) >> 1);
-		if(less_(*mid_, value_)) {
-			first_ = mid_ + ptrdiff_t{1};
-		}
-		else if(less_(value_, *mid_)) {
-			last_ = mid_;
-		}
-		else {
-			return mid_;
-		}
-	}
-	return end_;
+	const iterator_t_ pos_ = hxlower_bound<iterator_t_>(begin_, end_, value_, less_);
+	return (pos_ != end_ && !less_(value_, *pos_)) ? pos_ : end_;
 }
 
 /// `hxbinary_search` (specialization) - An overload of `hxbinary_search` that

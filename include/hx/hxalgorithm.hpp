@@ -93,7 +93,7 @@ callable_t_ hxfor_each(iterator_t_ begin_, iterator_t_ end_, callable_t_&& calla
 	for(; begin_ != end_; ++begin_) {
 		hxforward<callable_t_>(callable_)(*begin_);
 	}
-	return callable_;
+	return hxforward<callable_t_>(callable_);
 }
 
 /// `hxmerge` - Performs a stable merge of two ordered ranges `[begin0, end0)`

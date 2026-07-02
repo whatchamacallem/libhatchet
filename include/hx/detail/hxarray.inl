@@ -21,7 +21,7 @@ hxarray<T_, capacity_>::hxarray(void) noexcept {
 template<hxarray_concept_ T_, hxsize_t capacity_>
 hxarray<T_, capacity_>::hxarray(const T_& x_) noexcept {
 	static_assert(capacity_ > 0, "A known capacity is required for value initialization");
-	T_* it_ = this->data();
+	T_* hxrestrict it_ = this->data();
 	for(const T_*const end_ = it_ + capacity_; it_ != end_; ++it_) {
 		::new(it_) T_(x_);
 	}
@@ -278,7 +278,7 @@ T_* hxarray<T_, capacity_>::find_if(callable_t_&& callable_) {
 template<hxarray_concept_ T_, hxsize_t capacity_>
 template<typename callable_t_>
 void hxarray<T_, capacity_>::for_each(callable_t_&& callable_) const {
-	for(const T_* it_ = this->data(), *end_ = it_ + this->capacity(); it_ != end_; ++it_) {
+	for(const T_* it_ = this->data(), *const end_ = it_ + this->capacity(); it_ != end_; ++it_) {
 		hxforward<callable_t_>(callable_)(*it_);
 	}
 }
