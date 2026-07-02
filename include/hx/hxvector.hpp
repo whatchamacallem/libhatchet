@@ -305,11 +305,8 @@ public:
 	/// Clears the array, destroying all elements.
 	void clear(void) noexcept;
 
-	/// Returns a pointer to a const and potentially uninitialized array of `T`.
-	const T_* data(void) const { return hxallocator<T_, capacity_>::data(); }
-
 	/// Returns a pointer to a potentially uninitialized array of `T`.
-	T_* data(void) { return hxallocator<T_, capacity_>::data(); }
+	using hxallocator<T_, capacity_>::data;
 
 	/// Emplaces an element at the end of the array using forwarded arguments.
 	/// Returns a reference to the new element. Exactly the same as `push_back`.

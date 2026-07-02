@@ -21,15 +21,13 @@ module;
 #include <stdlib.h>
 #include <string.h>
 
-#if !defined __wasm__
-#if defined __x86_64__ || defined __i386__ || defined _M_X64 || defined _M_IX86
-#if defined _MSC_VER || defined __INTEL_COMPILER
-#include <intrin.h>
-#else
+#ifndef __wasm__
+#if __has_include(<x86intrin.h>)
 #include <x86intrin.h>
+#elif __has_include(<intrin.h>)
+#include <intrin.h>
 #endif
-#endif // x86/x64
-#endif // !defined __wasm__
+#endif
 
 #if !defined HX_USE_THREADS || (HX_USE_THREADS)
 #if __has_include(<threads.h>)

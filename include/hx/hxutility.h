@@ -19,11 +19,6 @@ extern "C" {
 
 // -- C Utilities --------------------------------------------------------------
 
-/// `hxbasename` - Returns a pointer to those characters following the last
-/// `'\'` or `'/'` character or `path` if those are not present.
-/// - `path` : Non-null null-terminated path string.
-hxattr_nodiscard const char* hxbasename(const char* path_) hxattr_nonnull(1);
-
 /// `hxfloat_dump` - Prints an array of floating point values.
 /// - `address` : Non-null pointer to the start of the float array.
 /// - `floats` : The number of floats to print.
@@ -238,15 +233,22 @@ hxattr_nodiscard constexpr bool hxisspace(char ch_) {
 }
 
 /// `hxlog2i` - Returns `log2(n)` as an integer which is the power of 2 of the
-/// largest bit in `n`. WARNING: `hxlog2i(0)` is currently -127 and is UB. `i` ≥
-/// 2^32-128 will also round up returning an incorrect result.
+/// largest bit in `n`. WARNING: `hxlog2i(0)` is UB. The fallback implementation
+/// returns -127 for 0 and rounds up for `i` >= 2^32-128 returning an incorrect
+/// result.
 /// - `i` : A `uint32_t`.
 hxattr_nodiscard inline int hxlog2i(uint32_t i_) {
-	// Use the floating point hardware because this isn't important enough.
-	// The memcpy is an intrinsic.
+#if defined _MSC_VER
+	unsigned long index_ = 0ul;
+	::_BitScanReverse(&index_, i_);
+	return static_cast<int>(index_);
+#elif defined __GNUC__ || defined __clang__
+	return 31 - __builtin_clz(i_);
+#else
 	float f_ = static_cast<float>(i_);
 	uint32_t bits_ = 0u; ::memcpy(&bits_, &f_, sizeof f_);
 	return static_cast<int>((bits_ >> 23) & 0xffu) - 127;
+#endif
 }
 
 /// `hxabs` - Returns the absolute value of `x` using a `<` comparison.

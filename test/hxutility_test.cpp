@@ -143,14 +143,6 @@ TEST(hxutility_test, hxnullptr_converts_only_to_null) {
 	EXPECT_EQ(method_ptr, hxnullptr);
 }
 
-TEST(hxutility_test, hxbasename_handles_separators) {
-	EXPECT_STREQ(hxbasename("plain"), "plain");
-	EXPECT_STREQ(hxbasename("dir/file.bin"), "file.bin");
-	EXPECT_STREQ(hxbasename("dir\\file.bin"), "file.bin");
-	EXPECT_STREQ(hxbasename("dir/sub\\mixed"), "mixed");
-	EXPECT_STREQ(hxbasename("dir/"), "");
-}
-
 TEST(hxutility_test, hxlog2i_returns_highest_set_bit) {
 	EXPECT_EQ(hxlog2i(1u), 0);
 	EXPECT_EQ(hxlog2i(2u), 1);
@@ -260,14 +252,4 @@ TEST(hxutility_test, hxisgraph_boundaries) {
 	EXPECT_FALSE(hxisgraph(static_cast<char>(0x7F)));
 	EXPECT_TRUE(hxisgraph(static_cast<char>(0x80)));
 	EXPECT_TRUE(hxisgraph(static_cast<char>(0xFF)));
-}
-
-TEST(hxutility_test, hxbasename_boundaries) {
-	EXPECT_STREQ(hxbasename("dir/"), "");
-	EXPECT_STREQ(hxbasename("dir\\"), "");
-	EXPECT_STREQ(hxbasename("/x"), "x");
-	EXPECT_STREQ(hxbasename("\\x"), "x");
-	EXPECT_STREQ(hxbasename("a/b/c"), "c");
-	EXPECT_STREQ(hxbasename("file"), "file");
-	EXPECT_STREQ(hxbasename(""), "");
 }

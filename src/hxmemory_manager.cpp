@@ -96,29 +96,14 @@ public:
 #endif
 
 // -- hxmemory_allocator_base --------------------------------------------------
-// Clang emits inline constructors of anonymous namespace types into module
-// consumers. Out-of-line constructors prevent this.
+// There are no virtual methods. The memory manager dispatches on the allocator
+// id with a single compare instead of a vtable.
 class hxmemory_allocator_base {
 public:
-	hxmemory_allocator_base() : m_label_(hxnull) { }
-	hxattr_hot void* allocate(size_t size, hxalignment_t alignment) {
-		return on_alloc(size, alignment);
-	}
-
-	virtual void begin_allocation_scope(hxsystem_allocator_scope* scope,
-		hxsystem_allocator_t new_id) = 0;
-	virtual void end_allocation_scope(hxsystem_allocator_scope* scope,
-		hxsystem_allocator_t old_id) = 0;
-	virtual size_t get_allocation_count(hxsystem_allocator_t id) const = 0;
-	virtual size_t get_bytes_allocated(hxsystem_allocator_t id) const = 0;
-	virtual size_t get_high_water(hxsystem_allocator_t id) = 0;
 	const char* label(void) const { return m_label_; }
 
 protected:
-	virtual void* on_alloc(size_t size, hxalignment_t alignment) = 0;
 	const char* m_label_;
-private:
-	void operator=(const hxmemory_allocator_base&) = delete;
 };
 
 // -- hxmemory_allocator_os_heap -----------------------------------------------
@@ -135,24 +120,7 @@ public:
 		m_high_water = 0u;
 	}
 
-	void begin_allocation_scope(hxsystem_allocator_scope* scope,
-		hxsystem_allocator_t new_id) override {
-		(void)scope; (void)new_id;
-		hxsystem_allocator_scope_init_(scope, m_allocation_count, m_bytes_allocated);
-	}
-	void end_allocation_scope(hxsystem_allocator_scope* scope,
-		hxsystem_allocator_t old_id) override { (void)scope; (void)old_id; }
-	size_t get_allocation_count(hxsystem_allocator_t id) const override {
-		(void)id; return m_allocation_count;
-	}
-	size_t get_bytes_allocated(hxsystem_allocator_t id) const override {
-		(void)id; return m_bytes_allocated;
-	}
-	size_t get_high_water(hxsystem_allocator_t id) override {
-		(void)id; return m_high_water;
-	}
-
-	hxattr_hot void* on_alloc(size_t size, hxalignment_t alignment) override {
+	hxattr_hot void* allocate(size_t size, hxalignment_t alignment) {
 #if HX_USE_STD_ALIGNED_ALLOC
 		// C11 aligned_alloc requires alignment ≥ sizeof(void*) on some platforms.
 		alignment = hxmax(alignment, hxalignment);
@@ -187,7 +155,7 @@ public:
 #endif
 	}
 
-	hxattr_hot void on_free_non_virtual(void* ptr) {
+	hxattr_hot void deallocate(void* ptr) {
 #if HX_USE_STD_ALIGNED_ALLOC
 		hxassertmsg(m_allocation_count > 0u, "bad_free nothing allocated");
 		--m_allocation_count;
@@ -208,6 +176,10 @@ public:
 #endif
 	}
 
+	size_t get_allocation_count(void) const { return m_allocation_count; }
+	size_t get_bytes_allocated(void) const { return m_bytes_allocated; }
+	size_t get_high_water(void) const { return m_high_water; }
+
 private:
 	size_t m_allocation_count;
 	size_t m_bytes_allocated;
@@ -225,28 +197,6 @@ public:
 		m_begin_ = reinterpret_cast<uintptr_t>(ptr);
 		m_end_ = reinterpret_cast<uintptr_t>(ptr) + size;
 		m_current = reinterpret_cast<uintptr_t>(ptr);
-
-	}
-
-	void begin_allocation_scope(hxsystem_allocator_scope* scope,
-		hxsystem_allocator_t new_id) override {
-			(void)scope; (void)new_id;
-			hxsystem_allocator_scope_init_(scope, m_allocation_count, m_current - m_begin_);
-		}
-	void end_allocation_scope(hxsystem_allocator_scope* scope,
-		hxsystem_allocator_t old_id) override { (void)scope; (void)old_id; }
-	bool contains(void* ptr) const {
-		const uintptr_t ptr_value = reinterpret_cast<uintptr_t>(ptr);
-		return ptr_value >= m_begin_ && ptr_value < m_end_;
-	}
-	size_t get_allocation_count(hxsystem_allocator_t id) const override {
-		(void)id; return m_allocation_count;
-	}
-	size_t get_bytes_allocated(hxsystem_allocator_t id) const override {
-		(void)id; return m_current - m_begin_;
-	}
-	size_t get_high_water(hxsystem_allocator_t id) override {
-		(void)id; return m_current - m_begin_;
 	}
 
 	hxattr_cold void* release(void) const {
@@ -254,7 +204,7 @@ public:
 		return reinterpret_cast<void*>(m_begin_);
 	}
 
-	hxattr_hot void* allocate_non_virtual(size_t size, hxalignment_t alignment) {
+	hxattr_hot void* allocate(size_t size, hxalignment_t alignment) {
 		const uintptr_t alignment_mask = static_cast<uintptr_t>(alignment - 1u);
 		const uintptr_t aligned = (m_current + alignment_mask) & ~alignment_mask;
 		// Assume size_t doesn't wrap here.
@@ -267,7 +217,12 @@ public:
 		return reinterpret_cast<void*>(aligned);
 	}
 
-	hxattr_hot void on_free_non_virtual(void* ptr) {
+	bool contains(void* ptr) const {
+		const uintptr_t ptr_value = reinterpret_cast<uintptr_t>(ptr);
+		return ptr_value >= m_begin_ && ptr_value < m_end_;
+	}
+
+	hxattr_hot void deallocate(void* ptr) {
 		// Use ≤ because a valid outstanding allocation of size 0 could have
 		// been made at m_current.
 		const uintptr_t ptr_value = reinterpret_cast<uintptr_t>(ptr);
@@ -276,10 +231,9 @@ public:
 		--m_allocation_count; (void)ptr_value;
 	}
 
-protected:
-	hxattr_hot void* on_alloc(size_t size, hxalignment_t alignment) override {
-		return allocate_non_virtual(size, alignment);
-	}
+	size_t get_allocation_count(void) const { return m_allocation_count; }
+	size_t get_bytes_allocated(void) const { return m_current - m_begin_; }
+	size_t get_high_water(void) const { return m_current - m_begin_; }
 
 protected:
 	uintptr_t m_begin_;
@@ -301,19 +255,17 @@ public:
 #endif
 	}
 
-	void begin_allocation_scope(hxsystem_allocator_scope* scope,
-			hxsystem_allocator_t new_id) override {
+	hxattr_hot void begin_allocation_scope(hxsystem_allocator_scope* scope) {
 #if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
 		hxassertmsg(m_owner_thread == 0u || m_owner_thread == hxthread_id(),
 			"temp_stack cross-thread scope %s", m_label_);
 		m_owner_thread = hxthread_id();
 		++m_scope_depth;
 #endif
-		hxmemory_allocator_stack::begin_allocation_scope(scope, new_id);
+		hxsystem_allocator_scope_init_(scope, m_allocation_count, m_current - m_begin_);
 	}
 
-	hxattr_hot void end_allocation_scope(hxsystem_allocator_scope* scope,
-			hxsystem_allocator_t old_id) override {
+	hxattr_hot void end_allocation_scope(hxsystem_allocator_scope* scope) {
 #if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
 		hxassertmsg(m_owner_thread == hxthread_id(),
 			"temp_stack cross-thread scope %s", m_label_);
@@ -321,7 +273,6 @@ public:
 			m_owner_thread = 0u;
 		}
 #endif
-		(void)old_id;
 		hxassertmsg(m_allocation_count <= scope->get_initial_allocation_count(),
 			"memory_leak scope %s allocations %zu", m_label_,
 			m_allocation_count - scope->get_initial_allocation_count());
@@ -339,8 +290,7 @@ public:
 		m_current = previous_current;
 	}
 
-	hxattr_hot size_t get_high_water(hxsystem_allocator_t id) override {
-		(void)id;
+	hxattr_hot size_t get_high_water(void) {
 		m_high_water = hxmax(m_high_water, m_current);
 		return m_high_water - m_begin_;
 	}
@@ -360,29 +310,17 @@ public:
 	hxattr_cold void construct(void);
 	hxattr_cold void allocate_stacks(const size_t* sizes, size_t stack_count);
 	hxattr_cold void destruct(void);
-	hxattr_cold hxmemory_manager_stats utilization(bool stacks_only, bool log);
-
+	hxattr_hot void* allocate(size_t size, hxsystem_allocator_t id, hxalignment_t alignment);
+	hxattr_hot void free(void* ptr);
 	hxattr_hot hxsystem_allocator_t begin_allocation_scope(hxsystem_allocator_scope* scope,
 		hxsystem_allocator_t new_id);
 	hxattr_hot void end_allocation_scope(hxsystem_allocator_scope* scope,
 		hxsystem_allocator_t previous_id);
-
-	hxattr_hot hxmemory_allocator_base& get_allocator(hxsystem_allocator_t id) {
-		hxassertmsg(id >= 0 && id < (hxsystem_allocator_stack_0 + static_cast<hxsystem_allocator_t>(m_stack_count)),
-			"invalid_parameter %d", static_cast<int>(id));
-		return *m_memory_allocators[id]; // NOLINT(clang-analyzer-security.ArrayBound)
-	}
-
-	hxattr_hot void* allocate(size_t size, hxsystem_allocator_t id, hxalignment_t alignment);
-	hxattr_hot void free(void* ptr);
+	size_t get_allocation_count(hxsystem_allocator_t id);
+	size_t get_bytes_allocated(hxsystem_allocator_t id);
+	hxattr_cold hxmemory_manager_stats utilization(bool stacks_only, bool log);
 
 private:
-	friend class hxsystem_allocator_scope;
-
-	static constexpr int hxs_allocator_slot_count_ = hxsystem_allocator_stack_0 + HX_MEMORY_MAX_STACKS;
-
-	hxmemory_allocator_base*      m_memory_allocators[hxs_allocator_slot_count_];
-
 	hxmemory_allocator_os_heap	  m_memory_allocator_heap;
 #if (HX_MEMORY_BUDGET_PERMANENT) != 0
 	hxmemory_allocator_stack	  m_memory_allocator_permanent;
@@ -396,20 +334,11 @@ private:
 static hxmemory_manager hxs_memory_manager;
 
 void hxmemory_manager::construct(void) {
-	m_memory_allocators[hxsystem_allocator_heap] = &m_memory_allocator_heap;
-
-	::new(&m_memory_allocator_heap) hxmemory_allocator_os_heap(); // Set vtable pointer.
-
 	m_memory_allocator_heap.construct("heap");
 
 #if (HX_MEMORY_BUDGET_PERMANENT) != 0
-	m_memory_allocators[hxsystem_allocator_permanent] = &m_memory_allocator_permanent;
-	::new(&m_memory_allocator_permanent) hxmemory_allocator_stack();
 	m_memory_allocator_permanent.construct(hxmalloc_checked_(HX_MEMORY_BUDGET_PERMANENT),
 		(HX_MEMORY_BUDGET_PERMANENT), "perm");
-#else
-	// Without a permanent budget, route permanent allocations to the heap.
-	m_memory_allocators[hxsystem_allocator_permanent] = &m_memory_allocator_heap;
 #endif
 
 	// Temporary stacks are not allocated until hxmemory_manager_allocate_stacks.
@@ -428,9 +357,7 @@ void hxmemory_manager::allocate_stacks(const size_t* sizes, size_t stack_count) 
 	HX_MEMORY_MANAGER_LOCK_();
 	for(size_t i = 0u; i != stack_count; ++i) {
 		hxmemory_allocator_temp_stack& stack = m_memory_allocator_stacks[i]; // NOLINT(clang-analyzer-security.ArrayBound)
-		::new(&stack) hxmemory_allocator_temp_stack();
 		stack.construct(hxmalloc_checked_(sizes[i]), sizes[i], "temp");
-		m_memory_allocators[hxsystem_allocator_stack_0 + i] = &stack;
 	}
 	m_stack_count = stack_count;
 }
@@ -443,52 +370,6 @@ void hxmemory_manager::destruct(void) {
 		::free(m_memory_allocator_stacks[i].release());
 	}
 	m_stack_count = 0u;
-}
-
-hxmemory_manager_stats hxmemory_manager::utilization(bool stacks_only, bool log) {
-	hxmemory_manager_stats stats = { 0u, 0u, m_allocator_overflows };
-	HX_MEMORY_MANAGER_LOCK_();
-	const size_t first_slot = stacks_only ? static_cast<size_t>(hxsystem_allocator_stack_0) : 0u;
-	const size_t slot_count = static_cast<size_t>(hxsystem_allocator_stack_0) + m_stack_count;
-	for(size_t i = first_slot; i != slot_count; ++i) {
-#if (HX_MEMORY_BUDGET_PERMANENT) == 0
-		// The permanent slot aliases the heap when there is no permanent budget.
-		if(i == static_cast<size_t>(hxsystem_allocator_permanent)) { continue; }
-#endif
-		hxmemory_allocator_base& allocator = *m_memory_allocators[i];
-		const hxsystem_allocator_t allocator_id = static_cast<hxsystem_allocator_t>(i);
-		if(log || allocator.get_allocation_count(allocator_id) != 0u) {
-			hxlog("allocator %s count %zu size %zu high_water %zu\n",
-				allocator.label(),
-				allocator.get_allocation_count(allocator_id),
-				allocator.get_bytes_allocated(allocator_id),
-				allocator.get_high_water(allocator_id));
-		}
-		stats.allocations_outstanding += allocator.get_allocation_count(allocator_id);
-		stats.bytes_outstanding += allocator.get_bytes_allocated(allocator_id);
-	}
-	if(log) {
-		hxlog("overflows %zu\n", m_allocator_overflows);
-	}
-	return stats;
-}
-
-hxsystem_allocator_t hxmemory_manager::begin_allocation_scope(
-		hxsystem_allocator_scope* scope, hxsystem_allocator_t new_id) {
-	HX_MEMORY_MANAGER_LOCK_();
-	const hxsystem_allocator_t previous_id = hxs_current_memory_allocator;
-	hxs_current_memory_allocator = new_id;
-	get_allocator(hxs_current_memory_allocator).begin_allocation_scope(
-		scope, hxs_current_memory_allocator);
-	return previous_id;
-}
-
-void hxmemory_manager::end_allocation_scope(
-		hxsystem_allocator_scope* scope, hxsystem_allocator_t previous_id) {
-	HX_MEMORY_MANAGER_LOCK_();
-	get_allocator(hxs_current_memory_allocator).end_allocation_scope(
-		scope, hxs_current_memory_allocator);
-	hxs_current_memory_allocator = previous_id;
 }
 
 // WARNING: It is undefined behavior to compare pointers to different
@@ -515,7 +396,38 @@ void* hxmemory_manager::allocate(size_t size, hxsystem_allocator_t id, hxalignme
 		"alignment_error Not pow2 %zu.", static_cast<size_t>(alignment));
 
 	HX_MEMORY_MANAGER_LOCK_();
-	void* ptr = get_allocator(id).allocate(size, alignment);
+	hxassertmsg(id >= 0 && id < (hxsystem_allocator_stack_0
+		+ static_cast<hxsystem_allocator_t>(m_stack_count)),
+		"invalid_parameter %d", static_cast<int>(id));
+
+#if (HX_MEMORY_BUDGET_PERMANENT) != 0
+	// The permanent allocator is the first fixed size allocator.
+	const hxsystem_allocator_t first_fixed_id = hxsystem_allocator_permanent;
+#else
+	// Without a permanent budget the permanent allocator aliases the heap.
+	const hxsystem_allocator_t first_fixed_id = hxsystem_allocator_stack_0;
+#endif
+
+	void* ptr = hxnull;
+	if(id >= hxsystem_allocator_stack_0) {
+		ptr = m_memory_allocator_stacks[id - hxsystem_allocator_stack_0] // NOLINT(clang-analyzer-security.ArrayBound)
+			.allocate(size, alignment);
+	}
+#if (HX_MEMORY_BUDGET_PERMANENT) != 0
+	else if(id == hxsystem_allocator_permanent) {
+		ptr = m_memory_allocator_permanent.allocate(size, alignment);
+	}
+#endif
+
+	if(ptr == hxnull) {
+		// Only the fixed size allocators overflow. The heap halts instead of
+		// returning null.
+		if(id >= first_fixed_id) {
+			++m_allocator_overflows;
+			hxlog_warning("allocation_error overflowing %d size %zu", static_cast<int>(id), size);
+		}
+		ptr = m_memory_allocator_heap.allocate(size, alignment);
+	}
 
 	const uintptr_t alignment_mask = static_cast<uintptr_t>(alignment) - 1u;
 	const uintptr_t ptr_value = reinterpret_cast<uintptr_t>(ptr);
@@ -523,12 +435,7 @@ void* hxmemory_manager::allocate(size_t size, hxsystem_allocator_t id, hxalignme
 		"alignment_error wrong %zx from %d", static_cast<size_t>(ptr_value), id);
 	 (void)alignment_mask; (void)ptr_value;
 
-	if(ptr != hxnull) { return ptr; }
-
-	// Will not return null.
-	++m_allocator_overflows;
-	hxlog_warning("allocation_error overflowing %s size %zu", get_allocator(id).label(), size);
-	return m_memory_allocator_heap.allocate(size, alignment);
+	return ptr;
 }
 
 void hxmemory_manager::free(void* ptr) {
@@ -539,10 +446,11 @@ void hxmemory_manager::free(void* ptr) {
 	// This path is hard-coded for efficiency.
 	HX_MEMORY_MANAGER_LOCK_();
 
-	for(size_t i = 0u; i != m_stack_count; ++i) {
-		hxmemory_allocator_temp_stack& stack = m_memory_allocator_stacks[i];
-		if(stack.contains(ptr)) {
-			stack.on_free_non_virtual(ptr);
+	hxmemory_allocator_temp_stack* hxrestrict stack = m_memory_allocator_stacks;
+	for(hxmemory_allocator_temp_stack* const stacks_end = stack + m_stack_count;
+			stack != stacks_end; ++stack) {
+		if(stack->contains(ptr)) {
+			stack->deallocate(ptr);
 			return;
 		}
 	}
@@ -550,12 +458,106 @@ void hxmemory_manager::free(void* ptr) {
 #if (HX_MEMORY_BUDGET_PERMANENT) != 0
 	if(m_memory_allocator_permanent.contains(ptr)) {
 		hxwarn_msg(hxg_settings.deallocate_permanent, "ERROR: free from permanent");
-		m_memory_allocator_permanent.on_free_non_virtual(ptr);
+		m_memory_allocator_permanent.deallocate(ptr);
 		return;
 	}
 #endif
 
-	m_memory_allocator_heap.on_free_non_virtual(ptr);
+	m_memory_allocator_heap.deallocate(ptr);
+}
+
+hxsystem_allocator_t hxmemory_manager::begin_allocation_scope(
+		hxsystem_allocator_scope* scope, hxsystem_allocator_t new_id) {
+	HX_MEMORY_MANAGER_LOCK_();
+	hxassertmsg(new_id >= 0 && new_id < (hxsystem_allocator_stack_0
+		+ static_cast<hxsystem_allocator_t>(m_stack_count)),
+		"invalid_parameter %d", static_cast<int>(new_id));
+
+	const hxsystem_allocator_t previous_id = hxs_current_memory_allocator;
+	hxs_current_memory_allocator = new_id;
+	if(new_id >= hxsystem_allocator_stack_0) {
+		m_memory_allocator_stacks[new_id - hxsystem_allocator_stack_0].begin_allocation_scope(scope);
+	}
+	else {
+		hxsystem_allocator_scope_init_(scope, get_allocation_count(new_id),
+			get_bytes_allocated(new_id));
+	}
+	return previous_id;
+}
+
+void hxmemory_manager::end_allocation_scope(
+		hxsystem_allocator_scope* scope, hxsystem_allocator_t previous_id) {
+	HX_MEMORY_MANAGER_LOCK_();
+	const hxsystem_allocator_t current_id = hxs_current_memory_allocator;
+	if(current_id >= hxsystem_allocator_stack_0) {
+		hxassertmsg(current_id < (hxsystem_allocator_stack_0
+			+ static_cast<hxsystem_allocator_t>(m_stack_count)),
+			"invalid_parameter %d", static_cast<int>(current_id));
+		m_memory_allocator_stacks[current_id - hxsystem_allocator_stack_0].end_allocation_scope(scope);
+	}
+	hxs_current_memory_allocator = previous_id;
+}
+
+size_t hxmemory_manager::get_allocation_count(hxsystem_allocator_t id) {
+	hxassertmsg(id >= 0 && id < (hxsystem_allocator_stack_0
+		+ static_cast<hxsystem_allocator_t>(m_stack_count)),
+		"invalid_parameter %d", static_cast<int>(id));
+	if(id >= hxsystem_allocator_stack_0) {
+		return m_memory_allocator_stacks[id - hxsystem_allocator_stack_0].get_allocation_count();
+	}
+#if (HX_MEMORY_BUDGET_PERMANENT) != 0
+	if(id == hxsystem_allocator_permanent) {
+		return m_memory_allocator_permanent.get_allocation_count();
+	}
+#endif
+	return m_memory_allocator_heap.get_allocation_count();
+}
+
+size_t hxmemory_manager::get_bytes_allocated(hxsystem_allocator_t id) {
+	hxassertmsg(id >= 0 && id < (hxsystem_allocator_stack_0
+		+ static_cast<hxsystem_allocator_t>(m_stack_count)),
+		"invalid_parameter %d", static_cast<int>(id));
+	if(id >= hxsystem_allocator_stack_0) {
+		return m_memory_allocator_stacks[id - hxsystem_allocator_stack_0].get_bytes_allocated();
+	}
+#if (HX_MEMORY_BUDGET_PERMANENT) != 0
+	if(id == hxsystem_allocator_permanent) {
+		return m_memory_allocator_permanent.get_bytes_allocated();
+	}
+#endif
+	return m_memory_allocator_heap.get_bytes_allocated();
+}
+
+template<typename allocator_t_>
+hxattr_cold static void hxmemory_allocator_utilization(allocator_t_& allocator,
+		hxmemory_manager_stats& stats, bool log) {
+	const size_t allocation_count = allocator.get_allocation_count();
+	const size_t bytes_allocated = allocator.get_bytes_allocated();
+	if(log || allocation_count != 0u) {
+		hxlog("allocator %s count %zu size %zu high_water %zu\n",
+			allocator.label(), allocation_count, bytes_allocated,
+			allocator.get_high_water());
+	}
+	stats.allocations_outstanding += allocation_count;
+	stats.bytes_outstanding += bytes_allocated;
+}
+
+hxmemory_manager_stats hxmemory_manager::utilization(bool stacks_only, bool log) {
+	hxmemory_manager_stats stats = { 0u, 0u, m_allocator_overflows };
+	HX_MEMORY_MANAGER_LOCK_();
+	if(!stacks_only) {
+		hxmemory_allocator_utilization(m_memory_allocator_heap, stats, log);
+#if (HX_MEMORY_BUDGET_PERMANENT) != 0
+		hxmemory_allocator_utilization(m_memory_allocator_permanent, stats, log);
+#endif
+	}
+	for(size_t i = 0u; i != m_stack_count; ++i) {
+		hxmemory_allocator_utilization(m_memory_allocator_stacks[i], stats, log);
+	}
+	if(log) {
+		hxlog("overflows %zu\n", m_allocator_overflows);
+	}
+	return stats;
 }
 
 // -- hxsystem_allocator_scope -------------------------------------------------
@@ -571,12 +573,12 @@ hxattr_noexcept hxsystem_allocator_scope::~hxsystem_allocator_scope(void) {
 
 size_t hxsystem_allocator_scope::get_current_allocation_count(void) const {
 	hxinit();
-	return hxs_memory_manager.get_allocator(m_this_allocator_).get_allocation_count(m_this_allocator_);
+	return hxs_memory_manager.get_allocation_count(m_this_allocator_);
 }
 
 size_t hxsystem_allocator_scope::get_current_bytes_allocated(void) const {
 	hxinit();
-	return hxs_memory_manager.get_allocator(m_this_allocator_).get_bytes_allocated(m_this_allocator_);
+	return hxs_memory_manager.get_bytes_allocated(m_this_allocator_);
 }
 
 void hxmemory_manager_init_(void) {
@@ -610,7 +612,7 @@ HX_NS_END_
 // -- C API --------------------------------------------------------------------
 extern "C"
 hxattr_noexcept void* hxmalloc(size_t size) {
-	return  hxmalloc_ext(size, hxsystem_allocator_current, hxalignment);
+	return hxmalloc_ext(size, hxsystem_allocator_current, hxalignment);
 }
 
 extern "C"
@@ -618,7 +620,7 @@ hxattr_noexcept void* hxmalloc_ext(size_t size, hxsystem_allocator_t id, hxalign
 	hxinit();
 	void* ptr = HX_NS_PREFIX_ hxs_memory_manager.allocate(size, id, alignment);
 #if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
-		::memset(ptr, 0xcd, size);
+	::memset(ptr, 0xcd, size);
 #endif
 	return ptr;
 }
@@ -678,7 +680,7 @@ hxattr_noexcept void hxfree(void *ptr) {
 
 extern "C"
 hxattr_noexcept char* hxstring_duplicate(const char* string, hxsystem_allocator_t id) {
-	const size_t len = strlen(string);
+	const size_t len = ::strlen(string);
 	char* temp = static_cast<char*>(hxmalloc_ext(len + 1, id, 1u));
 	::memcpy(temp, string, len + 1);
 	return temp;

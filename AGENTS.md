@@ -79,6 +79,11 @@ When using the C library use C-style headers and not the C++ wrappers around
 them. E.g. use `<math.h>` not `<cmath>`. The goal is to be able to compile
 against libc alone without using the C++ standard library at all.
 
+Do not make copies of parameters for no other reason than they are modified,
+even when the name of the parameter is made incorrect by modification.
+Specifically, do not gratuitously copy templated parameters as the cost of the
+copy may be significant.
+
 ## Inline Files
 
 Create a new `detail/*.inl` for any new class that has its own `.hpp` header.

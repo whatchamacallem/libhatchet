@@ -194,11 +194,8 @@ public:
 	/// Returns a `const T*` to the end of the array.
 	const T_* cend(void) const { return this->data() + this->capacity(); }
 
-	/// Returns a pointer to a const and potentially uninitialized array of `T`.
-	const T_* data(void) const { return hxallocator<T_, capacity_>::data(); }
-
 	/// Returns a pointer to a potentially uninitialized array of `T`.
-	T_* data(void) { return hxallocator<T_, capacity_>::data(); }
+	using hxallocator<T_, capacity_>::data;
 
 	/// Returns true if the arrays compare equivalent using `hxkey_equal`.
 	/// Callers must check the return value to detect mismatches.

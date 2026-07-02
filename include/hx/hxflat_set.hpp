@@ -116,12 +116,8 @@ public:
 	/// - `key` : The key to count.
 	hxattr_nodiscard hxsize_t count(const key_t_& key_) const;
 
-	/// Returns a pointer to a const and potentially uninitialized array of
-	/// `key_t`.
-	const key_t_* data(void) const { return hxallocator<key_t_, capacity_>::data(); }
-
 	/// Returns a pointer to a potentially uninitialized array of `key_t`.
-	key_t_* data(void) { return hxallocator<key_t_, capacity_>::data(); }
+	using hxallocator<key_t_, capacity_>::data;
 
 	/// Checks if the set contains no elements.
 	hxattr_nodiscard bool empty(void) const { return m_end_ == this->data(); }

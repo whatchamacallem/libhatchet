@@ -97,12 +97,10 @@ unsigned long long hxconsole_strtoull_(const char* str, char** next) {
 
 // const char* captures remainder of line including comments starting with #'s.
 // Leading whitespace is discarded and the string is allowed to be empty.
-template<> const char* hxconsole_parse_arg_<const char*>(const char* str_, char** next_) {
-	while(hxisspace(*str_)) { ++str_; }
-	const char* result_ = str_;
-	while(*str_ != '\0') { ++str_; }
-	*next_ = const_cast<char*>(str_);
-	return result_;
+template<> const char* hxconsole_parse_arg_<const char*>(const char* str, char** next) {
+	while(hxisspace(*str)) { ++str; }
+	*next = const_cast<char*>(str) + ::strlen(str);
+	return str;
 }
 
 void hxconsole_usage_(const char* id, const char* const* labels) {
@@ -143,10 +141,11 @@ hxconsole_command_table& hxconsole_commands_(void) {
 
 // hxconsole_register_ is internal only.
 void hxdetail_::hxconsole_register_(hxconsole_hash_table_node_* node) {
+	hxconsole_command_table& commands = hxconsole_commands_();
 	hxassertmsg(node->hash_key().str_ && node->command_(), "invalid_parameter");
-	hxassertmsg(!hxconsole_commands_().find(node->hash_key()), "command_reregistered %s", node->hash_key().str_);
+	hxassertmsg(!commands.find(node->hash_key()), "command_reregistered %s", node->hash_key().str_);
 
-	hxconsole_commands_().insert(node);
+	commands.insert(node);
 }
 
 // Nodes are statically allocated. Do not delete.
@@ -197,10 +196,11 @@ bool hxconsole_exec_line(const char* command) {
 bool hxconsole_help(void) {
 	hxinit();
 	const hxsystem_allocator_scope temp_mem(hxsystem_allocator_heap);
+	const hxconsole_command_table& commands = hxconsole_commands_();
 	hxvector<const hxdetail_::hxconsole_hash_table_node_*> cmds;
-	cmds.reserve(hxconsole_commands_().size());
-	for(hxconsole_command_table::const_iterator it = hxconsole_commands_().cbegin();
-			it != hxconsole_commands_().cend(); ++it) {
+	cmds.reserve(commands.size());
+	for(hxconsole_command_table::const_iterator it = commands.cbegin();
+			it != commands.cend(); ++it) {
 		if(::strncmp(it->hash_key().str_, "hxconsole_test", 14) == 0 ||
 				::strncmp(it->hash_key().str_, "hxs_console_test", 16) == 0) {
 			continue;
@@ -219,41 +219,46 @@ bool hxconsole_help(void) {
 
 #if HX_USE_FILE_IO
 bool hxconsole_exec_file(hxfile& file) {
-	file.disable_asserts();
-
-	// POSIX would require a system call per-character otherwise.
+	// POSIX would require a system call per-character if this didn't read past
+	// the end.
 	char line_buf[HX_MAX_LINE];
 	bool result = true;
-	hxsize_t carried = 0;
+	size_t carried = 0u;
 
 	while(result) {
-		const size_t want = static_cast<size_t>(HX_MAX_LINE - 1 - carried);
+		const size_t want = HX_MAX_LINE - 1u - carried;
 		const size_t got = file.read(line_buf + carried, want, want);
 		hxassertmsg(got <= want, "read_overrun %zu %zu", got, want);
-		const hxsize_t filled = carried + static_cast<hxsize_t>(got);
 
-		hxsize_t line_begin = 0;
-		for(hxsize_t i = carried; result && i < filled; ++i) {
-			if(line_buf[i] == '\n') {
-				line_buf[i] = '\0';
-				result = hxconsole_exec_line(line_buf + line_begin);
-				line_begin = i + 1;
+		// The carried bytes are already known not to contain a newline.
+		char* line_begin = line_buf;
+		char* scan = line_buf + carried;
+		char* const end = scan + got;
+		while(result) {
+			char* const newline = static_cast<char*>(
+				::memchr(scan, '\n', static_cast<size_t>(end - scan)));
+			if(newline == hxnull) {
+				break;
 			}
+			*newline = '\0';
+			result = hxconsole_exec_line(line_begin);
+			line_begin = newline + 1;
+			scan = newline + 1;
 		}
 
-		carried = filled - line_begin;
-		if(file.eof() || carried >= (HX_MAX_LINE - 1)) {
-			if(result && carried != 0) {
-				line_buf[line_begin + carried] = '\0'; // NOLINT(clang-analyzer-security.ArrayBound)
-				result = hxconsole_exec_line(line_buf + line_begin);
+		carried = static_cast<size_t>(end - line_begin);
+		if(file.eof() || carried >= (HX_MAX_LINE - 1u)) {
+			if(result && carried != 0u) {
+				*end = '\0'; // NOLINT(clang-analyzer-security.ArrayBound)
+				result = hxconsole_exec_line(line_begin);
 			}
 			if(file.eof()) {
 				break;
 			}
-			carried = 0;
+			carried = 0u;
 		}
 		else {
-			::memmove(line_buf, line_buf + line_begin, static_cast<size_t>(carried));
+			::memmove(line_buf, line_begin, carried);
 		}
 	}
 	return result;

@@ -21,17 +21,6 @@ inline HX_NS_PREFIX_ hxcycles_t HX_NS_PREFIX_ hxtime_sample_cycles(void) { retur
 
 #if !(HX_USE_MACROS_WITH_MODULE)
 
-#if defined __wasm__
-// from "emscripten/emscripten.h"
-extern "C" double emscripten_get_now(void);
-#elif defined __x86_64__ || defined __i386__ || defined _M_X64 || defined _M_IX86
-#if defined _MSC_VER || defined __INTEL_COMPILER
-#include <intrin.h>
-#else
-#include <x86intrin.h>
-#endif
-#endif
-
 HX_NS_BEGIN_
 
 inline hxcycles_t hxtime_sample_cycles(void) {

@@ -42,14 +42,10 @@ public:
 	hxattr_nodiscard hxsize_t capacity(void) const { return fixed_capacity_; }
 
 	/// Returns a pointer to a const and potentially uninitialized array of `T`.
-	const T_* data(void) const {
-		return reinterpret_cast<const T_*>(m_data_);
-	}
+	const T_* data(void) const { return reinterpret_cast<const T_*>(m_data_); }
 
 	/// Returns a pointer to a potentially uninitialized array of `T`.
-	T_* data(void) {
-		return reinterpret_cast<T_*>(m_data_);
-	}
+	T_* data(void) { return reinterpret_cast<T_*>(m_data_); }
 
 	/// Used to ensure initial capacity as `reserve_storage` will not reallocate.
 	/// Provided for interface compatibility with the dynamic allocator.
@@ -97,10 +93,10 @@ public:
 	/// Returns the number of elements of `T` allocated.
 	hxattr_nodiscard hxsize_t capacity(void) const { return m_capacity_; }
 
-	/// Returns a const array of `T`.
+	/// Returns a pointer to a const and potentially uninitialized array of `T`.
 	const T_* data(void) const { return m_data_; }
 
-	/// Returns an array of `T`.
+	/// Returns a pointer to a potentially uninitialized array of `T`.
 	T_* data(void) { return m_data_; }
 
 	/// Capacity is set by first call to `reserve_storage` and may not be extended.

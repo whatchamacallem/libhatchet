@@ -62,12 +62,6 @@ public:
 	/// Destroys all elements and resets the deque to empty without deallocating.
 	void clear(void) noexcept;
 
-	/// Returns a pointer to a const and potentially uninitialized array of `T`.
-	const T_* data(void) const { return hxallocator<T_, capacity_>::data(); }
-
-	/// Returns a pointer to a potentially uninitialized array of `T`.
-	T_* data(void) { return hxallocator<T_, capacity_>::data(); }
-
 	/// Constructs an element in place at the back using forwarded arguments.
 	/// Exactly the same as `push_back`.
 	/// - `args` : Arguments forwarded to `T`'s constructor.

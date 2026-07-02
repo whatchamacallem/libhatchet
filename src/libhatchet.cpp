@@ -186,12 +186,16 @@ hxattr_weak hxattr_noexcept void hxset_assert_handler(bool (*handler)(void)) {
 
 #if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
 hxattr_weak hxattr_noexcept bool hxassert_handler(const char* file, size_t line) {
-	const char* f = hxbasename(file);
+	for(const char* it = file; *it != '\0'; ++it) {
+		if(*it == '/' || *it == '\\') {
+			file = it + 1;
+		}
+	}
 	if(hxg_assert_handler != hxnull && hxg_assert_handler()) {
 		return true;
 	}
 	// GCOVR_EXCL_START
-	hxlog_handler(hxlog_level_assert, "breakpoint %s(%zu)", f, line);
+	hxlog_handler(hxlog_level_assert, "breakpoint %s(%zu)", file, line);
 	// Return to hxbreakpoint at the calling line.
 	return false;
 	// GCOVR_EXCL_STOP

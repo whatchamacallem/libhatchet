@@ -6,15 +6,6 @@
 
 extern "C" {
 
-const char* hxbasename(const char* path) {
-	for(const char* it = path; *it != '\0'; ++it) {
-		if(*it == '/' || *it == '\\') {
-			path = it + 1;
-		}
-	}
-	return path;
-}
-
 #if defined __clang__
 __attribute__((no_sanitize("address")))
 __attribute__((no_sanitize("memory")))
