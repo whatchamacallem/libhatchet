@@ -16,7 +16,6 @@
 #error Header does not provide macros alone.
 #endif
 
-#include "hxkey.hpp"
 #include "hxptr.hpp"
 #include "hxutility.h"
 
@@ -239,6 +238,25 @@ public:
 	/// - `pos` : Iterator to the node to unlink and return.
 	hxptr<node_t_, deleter_t_> extract(const_iterator pos_);
 
+	/// Finds the first node for which the predicate returns true. Returns
+	/// `end()` if no node matches.
+	/// - `callable` : A callable taking a `node_t` reference, returning bool.
+	template<typename callable_t_>
+	hxattr_nodiscard const_iterator find_if(callable_t_&& callable_) const;
+
+	/// Non-const version of `find_if`.
+	template<typename callable_t_>
+	hxattr_nodiscard iterator find_if(callable_t_&& callable_);
+
+	/// Calls a function, lambda, or `std::function` on each node.
+	/// - `callable` : A callable taking a `node_t` reference.
+	template<typename callable_t_>
+	void for_each(callable_t_&& callable_) const;
+
+	/// Non-const version of `for_each`.
+	template<typename callable_t_>
+	void for_each(callable_t_&& callable_);
+
 	/// Returns a reference to the first node. The list must not be empty.
 	hxattr_nodiscard node_t_& front(void);
 
@@ -306,8 +324,16 @@ public:
 	/// elsewhere or have already been freed.
 	void release_all(void);
 
+	/// Removes all nodes for which predicate returns true, invoking `deleter`
+	/// on each removed node. If `deleter` evaluates to false nodes are unlinked
+	/// but not freed. Returns the number of nodes removed.
+	/// - `callable` : A callable taking a `node_t` reference, returning bool.
+	/// - `deleter` : Override deleter callable. Called only if it evaluates to true.
+	template<typename callable_t_, typename deleter_override_t_>
+	hxsize_t remove_if(callable_t_&& callable_, const deleter_override_t_& deleter_) noexcept;
+
 	/// Removes all nodes for which predicate returns true, invoking the
-	/// stored deleter on each removed node.
+	/// stored deleter on each removed node. Returns the number of nodes removed.
 	/// - `callable` : A callable taking a `node_t` reference, returning bool.
 	template<typename callable_t_>
 	hxsize_t remove_if(callable_t_&& callable_) noexcept;

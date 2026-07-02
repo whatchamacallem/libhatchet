@@ -213,7 +213,7 @@ TEST(hxtask_queue_test, predicates_cover_all_any_erase) {
 		return record.priority > 8;
 	});
 	EXPECT_TRUE(any_high_priority);
-	const int32_t removed_low_priority = q.erase_if([](const hxtask_queue::record_t& record) {
+	const hxsize_t removed_low_priority = q.erase_if([](const hxtask_queue::record_t& record) {
 		return record.priority < 4;
 	});
 	EXPECT_EQ(removed_low_priority, 1);
@@ -415,22 +415,22 @@ TEST(hxtask_queue_test, erase_if_count_boundaries) {
 	q.enqueue(&t2, 3);
 	q.enqueue(&t3, 4);
 	q.enqueue(&t4, 5);
-	const int32_t removed0 = q.erase_if([](const hxtask_queue::record_t& r) {
+	const hxsize_t removed0 = q.erase_if([](const hxtask_queue::record_t& r) {
 		return r.priority > 10;
 	});
 	EXPECT_EQ(removed0, 0);
 	EXPECT_EQ(q.size(), 5);
-	const int32_t removed1 = q.erase_if([](const hxtask_queue::record_t& r) {
+	const hxsize_t removed1 = q.erase_if([](const hxtask_queue::record_t& r) {
 		return r.priority < 2;
 	});
 	EXPECT_EQ(removed1, 1);
 	EXPECT_EQ(q.size(), 4);
-	const int32_t removed2 = q.erase_if([](const hxtask_queue::record_t& r) {
+	const hxsize_t removed2 = q.erase_if([](const hxtask_queue::record_t& r) {
 		return r.priority > 4;
 	});
 	EXPECT_EQ(removed2, 1);
 	EXPECT_EQ(q.size(), 3);
-	const int32_t removed3 = q.erase_if([](const hxtask_queue::record_t&) {
+	const hxsize_t removed3 = q.erase_if([](const hxtask_queue::record_t&) {
 		return true;
 	});
 	EXPECT_EQ(removed3, 3);

@@ -97,7 +97,7 @@ public:
 	/// priorities.
 	/// - `callable` : Predicate accepting a `record_t&`.
 	template<typename callable_t_>
-	int32_t erase_if(callable_t_&& callable_) noexcept;
+	hxsize_t erase_if(callable_t_&& callable_) noexcept;
 
 	/// Locks the queue and calls `callable` on each task record.
 	/// - `callable` : callable accepting a `const record_t&`.
@@ -116,10 +116,10 @@ public:
 
 	/// Returns the maximum number of tasks that can be queued. This value is
 	/// fixed at construction and does not require locking.
-	hxattr_nodiscard int32_t max_size(void) const;
+	hxattr_nodiscard hxsize_t max_size(void) const;
 
 	/// Returns the number of queued tasks. Thread-safe.
-	hxattr_nodiscard int32_t size(void) const;
+	hxattr_nodiscard hxsize_t size(void) const;
 
 	/// Execute remaining tasks. The thread calling `wait_for_all` executes
 	/// tasks as well. Intended to be called by the thread that owns the queue

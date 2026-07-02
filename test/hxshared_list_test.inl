@@ -593,6 +593,133 @@ TEST(hxlist_test, remove_if) {
 	}
 }
 
+TEST(hxlist_test, remove_if_with_do_not_delete_override) {
+	hxs_list_test_destructor_count = 0;
+	hxtest_list_counted_node_t a(1), b(2), c(3);
+	hxlist<hxtest_list_counted_node_t, hxdo_not_delete> list;
+	list.push_back(&a);
+	list.push_back(&b);
+	list.push_back(&c);
+	const hxsize_t count = list.remove_if([](hxtest_list_counted_node_t& n) {
+		return n.value != 2;
+	}, hxdo_not_delete());
+	EXPECT_EQ(count, 2);
+	EXPECT_EQ(hxs_list_test_destructor_count, 0);
+	EXPECT_EQ(list.size(), 1);
+	EXPECT_EQ(list.front().value, 2);
+}
+
+TEST(hxlist_test, remove_if_with_custom_deleter_override) {
+	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
+	hxs_test_custom_deleter_count = 0;
+	hxlist<hxtest_list_counted_node_t, hxdo_not_delete> list;
+	list.push_back(hxnew<hxtest_list_counted_node_t>(1));
+	list.push_back(hxnew<hxtest_list_counted_node_t>(2));
+	list.push_back(hxnew<hxtest_list_counted_node_t>(3));
+	const hxsize_t count = list.remove_if([](hxtest_list_counted_node_t& n) {
+		return n.value == 2;
+	}, hxtest_list_custom_deleter_t());
+	EXPECT_EQ(count, 1);
+	EXPECT_EQ(hxs_test_custom_deleter_count, 1);
+	EXPECT_EQ(list.size(), 2);
+	EXPECT_EQ(list.front().value, 1);
+	EXPECT_EQ(list.back().value, 3);
+	list.clear(hxtest_list_custom_deleter_t());
+}
+
+TEST(hxlist_test, find_if_by_predicate) {
+	hxtest_list_node_t a(1), b(2), c(3);
+	hxlist<hxtest_list_node_t, hxdo_not_delete> list;
+	list.push_back(&a);
+	list.push_back(&b);
+	list.push_back(&c);
+	EXPECT_EQ(&*list.find_if([](const hxtest_list_node_t& n) { return n.value == 1; }), &a);
+	EXPECT_EQ(&*list.find_if([](const hxtest_list_node_t& n) { return n.value == 3; }), &c);
+	EXPECT_EQ(list.find_if([](const hxtest_list_node_t& n) { return n.value == 4; }), list.end());
+	list.release_all();
+}
+
+TEST(hxlist_test, find_if_on_empty_returns_end) {
+	hxlist<hxtest_list_node_t, hxdo_not_delete> list;
+	EXPECT_EQ(list.find_if([](const hxtest_list_node_t&) { return true; }), list.end());
+}
+
+TEST(hxlist_test, find_if_const_by_predicate) {
+	hxtest_list_node_t a(1), b(2);
+	hxlist<hxtest_list_node_t, hxdo_not_delete> list;
+	list.push_back(&a);
+	list.push_back(&b);
+	const hxlist<hxtest_list_node_t, hxdo_not_delete>& clist = list;
+	EXPECT_EQ(&*clist.find_if([](const hxtest_list_node_t& n) { return n.value == 2; }), &b);
+	EXPECT_EQ(clist.find_if([](const hxtest_list_node_t& n) { return n.value == 5; }), clist.end());
+	list.release_all();
+}
+
+TEST(hxlist_test, for_each_visits_every_node_in_order) {
+	hxtest_list_node_t a(1), b(2), c(3);
+	hxlist<hxtest_list_node_t, hxdo_not_delete> list;
+	list.push_back(&a);
+	list.push_back(&b);
+	list.push_back(&c);
+	int expected = 1;
+	int count = 0;
+	list.for_each([&](hxtest_list_node_t& n) {
+		EXPECT_EQ(n.value, expected++);
+		++count;
+	});
+	EXPECT_EQ(count, 3);
+	EXPECT_EQ(expected, 4);
+	list.release_all();
+}
+
+TEST(hxlist_test, for_each_mutates_nodes) {
+	hxtest_list_node_t a(1), b(2);
+	hxlist<hxtest_list_node_t, hxdo_not_delete> list;
+	list.push_back(&a);
+	list.push_back(&b);
+	list.for_each([](hxtest_list_node_t& n) { n.value += 10; });
+	EXPECT_EQ(a.value, 11);
+	EXPECT_EQ(b.value, 12);
+	list.release_all();
+}
+
+TEST(hxlist_test, for_each_on_empty_visits_nothing) {
+	hxlist<hxtest_list_node_t, hxdo_not_delete> list;
+	int count = 0;
+	list.for_each([&](hxtest_list_node_t&) { ++count; });
+	EXPECT_EQ(count, 0);
+}
+
+TEST(hxlist_test, for_each_single_node) {
+	hxtest_list_node_t a(7);
+	hxlist<hxtest_list_node_t, hxdo_not_delete> list;
+	list.push_back(&a);
+	int count = 0;
+	int seen = 0;
+	list.for_each([&](hxtest_list_node_t& n) { seen = n.value; ++count; });
+	EXPECT_EQ(count, 1);
+	EXPECT_EQ(seen, 7);
+	list.release_all();
+}
+
+TEST(hxlist_test, for_each_const_visits_every_node_in_order) {
+	hxtest_list_node_t a(1), b(2), c(3);
+	hxlist<hxtest_list_node_t, hxdo_not_delete> list;
+	list.push_back(&a);
+	list.push_back(&b);
+	list.push_back(&c);
+	const hxlist<hxtest_list_node_t, hxdo_not_delete>& clist = list;
+	int expected = 1;
+	int count = 0;
+	clist.for_each([&](const hxtest_list_node_t& n) {
+		EXPECT_EQ(n.value, expected++);
+		++count;
+	});
+	EXPECT_EQ(count, 3);
+	EXPECT_EQ(expected, 4);
+	list.release_all();
+}
+
 TEST(hxlist_test, reverse) {
 	{
 		hxlist<hxtest_list_node_t, hxdo_not_delete> list;

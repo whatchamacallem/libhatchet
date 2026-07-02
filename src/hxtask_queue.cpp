@@ -50,6 +50,38 @@ hxtask_queue::~hxtask_queue(void) {
 	}
 }
 
+void hxtask_queue::clear(void) noexcept {
+	hxtask_queue_lock_;
+	m_tasks_.clear();
+#if HX_USE_THREADS
+	m_cond_var_completion_.notify_all();
+#endif
+}
+
+bool hxtask_queue::cancel(hxtask* task_) noexcept {
+	bool erased_ = false;
+	{
+		hxtask_queue_lock_;
+		record_t* const found_ = m_tasks_.find_if(
+			[task_](const record_t& r_) { return r_.task == task_; });
+		if(found_ != m_tasks_.end()) {
+			m_tasks_.erase_unordered(found_);
+			hxdetail_::hxmake_heap_(m_tasks_.begin(), m_tasks_.end(), hxkey_less_t<record_t>{});
+			erased_ = true;
+#if HX_USE_THREADS
+			if(m_tasks_.empty()) {
+				m_cond_var_completion_.notify_all();
+			}
+#endif
+		}
+	}
+	if(erased_) {
+		task_->on_cancel(this);
+		return true;
+	}
+	return false;
+}
+
 void hxtask_queue::enqueue(hxtask* task, int priority) noexcept {
 	const record_t entry = { task, priority
 #if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
