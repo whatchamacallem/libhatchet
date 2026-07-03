@@ -4,8 +4,9 @@
 
 import gdb
 import gdb.printing
+import re
 import traceback
-from typing import Iterator, Tuple, Union
+from typing import Iterator, Optional, Tuple
 
 # hxhash_table uses this layout:
 #
@@ -33,8 +34,9 @@ from typing import Iterator, Tuple, Union
 #
 # hxhash_table_internal_allocator_ derives from hxallocator<node_t_*, ...> and
 # holds the bucket array. The fourth template argument table_size_bits_ selects
-# between two layouts, and the bucket count is always 2^table_size_bits_. Static
-# layout is selected when table_size_bits_ == 0. Each bucket slot is a node_t_*.
+# between two layouts. Dynamic layout is selected when table_size_bits_ == 0
+# and the bucket count is m_capacity_. Otherwise the layout is static and the
+# bucket count is 2^table_size_bits_. Each bucket slot is a node_t_*.
 #
 # WARNING: These fields are not guaranteed by the contract. If the client code
 # does not use the provided base classes then the pretty printer may not be
@@ -48,44 +50,67 @@ from typing import Iterator, Tuple, Union
 # hxhash_table_map_node additionally has:
 #   value_t_               m_value_;
 #
+# GDB sources every printer script into one shared Python namespace, so all
+# module level symbols here must be unique across the gdb directory.
+
+def _hxhash_table_has_value_field(node_type: gdb.Type) -> bool:
+	for field in node_type.fields():
+		if field.is_base_class:
+			if _hxhash_table_has_value_field(field.type):
+				return True
+		elif field.name == 'm_value_':
+			return True
+	return False
 
 class hxhash_table_printer:
 	def __init__(self, val: gdb.Value) -> None:
 		self.val: gdb.Value = val
+		self._summary: Optional[str] = None
+		self._ok: bool = False
 		self._bucket_addr: int
 		self._bucket_count: int
 		self._node_ptr_type: gdb.Type
 		self._size: int
 
+	def _parse(self) -> str:
+		if self._summary is not None:
+			return self._summary
+
+		if self.val['m_size_'].is_optimized_out:
+			self._summary = '<optimized out>'
+			return self._summary
+
+		size: int = int(self.val['m_size_'])
+		table: gdb.Value = self.val['m_table_']
+
+		bits_arg: gdb.Value = self.val.type.template_argument(3)
+		bucket_addr: int
+		bucket_count: int
+		if bits_arg != 0:
+			bucket_addr = int(table['m_data_'].address)
+			bucket_count = 1 << int(bits_arg)
+		else:
+			bucket_addr = int(table['m_data_'])
+			if bucket_addr == 0:
+				self._summary = '<unallocated>'
+				return self._summary
+			bucket_count = int(table['m_capacity_'])
+
+		node_type: gdb.Type = self.val.type.template_argument(0)
+
+		self._bucket_addr = bucket_addr
+		self._bucket_count = bucket_count
+		self._node_ptr_type = node_type.pointer()
+		self._size = size
+		self._ok = True
+
+		basename: str = re.sub(r'^((\w+|\(anonymous namespace\))::)+', '', f'{node_type}')
+		self._summary = f'[{size}/{bucket_count} buckets] {basename}'
+		return self._summary
+
 	def to_string(self) -> str:
 		try:
-			size: int = int(self.val['m_size_'])
-			table: gdb.Value = self.val['m_table_']
-
-			if self.val['m_size_'].is_optimized_out:
-				return '<optimized out>'
-
-			bits_arg: gdb.Value = self.val.type.template_argument(3)
-			bucket_addr: int
-			bucket_count: int
-			if bits_arg != 0:
-				bucket_addr = int(table['m_data_'].address)
-				bucket_count = 1 << int(bits_arg)
-			else:
-				bucket_addr = int(table['m_data_'])
-				if bucket_addr == 0:
-					return '<unallocated>'
-				bucket_count = int(table['m_capacity_'])
-
-			node_type: gdb.Type = self.val.type.template_argument(0)
-			ptr_type: gdb.Type = node_type.pointer()
-
-			self._bucket_addr = bucket_addr
-			self._bucket_count = bucket_count
-			self._node_ptr_type = ptr_type
-			self._size = size
-
-			return f'[{size}/{bucket_count} buckets]'
+			return self._parse()
 		except Exception:
 			error: str = f'{traceback.format_exc()}'
 			return error.split('\n', 1)[1]
@@ -100,7 +125,8 @@ class hxhash_table_printer:
 			while int(node_ptr) != 0:
 				yield (idx, node_ptr)
 				idx += 1
-				node_ptr = node_ptr['m_hash_next_']
+				# m_hash_next_ is declared with the set node base class type.
+				node_ptr = node_ptr['m_hash_next_'].cast(self._node_ptr_type)
 
 	def _node_value(self, node_ptr: gdb.Value) -> Tuple[gdb.Value, ...]:
 		node: gdb.Value = node_ptr.dereference()
@@ -114,26 +140,32 @@ class hxhash_table_printer:
 		except Exception:
 			return (node,)
 
-	def children(self) -> Iterator[Tuple[str, Union[gdb.Value, str]]]:
+	def children(self) -> Iterator[Tuple[str, gdb.Value]]:
 		try:
-			if not hasattr(self, '_size'):
+			self._parse()
+			if not self._ok:
 				return
 			for idx, node_ptr in self._iter_nodes():
 				result: Tuple[gdb.Value, ...] = self._node_value(node_ptr)
 				if len(result) == 2:
-					yield (f'[{idx}] key', result[0])
-					yield (f'[{idx}] value', result[1])
+					yield (f'[{idx}].key', result[0])
+					yield (f'[{idx}].value', result[1])
 				else:
 					yield (f'[{idx}]', result[0])
-		except Exception as e:
-			yield ('<error>', str(e))
+		except Exception:
+			return
 
 	def display_hint(self) -> str:
+		try:
+			if _hxhash_table_has_value_field(self.val.type.template_argument(0)):
+				return 'map'
+		except Exception:
+			pass
 		return 'array'
 
 def build_pretty_printer() -> gdb.printing.RegexpCollectionPrettyPrinter:
 	pp = gdb.printing.RegexpCollectionPrettyPrinter('hxhash_table')
-	pp.add_printer('hxhash_table', r'hxhash_table<', hxhash_table_printer)
+	pp.add_printer('hxhash_table', r'^(\w+::)*hxhash_table<.*>$', hxhash_table_printer)
 	return pp
 
 gdb.printing.register_pretty_printer(gdb.current_objfile(), build_pretty_printer(), replace=True)

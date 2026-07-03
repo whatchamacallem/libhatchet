@@ -25,12 +25,12 @@ class hxbitset_printer:
 	def to_string(self) -> str:
 		try:
 			bit_count: int = int(self.val.type.template_argument(0))
-			size_t_type: gdb.Type = gdb.lookup_type('size_t')
-			word_bits: int = size_t_type.sizeof * 8
 
 			data_field: gdb.Value = self.val['m_data_']
 			if data_field.is_optimized_out:
 				return '<optimized out>'
+
+			word_bits: int = data_field.type.target().sizeof * 8
 
 			displayed_bits: int = min(bit_count, _MAX_BITS)
 			chars: list[str] = []
@@ -50,11 +50,10 @@ class hxbitset_printer:
 
 	def children(self) -> Iterator[Tuple[str, gdb.Value]]:
 		try:
-			size_t_type: gdb.Type = gdb.lookup_type('size_t')
-			word_bits: int = size_t_type.sizeof * 8
 			bit_count: int = int(self.val.type.template_argument(0))
-			word_count: int = (bit_count + word_bits - 1) // word_bits
 			data_field: gdb.Value = self.val['m_data_']
+			word_bits: int = data_field.type.target().sizeof * 8
+			word_count: int = (bit_count + word_bits - 1) // word_bits
 			for i in range(word_count):
 				yield (f'm_data_[{i}]', data_field[i])
 		except Exception:
@@ -65,7 +64,7 @@ class hxbitset_printer:
 
 def build_pretty_printer() -> gdb.printing.RegexpCollectionPrettyPrinter:
 	pp = gdb.printing.RegexpCollectionPrettyPrinter('hxbitset')
-	pp.add_printer('hxbitset', r'hxbitset<', hxbitset_printer)
+	pp.add_printer('hxbitset', r'^(\w+::)*hxbitset<.*>$', hxbitset_printer)
 	return pp
 
 gdb.printing.register_pretty_printer(gdb.current_objfile(), build_pretty_printer(), replace=True)

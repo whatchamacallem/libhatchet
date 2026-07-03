@@ -1,6 +1,7 @@
 # libhatchet
 
-Please use the most recent [tagged release](https://github.com/whatchamacallem/libhatchet/tags). It has been exhaustively tested.
+Please use the most recent [tagged release](https://github.com/whatchamacallem/libhatchet).
+It has been exhaustively tested.
 
 ## Overview
 

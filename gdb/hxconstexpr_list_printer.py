@@ -4,6 +4,7 @@
 
 import gdb
 import gdb.printing
+import re
 import traceback
 from typing import Iterator, Optional, Set, Tuple
 
@@ -20,14 +21,33 @@ from typing import Iterator, Optional, Set, Tuple
 #		// ...
 #		deleter_t_            m_deleter_;
 #		hxsize_t              m_size_;
-#       // m_sentinel_.m_list_next_ is front. m_sentinel_.m_list_prev_ is back.
+#		// m_sentinel_.m_list_next_ is front. m_sentinel_.m_list_prev_ is back.
 #		hxconstexpr_list_node m_sentinel_;
 #	};
 #
+# The links store addresses of the hxconstexpr_list_node base subobject of
+# each node.
+#
+# GDB sources every printer script into one shared Python namespace, so all
+# module level symbols here must be unique across the gdb directory.
+
+def _hxconstexpr_list_find_link_base(node_type: gdb.Type) -> Optional[gdb.Type]:
+	for field in node_type.fields():
+		if not field.is_base_class:
+			continue
+		for base_field in field.type.fields():
+			if base_field.name == 'm_list_next_':
+				return field.type
+		deeper: Optional[gdb.Type] = _hxconstexpr_list_find_link_base(field.type)
+		if deeper is not None:
+			return deeper
+	return None
 
 class hxconstexpr_list_printer:
 	def __init__(self, val: gdb.Value) -> None:
 		self.val: gdb.Value = val
+		self._summary: Optional[str] = None
+		self._ok: bool = False
 		self._size: int
 		self._node_type: gdb.Type
 		self._sentinel_addr: int
@@ -35,30 +55,36 @@ class hxconstexpr_list_printer:
 		self._base_type: Optional[gdb.Type]
 		self._base_field_names: Set[Optional[str]]
 
+	def _parse(self) -> str:
+		if self._summary is not None:
+			return self._summary
+
+		if self.val['m_size_'].is_optimized_out:
+			self._summary = '<optimized out>'
+			return self._summary
+
+		size: int = int(self.val['m_size_'])
+		node_type: gdb.Type = self.val.type.template_argument(0)
+
+		self._size = size
+		self._node_type = node_type
+		self._sentinel_addr = int(self.val['m_sentinel_'].address)
+		self._front_addr = int(self.val['m_sentinel_']['m_list_next_'])
+
+		self._base_type = _hxconstexpr_list_find_link_base(node_type)
+		self._base_field_names = set()
+		if self._base_type is not None:
+			for base_field in self._base_type.fields():
+				self._base_field_names.add(base_field.name)
+		self._ok = True
+
+		basename: str = re.sub(r'^((\w+|\(anonymous namespace\))::)+', '', f'{node_type}')
+		self._summary = f'[{size}] {basename}'
+		return self._summary
+
 	def to_string(self) -> str:
 		try:
-			if self.val['m_size_'].is_optimized_out:
-				return '<optimized out>'
-
-			size: int = int(self.val['m_size_'])
-			node_type: gdb.Type = self.val.type.template_argument(0)
-
-			self._size = size
-			self._node_type = node_type
-			self._sentinel_addr = int(self.val['m_sentinel_'].address)
-			self._front_addr = int(self.val['m_sentinel_']['m_list_next_'])
-
-			self._base_type = None
-			self._base_field_names = set()
-			for field in node_type.fields():
-				if field.is_base_class:
-					self._base_type = field.type
-					for bf in field.type.fields():
-						self._base_field_names.add(bf.name)
-					break
-
-			basename: str = f'{node_type}'.split(':')[-1]
-			return f'[{size}] {basename}'
+			return self._parse()
 		except Exception:
 			error: str = f'{traceback.format_exc()}'
 			return error.split('\n', 1)[1]
@@ -73,22 +99,23 @@ class hxconstexpr_list_printer:
 
 	def children(self) -> Iterator[Tuple[str, gdb.Value]]:
 		try:
-			if not hasattr(self, '_size') or self._base_type is None:
+			self._parse()
+			if not self._ok or self._base_type is None:
 				return
-			node_ptr_type: gdb.Type = self._base_type.pointer()
+			base_ptr_type: gdb.Type = self._base_type.pointer()
+			node_ptr_type: gdb.Type = self._node_type.pointer()
 			current_addr: int = self._front_addr
 			for idx in range(self._size):
 				if current_addr == self._sentinel_addr:
 					break
-				node_ptr: gdb.Value = gdb.Value(current_addr).cast(self._node_type.pointer())
-				node: gdb.Value = node_ptr.dereference()
+				base_ptr: gdb.Value = gdb.Value(current_addr).cast(base_ptr_type)
+				node: gdb.Value = base_ptr.cast(node_ptr_type).dereference()
 				fields: list[Tuple[Optional[str], gdb.Value]] = list(self._node_fields(node))
 				if len(fields) == 1:
 					yield (f'[{idx}]', fields[0][1])
 				else:
 					for name, val in fields:
 						yield (f'[{idx}] {name}', val)
-				base_ptr: gdb.Value = gdb.Value(current_addr).cast(node_ptr_type)
 				current_addr = int(base_ptr['m_list_next_'])
 		except Exception:
 			return
@@ -98,7 +125,7 @@ class hxconstexpr_list_printer:
 
 def build_pretty_printer() -> gdb.printing.RegexpCollectionPrettyPrinter:
 	pp = gdb.printing.RegexpCollectionPrettyPrinter('hxconstexpr_list')
-	pp.add_printer('hxconstexpr_list', r'hxconstexpr_list<', hxconstexpr_list_printer)
+	pp.add_printer('hxconstexpr_list', r'^(\w+::)*hxconstexpr_list<.*>$', hxconstexpr_list_printer)
 	return pp
 
 gdb.printing.register_pretty_printer(gdb.current_objfile(), build_pretty_printer(), replace=True)

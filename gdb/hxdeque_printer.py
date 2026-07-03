@@ -4,8 +4,9 @@
 
 import gdb
 import gdb.printing
+import re
 import traceback
-from typing import Iterator, Tuple
+from typing import Iterator, Optional, Tuple
 
 # hxdeque uses this layout:
 #
@@ -34,6 +35,8 @@ from typing import Iterator, Tuple
 class hxdeque_printer:
 	def __init__(self, val: gdb.Value) -> None:
 		self.val: gdb.Value = val
+		self._summary: Optional[str] = None
+		self._ok: bool = False
 		self._count: int
 		self._capacity: int
 		self._mask: int
@@ -41,48 +44,59 @@ class hxdeque_printer:
 		self._data_addr: int
 		self._elem_type: gdb.Type
 
+	def _parse(self) -> str:
+		if self._summary is not None:
+			return self._summary
+
+		head_val: gdb.Value = self.val['m_head_']
+		tail_val: gdb.Value = self.val['m_tail_']
+		if head_val.is_optimized_out or tail_val.is_optimized_out:
+			self._summary = '<optimized out>'
+			return self._summary
+
+		head: int = int(head_val)
+		tail: int = int(tail_val)
+		wrap: int = 1 << (8 * head_val.type.sizeof)
+		count: int = (tail - head) % wrap
+
+		targ1: gdb.Value = self.val.type.template_argument(1)
+		capacity: int
+		data_addr: int
+		if targ1 == 0:
+			capacity = int(self.val['m_capacity_'])
+			if capacity <= 0:
+				self._summary = '<unallocated>'
+				return self._summary
+			data_addr = int(self.val['m_data_'])
+		else:
+			capacity = int(targ1)
+			data_addr = int(self.val['m_data_'].address)
+
+		elem_type: gdb.Type = self.val.type.template_argument(0)
+
+		self._count = count
+		self._capacity = capacity
+		self._mask = capacity - 1
+		self._head = head
+		self._data_addr = data_addr
+		self._elem_type = elem_type
+		self._ok = True
+
+		basename: str = re.sub(r'^((\w+|\(anonymous namespace\))::)+', '', f'{elem_type}')
+		self._summary = f'[{count}/{capacity}] {basename}'
+		return self._summary
+
 	def to_string(self) -> str:
 		try:
-			if self.val['m_head_'].is_optimized_out:
-				return '<optimized out>'
-
-			head: int = int(self.val['m_head_'])
-			tail: int = int(self.val['m_tail_'])
-			wrap: int = 1 << (8 * self.val['m_head_'].type.sizeof)
-			count: int = (tail - head) % wrap
-
-			capacity: int = int(self.val.type.template_argument(1))
-			if capacity == 0:
-				capacity = int(self.val['m_capacity_'])
-			mask: int = capacity - 1
-
-			if capacity <= 0:
-				return '<unallocated>'
-
-			elem_type: gdb.Type = self.val.type.template_argument(0)
-
-			data_addr: int
-			if int(self.val.type.template_argument(1)) == 0:
-				data_addr = int(self.val['m_data_'])
-			else:
-				data_addr = int(self.val['m_data_'].address)
-
-			self._count = count
-			self._capacity = capacity
-			self._mask = mask
-			self._head = head
-			self._data_addr = data_addr
-			self._elem_type = elem_type
-
-			basename: str = f'{elem_type}'.split(':')[-1]
-			return f'[{count}/{capacity}] {basename}'
+			return self._parse()
 		except Exception:
 			error: str = f'{traceback.format_exc()}'
 			return error.split('\n', 1)[1]
 
 	def children(self) -> Iterator[Tuple[str, gdb.Value]]:
 		try:
-			if not hasattr(self, '_count'):
+			self._parse()
+			if not self._ok:
 				return
 			for i in range(self._count):
 				slot: int = (self._head + i) & self._mask
@@ -97,7 +111,7 @@ class hxdeque_printer:
 
 def build_pretty_printer() -> gdb.printing.RegexpCollectionPrettyPrinter:
 	pp = gdb.printing.RegexpCollectionPrettyPrinter('hxdeque')
-	pp.add_printer('hxdeque', r'hxdeque<', hxdeque_printer)
+	pp.add_printer('hxdeque', r'^(\w+::)*hxdeque<.*>$', hxdeque_printer)
 	return pp
 
 gdb.printing.register_pretty_printer(gdb.current_objfile(), build_pretty_printer(), replace=True)

@@ -57,5 +57,8 @@ do
 	separator -----------------------------------------------------------------
 done
 
-echo "emcc must be installed separately:"
-which emcc || echo "error: emcc not found"
+if command -v emcc >/dev/null 2>&1; then
+    emcc --version
+else
+    echo "error: emcc not found. It must be installed separately." >&2
+fi

@@ -4,8 +4,9 @@
 
 import gdb
 import gdb.printing
+import re
 import traceback
-from typing import Iterator, Tuple
+from typing import Iterator, Optional, Tuple
 
 # hxflat_map uses two parallel hxallocator arrays:
 #
@@ -36,57 +37,68 @@ from typing import Iterator, Tuple
 class hxflat_map_printer:
 	def __init__(self, val: gdb.Value) -> None:
 		self.val: gdb.Value = val
+		self._summary: Optional[str] = None
+		self._ok: bool = False
 		self._key_type: gdb.Type
 		self._mapped_type: gdb.Type
 		self._size: int
 		self._raw_keys: int
 		self._raw_vals: int
 
+	def _parse(self) -> str:
+		if self._summary is not None:
+			return self._summary
+
+		if self.val['m_size_'].is_optimized_out:
+			self._summary = '<optimized out>'
+			return self._summary
+
+		size: int = int(self.val['m_size_'])
+		keys_alloc: gdb.Value = self.val['m_keys_']
+		vals_alloc: gdb.Value = self.val['m_values_']
+
+		key_type: gdb.Type = self.val.type.template_argument(0)
+		mapped_type: gdb.Type = self.val.type.template_argument(1)
+		cap_arg: gdb.Value = self.val.type.template_argument(4)
+
+		capacity: int
+		raw_keys: int
+		raw_vals: int
+		if cap_arg == 0:
+			capacity = int(keys_alloc['m_capacity_'])
+			if capacity <= 0:
+				self._summary = '<unallocated>'
+				return self._summary
+			raw_keys = int(keys_alloc['m_data_'])
+			raw_vals = int(vals_alloc['m_data_'])
+		else:
+			capacity = int(cap_arg)
+			raw_keys = int(keys_alloc['m_data_'].address)
+			raw_vals = int(vals_alloc['m_data_'].address)
+
+		self._key_type = key_type
+		self._mapped_type = mapped_type
+		self._size = size
+		self._raw_keys = raw_keys
+		self._raw_vals = raw_vals
+		self._ok = True
+
+		key_name: str = re.sub(r'^((\w+|\(anonymous namespace\))::)+', '', f'{key_type}')
+		val_name: str = re.sub(r'^((\w+|\(anonymous namespace\))::)+', '', f'{mapped_type}')
+		self._summary = '[{}/{}] {}->{}'.format(size, capacity, key_name, val_name)
+		return self._summary
+
 	def to_string(self) -> str:
 		try:
-			if self.val['m_size_'].is_optimized_out:
-				return '<optimized out>'
-
-			size: int = int(self.val['m_size_'])
-			keys_alloc: gdb.Value = self.val['m_keys_']
-			vals_alloc: gdb.Value = self.val['m_values_']
-
-			key_type: gdb.Type = self.val.type.template_argument(0)
-			mapped_type: gdb.Type = self.val.type.template_argument(1)
-			cap_arg: gdb.Value = self.val.type.template_argument(4)
-
-			capacity: int
-			raw_keys: int
-			raw_vals: int
-			if cap_arg == 0:
-				capacity = int(keys_alloc['m_capacity_'])
-				if capacity <= 0:
-					return '<unallocated>'
-				raw_keys = int(keys_alloc['m_data_'])
-				raw_vals = int(vals_alloc['m_data_'])
-			else:
-				capacity = int(cap_arg)
-				if capacity <= 0:
-					return '<invalid capacity>'
-				raw_keys = int(keys_alloc['m_data_'].address)
-				raw_vals = int(vals_alloc['m_data_'].address)
-
-			self._key_type = key_type
-			self._mapped_type = mapped_type
-			self._size = size
-			self._raw_keys = raw_keys
-			self._raw_vals = raw_vals
-
-			key_name: str = f'{key_type}'.split(':')[-1]
-			val_name: str = f'{mapped_type}'.split(':')[-1]
-			return '[{}/{}] {}->{}'.format(size, capacity, key_name, val_name)
-		except Exception as e:
+			return self._parse()
+		except Exception:
 			error: str = f'{traceback.format_exc()}'
 			return error.split('\n', 1)[1]
 
 	def children(self) -> Iterator[Tuple[str, gdb.Value]]:
 		try:
-			if not hasattr(self, '_size'):
+			self._parse()
+			if not self._ok:
 				return
 			for i in range(self._size):
 				key_ptr: gdb.Value = gdb.Value(self._raw_keys + i * self._key_type.sizeof).cast(
@@ -103,7 +115,7 @@ class hxflat_map_printer:
 
 def build_pretty_printer() -> gdb.printing.RegexpCollectionPrettyPrinter:
 	pp = gdb.printing.RegexpCollectionPrettyPrinter('hxflat_map')
-	pp.add_printer('hxflat_map', r'hxflat_map<', hxflat_map_printer)
+	pp.add_printer('hxflat_map', r'^(\w+::)*hxflat_map<.*>$', hxflat_map_printer)
 	return pp
 
 gdb.printing.register_pretty_printer(gdb.current_objfile(), build_pretty_printer(), replace=True)
