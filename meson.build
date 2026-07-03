@@ -66,6 +66,7 @@ if get_option('build_module')
 	libhatchet_module = custom_target('hatchet',
 		input : 'src/hxmodule.cppm',
 		output : _hxmodule_outputs,
+		build_by_default : true,
 		command : _hxcpp.cmd_array() + get_option('cpp_args') + hxwarning_args
 			+ hxmodule_include_args + _hxmodule_special_args + _hxmodule_pcm_args
 			+ [ '-c', '@INPUT@', '-o', '@OUTPUT0@', ],

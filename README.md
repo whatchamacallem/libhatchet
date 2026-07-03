@@ -1,14 +1,14 @@
 # libhatchet
 
-Please use the most recent [tagged release](https://github.com/whatchamacallem/libhatchet). It has been exhaustively tested.
+Please use the most recent [tagged release](https://github.com/whatchamacallem/libhatchet/tags). It has been exhaustively tested.
 
 ## Overview
 
 > People say that you should not micro-optimize. But if what you love is
 > micro-optimization... that's what you should do. - Linus Torvalds
 
-libhatchet is a fast compiling lightweight, bespoke C17/C++23 alternative to the
-C++ standard library designed for cross-compilation to resource-constrained
+libhatchet is a fast-compiling, lightweight, bespoke C17/C++23 alternative to
+the C++ standard library designed for cross-compilation to resource-constrained
 targets like DSPs, FPGAs, ASICs or WebAssembly. It also falls back to requiring
 only C99 libraries and a C++11 compiler, and deliberately avoids dependencies on
 the C++ standard library. For those with a low-level mindset, the developer
@@ -46,7 +46,7 @@ system allocators.
 - **Portability**: libhatchet can easily be made to run on top of any old
   embedded C99 library. musl libc is recommended for embedded Linux and is
   widely packaged: <https://musl.libc.org/>. No other C++ runtime or C++ code is
-  required. pthreads or C99's `<thread.h>` may be used for threading, which are
+  required. pthreads or C11's `<threads.h>` may be used for threading, which are
   widely implemented standards. See `.clang-tidy` for a discussion of linting
   rules and portability concerns. All public symbols (aside from methods and
   fields) start with either `HX` or `hx`. All non-public symbols in the headers
@@ -54,9 +54,9 @@ system allocators.
   provided.
 
 - **Profiling System**: Uses processor cycle sampling to create a hierarchical
-  timeline capture compatible with Chrome's `about://tracing` viewer (navigation
-  uses W, A, S, and D keys). One line of assembly may be needed for uncommon
-  hardware.
+  timeline capture compatible with Chrome's `chrome://tracing` viewer
+  (navigation uses W, A, S, and D keys). One line of assembly may be needed for
+  uncommon hardware.
 
 - **Memory Management**: Fast and deterministic. Supports various allocation
   semantics, particularly valuable for applications where crashing from memory
@@ -131,7 +131,7 @@ system allocators.
   existing knowledge of standard C++. It also already knows how to use the test
   macros when writing tests. Using tabs instead of spaces reduces token use.
 
-- **constexpr ready**: C++11 `constexpr` are used where possible. Asserts,
+- **constexpr ready**: C++11 `constexpr` is used where possible. Asserts,
   algorithms, `hxconstexpr_list`, `hxbitset` and `hxrandom` support `consteval`
   in C++23.
 
@@ -194,12 +194,12 @@ The scripted builds exercise the following toolchains, language modes, and
 
 | Script | Toolchain | Language Modes | `HX_HARDENING_MODE` | Notes |
 | --- | --- | --- | --- | --- |
-| `debugbuild.sh` | `clang`/`clang++` | C17, C++23 | 0 | 32-bit debug build with ccache and no exceptions/RTTI. |
-| `testcmake.sh` | `cmake` + default compiler | C17, C++23 | 0 (default) | Uses the real Google Test and runs `hxtest` and Clang-Tidy. |
-| `testcoverage.sh` | `gcc`, `g++` + `--coverage` | C99, C++23 | 0 | Enables `HX_TEST_ERROR_HANDLING=1` and emits `coverage.html`. |
-| `testmatrix.sh` | `gcc`, `clang` (ASan/UBSan) | C99, C17, C++11, C++23 | 0-3 | Sweeps optimization levels and sets `HX_USE_THREADS=0/1/11`. |
-| `teststrip.sh` | `musl-gcc` (static) | C17, C++11/14/17/20 | 3 | Size-focused static build with allocator/library stripping. |
-| `testwasm.sh` | `emcc` | Emscripten defaults (Clang-based C/C++) | 0 (default) | WebAssembly build with allocator disabled and single-thread mode. |
+| `debugbuild.sh` | `clang`/`clang++` | C17, C++23 | 3 | 32-bit debug build with ccache and no exceptions/RTTI. |
+| `testcmake.sh` | `cmake` + default compiler | C17, C++23 | 3 | Uses the real Google Test and runs `hxtest` and Clang-Tidy. |
+| `testcoverage.sh` | `gcc`, `g++` + `--coverage` | C99, C++23 | 3 | Enables `HX_TEST_ERROR_HANDLING=1` and emits `coverage_details.html`. |
+| `testmatrix.sh` | `gcc`, `clang` (ASan/UBSan/TSan/MSan) | C99, C17, C++11, C++23 | 0-3 | Sweeps optimization levels and sets `HX_USE_THREADS=1/11`. |
+| `teststrip.sh` | `musl-gcc` (static) | C17, C++11/14/17/20/23 | 0 | Size-focused static build with allocator/library stripping. |
+| `testwasm.sh` | `emcc` | Emscripten defaults (Clang-based C/C++) | 3 (default) | WebAssembly build with the memory manager disabled and pthreads enabled. |
 
 `testall.sh` runs all of the above and also enforces certain naming conventions.
 

@@ -55,13 +55,13 @@ rm -rf ./build; mkdir ./build && cd ./build
 
 run_clang_build() {
 	OPT=$1; SAN=$2; shift 2
-	echo "clang c17/c++20 -O$OPT $SAN $* ..."
+	echo "clang c17/c++23 -O$OPT $SAN $* ..."
 
 	# compile C17
 	clang -I../include -DHX_HARDENING_MODE=3-$OPT -O$OPT $FLAGS $ERRORS $SAN   \
 		-fdiagnostics-absolute-paths -pthread -std=c17 "$@" -c ../test/*.c
 
-	# generate C++20 pch. clang does this automatically when a c++ header file
+	# generate C++23 pch. clang does this automatically when a c++ header file
 	# is the target. This is just a test.
 	clang++ -I../include -DHX_HARDENING_MODE=3-$OPT -O$OPT $FLAGS $ERRORS $SAN \
 		-DHX_USE_THREADS=1 -pthread -std=c++23 -fno-exceptions                 \
@@ -77,8 +77,8 @@ run_clang_build() {
 	run_hxtest
 }
 
-# Test undefined behavior/address use at all build levels with clang. Uses pch
-# and allows exceptions just to make sure there are none.
+# Test undefined behavior/address use at all build levels with clang. Uses a
+# pch.
 for I in 0 1 2 3; do
 	run_clang_build "$I" "$SAN_UNDEF" "$@"
 done

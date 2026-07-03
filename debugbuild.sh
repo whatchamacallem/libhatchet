@@ -99,14 +99,14 @@ if [ "$OPT_GRIND" = "1" ]; then
 		[ $(($COUNT % 7)) -eq 0 ] || continue
 
 		BUILD="$NAMESPACE -DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG"
-		[ -n "$CONSOLE"   ] && BUILD="$BUILD -DHX_USE_CONSOLE=$CONSOLE"
-		[ -n "$FILE_IO"   ] && BUILD="$BUILD -DHX_USE_FILE_IO=$FILE_IO"
-		[ -n "$LIBCXX"    ] && BUILD="$BUILD -DHX_USE_LIBCXX=$LIBCXX"
+		BUILD="$BUILD -DHX_USE_CONSOLE=$CONSOLE"
+		BUILD="$BUILD -DHX_USE_FILE_IO=$FILE_IO"
+		BUILD="$BUILD -DHX_USE_LIBCXX=$LIBCXX"
 		[ "$LIBCXX" = "0" ] && BUILD="$BUILD -nostdinc++"
-		[ -n "$LOGGING"   ] && BUILD="$BUILD -DHX_USE_LOGGING=$LOGGING"
-		[ -n "$MEMORY"    ] && BUILD="$BUILD -DHX_USE_MEMORY_MANAGER=$MEMORY"
-		[ -n "$PROFILER"  ] && BUILD="$BUILD -DHX_USE_PROFILER=$PROFILER"
-		[ -n "$THREADS"   ] && BUILD="$BUILD -DHX_USE_THREADS=$THREADS"
+		BUILD="$BUILD -DHX_USE_LOGGING=$LOGGING"
+		BUILD="$BUILD -DHX_USE_MEMORY_MANAGER=$MEMORY"
+		BUILD="$BUILD -DHX_USE_PROFILER=$PROFILER"
+		BUILD="$BUILD -DHX_USE_THREADS=$THREADS"
 
 		if [ "$OPT_HEADLESS" = "1" ]; then
 			SPINNER_STATE=$(((SPINNER_STATE % 8) + 1))
@@ -135,7 +135,12 @@ fi
 if [ "$OPT_RUN" = "1" ]; then
 	cd build
 	if [ "$OPT_HEADLESS" = "1" ]; then
-		./hxtest 2>&1 | grep -E '\[  PASSED  \]|\[  FAILED  \]|FAILED TESTS'
+		if ./hxtest > console_output.txt 2>&1; then
+			grep -E '\[  PASSED  \]|\[  FAILED  \]|FAILED TESTS' console_output.txt
+		else
+			cat console_output.txt
+			exit 1
+		fi
 	else
 		./hxtest
 	fi

@@ -41,10 +41,10 @@
 
 /// `int LIBHATCHET_VER` - One digit major, and two digit minor and patch
 /// versions.
-#define LIBHATCHET_VER 14503
+#define LIBHATCHET_VER 14504
 
 /// `LIBHATCHET_TAG` - Major, minor and patch version tag name.
-#define LIBHATCHET_TAG "v1.45.3"
+#define LIBHATCHET_TAG "v1.45.4"
 
 #if !defined HX_HARDENING_MODE
 /// `HX_HARDENING_MODE` - Library hardening level. See the README.md for levels.
@@ -73,7 +73,7 @@
 /// meaning of `0` in pointer context as a null pointer of the expected type.
 /// However they do not define whether `NULL` is `0` or `((void*)0)`. `hxnull`
 /// fills that gap by having an unambiguous type. See `hxnullptr`/`hxnullptr_t`
-/// if you need a `std::nullptr` replacement.
+/// if you need a `std::nullptr_t` replacement.
 #define hxnull 0
 
 #include "hxsettings.h"

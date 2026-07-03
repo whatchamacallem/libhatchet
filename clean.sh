@@ -3,6 +3,8 @@
 # SPDX-License-Identifier: MIT
 # This file is licensed under the terms of the LICENSE.md file.
 
+set -eu
+
 # Nukes the files in .gitignore.
 git clean -Xdf
 

@@ -53,7 +53,7 @@ http.server.HTTPServer(('', 9876), Handler).serve_forever()
 
 	# Launch Chrome if it is installed.
 	if which google-chrome; then
-		google-chrome http://0.0.0.0:9876/ >/dev/null 2>&1;
+		google-chrome http://0.0.0.0:9876/ >/dev/null 2>&1 &
 	fi
 
 	# Wait for the web server. Kill its process group when interrupted (Ctrl-C).

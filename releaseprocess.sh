@@ -36,7 +36,8 @@ fi
 
 set -o xtrace
 
-if ! git diff --quiet || ! git diff --cached --quiet; then
+if ! git diff --quiet || ! git diff --cached --quiet \
+    || [ -n "$(git ls-files --others --exclude-standard)" ]; then
     git add .
     git commit -m "$BRANCH $TAG"
 fi

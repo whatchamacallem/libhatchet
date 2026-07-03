@@ -123,6 +123,7 @@ else()
 	endif()
 
 	# Use CMake to check that the tests are enumerable.
+	enable_testing()
 	include(GoogleTest)
 	gtest_discover_tests(hxtest DISCOVERY_TIMEOUT 60)
 endif()

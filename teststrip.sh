@@ -61,7 +61,12 @@ strip -o hxtest-strip --strip-unneeded hxtest
 if [ "${1:-}" != "--headless" ]; then
     ./hxtest-strip
 else
-    ./hxtest-strip 2>&1 | grep -E '\[  PASSED  \]|\[  FAILED  \]|FAILED TESTS'
+    if ./hxtest-strip > console_output.txt 2>&1; then
+        grep -E '\[  PASSED  \]|\[  FAILED  \]|FAILED TESTS' console_output.txt
+    else
+        cat console_output.txt
+        exit 1
+    fi
 fi
 
 cd ..

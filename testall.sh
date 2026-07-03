@@ -33,8 +33,9 @@ fi
 # testing should be possible without using internal symbols. Symbols ending with
 # an underscore are not intended to be used externally and may change without
 # notice.
-if grep -nE '(^|[^[:alnum:]_])[[:alpha:]_][[:alnum:]_]*[[:alnum:]]_([^[:alnum:]_]|$)' test/*.cpp >&2; then
-	echo "error: Alphanumeric sequences ending with '_' are not allowed in test/*.cpp."
+if grep -nE '(^|[^[:alnum:]_])[[:alpha:]_][[:alnum:]_]*[[:alnum:]]_([^[:alnum:]_]|$)' \
+		test/*.c test/*.cpp test/*.h test/*.hpp test/*.inl >&2; then
+	echo "error: Alphanumeric sequences ending with '_' are not allowed in the test directory."
 	exit 1
 fi
 
@@ -42,21 +43,23 @@ fi
 # "test". This makes it clear in different messages whether a symbol is from the
 # test suite or the library. Use a comment like "// hxtest" to disable this
 # check.
-if grep -nP '\b(class|struct)\b' test/*.cpp | grep -Pv '^[^:]*:[^:]*:.*(?=.*hx)(?=.*test)' >&2; then
-	echo "error: Class/struct definitions in test/*.cpp must contain both 'hx' and 'test'."
+if grep -nP '\b(class|struct)\b' test/*.c test/*.cpp test/*.h test/*.hpp test/*.inl \
+		| grep -Pv '^[^:]*:[^:]*:.*(?=.*hx)(?=.*test)' >&2; then
+	echo "error: Class/struct definitions in the test directory must contain both 'hx' and 'test'."
 	exit 1
 fi
 
 # Some keywords are implemented when the standard library is not available.
 # These are not.
 KEYWORDS='(^|[^[:alnum:]_])(typeid|nullptr|co_await|co_yield|co_return|throw)([^[:alnum:]_]|$)'
-if grep -nEHIR --include='*.cpp' --include='*.hpp' "$KEYWORDS" include src test >&2; then
+if grep -nEHIR --include='*.cpp' --include='*.h' --include='*.hpp' --include='*.inl' \
+		"$KEYWORDS" include src test >&2; then
 	echo "error: C++ keywords must not depend on the C++ standard library."
 	exit 1
 fi
 
 # Check for stray CRLF.
-if file $(git ls-files) | grep CRLF; then
+if git ls-files -z | xargs -0 file | grep CRLF; then
 	printf 'error: CRLF line ending found. Fix with: sed -i %ss/\\r//%s <file>\n' "'" "'"
 	exit 1
 fi

@@ -14,7 +14,7 @@ ARCHIVE="$PROJECT-$DATE.git.txz"
 if [ "$#" -gt 1 ] || { [ "$#" -eq 1 ] && [ "${1#-}" != "$1" ]; }; then
 	echo "$SCRIPT_NAME [destination-directory]"
 	echo "Will create $ARCHIVE in the destination-directory if"
-	echo "provided, otherwise ~/Backup/ if it exists and in ~/ otherwise. Restores all"
+	echo "provided, otherwise ~/Backups/ if it exists and in ~/ otherwise. Restores all"
 	echo "files if $0 is the only file in the directory."
 	exit 1
 fi
@@ -31,7 +31,7 @@ if [ "$(command ls)" = "$SCRIPT_NAME" ]; then
 	git restore .
 	echo "Extracted all files in $PROJECT."
 
-	FS_TYPE=$(stat -f -c "%T" . 2>/dev/null)
+	FS_TYPE=$(stat -f -c "%T" . 2>/dev/null) || FS_TYPE=""
 	if [ "$FS_TYPE" = "v9fs" ] || [ "$FS_TYPE" = "fuseblk" ] || [ "$FS_TYPE" = "ntfs" ]; then
 		echo "Windows detected. Setting config core.fileMode false."
 		git config core.fileMode false

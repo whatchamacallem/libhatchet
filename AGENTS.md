@@ -19,11 +19,12 @@ correct. Do not enshrine bugs in tests or documentation.
 
 Do not add features or functionality that has not been explicitly requested. If
 additional functionality is advisable present the user with a numbered list.
-Always number separate items in any analysis so they are easy referenced.
+Always number separate items in any analysis so they are easily referenced.
 
-Do not create or modify git commits unless asked. Assume git commits indicate
-intent instead of being in error. Make a checklist for any multi-step task. E.g.
-when a change touches two different places.
+Do not create or modify git commits unless asked. Assume committed work
+indicates intent instead of being in error, while uncommitted changes may still
+be exploratory. Make a checklist for any multi-step task. E.g. when a change
+touches two different places.
 
 If the prompt is only an error message or warning assume it is a request to have
 the error fixed.
@@ -52,9 +53,10 @@ not allowed. The rules are only checked by `testcmake.sh` and are not checked by
 `vscode`. Declare local variables `const` when they are not modified. Prefer
 `1000u` to `(size_t)1000`.
 
-Do not add unrequested private helper methods to a class. Except prefer
-delegating constructors over repeating field initializers. Do not write code that requires
-unnecessary traversal of data structures in the debugger watch window.
+Do not add unrequested private helper methods to a class. However, prefer
+delegating constructors over repeating field initializers. Do not write code
+that requires unnecessary traversal of data structures in the debugger watch
+window.
 
 Do not use defensive programming or guard against mistakes. Never implement
 hypothetical safety guarantees. Unintended use cases need to be identified with
@@ -87,8 +89,8 @@ copy may be significant.
 ## Inline Files
 
 Create a new `detail/*.inl` for any new class that has its own `.hpp` header.
-When there is an `.inl` file, create out of line definitions for all member
-functions that do not fit on a single line within 100 chars.
+When there is an `.inl` file, create out of line definitions for all methods
+that do not fit on a single line within 100 chars.
 
 ## Naming
 
@@ -101,12 +103,12 @@ code and template metaprogramming. Never use the word "member" and instead use
 Classes, structs and functions begin with `hx` and not `hx_`. Template
 parameters are `snake_case` and end with `_t_`. `using` statements may publish
 template parameters and other types with an `_t` suffix (in violation of POSIX
-chapter 2, section 2.2.2). Function parameters and private fields do not begin
-with `hx` and end with an underscore. Private fields begin with `m_`. Global
-variables start with `hxg_` and static or anonymous namespace variables start
-with `hxs_`. Prefix calls to the C standard library with `::` to indicate they
-are in the global namespace. Use `src_` and `dst_` for source and destination
-iterators.
+chapter 2, section 2.2.2). Function parameters and private fields end with an
+underscore and do not begin with `hx`. Private fields also begin with `m_`.
+Global variables start with `hxg_` and static or anonymous namespace variables
+start with `hxs_`. Prefix calls to the C standard library with `::` to indicate
+they are in the global namespace. Use `src_` and `dst_` for source and
+destination iterators.
 
 Use scoped enums for private symbols and unscoped enums for public symbols.
 Prefix all calls to methods in header files with `this->`.
@@ -172,9 +174,9 @@ build with `debugbuild.sh` without `--run`. Then run GDB in batch mode passing
 (do not use `--gtest_filter`). Use the `--cd` arg to specify the `build`
 directory as the working directory to avoid polluting the unstaged changes. Both
 `hxassert()` and `hxbreakpoint()` will raise `SIGTRAP` and can be added
-temporarily to stop execution at a specific point. Do not look for a core dump
-on WSL as cores are discarded. If `ptrace` is not allowed then make a core dump
-to debug instead.
+temporarily to stop execution at a specific point. Automatic core dumps are
+discarded on WSL, so do not look for one. If `ptrace` is not allowed then
+explicitly generate a core dump to debug instead.
 
 ## Documentation
 

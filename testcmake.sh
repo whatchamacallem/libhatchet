@@ -19,7 +19,7 @@ set -eu
 
 export POSIXLY_CORRECT=1
 
-if [ ! -f build/build.ninja ]; then
+if [ ! -f build/CMakeCache.txt ]; then
 	rm -rf ./build; mkdir ./build
 	if [ "${1:-}" != "--headless" ]; then
 		cmake -S . -B build -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
@@ -28,7 +28,7 @@ if [ ! -f build/build.ninja ]; then
 			|| { echo "cmake failed:"; cat build/testcmake.sh.log; exit 1; }
 	fi
 else
-	echo "Found build/build.ninja..."
+	echo "Found build/CMakeCache.txt..."
 fi
 
 if [ "${1:-}" != "--headless" ]; then
