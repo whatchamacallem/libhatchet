@@ -391,7 +391,7 @@ public:
 		// Stay on the right side of the C++ standard by avoiding assumptions
 		// about pointer representations. The parameter is being reinterpreted
 		// twice instead of cast once and reinterpreted back.
-		static_assert(sizeof(void*) == sizeof(parameter_t_*), "Incompatible pointer sizes.");
+		static_assert(sizeof(void*) == sizeof(parameter_t_*), "Incompatible pointer sizes");
 
 		void* reinterpreted_parameter_ = hxnull;
 		::memcpy(&reinterpreted_parameter_, &parameter_, sizeof(void*)); // NOLINT(bugprone-bitwise-pointer-cast)

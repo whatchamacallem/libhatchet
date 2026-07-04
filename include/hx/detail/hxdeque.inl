@@ -156,7 +156,8 @@ void hxdeque<T_, capacity_>::push_front(args_t_&&... args_) noexcept {
 
 template<typename T_, hxsize_t capacity_>
 void hxdeque<T_, capacity_>::reserve(hxsize_t dynamic_capacity_) {
-	hxassert_hard(dynamic_capacity_ > 0 && (dynamic_capacity_ & (dynamic_capacity_ - 1)) == 0,
+	hxassert_hard(dynamic_capacity_ > hxallocator_dynamic_capacity
+		&& (dynamic_capacity_ & (dynamic_capacity_ - 1)) == 0,
 		"invalid_capacity capacity must be a power of 2");
 	this->reserve_storage(dynamic_capacity_);
 }

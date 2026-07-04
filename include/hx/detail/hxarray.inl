@@ -12,15 +12,18 @@ HX_BEGIN_INL_
 
 template<hxarray_concept_ T_, hxsize_t capacity_>
 hxarray<T_, capacity_>::hxarray(void) noexcept {
-	T_* it_ = this->data();
-	for(const T_*const end_ = it_ + capacity_; it_ != end_; ++it_) {
-		::new(it_) T_;
+	hxif_constexpr(capacity_ != hxallocator_dynamic_capacity) {
+		T_* it_ = this->data();
+		for(const T_*const end_ = it_ + capacity_; it_ != end_; ++it_) {
+			::new(it_) T_;
+		}
 	}
 }
 
 template<hxarray_concept_ T_, hxsize_t capacity_>
 hxarray<T_, capacity_>::hxarray(const T_& x_) noexcept {
-	static_assert(capacity_ > 0, "A known capacity is required for value initialization");
+	static_assert(capacity_ > hxallocator_dynamic_capacity,
+		"A known capacity is required for value initialization");
 	T_* hxrestrict it_ = this->data();
 	for(const T_*const end_ = it_ + capacity_; it_ != end_; ++it_) {
 		::new(it_) T_(x_);
@@ -29,13 +32,13 @@ hxarray<T_, capacity_>::hxarray(const T_& x_) noexcept {
 
 template<hxarray_concept_ T_, hxsize_t capacity_>
 hxarray<T_, capacity_>::hxarray(const hxarray& x_) noexcept {
-	const hxsize_t n_ = x_.capacity();
-	hxif_constexpr(capacity_ == 0) {
-		this->reserve_storage(n_);
+	const hxsize_t c_ = x_.capacity();
+	hxif_constexpr(capacity_ == hxallocator_dynamic_capacity) {
+		this->reserve_storage(c_);
 	}
 	const T_* hxrestrict src_ = x_.data();
 	T_* hxrestrict dst_ = this->data();
-	for(const T_*const end_ = dst_ + n_; dst_ != end_; ++dst_, ++src_) {
+	for(const T_*const end_ = dst_ + c_; dst_ != end_; ++dst_, ++src_) {
 		::new(dst_) T_(*src_);
 	}
 }
@@ -43,7 +46,7 @@ hxarray<T_, capacity_>::hxarray(const hxarray& x_) noexcept {
 template<hxarray_concept_ T_, hxsize_t capacity_>
 hxarray<T_, capacity_>::hxarray(hxarray&& x_) noexcept {
 	static_assert(capacity_ == hxallocator_dynamic_capacity,
-		"hxallocator_dynamic_capacity required for temporaries.");
+		"hxallocator_dynamic_capacity required for temporaries");
 	::memcpy(static_cast<void*>(this), &x_, sizeof x_); // NOLINT(bugprone-undefined-memory-manipulation)
 	::memset(static_cast<void*>(&x_), 0x00, sizeof x_);
 }
@@ -51,8 +54,9 @@ hxarray<T_, capacity_>::hxarray(hxarray&& x_) noexcept {
 template<hxarray_concept_ T_, hxsize_t capacity_>
 template<typename other_value_t_, hxsize_t array_length_>
 hxarray<T_, capacity_>::hxarray(const other_value_t_(&array_)[array_length_]) noexcept {
-	static_assert(capacity_ == 0 || capacity_ == array_length_, "array_length mismatch");
-	hxif_constexpr(capacity_ == 0) {
+	static_assert(capacity_ == hxallocator_dynamic_capacity
+		|| capacity_ == array_length_, "array_length mismatch");
+	hxif_constexpr(capacity_ == hxallocator_dynamic_capacity) {
 		this->reserve_storage(array_length_);
 	}
 	const other_value_t_* hxrestrict src_ = array_ + 0;
@@ -65,10 +69,8 @@ hxarray<T_, capacity_>::hxarray(const other_value_t_(&array_)[array_length_]) no
 template<hxarray_concept_ T_, hxsize_t capacity_>
 template<typename other_value_t_>
 hxarray<T_, capacity_>::hxarray(std::initializer_list<other_value_t_> x_) noexcept {
-	hxassert_hard(capacity_ == 0 || capacity_ == x_.size(), "array_length mismatch");
-	hxif_constexpr(capacity_ == 0) {
-		this->reserve_storage(static_cast<hxsize_t>(x_.size()));
-	}
+	// Will assert on a size mismatch.
+	this->reserve_storage(static_cast<hxsize_t>(x_.size()));
 	const other_value_t_* hxrestrict src_ = x_.begin();
 	T_* hxrestrict dst_ = this->data();
 	for(const T_*const end_ = dst_ + x_.size(); dst_ != end_; ++dst_, ++src_) {
@@ -96,13 +98,15 @@ void hxarray<T_, capacity_>::operator=(const other_value_t_(&array_)[array_lengt
 
 template<hxarray_concept_ T_, hxsize_t capacity_>
 const T_& hxarray<T_, capacity_>::operator[](hxsize_t index_) const {
-	hxassert_hard(static_cast<size_t>(index_) < static_cast<size_t>(this->capacity()), "invalid_index %zu", index_);
+	hxassert_hard(static_cast<size_t>(index_) < static_cast<size_t>(this->capacity()),
+		"invalid_index %zu", index_);
 	return this->data()[index_];
 }
 
 template<hxarray_concept_ T_, hxsize_t capacity_>
 T_& hxarray<T_, capacity_>::operator[](hxsize_t index_) {
-	hxassert_hard(static_cast<size_t>(index_) < static_cast<size_t>(this->capacity()), "invalid_index %zu", index_);
+	hxassert_hard(static_cast<size_t>(index_) < static_cast<size_t>(this->capacity()),
+		"invalid_index %zu", index_);
 	return this->data()[index_];
 }
 
@@ -154,18 +158,16 @@ template<hxarray_concept_ T_, hxsize_t capacity_>
 template<typename iterator_t_>
 void hxarray<T_, capacity_>::assign(iterator_t_ begin_, iterator_t_ end_) noexcept {
 	hxassertmsg(!(end_ < begin_), "invalid_range");
-	const hxsize_t n_ = static_cast<hxsize_t>(end_ - begin_);
-	hxassert_hard(this->capacity() == 0 || this->capacity() == n_, "array_length mismatch");
-	hxif_constexpr(capacity_ == 0) {
+	hxif_constexpr(capacity_ == hxallocator_dynamic_capacity) {
 		if(this->capacity() == 0) {
-			this->reserve_storage(n_);
+			this->reserve_storage(static_cast<hxsize_t>(end_ - begin_));
 			for(T_* hxrestrict dst_ = this->data(); begin_ != end_; ++dst_, ++begin_) {
 				::new(dst_) T_(*begin_);
 			}
 			return;
 		}
 	}
-	for(T_* hxrestrict dst_ = this->data(); begin_ != end_; dst_++, begin_++) {
+	for(T_* hxrestrict dst_ = this->data(); begin_ != end_; ++begin_, ++dst_) {
 		*dst_ = *begin_;
 	}
 }
@@ -174,6 +176,7 @@ void hxarray<T_, capacity_>::assign(iterator_t_ begin_, iterator_t_ end_) noexce
 template<hxarray_concept_ T_, hxsize_t capacity_>
 template<typename range_t_>
 void hxarray<T_, capacity_>::assign_range(range_t_& range_) noexcept {
+	// Sorry, hxbegin and hxend are not in use.
 	this->assign(range_.begin(), range_.end());
 }
 
@@ -181,24 +184,22 @@ template<hxarray_concept_ T_, hxsize_t capacity_>
 template<typename range_t_>
 requires(!hxis_lvalue_reference<range_t_>::value)
 void hxarray<T_, capacity_>::assign_range(range_t_&& range_) noexcept {
-	hxif_constexpr(capacity_ == 0) {
+	// Sorry, hxbegin and hxend are not in use.
+	auto begin_ = range_.begin();
+	auto end_ = range_.end();
+	hxassertmsg(!(end_ < begin_), "invalid_range");
+	hxif_constexpr(capacity_ == hxallocator_dynamic_capacity) {
 		if(this->capacity() == 0) {
-			const hxsize_t n_ = static_cast<hxsize_t>(range_.end() - range_.begin());
-			this->reserve_storage(n_);
-			T_* hxrestrict dst_ = this->data();
-			for(auto it_ = range_.begin(), rend_ = range_.end(); it_ != rend_; ++it_, ++dst_) {
-				::new(dst_) T_(hxmove(*it_));
+			this->reserve_storage(static_cast<hxsize_t>(end_ - begin_));
+			for(T_* hxrestrict dst_ = this->data(); begin_ != end_; ++dst_, ++begin_) {
+				::new(dst_) T_(hxmove(*begin_));
 			}
 			return;
 		}
 	}
-	T_* dst_ = this->data();
-	const T_*const end_ = this->data() + this->capacity();
-	for(auto it_ = range_.begin(), rend_ = range_.end(); it_ != rend_; ++it_, ++dst_) {
-		hxassertmsg(dst_ != end_, "array_length mismatch");
-		*dst_ = hxmove(*it_);
+	for(T_* hxrestrict dst_ = this->data(); begin_ != end_; ++begin_, ++dst_) {
+		*dst_ = hxmove(*begin_);
 	}
-	hxassertmsg(dst_ == end_, "array_length mismatch"); (void)end_;
 }
 #endif
 
@@ -221,9 +222,9 @@ hxsize_t hxarray<T_, capacity_>::capacity(void) const {
 
 template<hxarray_concept_ T_, hxsize_t capacity_>
 bool hxarray<T_, capacity_>::equal(const hxarray& x_) const {
-	const hxsize_t n_ = this->capacity();
-	if(n_ != x_.capacity()) { return false; }
-	for(const T_* it0_ = this->data(), *it1_ = x_.data(), *const end_ = it0_ + n_;
+	const hxsize_t c_ = this->capacity();
+	if(c_ != x_.capacity()) { return false; }
+	for(const T_* it0_ = this->data(), *it1_ = x_.data(), *const end_ = it0_ + c_;
 			it0_ != end_; ++it0_, ++it1_) {
 		if(!hxkey_equal(*it0_, *it1_)) {
 			return false;
@@ -308,16 +309,16 @@ void hxarray<T_, capacity_>::insertion_sort(void) noexcept {
 
 template<hxarray_concept_ T_, hxsize_t capacity_>
 bool hxarray<T_, capacity_>::less(const hxarray& x_) const {
-	const hxsize_t n_ = this->capacity();
+	const hxsize_t c_ = this->capacity();
 	const hxsize_t nx_ = x_.capacity();
-	const hxsize_t min_ = n_ < nx_ ? n_ : nx_;
+	const hxsize_t min_ = c_ < nx_ ? c_ : nx_;
 	for(const T_* it0_ = this->data(), *it1_ = x_.data(), *const end_ = it0_ + min_;
 			it0_ != end_; ++it0_, ++it1_) {
 		if(!hxkey_equal(*it0_, *it1_)) {
 			return hxkey_less(*it0_, *it1_);
 		}
 	}
-	return n_ < nx_;
+	return c_ < nx_;
 }
 
 template<hxarray_concept_ T_, hxsize_t capacity_>
@@ -336,13 +337,15 @@ void hxarray<T_, capacity_>::memset(int byte_) {
 template<hxarray_concept_ T_, hxsize_t capacity_>
 void hxarray<T_, capacity_>::reserve(hxsize_t size_,
 		hxsystem_allocator_t allocator_, hxalignment_t alignment_) noexcept {
-	const hxsize_t n_ = this->capacity();
-	hxassert_hard(n_ == 0 || n_ == size_, "reserve can not resize");
+	const hxsize_t c_ = this->capacity();
 	this->reserve_storage(size_, allocator_, alignment_);
-	if(n_ == 0) {
-		T_* it_ = this->data();
-		for(const T_*const end_ = it_ + size_; it_ != end_; ++it_) {
-			::new(it_) T_;
+	hxif_constexpr(capacity_ == hxallocator_dynamic_capacity) {
+		if(c_ == 0) {
+			T_* it_ = this->data();
+			for(const T_*const end_ = it_ + size_; it_ != end_; ++it_) {
+				// Does not zero-fill.
+				::new(it_) T_;
+			}
 		}
 	}
 }

@@ -37,7 +37,7 @@ hxvector<T_, capacity_>::hxvector(const hxvector<T_, capacity_x_>& x_) noexcept 
 template<hxvector_concept_ T_, hxsize_t capacity_>
 hxvector<T_, capacity_>::hxvector(hxvector&& x_) noexcept {
 	static_assert(capacity_ == hxallocator_dynamic_capacity,
-		"hxallocator_dynamic_capacity required for temporaries.");
+		"hxallocator_dynamic_capacity required for temporaries");
 	::memcpy(static_cast<void*>(this), &x_, sizeof x_); // NOLINT(bugprone-undefined-memory-manipulation)
 	::memset(static_cast<void*>(&x_), 0x00, sizeof x_);
 }
@@ -575,16 +575,18 @@ T_& hxvector<T_, capacity_>::push_heap(ref_t_&& arg_) noexcept {
 template<hxvector_concept_ T_, hxsize_t capacity_>
 void hxvector<T_, capacity_>::reserve(hxsize_t size_, hxsystem_allocator_t allocator_,
 		hxalignment_t alignment_) {
-	this->reserve_storage(size_, allocator_, alignment_);
-	if(m_end_ == hxnull) {
-		m_end_ = this->data();
+	if(size_ > this->capacity()) {
+		// reserve_storage asserts unallocated or size is equivalent.
+		this->reserve_storage(size_, allocator_, alignment_);
+		if(m_end_ == hxnull) {
+			m_end_ = this->data();
+		}
 	}
 }
 
 template<hxvector_concept_ T_, hxsize_t capacity_>
 void hxvector<T_, capacity_>::resize(hxsize_t size_) noexcept {
 	this->reserve(size_);
-	hxassert_hard(size_ <= this->capacity(), "stack_overflow");
 	T_* it_ = m_end_;
 	T_*const end_ = this->data() + size_;
 	while(it_ < end_) {
@@ -599,7 +601,6 @@ void hxvector<T_, capacity_>::resize(hxsize_t size_) noexcept {
 template<hxvector_concept_ T_, hxsize_t capacity_>
 void hxvector<T_, capacity_>::resize(hxsize_t size_, const T_& x_) noexcept {
 	this->reserve(size_);
-	hxassert_hard(size_ <= this->capacity(), "stack_overflow");
 	T_* hxrestrict it_ = m_end_;
 	T_*const end_ = this->data() + size_;
 	while(it_ < end_) {

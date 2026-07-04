@@ -369,7 +369,7 @@
 
 #if HX_CPLUSPLUS
 // HX_USE_* feature test flags must not be empty as that is evaluated as 0.
-#define HX_CHECK_USE_(x_) static_assert(HX_QUOTE(x_)[0] != 0, #x_ " must not be empty.");
+#define HX_CHECK_USE_(x_) static_assert(HX_QUOTE(x_)[0] != 0, #x_ " must not be empty");
 HX_CHECK_USE_(HX_PROVIDE_NEW_DELETE)
 HX_CHECK_USE_(HX_TEST_ERROR_HANDLING)
 HX_CHECK_USE_(HX_USE_CONSOLE)

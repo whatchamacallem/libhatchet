@@ -126,7 +126,7 @@ public:
 	hxattr_nodiscard hxconstexpr bool test(size_t pos_) const;
 
 private:
-	static_assert(bit_count_ > 0, "hxbitset requires bit_count > 0.");
+	static_assert(bit_count_ > 0, "hxbitset requires bit_count > 0");
 	static hxinline_constexpr size_t s_bits_per_word_ = sizeof(size_t) * 8u;
 	static hxinline_constexpr size_t s_log2_bits_per_word_ = (s_bits_per_word_ > 32u) ? 6u : 5u;
 	static hxinline_constexpr size_t s_bit_mask_ = s_bits_per_word_ - 1u;

@@ -31,7 +31,7 @@ inline hxcycles_t hxtime_sample_cycles(void) {
 #elif defined __x86_64__ || defined __i386__ || defined _M_X64 || defined _M_IX86
 	cycles_ = __rdtsc();
 #else
-static_assert(0, "Implement hxtime_sample_cycles.");
+static_assert(0, "Implement hxtime_sample_cycles");
 #endif
 	return static_cast<hxcycles_t>(cycles_);
 }

@@ -107,7 +107,7 @@ private:
 template<typename T_, typename deleter_t_>
 class hxptr<T_[], deleter_t_> {
 public:
-	static_assert(sizeof(T_) == 0, "hxptr does not support array types.");
+	static_assert(sizeof(T_) == 0, "hxptr does not support array types");
 };
 
 /// `hxmake_ptr<T, allocator, align>(args...)` - Allocates and constructs an

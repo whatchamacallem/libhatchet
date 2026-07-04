@@ -84,7 +84,7 @@ inline hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capacity_>::hxflat_ma
 template<typename key_t_, typename mapped_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
 inline hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capacity_>::hxflat_map(hxflat_map&& x_) noexcept {
 	static_assert(capacity_ == hxallocator_dynamic_capacity,
-		"hxallocator_dynamic_capacity required for temporaries.");
+		"hxallocator_dynamic_capacity required for temporaries");
 	::memcpy(static_cast<void*>(this), &x_, sizeof x_); // NOLINT(bugprone-undefined-memory-manipulation)
 	::memset(static_cast<void*>(&x_), 0x00, sizeof x_);
 }
@@ -336,7 +336,6 @@ inline auto hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capacity_>::lowe
 template<typename key_t_, typename mapped_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
 inline void hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capacity_>::reserve(hxsize_t cap_,
 		hxsystem_allocator_t allocator_, hxalignment_t alignment_) noexcept {
-	hxassertmsg(m_size_ == 0, "reserve after insert");
 	m_keys_.reserve_storage(cap_, allocator_, alignment_);
 	m_values_.reserve_storage(cap_, allocator_, alignment_);
 }

@@ -13,7 +13,7 @@ HX_BEGIN_INL_
 template<size_t bit_count_>
 inline hxconstexpr hxbitset<bit_count_>::hxbitset(size_t val_) {
 	static_assert(bit_count_ == s_bits_per_word_,
-		"hxbitset(size_t) requires bit_count_ == sizeof(size_t) * 8.");
+		"hxbitset(size_t) requires bit_count_ == sizeof(size_t) * 8");
 	m_data_[0] = val_;
 }
 

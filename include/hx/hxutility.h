@@ -279,7 +279,7 @@ hxattr_nodiscard constexpr T_ hxclamp(T_ x_, T_ minimum_, T_ maximum_) {
 /// This is the `T&&` version of hxforward<T>.
 template<typename T_>
 constexpr T_&& hxforward(hxremove_reference_t<T_>&& x_) {
-	static_assert(!hxis_lvalue_reference<T_>::value, "T must be a `T&&` reference.");
+	static_assert(!hxis_lvalue_reference<T_>::value, "T must be a `T&&` reference");
 	return static_cast<T_&&>(x_);
 }
 
@@ -316,7 +316,7 @@ constexpr hxremove_reference_t<T_>&& hxmove(T_&& t_) {
 template<typename T_>
 hxconstexpr void hxswap(T_& x_, T_& y_) {
 	// Provides an optimization hint.
-	hxassertmsg(&x_ != &y_, "hxswap No swapping with self.");
+	hxassertmsg(&x_ != &y_, "hxswap No swapping with self");
 	T_ t_(hxmove(x_));
 	x_ = hxmove(y_);
 	y_ = hxmove(t_);
@@ -329,7 +329,7 @@ hxconstexpr void hxswap(T_& x_, T_& y_) {
 /// - `y` : Second `T&`.
 template<typename T_>
 void hxswap_memcpy(T_& x_, T_& y_) {
-	hxassertmsg(&x_ != &y_, "hxswap_memcpy No swapping with self.");
+	hxassertmsg(&x_ != &y_, "hxswap_memcpy No swapping with self");
 	char t_[sizeof x_];
 	::memcpy(t_, &y_, sizeof x_); // NOLINT(bugprone-undefined-memory-manipulation)
 	::memcpy(static_cast<void*>(&y_), &x_, sizeof x_); // NOLINT(bugprone-undefined-memory-manipulation)

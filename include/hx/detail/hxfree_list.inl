@@ -12,7 +12,7 @@ HX_BEGIN_INL_
 
 template<hxfree_list_concept_ T_, hxsize_t capacity_>
 hxfree_list<T_, capacity_>::hxfree_list(void) noexcept {
-	hxif_constexpr(capacity_ > 0) {
+	hxif_constexpr(capacity_ > hxallocator_dynamic_capacity) {
 		this->enqueue_all_(capacity_);
 	}
 	else {
@@ -24,7 +24,7 @@ hxfree_list<T_, capacity_>::hxfree_list(void) noexcept {
 template<hxfree_list_concept_ T_, hxsize_t capacity_>
 hxfree_list<T_, capacity_>::hxfree_list(hxfree_list&& x_) noexcept {
 	static_assert(capacity_ == hxallocator_dynamic_capacity,
-		"hxallocator_dynamic_capacity required for temporaries.");
+		"hxallocator_dynamic_capacity required for temporaries");
 	::memcpy(static_cast<void*>(this), &x_, sizeof x_); // NOLINT(bugprone-undefined-memory-manipulation)
 	::memset(static_cast<void*>(&x_), 0x00, sizeof x_);
 }

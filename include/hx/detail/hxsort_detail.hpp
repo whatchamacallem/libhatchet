@@ -64,7 +64,7 @@ void hxmake_heap_(iterator_t_ begin_, iterator_t_ end_, const less_t_& less_) {
 template<typename iterator_t_, typename less_t_, typename sort_callback_t_>  hxattr_hot hxconstexpr
 void hxpartition_sort_(iterator_t_ begin_, iterator_t_ end_, const less_t_& less_,
 						const sort_callback_t_& sort_callback_, int depth_) {
-	hxassertmsg((end_ - begin_) > hxpartition_sort_cutoff_, "range_error Use hxinsertion_sort.");
+	hxassertmsg((end_ - begin_) > hxpartition_sort_cutoff_, "range_error Use hxinsertion_sort");
 	const hxsize_t length_ = end_ - begin_;
 
 	// Select 5 pivot values at 1/7th increments. And allow them to be naturally

@@ -219,16 +219,16 @@ public:
 		const node_t_* operator->(void) const;
 
 	private:
+		/// \cond HIDDEN
 		friend class hxhash_table;
 		const_iterator(const hxhash_table* table_);
 		const_iterator(const hxhash_table* table_, node_t_* node_);
-		void next_bucket(void);
+		void next_bucket_(void);
 
 		node_t_** m_next_bucket_;
 		node_t_** m_bucket_end_;
 
 	protected:
-		/// \cond HIDDEN
 		node_t_* m_current_node_;
 		/// \endcond
 	};
@@ -406,7 +406,7 @@ public:
 		const typename node_t_::key_t& key_, args_t_&&... args_) noexcept;
 
 private:
-	static_assert(table_size_bits_ < hxhash_bits, "Hash bits must be [0..hxhash_bits).");
+	static_assert(table_size_bits_ < hxhash_bits, "Hash bits must be [0..hxhash_bits)");
 
 	// Deleted for being bug prone.
 	hxhash_table(const hxhash_table&) = delete;

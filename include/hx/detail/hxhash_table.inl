@@ -44,7 +44,7 @@ inline hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::const_iter
 	, m_bucket_end_(m_next_bucket_ + table_->m_table_.capacity())
 	, m_current_node_(hxnull)
 {
-	this->next_bucket();
+	this->next_bucket_();
 }
 
 template<hxhash_table_concept_ node_t_, typename deleter_t_, bool multi_t_, hxhash_t table_size_bits_>
@@ -62,7 +62,7 @@ inline auto hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::const
 	hxassertmsg(m_current_node_, "invalid_iterator"); // !end
 	m_current_node_ = m_current_node_->hash_next();
 	if(m_current_node_ == hxnull) {
-		this->next_bucket();
+		this->next_bucket_();
 	}
 	return *this;
 }
@@ -70,7 +70,7 @@ inline auto hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::const
 template<hxhash_table_concept_ node_t_, typename deleter_t_, bool multi_t_, hxhash_t table_size_bits_>
 inline bool
 hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::const_iterator::operator==(
-	const const_iterator& x_) const {
+		const const_iterator& x_) const {
 	return m_current_node_ == x_.m_current_node_;
 }
 
@@ -78,24 +78,24 @@ hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::const_iterator::o
 template<hxhash_table_concept_ node_t_, typename deleter_t_, bool multi_t_, hxhash_t table_size_bits_>
 inline bool
 hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::const_iterator::operator!=(
-	const const_iterator& x_) const {
+		const const_iterator& x_) const {
 	return m_current_node_ != x_.m_current_node_;
 }
 #endif
 
 template<hxhash_table_concept_ node_t_, typename deleter_t_, bool multi_t_, hxhash_t table_size_bits_>
 inline void
-hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::const_iterator::next_bucket(void) {
-	hxassertmsg(m_current_node_ == hxnull, "invalid_iterator");
+hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::const_iterator::next_bucket_(void) {
+	hxassertmsg(m_current_node_ == hxnull, "internal_error");
 	node_t_** hxrestrict it_ = m_next_bucket_;
 	while(it_ != m_bucket_end_) {
 		node_t_* const node_ = *it_++;
 		if(node_ != hxnull) {
 			m_current_node_ = node_;
+			m_next_bucket_ = it_;
 			break;
 		}
 	}
-	m_next_bucket_ = it_;
 }
 
 // hxhash_table out-of-line implementations
@@ -176,7 +176,6 @@ inline hxsize_t hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::e
 		const typename node_t_::key_t& key_, const deleter_override_t_& deleter_) noexcept {
 	const hxhash_t hash_ = node_t_::hash_value(key_);
 	node_t_** const head_ = this->get_bucket_head_(hash_);
-
 	hxif_constexpr(!multi_t_) {
 		node_t_* previous_ = hxnull;
 		for(node_t_* node_ = *head_; node_ != hxnull; node_ = node_->hash_next()) {
@@ -199,8 +198,11 @@ inline hxsize_t hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::e
 	}
 	else {
 		node_t_* node_ = *head_;
-		if(node_ == hxnull) { return 0; }
+		if(node_ == hxnull) {
+			return 0;
+		}
 		hxsize_t count_ = 0;
+		// The matching prefix pointed to by the head.
 		if(hxkey_equal(node_->hash_key(), key_)) {
 			do {
 				node_t_* const next_ = node_->hash_next();
@@ -212,7 +214,7 @@ inline hxsize_t hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::e
 			} while(node_ != hxnull && hxkey_equal(node_->hash_key(), key_));
 			*head_ = node_;
 		}
-
+		// Those following a non-matching node.
 		if(node_ != hxnull) {
 			node_t_* previous_ = node_;
 			node_ = node_->hash_next();

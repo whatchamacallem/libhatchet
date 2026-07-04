@@ -44,7 +44,7 @@ private:
 	// Required by the implementation of hxradix_sort_void/hxradix_sort_void11.
 	// Use a pointer or small struct for value_t. Otherwise the implementation
 	// does too much copying.
-	static_assert(sizeof(void*) >= sizeof(value_t_), "value_t size too big.");
+	static_assert(sizeof(void*) >= sizeof(value_t_), "value_t size too big");
 
 	// Internal. Possible conversion routines.
 	void set_(int8_t key_, value_t_ value_) { this->set_(static_cast<int32_t>(key_), value_); }
