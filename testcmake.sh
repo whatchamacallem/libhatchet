@@ -25,7 +25,7 @@ if [ ! -f build/CMakeCache.txt ]; then
 		cmake -S . -B build -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 	else
 		cmake -S . -B build -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON >build/testcmake.sh.log 2>&1 \
-			|| { echo "cmake failed:"; cat build/testcmake.sh.log; exit 1; }
+			|| { echo "error: cmake failed:"; cat build/testcmake.sh.log; exit 1; }
 	fi
 else
 	echo "Found build/CMakeCache.txt..."
@@ -35,7 +35,7 @@ if [ "${1:-}" != "--headless" ]; then
 	ninja -C build
 else
 	ninja -C build >build/testcmake.sh.log 2>&1 \
-		|| { echo "ninja failed:"; cat build/testcmake.sh.log; exit 1; }
+		|| { echo "error: ninja failed:"; cat build/testcmake.sh.log; exit 1; }
 fi
 
 echo "Run build/hxtest with GDB..."
@@ -46,16 +46,36 @@ gdb -batch -x ../test/gdb_printer_test.gdb ./hxtest > testcmake.sh.txt 2>&1
 
 # GDB exits 0 even after SIGTRAP so check for the summary line explicitly.
 if ! grep -qE '\[  PASSED  \]' testcmake.sh.txt; then
-	echo "GDB exited before test suite completed."
+	echo "error: GDB exited prematurely or test suite failed."
 	tail -5 testcmake.sh.txt
 	exit 1
 fi
 
-grep -E '\[  PASSED  \]|\[  FAILED  \]|FAILED TESTS' testcmake.sh.txt
+echo "Check GDB pretty printer output..."
+grep -E '^\$[0-9]+ = ' gdb_printer_output.txt > actual_pretty_print.txt
 
-if [ "${1:-}" != "--headless" ]; then
-	echo "Listing GDB output:"
+cat > expected_pretty_print.txt <<'EOF'
+$1 = [3] hxtest_object = {{moved_from = false, id = -1}, {moved_from = false, id = -2}, {moved_from = false, id = -3}}
+$2 = [4] int = {7, 14, 21, 28}
+$3 = 1010000000000000000000000000000000000000000000000000000000000000001 = {m_data_[0] = 1, m_data_[1] = 5}
+$4 = 1010000000000000000000000000000000000000000000000000000000000000001 = {m_data_[0] = 1, m_data_[1] = 5}
+$5 = [3] hxtest_const_list_node_t = {1, 2, 3}
+$6 = [4/4] int = {-1, 0, 1, 2}
+$7 = [8/8] int = {4, 5, 6, 7, 8, 9, 10, 11}
+$8 = [3/4] int->hxtest_object = {[1] = {moved_from = false, id = 10}, [2] = {moved_from = false, id = 20}, [3] = {moved_from = false, id = 30}}
+$9 = [3/8] int->hxtest_object = {[1] = {moved_from = false, id = 10}, [2] = {moved_from = false, id = 20}, [3] = {moved_from = false, id = 30}}
+$10 = [3/4] hxtest_object = {{moved_from = false, id = 10}, {moved_from = false, id = 20}, {moved_from = false, id = 30}}
+$11 = [3/8] hxtest_object = {{moved_from = false, id = 10}, {moved_from = false, id = 20}, {moved_from = false, id = 30}}
+$12 = [39/32 buckets] hxtest_integer = {57, 61, 39, 67, 55, 75, 60, 48, 45, 72, 64, 56, 59, 66, 42, 63, 62, 44, 53, 73, 58, 71, 52, 40, 46, 68, 65, 41, 51, 76, 70, 77, 49, 69, 43, 54, 47, 74, 50}
+$13 = [3] hxtest_list_node_t = {1, 2, 3}
+$14 = [5/5] hxtest_object = {{moved_from = false, id = 91}, {moved_from = false, id = -2}, {moved_from = false, id = -1}, {moved_from = false, id = -1}, {moved_from = false, id = 99}}
+$15 = [7/8] int = {10, 9, 6, 8, 7, 4, 5}
+EOF
+
+if ! diff -u expected_pretty_print.txt actual_pretty_print.txt; then
 	cat gdb_printer_output.txt
+	echo "error: GDB pretty printer output does not match expected output."
+	exit 1
 fi
 
 cd ..

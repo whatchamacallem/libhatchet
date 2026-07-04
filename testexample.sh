@@ -43,15 +43,16 @@ run_example() {
 		ninja -v -C build
 	fi
 
-	cp "example/example.cfg" ./build/example
+	cp example/example.cfg build
+	ln -sf example/hxexample build/hxtest
 
 	if [ ! -f "$CORRECT" ]; then
 		echo "WARNING: regenerating $CORRECT..."
-		echo exit | (cd ./build/example && ./hxexample) 2>/dev/null > "$CORRECT"
+		echo exit | (cd build && ./hxtest) 2>/dev/null > "$CORRECT"
 	fi
 
-	echo exit | (cd ./build/example && ./hxexample) 2>/dev/null > build/example/hxexample_out.txt
-	if ! diff -u "$CORRECT" build/example/hxexample_out.txt; then
+	echo exit | (cd build && ./hxtest) 2>/dev/null > build/hxexample_out.txt
+	if ! diff -u "$CORRECT" build/hxexample_out.txt; then
 		echo "error: output differs from $CORRECT"
 		exit 1
 	fi
@@ -72,6 +73,6 @@ echo "$CXX meson+ninja with named module..."
 run_example -Dbuild_module=true
 
 echo "Output matches"
-echo "Run hxexample from the build/example directory to test interactively."
+echo "Run hxtest from the build directory to test interactively."
 
 echo "🪓🪓🪓"

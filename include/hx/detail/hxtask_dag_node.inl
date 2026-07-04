@@ -16,7 +16,7 @@ hxtask_dag_node<max_successors_>::hxtask_dag_node(void) :
 
 template<int32_t max_successors_>
 void hxtask_dag_node<max_successors_>::add_successor(hxtask_dag_node* successor_, int priority_) {
-	hxassert_hard(m_successor_count_ < max_successors_, "max_successors");
+	hxassert_always(m_successor_count_ < max_successors_, "max_successors");
 	edge_t_& edge_ = m_successors_[m_successor_count_++]; // NOLINT(clang-analyzer-security.ArrayBound)
 	edge_.node_ = successor_;
 	edge_.priority_ = priority_;

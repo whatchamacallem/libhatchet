@@ -18,6 +18,15 @@
 				"kind": "build",
 				"isDefault": true
 			}
+		},
+		{
+			"type": "shell",
+			"label": "kill stale hxtest",
+			"command": "pkill -9 -f '${workspaceFolder}/build/hxtest' || true",
+			"presentation": {
+				"reveal": "silent"
+			},
+			"problemMatcher": []
 		}
 	],
 	"version": "2.0.0"

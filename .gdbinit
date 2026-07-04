@@ -4,6 +4,7 @@
 
 set print pretty on
 set print thread-events off
+set debuginfod enabled off
 source gdb/hxarray_printer.py
 source gdb/hxbitset_printer.py
 source gdb/hxconstexpr_list_printer.py

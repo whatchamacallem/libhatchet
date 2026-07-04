@@ -17,53 +17,23 @@
 			"MIMode": "gdb",
 			"setupCommands": [
 				{
+					"description": "Change to workspace root to source .gdbinit",
+					"text": "cd ${workspaceFolder}",
+					"ignoreFailures": false
+				},
+				{
+					"description": "Source .gdbinit",
+					"text": "source .gdbinit",
+					"ignoreFailures": false
+				},
+				{
+					"description": "Restore build directory as the working directory",
+					"text": "cd ${workspaceFolder}/build",
+					"ignoreFailures": false
+				},
+				{
 					"description": "Enable pretty printing",
 					"text": "-enable-pretty-printing",
-					"ignoreFailures": false
-				},
-				{
-					"description": "Load hxarray printer",
-					"text": "source ${workspaceFolder}/gdb/hxarray_printer.py",
-					"ignoreFailures": false
-				},
-				{
-					"description": "Load hxbitset printer",
-					"text": "source ${workspaceFolder}/gdb/hxbitset_printer.py",
-					"ignoreFailures": false
-				},
-				{
-					"description": "Load hxconstexpr_list printer",
-					"text": "source ${workspaceFolder}/gdb/hxconstexpr_list_printer.py",
-					"ignoreFailures": false
-				},
-				{
-					"description": "Load hxdeque printer",
-					"text": "source ${workspaceFolder}/gdb/hxdeque_printer.py",
-					"ignoreFailures": false
-				},
-				{
-					"description": "Load hxflat_map printer",
-					"text": "source ${workspaceFolder}/gdb/hxflat_map_printer.py",
-					"ignoreFailures": false
-				},
-				{
-					"description": "Load hxflat_set printer",
-					"text": "source ${workspaceFolder}/gdb/hxflat_set_printer.py",
-					"ignoreFailures": false
-				},
-				{
-					"description": "Load hxhash_table printer",
-					"text": "source ${workspaceFolder}/gdb/hxhash_table_printer.py",
-					"ignoreFailures": false
-				},
-				{
-					"description": "Load hxlist printer",
-					"text": "source ${workspaceFolder}/gdb/hxlist_printer.py",
-					"ignoreFailures": false
-				},
-				{
-					"description": "Load hxvector printer",
-					"text": "source ${workspaceFolder}/gdb/hxvector_printer.py",
 					"ignoreFailures": false
 				},
 				{

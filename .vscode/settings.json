@@ -5,7 +5,6 @@
     "cSpell.ignoreRegExpList": [
         "hx[a-zA-Z0-9]*"
     ],
-
     "cSpell.words": [
         "anyofallof",
         "argtypes",
@@ -47,6 +46,7 @@
         "Dcpp",
         "deadcode",
         "debugbuild",
+        "debuginfod",
         "deleters",
         "demangle",
         "Demangled",

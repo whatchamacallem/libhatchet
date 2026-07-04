@@ -3,7 +3,7 @@
 # This file is licensed under the terms of the LICENSE.md file.
 
 import gdb
-import gdb.printing
+import gdb.printing  # pyright: ignore[reportMissingModuleSource]
 import re
 import traceback
 from typing import Iterator, Optional, Set, Tuple
@@ -95,6 +95,7 @@ class hxconstexpr_list_printer:
 				continue
 			if field.name in self._base_field_names:
 				continue
+			assert field.name is not None
 			yield (field.name, node[field.name])
 
 	def children(self) -> Iterator[Tuple[str, gdb.Value]]:

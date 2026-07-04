@@ -3,7 +3,7 @@
 # This file is licensed under the terms of the LICENSE.md file.
 
 import gdb
-import gdb.printing
+import gdb.printing  # pyright: ignore[reportMissingModuleSource]
 import re
 import traceback
 from typing import Iterator, Optional, Tuple
