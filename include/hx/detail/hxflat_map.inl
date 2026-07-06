@@ -275,6 +275,12 @@ inline auto hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capacity_>::get(
 	return iterator(this, index_ < m_size_ ? index_ : m_size_);
 }
 
+// Fixes gcc + optimizer + sanitizer -Wmaybe-uninitialized bug.
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
+
 template<typename key_t_, typename mapped_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
 inline auto hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capacity_>::insert(
 		const key_t_& key_, const mapped_t_& mapped_) noexcept -> iterator {
@@ -302,6 +308,10 @@ inline auto hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capacity_>::inse
 	}
 	return this->insert_at_(index_, key_, hxmove(mapped_));
 }
+
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 
 template<typename key_t_, typename mapped_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
 template<hxsize_t capacity_x_>

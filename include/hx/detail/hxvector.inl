@@ -541,6 +541,12 @@ T_& hxvector<T_, capacity_>::push_back(args_t_&&... args_) noexcept {
 	return *::new(m_end_++) T_(hxforward<args_t_>(args_)...);
 }
 
+// Fixes gcc + optimizer + sanitizer -Wmaybe-uninitialized bug.
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
+
 template<hxvector_concept_ T_, hxsize_t capacity_>
 template<typename ref_t_>
 T_& hxvector<T_, capacity_>::push_heap(ref_t_&& arg_) noexcept {
@@ -571,6 +577,10 @@ T_& hxvector<T_, capacity_>::push_heap(ref_t_&& arg_) noexcept {
 	*node_ = hxforward<ref_t_>(arg_);
 	return *node_;
 }
+
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 
 template<hxvector_concept_ T_, hxsize_t capacity_>
 void hxvector<T_, capacity_>::reserve(hxsize_t size_, hxsystem_allocator_t allocator_,

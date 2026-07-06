@@ -550,8 +550,8 @@ public:
 	void swap(hxvector& x_) noexcept;
 
 private:
-	void* push_back_unconstructed_(void);
 	void destruct_(T_* begin_, T_* end_) noexcept;
+	void* push_back_unconstructed_(void);
 
 	T_* m_end_;
 };

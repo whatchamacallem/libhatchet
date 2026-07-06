@@ -39,7 +39,7 @@ done
 [ -n "$HX_TARGET" ] || HX_TARGET="$HX_DIR/build/"
 
 # Build artifacts are not retained.
-rm -rf ./build; mkdir ./build && cd ./build
+rm -rf "$(readlink -f build)" build; ln -s "$(mktemp -d)" build && cd build
 
 if [ -z "$HX_HEADLESS" ]; then
     set -o xtrace

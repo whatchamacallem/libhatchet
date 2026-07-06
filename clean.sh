@@ -5,6 +5,8 @@
 
 set -eu
 
+rm -rf "$(readlink -f build)"
+
 # Nukes the files in .gitignore.
 git clean -Xdf
 

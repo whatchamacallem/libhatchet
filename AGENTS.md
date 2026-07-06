@@ -73,9 +73,11 @@ Separate code onto individual lines when it helps step through expressions
 individually in the debugger. Use references instead of pointers when a pointer
 would never be null.
 
-Alphabetize all class methods, keeping operators first. Place the opening brace
-of a function body on the same line as the function signature. When creating a
-new class do not use global operators and use class methods instead.
+Alphabetize all public class methods, keeping operators first. Order all
+protected and private class methods and operators the same way in separate
+blocks following the public one. Place the opening brace of a function body on
+the same line as the function signature. When creating a new class do not use
+global operators and use class methods instead.
 
 When using the C library use C-style headers and not the C++ wrappers around
 them. E.g. use `<math.h>` not `<cmath>`. The goal is to be able to compile

@@ -32,7 +32,7 @@ CORRECT="example/example_correct.txt"
 
 run_example() {
 	# Build artifacts are not retained.
-	rm -rf ./build
+	rm -rf "$(readlink -f build)" build
 	if [ "$HEADLESS" = 1 ]; then
 		meson setup build --buildtype=debug -Dc_args="$C_FLAGS" -Dcpp_args="$CPP_FLAGS" \
 			-Dcpp_link_args="$LINK_FLAGS" -Dbuild_example=true "$@" >/dev/null

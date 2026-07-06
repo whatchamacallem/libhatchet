@@ -57,17 +57,18 @@ if [ "$OPT_HEADLESS" = "0" ] && [ "$OPT_RUN" = "0" ] && [ -z "${CLAUDECODE:-}" ]
 fi
 
 build_hxtest() {
-	# Build artifacts are not retained.
-	rm -rf build; mkdir build
+	# Build artifacts are not retained. Only ccache the normal build.
+	CCACHE="${1:-}"
+	rm -rf "$(readlink -f build)" build; ln -s "$(mktemp -d)" build
 
 	PIDS=""
 	for FILE in test/*.c; do
-		ccache clang $BUILD $ERRORS $FLAGS -Iinclude -std=c17 -c $FILE \
+		$CCACHE clang $BUILD $ERRORS $FLAGS -Iinclude -std=c17 -c $FILE \
 			-o build/$(basename "$FILE" .c).o & PIDS="$PIDS $!"
 	done
 
 	for FILE in src/*.cpp test/*.cpp; do
-		ccache clang++ $BUILD $ERRORS $FLAGS -Iinclude -std=c++23 -fno-exceptions -fno-rtti \
+		$CCACHE clang++ $BUILD $ERRORS $FLAGS -Iinclude -std=c++23 -fno-exceptions -fno-rtti \
 			-c $FILE -o build/$(basename "$FILE" .cpp).o & PIDS="$PIDS $!"
 	done
 
@@ -77,7 +78,7 @@ build_hxtest() {
 		fi
 	done
 
-	ccache clang++ $FLAGS build/*.o -lpthread -lstdc++ -lm -o build/hxtest
+	$CCACHE clang++ $FLAGS build/*.o -lpthread -lstdc++ -lm -o build/hxtest
 }
 
 if [ "$OPT_GRIND" = "1" ]; then
@@ -125,7 +126,7 @@ fi
 
 # Enable as much code as possible for the default build and run.
 BUILD="-DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG -DHX_USE_CONSOLE=2 -DHX_USE_PROFILER=1"
-build_hxtest
+build_hxtest ccache
 
 # Show stats or save tokens.
 if [ "$OPT_HEADLESS" = "0" ] && [ -z "${CLAUDECODE:-}" ]; then

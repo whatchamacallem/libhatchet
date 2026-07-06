@@ -20,7 +20,7 @@ set -eu
 export POSIXLY_CORRECT=1
 
 if [ ! -f build/CMakeCache.txt ]; then
-	rm -rf ./build; mkdir ./build
+	rm -rf "$(readlink -f build)" build; mkdir build
 	if [ "${1:-}" != "--headless" ]; then
 		cmake -S . -B build -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 	else

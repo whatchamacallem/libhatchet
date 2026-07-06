@@ -1,4 +1,4 @@
-build/
-cache/
-docs/
+build
+cache
+docs
 tags

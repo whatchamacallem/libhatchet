@@ -24,8 +24,7 @@ BUILD="-DHX_USE_LIBCXX=0 -DHX_PROVIDE_NEW_DELETE=0 -DHX_HARDENING_MODE=HX_HARDEN
 
 ERRORS="-Wall -Wextra -pedantic-errors -Werror -Wfatal-errors -Wno-error=maybe-uninitialized \
 	-Wcast-qual -Wdisabled-optimization -Wshadow -Wundef -Wconversion -Wdate-time            \
-	-Wmissing-declarations -Wno-c2y-extensions -Wno-maybe-uninitialized                      \
-    -Wno-unknown-warning-option"
+	-Wmissing-declarations -Wno-c2y-extensions -Wno-unknown-warning-option"
 
 # 32-bit MUSL is not tested as it is unsupported on Ubuntu.
 FLAGS="-Os -static -g -ffunction-sections -fdata-sections -ffast-math"
@@ -33,7 +32,7 @@ FLAGS="-Os -static -g -ffunction-sections -fdata-sections -ffast-math"
 HX_DIR=$PWD
 
 # Build artifacts are not retained.
-rm -rf ./build; mkdir ./build && cd ./build
+rm -rf "$(readlink -f build)" build; ln -s "$(mktemp -d)" build && cd build
 
 if [ "${1:-}" != "--headless" ]; then
     set -o xtrace
