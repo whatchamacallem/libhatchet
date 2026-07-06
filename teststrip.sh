@@ -19,11 +19,11 @@ export POSIXLY_CORRECT=1
 
 # Proves test suite can run without non-placement ::new() and ::delete. This is
 # because there may be no general purpose allocator at all.
-BUILD="-DHX_USE_LIBCXX=0 -DHX_PROVIDE_NEW_DELETE=0 -DHX_HARDENING_MODE=HX_HARDENING_MODE_NONE \
-    -DHX_USE_LOGGING=1 -DHX_USE_THREADS=11"
+BUILD="-DHX_HARDENING_MODE=HX_HARDENING_MODE_NONE -DHX_PROVIDE_NEW_DELETE=0 \
+    -DHX_USE_LIBCXX=0 -DHX_USE_LOGGING=1 -DHX_USE_THREADS=11"
 
-ERRORS="-Wall -Wextra -pedantic-errors -Werror -Wfatal-errors -Wno-error=maybe-uninitialized \
-	-Wcast-qual -Wdisabled-optimization -Wshadow -Wundef -Wconversion -Wdate-time            \
+ERRORS="-Wall -Wextra -pedantic-errors -Werror -Wfatal-errors -Wcast-qual   \
+	-Wdisabled-optimization -Wshadow -Wundef -Wconversion -Wdate-time       \
 	-Wmissing-declarations -Wno-c2y-extensions -Wno-unknown-warning-option"
 
 # 32-bit MUSL is not tested as it is unsupported on Ubuntu.
@@ -38,16 +38,19 @@ if [ "${1:-}" != "--headless" ]; then
     set -o xtrace
 fi
 
-musl-gcc $BUILD $ERRORS $FLAGS -I"$HX_DIR/include" \
-	-std=c17 -c "$HX_DIR"/test/*.c
+musl-gcc $BUILD $ERRORS $FLAGS -I"$HX_DIR/include" -std=c17 -c "$HX_DIR"/test/*.c
 
 # Test every supported version of the standard without libc++.
 for VERSION in 11 14 17 20 23; do
 
-# -Wl,--gc-sections and -flto=12 should reduce size.
 musl-gcc $BUILD $ERRORS $FLAGS -I"$HX_DIR/include" -std=c++$VERSION -nostdinc++ \
-    -fno-exceptions -fno-rtti -Wl,--gc-sections -nodefaultlibs -flto=auto \
-	"$HX_DIR"/src/*.cpp "$HX_DIR"/test/*.cpp *.o -lc -lpthread -lm -o hxtest
+    -fno-exceptions -fno-rtti -flto=auto -c "$HX_DIR"/src/*.cpp "$HX_DIR"/test/*.cpp
+
+# -Wno-maybe-uninitialized is passed to the link time optimizer because it has
+# false positives. -Wl,--gc-sections and -flto=12 should reduce size.
+musl-gcc $BUILD $ERRORS -Wno-maybe-uninitialized $FLAGS -std=c++$VERSION -nostdinc++ \
+    -fno-exceptions -fno-rtti -Wl,--gc-sections -nodefaultlibs -flto=auto *.o -lc    \
+    -lpthread -lm -o hxtest
 
 done
 

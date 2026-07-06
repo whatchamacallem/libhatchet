@@ -39,20 +39,15 @@ const double s_example_two_pi_over_3  = 2.09439510239319552;
 const double s_example_four_pi_over_3 = 4.18879020478639098;
 const double s_example_amplitude      = 127.5;
 
-// Handle exiting on SIGINT or by console command.
-hx::hxmutex s_example_exit_mutex;
+void example_notify_sigint(int) {
+	hxexit(EXIT_FAILURE);
+}
+
 bool s_example_exit = false;
 
-// Sets s_example_exit under lock. Without SA_RESTART, SIGINT also interrupts
-// blocking fgets, causing it to return null and break the main loop.
-void example_notify_sigint(int) {
-	const hx::hxunique_lock lock_(s_example_exit_mutex);
-	s_example_exit = true;
-}
 
 // Sets s_example_exit, causing the main loop to break after the current render.
 bool example_exit(void) {
-	const hx::hxunique_lock lock_(s_example_exit_mutex);
 	s_example_exit = true;
 	return true;
 }
@@ -237,11 +232,7 @@ int example_main(void) {
 				break;
 			}
 			if(hx::hxconsole_exec_line(line)) {
-				{
-					const hx::hxunique_lock lock_(s_example_exit_mutex);
-					if(s_example_exit) { break; }
-				}
-
+				if(s_example_exit) { break; }
 				example_render(queue, tasks, *row_storage);
 			}
 			else {
