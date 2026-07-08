@@ -209,7 +209,7 @@ public:
 #if HX_CPLUSPLUS < 202002L // C++20 defaults != from ==.
 		/// Compares two iterators for inequality.
 		/// - `x` : The iterator to compare against.
-		bool operator!=(const const_iterator& x_) const;
+		bool operator!=(const const_iterator& x_) const { return !(*this == x_); }
 #endif
 
 		/// Dereferences the iterator to access the current `node_t`.

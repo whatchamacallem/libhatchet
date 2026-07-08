@@ -217,6 +217,7 @@
         "uart",
         "ubsan",
         "ulonglong",
+        "uncallable",
         "unconstructed",
         "unmatch",
         "unrequested",

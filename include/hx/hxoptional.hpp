@@ -4,7 +4,8 @@
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
 /// \file
-/// An optional value type.
+/// An optional value type. Implements `std::optional<T>`. See `hxref` for a
+/// std::optional<T&> equivalent.
 
 #include "libhatchet.h"
 
@@ -14,6 +15,7 @@
 #endif
 
 #include "hxutility.h"
+#include "hxkey.hpp"
 
 HX_NS_BEGIN_
 
@@ -41,8 +43,9 @@ struct hxnullopt_t {
 hxinline_constexpr hxnullopt_t hxnullopt{0};
 
 /// `hxoptional<T>` - Holds either a value of type `T` or nothing. Implements
-/// `std::optional`. The value is stored in aligned internal storage without
-/// dynamic allocation. A disengaged optional compares equal to `hxnullopt`.
+/// `std::optional`. See `hxref` for a std::optional<T&> equivalent. The value
+/// is stored in aligned internal storage without dynamic allocation. A
+/// disengaged optional compares equal to `hxnullopt`.
 /// - `T` : The contained value type. Must not be a reference or array type.
 template<typename T_>
 class hxoptional {
@@ -68,15 +71,15 @@ public:
 	hxoptional(hxoptional&& other_) noexcept;
 
 	/// Constructs by copying the engaged state and converting the value of
-	/// `other_` to `T_`. `U_` must be convertible to `T_`.
-	/// - `other_` : The `hxoptional` to copy from.
+	/// `other` to `T`. `U` must be convertible to `T`.
+	/// - `other` : The `hxoptional` to copy from.
 	template<typename U_>
 	hxoptional(const hxoptional<U_>& other_) noexcept;
 
 	/// Constructs by moving the engaged state and converting the value of
-	/// `other_` to `T_`. `other_` is left disengaged. `U_` must be
-	/// convertible to `T_`.
-	/// - `other_` : The `hxoptional` to move from.
+	/// `other` to `T`. `other` is left disengaged. `U` must be convertible to
+	/// `T`.
+	/// - `other` : The `hxoptional` to move from.
 	template<typename U_>
 	hxoptional(hxoptional<U_>&& other_) noexcept;
 
@@ -90,7 +93,8 @@ public:
 	/// Destroys the contained value if engaged.
 	~hxoptional(void) { reset(); }
 
-	/// Returns a reference to the contained value. The optional must be engaged.
+	/// Returns a reference to the contained value. The optional must be
+	/// engaged.
 	hxattr_nodiscard T_& operator*(void);
 
 	/// Returns a const reference to the contained value. The optional must be
@@ -122,8 +126,22 @@ public:
 
 	/// Assigns `value` by forwarding, engaging the optional.
 	/// - `value` : The value to assign from. Must be convertible to `T`.
-	template<typename U_=T_, hxenable_if_t<!hxis_same<hxremove_cvref_t<U_>, hxoptional>::value, bool> = true>
+	template<typename U_=T_, hxenable_if_t<
+		!hxis_same<hxremove_cvref_t<U_>, hxoptional>::value &&
+		!hxdetail_::hxis_hxoptional_<hxremove_cvref_t<U_>>::value, bool> = true>
 	hxoptional& operator=(U_&& value_) noexcept;
+
+	/// Copies the engaged state and converts the value of `other` to `T`. `U`
+	/// must be convertible to `T`.
+	/// - `other` : The `hxoptional` to copy from.
+	template<typename U_>
+	hxoptional& operator=(const hxoptional<U_>& other_) noexcept;
+
+	/// Moves the engaged state and converts the value of `other` to `T`.
+	/// `other` is left disengaged. `U` must be convertible to `T`.
+	/// - `other` : The `hxoptional` to move from.
+	template<typename U_>
+	hxoptional& operator=(hxoptional<U_>&& other_) noexcept;
 
 	/// Returns `true` if both optionals are disengaged or both are engaged with
 	/// equal values.
@@ -145,13 +163,29 @@ public:
 
 	/// Returns `true` if this optional is engaged.
 	/// - `nullopt` : The disengaged sentinel.
-	hxattr_nodiscard bool operator!=(hxnullopt_t) const { return m_engaged_; }
+	hxattr_nodiscard bool operator!=(hxnullopt_t nullopt_) const { return !(*this == nullopt_); }
 
 	/// Returns `true` if this optional is disengaged or its value does not
 	/// equal `value`.
 	/// - `value` : The value to compare against.
-	hxattr_nodiscard bool operator!=(const T_& value_) const;
+	hxattr_nodiscard bool operator!=(const T_& value_) const { return !(*this == value_); }
 #endif
+
+	/// Returns the result of calling `callable` with the contained value if
+	/// engaged, otherwise returns a disengaged optional of the same type.
+	/// `callable` must return an `hxoptional`.
+	/// - `callable` : The function to call with the contained value.
+	template<typename function_t_>
+	hxattr_nodiscard auto and_then(function_t_&& callable_)
+		-> hxremove_cvref_t<decltype(hxforward<function_t_>(callable_)(hxdeclval<T_&>()))>;
+
+	/// Returns the result of calling `callable` with the contained value if
+	/// engaged, otherwise returns a disengaged optional of the same type.
+	/// `callable` must return an `hxoptional`.
+	/// - `callable` : The function to call with the contained value.
+	template<typename function_t_>
+	hxattr_nodiscard auto and_then(function_t_&& callable_) const
+		-> hxremove_cvref_t<decltype(hxforward<function_t_>(callable_)(hxdeclval<const T_&>()))>;
 
 	/// Constructs the contained value in place from `args`, destroying any
 	/// previous value.
@@ -162,6 +196,12 @@ public:
 	/// Returns `true` if the optional contains a value.
 	hxattr_nodiscard bool has_value(void) const { return m_engaged_; }
 
+	/// Returns a copy of this optional if engaged, otherwise returns the result
+	/// of calling `callable`. `callable` must return an `hxoptional<T>`.
+	/// - `callable` : The function to call when disengaged.
+	template<typename function_t_>
+	hxattr_nodiscard hxoptional or_else(function_t_&& callable_) const;
+
 	/// Destroys the contained value if engaged and leaves the optional
 	/// disengaged.
 	void reset(void) noexcept;
@@ -171,20 +211,40 @@ public:
 	/// - `other` : The `hxoptional` to swap with.
 	void swap(hxoptional& other_) noexcept;
 
-	/// Returns a reference to the contained value. The optional must be engaged.
+	/// Returns a reference to the contained value. The optional must be
+	/// engaged.
 	hxattr_nodiscard T_& value(void);
 
 	/// Returns a const reference to the contained value. The optional must be
 	/// engaged.
 	hxattr_nodiscard const T_& value(void) const;
 
-	/// Returns the contained value if engaged, otherwise returns `default_value`.
+	/// Returns the contained value if engaged, otherwise returns
+	/// `default_value` forwarded and converted to `T`.
 	/// - `default_value` : The value to return when disengaged.
-	hxattr_nodiscard T_ value_or(const T_& default_value_) const;
+	template<typename U_=T_>
+	hxattr_nodiscard T_ value_or(U_&& default_value_) const;
 
 private:
 	alignas(T_) char m_storage_[sizeof(T_)];
 	bool m_engaged_;
+};
+
+/// `hxoptional<T&>` - Optionals over reference types are not supported. Use
+/// `hxref<T>` instead.
+/// - `T` : The referenced value type.
+template<typename T_>
+class hxoptional<T_&> {
+public:
+	static_assert(sizeof(T_) == 0, "hxoptional does not support reference types");
+};
+
+/// `hxoptional<T&>` - Optionals over pointer types are not supported. Use
+/// `hxref<T>` instead.
+template<typename T_>
+class hxoptional<T_*> {
+public:
+	static_assert(sizeof(T_) == 0, "hxoptional does not support pointer types");
 };
 
 /// `hxmake_optional` - Returns an engaged `hxoptional<hxremove_cvref_t<T>>`
@@ -193,6 +253,24 @@ private:
 template<typename T_>
 hxoptional<hxremove_cvref_t<T_>> hxmake_optional(T_&& value_) {
 	return hxoptional<hxremove_cvref_t<T_>>(hxforward<T_>(value_));
+}
+
+/// `hxmake_optional<T>` - Returns an engaged `hxoptional<T>` constructed in
+/// place by forwarding `args` to the constructor of `T`.
+/// - `args` : Arguments forwarded to the constructor of `T`.
+template<typename T_, typename... args_t_>
+hxoptional<T_> hxmake_optional(args_t_&&... args_) {
+	hxoptional<T_> result_;
+	result_.emplace(hxforward<args_t_>(args_)...);
+	return result_;
+}
+
+/// `hxkey_hash(hxoptional<T>)` - Returns the hash of the contained value if
+/// engaged, otherwise `1u`.
+/// - `opt` : The optional to hash.
+template<typename T_>
+hxattr_nodiscard hxhash_t hxkey_hash(const hxoptional<T_>& opt_) {
+	return opt_.has_value() ? hxkey_hash(*opt_) : hxhash_t{1u};
 }
 
 #include "detail/hxoptional.inl"

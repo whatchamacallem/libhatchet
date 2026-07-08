@@ -93,6 +93,7 @@ export {
 #include "../include/hx/hxprofiler.hpp"
 #include "../include/hx/hxptr.hpp"
 #include "../include/hx/hxradix_sort.hpp"
+#include "../include/hx/hxref.hpp"
 #include "../include/hx/hxrandom.hpp"
 //#include "../include/hx/hxsettings.h"
 #include "../include/hx/hxsort.hpp"

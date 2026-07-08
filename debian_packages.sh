@@ -12,12 +12,12 @@
 
 # Prevent leaking background tasks.
 trap '{ set +o xtrace; } 2> /dev/null
-    trap - 1 2 3 6 15
-    for pid in $(pgrep -g "$$" 2>/dev/null); do
-        [ "$pid" = "$$" ] && continue
-        kill -9 "$pid" 2>/dev/null
-    done
-    exit 1
+	trap - 1 2 3 6 15
+	for pid in $(pgrep -g "$$" 2>/dev/null); do
+		[ "$pid" = "$$" ] && continue
+		kill -9 "$pid" 2>/dev/null
+	done
+	exit 1
 ' 1 2 3 6 15
 
 set -euo pipefail
@@ -53,12 +53,12 @@ separator ---------------------------------------------------------------------
 for CMD in clang cmake ctags doxygen gcc gcovr musl-gcc ninja pgrep python3
 do
 	echo "$CMD --version"
-    $CMD --version
+	$CMD --version
 	separator -----------------------------------------------------------------
 done
 
 if command -v emcc >/dev/null 2>&1; then
-    emcc --version
+	emcc --version
 else
-    echo "error: emcc not found. It must be installed separately." >&2
+	echo "error: emcc not found. It must be installed separately." >&2
 fi

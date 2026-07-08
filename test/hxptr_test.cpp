@@ -283,3 +283,72 @@ TEST(hxptr_test, swap_holds_exact_addresses) {
 	EXPECT_EQ(a.get(), addr_b);
 	EXPECT_EQ(b.get(), addr_a);
 }
+
+TEST(hxptr_test, and_then_engaged_calls_with_referent) {
+	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
+	const hxptr<int> p = hxmake_ptr<int>(3);
+	const hxptr<long> r = p.and_then([](int& v) { return hxmake_ptr<long>(v + 1); });
+	EXPECT_TRUE((bool)r);
+	EXPECT_EQ(*r, 4);
+}
+
+TEST(hxptr_test, and_then_engaged_can_return_null) {
+	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
+	const hxptr<int> p = hxmake_ptr<int>(7);
+	EXPECT_FALSE((bool)p.and_then([](int&) { return hxptr<int>(); }));
+}
+
+TEST(hxptr_test, and_then_null_returns_null_without_calling) {
+	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
+	const hxptr<int> p;
+	bool called = false;
+	const hxptr<long> r = p.and_then([&called](int& v) {
+		// GCOVR_EXCL_START
+		called = true; return hxmake_ptr<long>(v);
+		// GCOVR_EXCL_STOP
+	});
+	EXPECT_FALSE((bool)r);
+	EXPECT_FALSE(called);
+}
+
+TEST(hxptr_test, or_else_engaged_moves_self_out) {
+	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
+	hxs_ptr_test_destructor_count = 0;
+	hxptr<hxtest_ptr_counted_t> p = hxmake_ptr<hxtest_ptr_counted_t>(8);
+	const hxtest_ptr_counted_t* const raw = p.get();
+	bool called = false;
+	const hxptr<hxtest_ptr_counted_t> r = hxmove(p).or_else([&called]() {
+		// GCOVR_EXCL_START
+		called = true; return hxptr<hxtest_ptr_counted_t>();
+		// GCOVR_EXCL_STOP
+	});
+	EXPECT_FALSE(called);
+	EXPECT_EQ(r.get(), raw);
+	EXPECT_EQ(p.get(), (hxtest_ptr_counted_t*)hxnull);
+	EXPECT_EQ(hxs_ptr_test_destructor_count, 0);
+}
+
+TEST(hxptr_test, or_else_null_returns_callable_result) {
+	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
+	hxptr<hxtest_ptr_counted_t> p;
+	bool called = false;
+	const hxptr<hxtest_ptr_counted_t> r = hxmove(p).or_else([&called]() {
+		called = true; return hxmake_ptr<hxtest_ptr_counted_t>(42);
+	});
+	EXPECT_TRUE(called);
+	EXPECT_TRUE((bool)r);
+	EXPECT_EQ(r->value, 42);
+}
+
+TEST(hxptr_test, value_or_engaged_returns_referent) {
+	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
+	const hxptr<int> engaged = hxmake_ptr<int>(3);
+	EXPECT_EQ(engaged.value_or(99), 3);
+	const hxptr<int> zero = hxmake_ptr<int>(0);
+	EXPECT_EQ(zero.value_or(99), 0);
+}
+
+TEST(hxptr_test, value_or_null_returns_default) {
+	const hxptr<int> empty;
+	EXPECT_EQ(empty.value_or(7), 7);
+}

@@ -112,7 +112,7 @@ public:
 #if HX_CPLUSPLUS < 202002L // C++20 defaults != from ==.
 		/// Returns `true` if the iterators point to different nodes.
 		/// - `x` : The iterator to compare against.
-		hxconstexpr bool operator!=(const const_iterator& x_) const;
+		hxconstexpr bool operator!=(const const_iterator& x_) const { return !(*this == x_); }
 #endif
 
 		/// Returns a const reference to the current node.

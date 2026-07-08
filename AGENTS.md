@@ -29,6 +29,9 @@ touches two different places.
 If the prompt is only an error message or warning assume it is a request to have
 the error fixed.
 
+Use the --headless switch when running `test*.sh` scripts if supported whenever
+it will save tokens and not impair debugging.
+
 ## Style Guide
 
 Add code like you are adding weight to an airplane. Use K&R style. Use tabs of
@@ -166,6 +169,11 @@ direct consequence of changes you are making. Do not fix a failing test in a
 manner that defeats the intent of the test except by removing it entirely.
 Prompt the user with a list of failing tests when they are unrelated to your
 work or the intent preserving fix is unclear.
+
+100% line coverage is required by `testcoverage.sh`. Use `// GCOVR_EXCL_START`
+and `// GCOVR_EXCL_STOP` to exclude uncallable lines. Exclusions should only be
+required in test coverage. Deleting unused overloads is better than excluding
+them.
 
 ## Debugging
 

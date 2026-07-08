@@ -5,12 +5,12 @@
 
 # Prevent leaking background tasks.
 trap '{ set +o xtrace; } 2> /dev/null
-    trap - 1 2 3 6 15
-    for pid in $(pgrep -g "$$" 2>/dev/null); do
-        [ "$pid" = "$$" ] && continue
-        kill -9 "$pid" 2>/dev/null
-    done
-    exit 1
+	trap - 1 2 3 6 15
+	for pid in $(pgrep -g "$$" 2>/dev/null); do
+		[ "$pid" = "$$" ] && continue
+		kill -9 "$pid" 2>/dev/null
+	done
+	exit 1
 ' 1 2 3 6 15
 
 set -eu
@@ -42,7 +42,7 @@ done
 rm -rf "$(readlink -f build)" build; ln -s "$(mktemp -d)" build && cd build
 
 if [ -z "$HX_HEADLESS" ]; then
-    set -o xtrace
+	set -o xtrace
 fi
 
 # Uncalled functions are kept because dead code in a template library is missing
@@ -50,28 +50,51 @@ fi
 HX_COVERAGE="--coverage -O0 -g -fprofile-update=atomic -fno-inline -fkeep-static-functions"
 HX_COVERAGE_CXX="$HX_COVERAGE -fno-elide-constructors -fkeep-inline-functions"
 
-gcc -I"$HX_DIR"/include $HX_COVERAGE -DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG        \
-    -std=c99 -Wall -Werror -Wfatal-errors -pthread -c "$HX_DIR"/test/*.c
+gcc -I"$HX_DIR"/include $HX_COVERAGE -DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG		\
+	-std=c99 -Wall -Werror -Wfatal-errors -pthread -c "$HX_DIR"/test/*.c
 
 g++ -I"$HX_DIR"/include $HX_COVERAGE_CXX -DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG    \
-    -DHX_TEST_ERROR_HANDLING=1 -DHX_USE_CONSOLE=2 -DHX_USE_PROFILER=1 -DHX_USE_LIBCXX=0 \
-    -std=c++23 -Wall -Werror -Wextra -Wfatal-errors -fno-exceptions -Wno-c2y-extensions \
-    -Wno-unknown-warning-option -pthread -lpthread -nostdinc++ "$HX_DIR"/src/*.cpp      \
-    "$HX_DIR"/test/*.cpp *.o -o hxtest
+	-DHX_TEST_ERROR_HANDLING=1 -DHX_USE_CONSOLE=2 -DHX_USE_PROFILER=1 -DHX_USE_LIBCXX=0 \
+	-std=c++23 -Wall -Werror -Wextra -Wfatal-errors -fno-exceptions -Wno-c2y-extensions \
+	-Wno-unknown-warning-option -pthread -lpthread -nostdinc++ "$HX_DIR"/src/*.cpp      \
+	"$HX_DIR"/test/*.cpp *.o -o hxtest
 
 if [ -z "$HX_HEADLESS" ]; then
-    echo runtests | ./hxtest help execstdin
+	echo runtests | ./hxtest help execstdin
 else
-    echo runtests | ./hxtest help execstdin > /dev/null 2>&1
+	echo runtests | ./hxtest help execstdin > /dev/null 2>&1
 fi
 
 mkdir -p "$HX_TARGET"
 
-gcovr --gcov-executable "$HX_GCOV" --gcov-object-directory . --exclude-throw-branches   \
-    --exclude-unreachable-branches --exclude-noncode-lines --exclude-lines-by-pattern   \
-    '.*hxassert.*' --exclude-branches-by-pattern '.*hxassert.*' --html-details          \
-    "${HX_TARGET}coverage_details.html" --html-self-contained --txt-metric branch       \
-    --print-summary --fail-under-line 100 --root "$HX_DIR" .
+HX_GCOVR="gcovr --gcov-executable $HX_GCOV --gcov-object-directory . \
+	--exclude-throw-branches --exclude-unreachable-branches --exclude-noncode-lines \
+	--exclude-lines-by-pattern .*hxassert.* --exclude-branches-by-pattern .*hxassert.* \
+	--root $HX_DIR"
+
+if ! $HX_GCOVR --html-details "${HX_TARGET}coverage_details.html" --html-self-contained  \
+	--json coverage.json --txt-metric branch --print-summary --fail-under-line 100 .; then
+	# A script is required because the gcovr text output includes suppressed lines.
+	{ set +o xtrace; } 2> /dev/null
+	python3 - coverage.json <<EOF
+import json, sys
+files = json.load(open(sys.argv[1]))["files"]
+for f in sorted(files, key=lambda x: x["file"]):
+	numbers = sorted(l["line_number"] for l in f["lines"]
+				if l["count"] == 0 and not l.get("gcovr/excluded"))
+	if not numbers:
+		continue
+	spans, start, prev = [], numbers[0], numbers[0]
+	for n in numbers[1:] + [None]:
+		if n == prev + 1:
+			prev = n
+			continue
+		spans.append(str(start) if start == prev else "%d-%d" % (start, prev))
+		start = prev = n
+	print("%s:%s" % (f["file"], ",".join(spans)))
+EOF
+	exit 1
+fi
 
 { set +o xtrace; } 2> /dev/null
 

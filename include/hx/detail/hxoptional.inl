@@ -80,13 +80,48 @@ hxoptional<T_>& hxoptional<T_>::operator=(hxoptional&& other_) noexcept {
 }
 
 template<typename T_>
-template<typename U_, hxenable_if_t<!hxis_same<hxremove_cvref_t<U_>, hxoptional<T_>>::value, bool>>
+template<typename U_, hxenable_if_t<
+	!hxis_same<hxremove_cvref_t<U_>, hxoptional<T_>>::value &&
+	!hxdetail_::hxis_hxoptional_<hxremove_cvref_t<U_>>::value, bool>>
 hxoptional<T_>& hxoptional<T_>::operator=(U_&& value_) noexcept {
 	if (m_engaged_) {
 		*reinterpret_cast<T_*>(&m_storage_) = hxforward<U_>(value_);
 	} else {
 		::new(static_cast<void*>(&m_storage_)) T_(hxforward<U_>(value_));
 		m_engaged_ = true;
+	}
+	return *this;
+}
+
+template<typename T_>
+template<typename U_>
+hxoptional<T_>& hxoptional<T_>::operator=(const hxoptional<U_>& other_) noexcept {
+	if (other_.has_value()) {
+		if (m_engaged_) {
+			*reinterpret_cast<T_*>(&m_storage_) = *other_;
+		} else {
+			::new(static_cast<void*>(&m_storage_)) T_(*other_);
+			m_engaged_ = true;
+		}
+	} else {
+		this->reset();
+	}
+	return *this;
+}
+
+template<typename T_>
+template<typename U_>
+hxoptional<T_>& hxoptional<T_>::operator=(hxoptional<U_>&& other_) noexcept {
+	if (other_.has_value()) {
+		if (m_engaged_) {
+			*reinterpret_cast<T_*>(&m_storage_) = hxmove(*other_);
+		} else {
+			::new(static_cast<void*>(&m_storage_)) T_(hxmove(*other_));
+			m_engaged_ = true;
+		}
+		other_.reset();
+	} else {
+		this->reset();
 	}
 	return *this;
 }
@@ -130,12 +165,25 @@ bool hxoptional<T_>::operator==(const T_& value_) const {
 	return m_engaged_ && (*reinterpret_cast<const T_*>(&m_storage_) == value_);
 }
 
-#if HX_CPLUSPLUS < 202002L // C++20 defaults != from ==.
 template<typename T_>
-bool hxoptional<T_>::operator!=(const T_& value_) const {
-	return !m_engaged_ || (*reinterpret_cast<const T_*>(&m_storage_) != value_);
+template<typename function_t_>
+auto hxoptional<T_>::and_then(function_t_&& callable_)
+		-> hxremove_cvref_t<decltype(hxforward<function_t_>(callable_)(hxdeclval<T_&>()))> {
+	if (m_engaged_) {
+		return hxforward<function_t_>(callable_)(*reinterpret_cast<T_*>(&m_storage_));
+	}
+	return hxnullopt;
 }
-#endif
+
+template<typename T_>
+template<typename function_t_>
+auto hxoptional<T_>::and_then(function_t_&& callable_) const
+		-> hxremove_cvref_t<decltype(hxforward<function_t_>(callable_)(hxdeclval<const T_&>()))> {
+	if (m_engaged_) {
+		return hxforward<function_t_>(callable_)(*reinterpret_cast<const T_*>(&m_storage_));
+	}
+	return hxnullopt;
+}
 
 template<typename T_>
 template<typename... args_t_>
@@ -144,6 +192,15 @@ T_& hxoptional<T_>::emplace(args_t_&&... args_) noexcept {
 	T_* const p_ = ::new(static_cast<void*>(&m_storage_)) T_(hxforward<args_t_>(args_)...);
 	m_engaged_ = true;
 	return *p_;
+}
+
+template<typename T_>
+template<typename function_t_>
+hxoptional<T_> hxoptional<T_>::or_else(function_t_&& callable_) const {
+	if (m_engaged_) {
+		return *this;
+	}
+	return hxforward<function_t_>(callable_)();
 }
 
 template<typename T_>
@@ -186,8 +243,10 @@ const T_& hxoptional<T_>::value(void) const {
 }
 
 template<typename T_>
-T_ hxoptional<T_>::value_or(const T_& default_value_) const {
-	return m_engaged_ ? *reinterpret_cast<const T_*>(&m_storage_) : default_value_;
+template<typename U_>
+T_ hxoptional<T_>::value_or(U_&& default_value_) const {
+	return m_engaged_ ? *reinterpret_cast<const T_*>(&m_storage_)
+		: static_cast<T_>(hxforward<U_>(default_value_));
 }
 
 HX_END_INL_

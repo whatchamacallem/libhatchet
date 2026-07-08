@@ -64,16 +64,14 @@ public:
 	/// - `other` : The `hxptr` to compare against.
 	hxattr_nodiscard hxconstexpr bool operator==(const hxptr& other_) const;
 
-#if HX_CPLUSPLUS < 202002L // C++20 defaults != from ==.
-	/// Returns `true` if this and `other` point to different objects.
-	/// - `other` : The `hxptr` to compare against.
-	hxattr_nodiscard hxconstexpr bool operator!=(const hxptr& other_) const;
-#endif
-
 	/// Returns `true` if the owned pointer is null.
 	hxattr_nodiscard hxconstexpr bool operator==(hxnullptr_t) const;
 
 #if HX_CPLUSPLUS < 202002L // C++20 defaults != from ==.
+	/// Returns `true` if this and `other` point to different objects.
+	/// - `other` : The `hxptr` to compare against.
+	hxattr_nodiscard hxconstexpr bool operator!=(const hxptr& other_) const;
+
 	/// Returns `true` if the owned pointer is non-null.
 	hxattr_nodiscard hxconstexpr bool operator!=(hxnullptr_t) const;
 #endif
@@ -90,9 +88,36 @@ public:
 	/// - `ptr` : The new pointer to own. May be null.
 	hxconstexpr void reset(T_* ptr_=hxnull) noexcept;
 
+	/// Returns the result of calling `callable` with the owned object if
+	/// non-null, otherwise returns a null `hxptr` of the same type. `callable`
+	/// must return an `hxptr`.
+	/// - `callable` : The function to call with the referenced value.
+	template<typename function_t_>
+	hxattr_nodiscard hxconstexpr auto and_then(function_t_&& callable_) const
+		-> hxremove_cvref_t<decltype(hxforward<function_t_>(callable_)(hxdeclval<T_&>()))>;
+
+#if HX_CPLUSPLUS >= 201103L
+	/// Returns this `hxptr` moved out if non-null, otherwise returns the result
+	/// of calling `callable`. `callable` must return an `hxptr`. Rvalue
+	/// qualified because ownership is transferred out of this `hxptr`.
+	/// - `callable` : The function to call when null.
+	template<typename function_t_>
+	hxattr_nodiscard hxconstexpr hxptr or_else(function_t_&& callable_) &&;
+
+	// An lvalue `hxptr` cannot yield ownership without leaving a dangling copy.
+	template<typename function_t_>
+	hxptr or_else(function_t_&& callable_) const& = delete;
+#endif
+
 	/// Exchanges ownership with `other`. Neither pointer is deleted.
 	/// - `other` : The `hxptr` to swap with.
 	hxconstexpr void swap(hxptr& other_) noexcept;
+
+	/// Returns the owned value if non-null, otherwise returns `default_value`
+	/// forwarded and converted to `T`.
+	/// - `default_value` : The value to return when null.
+	template<typename U_=hxremove_cv_t<T_>>
+	hxattr_nodiscard hxconstexpr hxremove_cv_t<T_> value_or(U_&& default_value_) const;
 
 private:
 	hxptr(const hxptr&) = delete;

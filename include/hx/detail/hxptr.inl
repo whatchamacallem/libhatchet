@@ -59,13 +59,6 @@ hxconstexpr bool hxptr<T_, deleter_t_>::operator==(const hxptr& other_) const {
 	return m_ptr_ == other_.m_ptr_;
 }
 
-#if HX_CPLUSPLUS < 202002L // C++20 defaults != from ==.
-template<typename T_, typename deleter_t_>
-hxconstexpr bool hxptr<T_, deleter_t_>::operator!=(const hxptr& other_) const {
-	return m_ptr_ != other_.m_ptr_;
-}
-#endif
-
 template<typename T_, typename deleter_t_>
 hxconstexpr bool hxptr<T_, deleter_t_>::operator==(hxnullptr_t) const {
 	return m_ptr_ == hxnull;
@@ -73,8 +66,34 @@ hxconstexpr bool hxptr<T_, deleter_t_>::operator==(hxnullptr_t) const {
 
 #if HX_CPLUSPLUS < 202002L // C++20 defaults != from ==.
 template<typename T_, typename deleter_t_>
+hxconstexpr bool hxptr<T_, deleter_t_>::operator!=(const hxptr& other_) const {
+	return !(*this == other_);
+}
+
+template<typename T_, typename deleter_t_>
 hxconstexpr bool hxptr<T_, deleter_t_>::operator!=(hxnullptr_t) const {
-	return m_ptr_ != hxnull;
+	return !(*this == hxnullptr);
+}
+#endif
+
+template<typename T_, typename deleter_t_>
+template<typename function_t_>
+hxconstexpr auto hxptr<T_, deleter_t_>::and_then(function_t_&& callable_) const
+		-> hxremove_cvref_t<decltype(hxforward<function_t_>(callable_)(hxdeclval<T_&>()))> {
+	if(m_ptr_ != hxnull) {
+		return hxforward<function_t_>(callable_)(*m_ptr_);
+	}
+	return {};
+}
+
+#if HX_CPLUSPLUS >= 201103L
+template<typename T_, typename deleter_t_>
+template<typename function_t_>
+hxconstexpr hxptr<T_, deleter_t_> hxptr<T_, deleter_t_>::or_else(function_t_&& callable_) && {
+	if(m_ptr_ != hxnull) {
+		return hxmove(*this);
+	}
+	return hxforward<function_t_>(callable_)();
 }
 #endif
 
@@ -98,6 +117,13 @@ template<typename T_, typename deleter_t_>
 hxconstexpr void hxptr<T_, deleter_t_>::swap(hxptr& other_) noexcept {
 	hxswap(m_ptr_, other_.m_ptr_);
 	hxswap(m_deleter_, other_.m_deleter_);
+}
+
+template<typename T_, typename deleter_t_>
+template<typename U_>
+hxconstexpr hxremove_cv_t<T_> hxptr<T_, deleter_t_>::value_or(U_&& default_value_) const {
+	return m_ptr_ != hxnull ? *m_ptr_
+		: static_cast<hxremove_cv_t<T_>>(hxforward<U_>(default_value_));
 }
 
 HX_END_INL_

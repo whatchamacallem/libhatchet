@@ -5,12 +5,12 @@
 
 # Prevent leaking background tasks.
 trap '{ set +o xtrace; } 2> /dev/null
-    trap - 1 2 3 6 15
-    for pid in $(pgrep -g "$$" 2>/dev/null); do
-        [ "$pid" = "$$" ] && continue
-        kill -9 "$pid" 2>/dev/null
-    done
-    exit 1
+	trap - 1 2 3 6 15
+	for pid in $(pgrep -g "$$" 2>/dev/null); do
+		[ "$pid" = "$$" ] && continue
+		kill -9 "$pid" 2>/dev/null
+	done
+	exit 1
 ' 1 2 3 6 15
 
 set -eu
@@ -20,14 +20,14 @@ export POSIXLY_CORRECT=1
 # Proves test suite can run without non-placement ::new() and ::delete. This is
 # because there may be no general purpose allocator at all.
 BUILD="-DHX_HARDENING_MODE=HX_HARDENING_MODE_NONE -DHX_PROVIDE_NEW_DELETE=0 \
-    -DHX_USE_LIBCXX=0 -DHX_USE_LOGGING=1 -DHX_USE_THREADS=11"
+	-DHX_USE_LIBCXX=0 -DHX_USE_LOGGING=1 -DHX_USE_THREADS=11"
 
 ERRORS="-Wall -Wextra -pedantic-errors -Werror -Wfatal-errors -Wcast-qual   \
-	-Wdisabled-optimization -Wshadow -Wundef -Wconversion -Wdate-time       \
+	-Wdisabled-optimization -Wshadow -Wundef -Wconversion -Wdate-time	   \
 	-Wmissing-declarations -Wno-c2y-extensions -Wno-unknown-warning-option"
 
 # 32-bit MUSL is not tested as it is unsupported on Ubuntu.
-FLAGS="-Os -static -g -ffunction-sections -fdata-sections -ffast-math"
+FLAGS="-Os -march=native -static -g -ffunction-sections -fdata-sections -ffast-math"
 
 HX_DIR=$PWD
 
@@ -35,7 +35,7 @@ HX_DIR=$PWD
 rm -rf "$(readlink -f build)" build; ln -s "$(mktemp -d)" build && cd build
 
 if [ "${1:-}" != "--headless" ]; then
-    set -o xtrace
+	set -o xtrace
 fi
 
 musl-gcc $BUILD $ERRORS $FLAGS -I"$HX_DIR/include" -std=c17 -c "$HX_DIR"/test/*.c
@@ -44,13 +44,13 @@ musl-gcc $BUILD $ERRORS $FLAGS -I"$HX_DIR/include" -std=c17 -c "$HX_DIR"/test/*.
 for VERSION in 11 14 17 20 23; do
 
 musl-gcc $BUILD $ERRORS $FLAGS -I"$HX_DIR/include" -std=c++$VERSION -nostdinc++ \
-    -fno-exceptions -fno-rtti -flto=auto -c "$HX_DIR"/src/*.cpp "$HX_DIR"/test/*.cpp
+	-fno-exceptions -fno-rtti -flto=auto -c "$HX_DIR"/src/*.cpp "$HX_DIR"/test/*.cpp
 
 # -Wno-maybe-uninitialized is passed to the link time optimizer because it has
 # false positives. -Wl,--gc-sections and -flto=12 should reduce size.
 musl-gcc $BUILD $ERRORS -Wno-maybe-uninitialized $FLAGS -std=c++$VERSION -nostdinc++ \
-    -fno-exceptions -fno-rtti -Wl,--gc-sections -nodefaultlibs -flto=auto *.o -lc    \
-    -lpthread -lm -o hxtest
+	-fno-exceptions -fno-rtti -Wl,--gc-sections -nodefaultlibs -flto=auto *.o -lc	\
+	-lpthread -lm -o hxtest
 
 done
 
@@ -61,21 +61,21 @@ strip -o hxtest-strip --strip-unneeded hxtest
 { set +o xtrace; } 2> /dev/null
 
 if [ "${1:-}" != "--headless" ]; then
-    ./hxtest-strip
+	./hxtest-strip
 else
-    if ./hxtest-strip > console_output.txt 2>&1; then
-        grep -E '\[  PASSED  \]|\[  FAILED  \]|FAILED TESTS' console_output.txt
-    else
-        cat console_output.txt
-        exit 1
-    fi
+	if ./hxtest-strip > console_output.txt 2>&1; then
+		grep -E '\[  PASSED  \]|\[  FAILED  \]|FAILED TESTS' console_output.txt
+	else
+		cat console_output.txt
+		exit 1
+	fi
 fi
 
 cd ..
 
 # --headless skips all output.
 if [ "${1:-}" != "--headless" ]; then
-    ./listsymbols.sh
+	./listsymbols.sh
 fi
 
 SYMBOLS=$(nm --radix=d --print-size build/hxtest)

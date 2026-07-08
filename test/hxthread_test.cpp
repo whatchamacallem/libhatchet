@@ -318,16 +318,15 @@ TEST(hxthread_test_condition_variable, notify_all_single_waiter) {
 	int waiting = 0;
 	hxthread_test_parameters_t parameters(&mutex, &condition_variable, &ready, &woken,
 		&handshake, &waiting);
+	hxunique_lock lock(mutex);
 	hxthread thread(hxthread_test_func_notify_all, &parameters);
-	{
-		hxunique_lock lock(mutex);
-		while(waiting == 0) {
-			const bool wait_result = handshake.wait(lock);
-			hxassert_always(wait_result, "wait"); (void)wait_result;
-		}
-		ready = true;
-		condition_variable.notify_all();
+	while(waiting == 0) {
+		const bool wait_result = handshake.wait(lock);
+		hxassert_always(wait_result, "wait"); (void)wait_result;
 	}
+	ready = true;
+	condition_variable.notify_all();
+	lock.unlock();
 	thread.join();
 	EXPECT_EQ(woken, 1);
 	EXPECT_EQ(waiting, 1);

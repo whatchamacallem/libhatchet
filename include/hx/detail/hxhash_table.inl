@@ -74,15 +74,6 @@ hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::const_iterator::o
 	return m_current_node_ == x_.m_current_node_;
 }
 
-#if HX_CPLUSPLUS < 202002L // C++20 defaults != from ==.
-template<hxhash_table_concept_ node_t_, typename deleter_t_, bool multi_t_, hxhash_t table_size_bits_>
-inline bool
-hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::const_iterator::operator!=(
-		const const_iterator& x_) const {
-	return m_current_node_ != x_.m_current_node_;
-}
-#endif
-
 template<hxhash_table_concept_ node_t_, typename deleter_t_, bool multi_t_, hxhash_t table_size_bits_>
 inline void
 hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::const_iterator::next_bucket_(void) {

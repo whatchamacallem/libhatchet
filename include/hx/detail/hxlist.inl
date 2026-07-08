@@ -60,14 +60,6 @@ inline bool hxlist<node_t_, deleter_t_>::const_iterator::operator==(const const_
 	return m_current_node_ == x_.m_current_node_;
 }
 
-#if HX_CPLUSPLUS < 202002L // C++20 defaults != from ==.
-template<typename node_t_, typename deleter_t_>
-inline bool hxlist<node_t_, deleter_t_>::const_iterator::operator!=(
-		const const_iterator& x_) const {
-	return m_current_node_ != x_.m_current_node_;
-}
-#endif
-
 // iterator
 
 template<typename node_t_, typename deleter_t_>
