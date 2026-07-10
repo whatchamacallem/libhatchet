@@ -132,7 +132,7 @@ class hxconsole_command_table
 
 // Local static to enforce construction-order. Destruction is no-op.
 hxconsole_command_table& hxconsole_commands_(void) {
-	static hxconsole_command_table table_;
+	static hxconsole_command_table table_; // GCOVR_EXCL_LINE
 	return table_;
 }
 } // namespace {
@@ -143,9 +143,9 @@ hxconsole_command_table& hxconsole_commands_(void) {
 void hxdetail_::hxconsole_register_(hxconsole_hash_table_node_* node) {
 	hxconsole_command_table& commands = hxconsole_commands_();
 	hxassertmsg(node->hash_key().str_ && node->command_(), "invalid_parameter");
-	hxassertmsg(!commands.find(node->hash_key()), "command_reregistered %s", node->hash_key().str_);
-
-	commands.insert(node);
+	if(commands.replace(node)) {
+		hxlog_handler(hxlog_level_warning, "command_reregistered %s\n", node->hash_key().str_);
+	}
 }
 
 // Nodes are statically allocated. Do not delete.
@@ -194,7 +194,7 @@ bool hxconsole_exec_line(const char* command) {
 
 // Lists variables and commands in order.
 bool hxconsole_help(void) {
-	hxinit();
+	hxinit(); // GCOVR_EXCL_LINE
 	const hxsystem_allocator_scope temp_mem(hxsystem_allocator_heap);
 	const hxconsole_command_table& commands = hxconsole_commands_();
 	hxvector<const hxdetail_::hxconsole_hash_table_node_*> cmds;

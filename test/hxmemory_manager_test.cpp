@@ -40,6 +40,12 @@ TEST(hxmemory_manager_test, hxnew_forward_move_count_is_exactly_one) {
 	hxdelete(p);
 }
 
+TEST(hxmemory_manager_test, hxdelete_null_is_no_op) {
+	int* p = hxnull;
+	hxdelete(p);
+	SUCCEED();
+}
+
 #if (HX_PROVIDE_NEW_DELETE) == 1
 TEST(hxmemory_manager_test, new_delete) {
 	unsigned int* t = new unsigned int(3);
@@ -73,6 +79,11 @@ TEST(hxmemory_manager_test, hxmalloc_allocator_alignment_args_heap) {
 	EXPECT_EQ(reinterpret_cast<uintptr_t>(defaulted)
 		& (static_cast<uintptr_t>(hxalignment) - 1u), 0u);
 	hxfree(defaulted);
+}
+
+TEST(hxmemory_manager_test, hxfree_null_is_no_op) {
+	hxfree(hxnull);
+	SUCCEED();
 }
 
 TEST(hxmemory_manager_test, hxmalloc_allocator_alignment_args_stack) {
@@ -204,6 +215,16 @@ TEST(hxmemory_manager_test, additional_stacks_reset_on_scope_close) {
 	ASSERT_EQ(temporary_stack_scope.get_current_bytes_allocated(), baseline_bytes);
 }
 
+TEST(hxmemory_manager_test, utilization_reports_outstanding_without_log) {
+	const hxsystem_allocator_t stack_1 = hxsystem_allocator_stack_0 + 1;
+	const hxsystem_allocator_scope temporary_stack_scope(stack_1);
+	void* p = hxmalloc(16u);
+	ASSERT_NE(p, hxnullptr);
+	const hxmemory_manager_stats stats = hxmemory_manager_utilization(true, false);
+	ASSERT_GE(stats.allocations_outstanding, 1u);
+	hxfree(p);
+}
+
 TEST(hxmemory_manager_test, additional_stacks_are_independent) {
 	const hxsystem_allocator_t stack_1 = hxsystem_allocator_stack_0 + 1;
 	const hxsystem_allocator_t stack_2 = hxsystem_allocator_stack_0 + 2;
@@ -221,6 +242,14 @@ TEST(hxmemory_manager_test, additional_stacks_are_independent) {
 	}
 	ASSERT_EQ(scope_1.get_current_allocation_count(), 1u);
 	hxfree(p1);
+}
+
+TEST(hxmemory_manager_test, free_permanent_without_flag_warns) {
+	hxlog_warning("EXPECTING_TEST_WARNINGS");
+	void* p = hxmalloc(16u, hxsystem_allocator_permanent);
+	ASSERT_NE(p, hxnullptr);
+	hxg_settings.deallocate_permanent = false;
+	hxfree(p);
 }
 
 class hxmemory_manager_test_f :

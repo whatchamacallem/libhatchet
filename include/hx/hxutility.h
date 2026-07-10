@@ -123,6 +123,29 @@ struct hxtrue_t { constexpr static bool value = true; };
 /// `hxfalse_t` - Implements `std::false_type`.
 struct hxfalse_t { constexpr static bool value = false; };
 
+/// `hxbinds_directly<T, U>` - Provides a `value` constant that is true when an
+/// lvalue of type `U` binds to `T&` without creating a temporary.
+/// - `T` : The referenced type.
+/// - `U` : The type of the lvalue being bound.
+template<typename T_, typename U_>
+struct hxbinds_directly {
+private:
+	/// \cond HIDDEN
+	static hxtrue_t test_(T_&);
+	static hxfalse_t test_(T_&&);
+	static hxfalse_t test_(...);
+	/// \endcond
+public:
+#if defined _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4244 4267)
+#endif
+	constexpr static bool value = decltype(test_(hxdeclval<U_&>()))::value;
+#if defined _MSC_VER
+#pragma warning(pop)
+#endif
+};
+
 /// `hxis_array` - Implements `std::is_array`.
 template<typename T_> struct hxis_array : public hxfalse_t { };
 template<typename T_, size_t size_> struct hxis_array<T_[size_]> : public hxtrue_t { };

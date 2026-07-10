@@ -3,352 +3,246 @@
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
 #include <hx/hxptr.hpp>
-#include <hx/hxtest.hpp>
+#include "./hxtest_util.hpp"
 
 HX_NS_USE
 
+#if !defined _MSC_VER && !defined __wasm__
+static_assert(sizeof(size_t) != 4 || (
+		sizeof(hxptr<int>) == 4u),
+	"hxptr with the default deleter must be exactly pointer sized due to"
+	" empty base optimization");
+static_assert(sizeof(size_t) != 8 || (
+		sizeof(hxptr<int>) == 8u),
+	"hxptr with the default deleter must be exactly pointer sized due to"
+	" empty base optimization");
+#endif
+
 namespace {
+class hxptr_test_f : public hxtest_object_fixture { };
 
-int hxs_ptr_test_destructor_count = 0;
-
-struct hxtest_ptr_counted_t {
-	explicit hxtest_ptr_counted_t(int v) : value(v) { }
-	~hxtest_ptr_counted_t(void) { ++hxs_ptr_test_destructor_count; }
-	int value;
-};
-int hxs_test_custom_deleter_count = 0;
-struct hxtest_ptr_custom_deleter_t {
-	void operator()(hxtest_ptr_counted_t* ptr) const {
-		++hxs_test_custom_deleter_count;
+int hxs_ptr_stateful_delete_count = 0;
+int hxs_ptr_stateful_delete_tag = 0;
+struct hxtest_ptr_stateful_deleter {
+	explicit hxtest_ptr_stateful_deleter(int tag) : m_tag(tag) { }
+	void operator()(hxtest_object* ptr) const {
+		++hxs_ptr_stateful_delete_count;
+		hxs_ptr_stateful_delete_tag = m_tag;
 		hxdelete(ptr);
 	}
 	operator bool(void) const = delete;
+	int m_tag;
 };
 } // namespace
 
-TEST(hxptr_test, default_construction_is_null) {
-	const hxptr<int> p;
-	EXPECT_EQ(p.get(), static_cast<int*>(hxnull));
-	EXPECT_FALSE((bool)p);
-	EXPECT_TRUE(p == hxnullptr);
-	EXPECT_FALSE(p != hxnullptr);
-}
-
-TEST(hxptr_test, construct_from_pointer) {
-	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
-	const hxptr<int> p(hxnew<int>(34));
-	EXPECT_TRUE((bool)p);
-	EXPECT_NE(p.get(), static_cast<int*>(hxnull));
-	EXPECT_EQ(*p, 34);
-	EXPECT_FALSE(p == hxnullptr);
-	EXPECT_TRUE(p != hxnullptr);
-}
-
-TEST(hxptr_test, destructor_calls_deleter) {
-	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
-	hxs_ptr_test_destructor_count = 0;
+TEST_F(hxptr_test_f, hxptr_construction_and_destruction) {
 	{
-		const hxptr<hxtest_ptr_counted_t> p(hxnew<hxtest_ptr_counted_t>(1));
+		const hxptr<hxtest_object> null_ptr;
+		EXPECT_EQ(null_ptr.get(), static_cast<hxtest_object*>(hxnull));
+		EXPECT_FALSE((bool)null_ptr);
 	}
-	EXPECT_EQ(hxs_ptr_test_destructor_count, 1);
-}
-
-TEST(hxptr_test, destructor_null_no_delete) {
-	hxs_ptr_test_destructor_count = 0;
+	EXPECT_TRUE(this->check_totals(0u));
 	{
-		const hxptr<hxtest_ptr_counted_t> p;
+		const hxptr<hxtest_object> owned(hxnew<hxtest_object>(34));
+		EXPECT_TRUE((bool)owned);
+		EXPECT_EQ(owned->id, 34);
 	}
-	EXPECT_EQ(hxs_ptr_test_destructor_count, 0);
+	EXPECT_TRUE(this->check_totals(1u));
+	{
+		const hxptr<hxtest_object, hxtest_ptr_stateful_deleter> with_deleter(
+			hxnew<hxtest_object>(1), hxtest_ptr_stateful_deleter(99));
+		EXPECT_EQ(hxs_ptr_stateful_delete_count, 0);
+	}
+	EXPECT_EQ(hxs_ptr_stateful_delete_count, 1);
+	EXPECT_EQ(hxs_ptr_stateful_delete_tag, 99);
+	EXPECT_TRUE(this->check_totals(2u));
 }
 
-TEST(hxptr_test, deref_and_arrow) {
-	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
-	hxptr<hxtest_ptr_counted_t> p = hxmake_ptr<hxtest_ptr_counted_t>(7);
-	EXPECT_EQ((*p).value, 7);
-	EXPECT_EQ(p->value, 7);
-}
-
-TEST(hxptr_test, move_construction_transfers_ownership) {
-	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
-	hxs_ptr_test_destructor_count = 0;
-	hxptr<hxtest_ptr_counted_t> a(hxnew<hxtest_ptr_counted_t>(3));
-	const hxtest_ptr_counted_t* const raw = a.get();
-	const hxptr<hxtest_ptr_counted_t> b(hxmove(a));
-	EXPECT_EQ(a.get(), (hxtest_ptr_counted_t*)hxnull);
+TEST_F(hxptr_test_f, hxptr_move_construction) {
+	hxptr<hxtest_object> a(hxnew<hxtest_object>(3));
+	const hxtest_object* const raw = a.get();
+	const hxptr<hxtest_object> b(hxmove(a));
+	EXPECT_EQ(a.get(), static_cast<hxtest_object*>(hxnull));
 	EXPECT_FALSE((bool)a);
 	EXPECT_EQ(b.get(), raw);
 	EXPECT_TRUE((bool)b);
-	EXPECT_EQ(hxs_ptr_test_destructor_count, 0);
+	EXPECT_EQ(this->m_constructed, (hxsize_t)1);
+	EXPECT_EQ(this->m_destructed, (hxsize_t)0);
 }
 
-TEST(hxptr_test, move_assignment_transfers_ownership) {
-	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
-	hxs_ptr_test_destructor_count = 0;
-	hxptr<hxtest_ptr_counted_t> a = hxmake_ptr<hxtest_ptr_counted_t>(10);
-	hxptr<hxtest_ptr_counted_t> b = hxmake_ptr<hxtest_ptr_counted_t>(20);
-	const hxtest_ptr_counted_t* const raw_a = a.get();
+TEST_F(hxptr_test_f, hxptr_operator_assign_move) {
+	hxptr<hxtest_object> a(hxnew<hxtest_object>(10));
+	hxptr<hxtest_object> b(hxnew<hxtest_object>(20));
+	const hxtest_object* const raw_a = a.get();
 	b = hxmove(a);
-	EXPECT_EQ(hxs_ptr_test_destructor_count, 1);
+	EXPECT_EQ(this->m_constructed, (hxsize_t)2);
+	EXPECT_EQ(this->m_destructed, (hxsize_t)1);
 	EXPECT_EQ(b.get(), raw_a);
-	EXPECT_EQ(a.get(), (hxtest_ptr_counted_t*)hxnull);
+	EXPECT_EQ(a.get(), static_cast<hxtest_object*>(hxnull));
+	hxptr<hxtest_object> c;
+	b = hxmove(c);
+	EXPECT_EQ(this->m_constructed, (hxsize_t)2);
+	EXPECT_EQ(this->m_destructed, (hxsize_t)2);
+	EXPECT_EQ(b.get(), static_cast<hxtest_object*>(hxnull));
+	hxptr<hxtest_object> d(hxnew<hxtest_object>(30));
+	const hxtest_object* const raw_d = d.get();
+	b = hxmove(d);
+	EXPECT_EQ(this->m_constructed, (hxsize_t)3);
+	EXPECT_EQ(this->m_destructed, (hxsize_t)2);
+	EXPECT_EQ(b.get(), raw_d);
+	EXPECT_EQ(d.get(), static_cast<hxtest_object*>(hxnull));
 }
 
-TEST(hxptr_test, move_assign_from_null_deletes_owned) {
-	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
-	hxs_ptr_test_destructor_count = 0;
-	hxptr<hxtest_ptr_counted_t> a = hxmake_ptr<hxtest_ptr_counted_t>(5);
-	hxptr<hxtest_ptr_counted_t> b;
-	a = hxmove(b);
-	EXPECT_EQ(hxs_ptr_test_destructor_count, 1);
-	EXPECT_EQ(a.get(), (hxtest_ptr_counted_t*)hxnull);
+TEST_F(hxptr_test_f, hxptr_operator_deref_and_arrow) {
+	const hxptr<hxtest_object> p(hxnew<hxtest_object>(7));
+	EXPECT_EQ((*p).id, 7);
+	EXPECT_EQ(p->id, 7);
 }
 
-TEST(hxptr_test, release_returns_raw_no_delete) {
-	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
-	hxs_ptr_test_destructor_count = 0;
-	hxptr<hxtest_ptr_counted_t> p(hxnew<hxtest_ptr_counted_t>(9));
-	hxtest_ptr_counted_t* raw = p.release();
-	EXPECT_NE(raw, (hxtest_ptr_counted_t*)hxnull);
-	EXPECT_EQ(p.get(), (hxtest_ptr_counted_t*)hxnull);
-	EXPECT_EQ(hxs_ptr_test_destructor_count, 0);
-	hxdelete(raw);
+TEST_F(hxptr_test_f, hxptr_operator_bool) {
+	const hxptr<hxtest_object> empty;
+	EXPECT_FALSE((bool)empty);
+	const hxptr<hxtest_object> owned(hxnew<hxtest_object>(1));
+	EXPECT_TRUE((bool)owned);
 }
 
-TEST(hxptr_test, reset_replaces_owned_object) {
-	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
-	hxs_ptr_test_destructor_count = 0;
-	hxptr<hxtest_ptr_counted_t> p = hxmake_ptr<hxtest_ptr_counted_t>(1);
-	hxtest_ptr_counted_t* second = hxnew<hxtest_ptr_counted_t>(2);
-	p.reset(second);
-	EXPECT_EQ(hxs_ptr_test_destructor_count, 1);
-	EXPECT_EQ(p.get(), second);
-	EXPECT_EQ(p->value, 2);
-}
-
-TEST(hxptr_test, reset_null_deletes_owned) {
-	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
-	hxs_ptr_test_destructor_count = 0;
-	hxptr<hxtest_ptr_counted_t> p = hxmake_ptr<hxtest_ptr_counted_t>(1);
-	p.reset();
-	EXPECT_EQ(hxs_ptr_test_destructor_count, 1);
-	EXPECT_EQ(p.get(), (hxtest_ptr_counted_t*)hxnull);
-	EXPECT_FALSE((bool)p);
-}
-
-TEST(hxptr_test, reset_null_on_empty_is_noop) {
-	hxs_ptr_test_destructor_count = 0;
-	hxptr<hxtest_ptr_counted_t> p;
-	p.reset();
-	EXPECT_EQ(hxs_ptr_test_destructor_count, 0);
-	EXPECT_EQ(p.get(), (hxtest_ptr_counted_t*)hxnull);
-}
-
-TEST(hxptr_test, equality_operators_compare_address) {
-	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
-	const hxptr<hxtest_ptr_counted_t> a = hxmake_ptr<hxtest_ptr_counted_t>(0);
-	const hxptr<hxtest_ptr_counted_t> b;
+TEST_F(hxptr_test_f, hxptr_operator_equal_hxptr) {
+	const hxptr<hxtest_object> a(hxnew<hxtest_object>(0));
+	const hxptr<hxtest_object> b;
+	const hxptr<hxtest_object> c;
 	EXPECT_FALSE(a == b);
 	EXPECT_TRUE(a != b);
-	const hxptr<hxtest_ptr_counted_t> c;
 	EXPECT_TRUE(b == c);
 	EXPECT_FALSE(b != c);
+	const hxptr<hxtest_object> d(hxnew<hxtest_object>(5));
+	const hxptr<hxtest_object> e(hxnew<hxtest_object>(5));
+	EXPECT_FALSE(d == e);
+	EXPECT_TRUE(d != e);
 }
 
-TEST(hxptr_test, not_equal_nullptr_distinguishes_null_and_owned) {
-	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
-	const hxptr<hxtest_ptr_counted_t> empty;
+TEST_F(hxptr_test_f, hxptr_operator_equal_nullptr) {
+	const hxptr<hxtest_object> empty;
+	EXPECT_TRUE(empty == hxnullptr);
 	EXPECT_FALSE(empty != hxnullptr);
-	const hxptr<hxtest_ptr_counted_t> owned = hxmake_ptr<hxtest_ptr_counted_t>(0);
+	const hxptr<hxtest_object> owned(hxnew<hxtest_object>(0));
+	EXPECT_FALSE(owned == hxnullptr);
 	EXPECT_TRUE(owned != hxnullptr);
 }
 
-TEST(hxptr_test, custom_deleter_called_on_destruction) {
-	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
-	hxs_ptr_test_destructor_count = 0;
-	hxs_test_custom_deleter_count = 0;
-	{
-		const hxptr<hxtest_ptr_counted_t, hxtest_ptr_custom_deleter_t> p(
-			hxnew<hxtest_ptr_counted_t>(55));
-	}
-	EXPECT_EQ(hxs_test_custom_deleter_count, 1);
-	EXPECT_EQ(hxs_ptr_test_destructor_count, 1);
+TEST_F(hxptr_test_f, hxptr_and_then) {
+	const hxptr<hxtest_object> engaged(hxnew<hxtest_object>(3));
+	const hxptr<hxtest_object> mapped = engaged.and_then([](hxtest_object& v) {
+		return hxptr<hxtest_object>(hxnew<hxtest_object>(v.id + 1));
+	});
+	EXPECT_TRUE((bool)mapped);
+	EXPECT_EQ(mapped->id, 4);
+	EXPECT_FALSE((bool)engaged.and_then([](hxtest_object&) { return hxptr<hxtest_object>(); }));
+	const hxptr<hxtest_object> empty;
+	bool called = false;
+	const hxptr<hxtest_object> from_null = empty.and_then([&called](hxtest_object& v) {
+		// GCOVR_EXCL_START
+		called = true; return hxptr<hxtest_object>(hxnew<hxtest_object>(v.id));
+		// GCOVR_EXCL_STOP
+	});
+	EXPECT_FALSE((bool)from_null);
+	EXPECT_FALSE(called);
 }
 
-TEST(hxptr_test, swap_exchanges_ownership) {
-	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
-	hxs_ptr_test_destructor_count = 0;
-	hxptr<hxtest_ptr_counted_t> a = hxmake_ptr<hxtest_ptr_counted_t>(1);
-	hxptr<hxtest_ptr_counted_t> b = hxmake_ptr<hxtest_ptr_counted_t>(2);
-	const hxtest_ptr_counted_t* const raw_a = a.get();
-	const hxtest_ptr_counted_t* const raw_b = b.get();
-	a.swap(b);
-	EXPECT_EQ(hxs_ptr_test_destructor_count, 0);
-	EXPECT_EQ(a.get(), raw_b);
-	EXPECT_EQ(b.get(), raw_a);
-	EXPECT_EQ(a->value, 2);
-	EXPECT_EQ(b->value, 1);
+TEST_F(hxptr_test_f, hxptr_get) {
+	const hxptr<hxtest_object> empty;
+	EXPECT_EQ(empty.get(), static_cast<hxtest_object*>(hxnull));
+	hxtest_object* const raw = hxnew<hxtest_object>(9);
+	const hxptr<hxtest_object> owned(raw);
+	EXPECT_EQ(owned.get(), raw);
 }
 
-TEST(hxptr_test, swap_with_null) {
-	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
-	hxs_ptr_test_destructor_count = 0;
-	hxptr<hxtest_ptr_counted_t> a = hxmake_ptr<hxtest_ptr_counted_t>(7);
-	hxptr<hxtest_ptr_counted_t> b;
-	const hxtest_ptr_counted_t* const raw_a = a.get();
-	a.swap(b);
-	EXPECT_EQ(hxs_ptr_test_destructor_count, 0);
-	EXPECT_EQ(a.get(), (hxtest_ptr_counted_t*)hxnull);
-	EXPECT_EQ(b.get(), raw_a);
+TEST_F(hxptr_test_f, hxptr_get_deleter) {
+	hxptr<hxtest_object, hxtest_ptr_stateful_deleter> p(
+		hxnew<hxtest_object>(1), hxtest_ptr_stateful_deleter(5));
+	EXPECT_EQ(p.deleter().m_tag, 5);
+	p.deleter().m_tag = 6;
+	const hxptr<hxtest_object, hxtest_ptr_stateful_deleter>& const_ref = p;
+	EXPECT_EQ(const_ref.deleter().m_tag, 6);
 }
 
-TEST(hxptr_test, make_ptr_constructs_and_owns) {
-	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
-	hxs_ptr_test_destructor_count = 0;
-	{
-		const hxptr<hxtest_ptr_counted_t> p =
-			hxmake_ptr<hxtest_ptr_counted_t>(34);
-		EXPECT_TRUE((bool)p);
-		EXPECT_EQ(p->value, 34);
-		EXPECT_EQ(hxs_ptr_test_destructor_count, 0);
-	}
-	EXPECT_EQ(hxs_ptr_test_destructor_count, 1);
+TEST_F(hxptr_test_f, hxptr_or_else) {
+	hxptr<hxtest_object> engaged(hxnew<hxtest_object>(8));
+	const hxtest_object* const raw = engaged.get();
+	bool called_engaged = false;
+	const hxptr<hxtest_object> from_engaged = hxmove(engaged).or_else([&called_engaged]() {
+		// GCOVR_EXCL_START
+		called_engaged = true; return hxptr<hxtest_object>();
+		// GCOVR_EXCL_STOP
+	});
+	EXPECT_FALSE(called_engaged);
+	EXPECT_EQ(from_engaged.get(), raw);
+	EXPECT_EQ(engaged.get(), static_cast<hxtest_object*>(hxnull));
+
+	hxptr<hxtest_object> empty;
+	bool called_empty = false;
+	const hxptr<hxtest_object> from_empty = hxmove(empty).or_else([&called_empty]() {
+		called_empty = true; return hxptr<hxtest_object>(hxnew<hxtest_object>(42));
+	});
+	EXPECT_TRUE(called_empty);
+	EXPECT_TRUE((bool)from_empty);
+	EXPECT_EQ(from_empty->id, 42);
 }
 
-TEST(hxptr_test, custom_deleter_called_on_reset) {
-	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
-	hxs_ptr_test_destructor_count = 0;
-	hxs_test_custom_deleter_count = 0;
-	hxptr<hxtest_ptr_counted_t, hxtest_ptr_custom_deleter_t> p(
-		hxnew<hxtest_ptr_counted_t>(6));
-	p.reset();
-	EXPECT_EQ(hxs_test_custom_deleter_count, 1);
-	EXPECT_EQ(hxs_ptr_test_destructor_count, 1);
-	p.reset();
-	EXPECT_EQ(hxs_test_custom_deleter_count, 1);
-}
-
-TEST(hxptr_test, destructor_exactly_one_call) {
-	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
-	hxs_ptr_test_destructor_count = 0;
-	{
-		const hxptr<hxtest_ptr_counted_t> p(hxnew<hxtest_ptr_counted_t>(1));
-		EXPECT_EQ(hxs_ptr_test_destructor_count, 0);
-	}
-	EXPECT_EQ(hxs_ptr_test_destructor_count, 1);
-}
-
-TEST(hxptr_test, equality_different_address_not_equal) {
-	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
-	const hxptr<hxtest_ptr_counted_t> a = hxmake_ptr<hxtest_ptr_counted_t>(5);
-	const hxptr<hxtest_ptr_counted_t> b = hxmake_ptr<hxtest_ptr_counted_t>(5);
-	EXPECT_FALSE(a == b);
-	EXPECT_TRUE(a != b);
-}
-
-TEST(hxptr_test, release_returns_exact_pointer) {
-	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
-	hxtest_ptr_counted_t* raw = hxnew<hxtest_ptr_counted_t>(77);
-	hxptr<hxtest_ptr_counted_t> p(raw);
-	hxtest_ptr_counted_t* released = p.release();
+TEST_F(hxptr_test_f, hxptr_release) {
+	hxtest_object* const raw = hxnew<hxtest_object>(77);
+	hxptr<hxtest_object> p(raw);
+	hxtest_object* const released = p.release();
 	EXPECT_EQ(released, raw);
-	EXPECT_EQ(released->value, 77);
+	EXPECT_EQ(released->id, 77);
+	EXPECT_EQ(p.get(), static_cast<hxtest_object*>(hxnull));
+	EXPECT_EQ(this->m_destructed, (hxsize_t)0);
 	hxdelete(released);
 }
 
-TEST(hxptr_test, reset_old_deleted_exactly_once) {
-	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
-	hxs_ptr_test_destructor_count = 0;
-	hxptr<hxtest_ptr_counted_t> p = hxmake_ptr<hxtest_ptr_counted_t>(3);
-	hxtest_ptr_counted_t* second = hxnew<hxtest_ptr_counted_t>(4);
+TEST_F(hxptr_test_f, hxptr_reset) {
+	hxptr<hxtest_object> p(hxnew<hxtest_object>(1));
+	hxtest_object* const second = hxnew<hxtest_object>(2);
 	p.reset(second);
-	EXPECT_EQ(hxs_ptr_test_destructor_count, 1);
-	EXPECT_EQ(p->value, 4);
+	EXPECT_EQ(this->m_constructed, (hxsize_t)2);
+	EXPECT_EQ(this->m_destructed, (hxsize_t)1);
+	EXPECT_EQ(p.get(), second);
+	EXPECT_EQ(p->id, 2);
+	p.reset();
+	EXPECT_TRUE(this->check_totals(2u));
+	EXPECT_EQ(p.get(), static_cast<hxtest_object*>(hxnull));
+	p.reset();
+	EXPECT_TRUE(this->check_totals(2u));
 }
 
-TEST(hxptr_test, move_construction_source_is_exactly_null) {
-	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
-	hxptr<hxtest_ptr_counted_t> a = hxmake_ptr<hxtest_ptr_counted_t>(9);
-	const hxptr<hxtest_ptr_counted_t> b(hxmove(a));
-	EXPECT_EQ(a.get(), static_cast<hxtest_ptr_counted_t*>(hxnull));
-	EXPECT_TRUE((bool)b);
-}
-
-TEST(hxptr_test, swap_holds_exact_addresses) {
-	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
-	hxptr<hxtest_ptr_counted_t> a = hxmake_ptr<hxtest_ptr_counted_t>(11);
-	hxptr<hxtest_ptr_counted_t> b = hxmake_ptr<hxtest_ptr_counted_t>(22);
-	hxtest_ptr_counted_t* const addr_a = a.get();
-	hxtest_ptr_counted_t* const addr_b = b.get();
+TEST_F(hxptr_test_f, hxptr_swap) {
+	hxptr<hxtest_object> a(hxnew<hxtest_object>(1));
+	hxptr<hxtest_object> b(hxnew<hxtest_object>(2));
+	const hxtest_object* const raw_a = a.get();
+	const hxtest_object* const raw_b = b.get();
 	a.swap(b);
-	EXPECT_EQ(a.get(), addr_b);
-	EXPECT_EQ(b.get(), addr_a);
+	EXPECT_EQ(this->m_destructed, (hxsize_t)0);
+	EXPECT_EQ(a.get(), raw_b);
+	EXPECT_EQ(b.get(), raw_a);
+	EXPECT_EQ(a->id, 2);
+	EXPECT_EQ(b->id, 1);
+
+	hxptr<hxtest_object> c(hxnew<hxtest_object>(7));
+	hxptr<hxtest_object> d;
+	const hxtest_object* const raw_c = c.get();
+	c.swap(d);
+	EXPECT_EQ(c.get(), static_cast<hxtest_object*>(hxnull));
+	EXPECT_EQ(d.get(), raw_c);
 }
 
-TEST(hxptr_test, and_then_engaged_calls_with_referent) {
-	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
-	const hxptr<int> p = hxmake_ptr<int>(3);
-	const hxptr<long> r = p.and_then([](int& v) { return hxmake_ptr<long>(v + 1); });
-	EXPECT_TRUE((bool)r);
-	EXPECT_EQ(*r, 4);
+TEST_F(hxptr_test_f, hxptr_value_or) {
+	const hxptr<hxtest_object> engaged(hxnew<hxtest_object>(3));
+	EXPECT_EQ(engaged.value_or(hxtest_object(99)).id, 3);
+	const hxptr<hxtest_object> empty;
+	EXPECT_EQ(empty.value_or(hxtest_object(7)).id, 7);
 }
 
-TEST(hxptr_test, and_then_engaged_can_return_null) {
-	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
-	const hxptr<int> p = hxmake_ptr<int>(7);
-	EXPECT_FALSE((bool)p.and_then([](int&) { return hxptr<int>(); }));
-}
-
-TEST(hxptr_test, and_then_null_returns_null_without_calling) {
-	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
-	const hxptr<int> p;
-	bool called = false;
-	const hxptr<long> r = p.and_then([&called](int& v) {
-		// GCOVR_EXCL_START
-		called = true; return hxmake_ptr<long>(v);
-		// GCOVR_EXCL_STOP
-	});
-	EXPECT_FALSE((bool)r);
-	EXPECT_FALSE(called);
-}
-
-TEST(hxptr_test, or_else_engaged_moves_self_out) {
-	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
-	hxs_ptr_test_destructor_count = 0;
-	hxptr<hxtest_ptr_counted_t> p = hxmake_ptr<hxtest_ptr_counted_t>(8);
-	const hxtest_ptr_counted_t* const raw = p.get();
-	bool called = false;
-	const hxptr<hxtest_ptr_counted_t> r = hxmove(p).or_else([&called]() {
-		// GCOVR_EXCL_START
-		called = true; return hxptr<hxtest_ptr_counted_t>();
-		// GCOVR_EXCL_STOP
-	});
-	EXPECT_FALSE(called);
-	EXPECT_EQ(r.get(), raw);
-	EXPECT_EQ(p.get(), (hxtest_ptr_counted_t*)hxnull);
-	EXPECT_EQ(hxs_ptr_test_destructor_count, 0);
-}
-
-TEST(hxptr_test, or_else_null_returns_callable_result) {
-	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
-	hxptr<hxtest_ptr_counted_t> p;
-	bool called = false;
-	const hxptr<hxtest_ptr_counted_t> r = hxmove(p).or_else([&called]() {
-		called = true; return hxmake_ptr<hxtest_ptr_counted_t>(42);
-	});
-	EXPECT_TRUE(called);
-	EXPECT_TRUE((bool)r);
-	EXPECT_EQ(r->value, 42);
-}
-
-TEST(hxptr_test, value_or_engaged_returns_referent) {
-	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
-	const hxptr<int> engaged = hxmake_ptr<int>(3);
-	EXPECT_EQ(engaged.value_or(99), 3);
-	const hxptr<int> zero = hxmake_ptr<int>(0);
-	EXPECT_EQ(zero.value_or(99), 0);
-}
-
-TEST(hxptr_test, value_or_null_returns_default) {
-	const hxptr<int> empty;
-	EXPECT_EQ(empty.value_or(7), 7);
+TEST_F(hxptr_test_f, hxmake_ptr) {
+	const hxptr<hxtest_object> p = hxmake_ptr<hxtest_object>(34);
+	EXPECT_TRUE((bool)p);
+	EXPECT_EQ(p->id, 34);
 }

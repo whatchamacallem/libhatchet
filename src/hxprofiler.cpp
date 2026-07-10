@@ -87,7 +87,7 @@ void hxprofiler_internal_::write_to_chrome_tracing_(const char* filename) {
 
 			// Register wrapping can cause bad samples. Meanwhile Chrome has been
 			// updated to generate exceptions when any sample has end < begin.
-			if(rec.m_end_ < rec.m_begin_) { continue; }
+			if(rec.m_end_ < rec.m_begin_) { continue; } // GCOV_EXCL_LINE
 
 			if(!first) { f.print(",\n"); }
 			first = false;

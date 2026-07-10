@@ -77,7 +77,7 @@ break hxtest_gdb_break_hxflat_map_dynamic
 commands
   up
   echo \n=== hxflat_map dynamic ===\n
-  print m
+  print md
   continue
 end
 
@@ -85,7 +85,7 @@ break hxtest_gdb_break_hxflat_map_static
 commands
   up
   echo \n=== hxflat_map static ===\n
-  print m
+  print ms
   continue
 end
 

@@ -13,20 +13,28 @@ HX_BEGIN_INL_
 template<typename T_>
 template<typename U_, hxenable_if_t<
 	!hxdetail_::hxis_hxref_<hxremove_cvref_t<U_>>::value &&
-	!hxdetail_::hxis_hxoptional_<hxremove_cvref_t<U_>>::value &&
-	hxis_lvalue_reference<U_&>::value, bool>>
-hxref<T_>::hxref(U_& value_) : m_value_(&static_cast<T_&>(value_)) { }
+	!hxdetail_::hxis_hxoptional_<hxremove_cvref_t<U_>>::value, bool>>
+hxref<T_>::hxref(U_& value_) : m_value_(&static_cast<T_&>(value_)) {
+	static_assert(hxbinds_directly<T_, U_>::value,
+		"U& must bind to T& without creating a temporary");
+}
 
 template<typename T_>
 template<typename U_, hxenable_if_t<
 	!hxis_same<U_, T_>::value, bool>>
 hxref<T_>::hxref(const hxref<U_>& other_)
-		: m_value_(other_.has_value() ? &static_cast<T_&>(*other_) : hxnull) { }
+		: m_value_(other_.has_value() ? &static_cast<T_&>(*other_) : hxnull) {
+	static_assert(hxbinds_directly<T_, U_>::value,
+		"U& must bind to T& without creating a temporary");
+}
 
 template<typename T_>
 template<typename U_>
 hxref<T_>::hxref(hxoptional<U_>& other_)
-		: m_value_(other_.has_value() ? &static_cast<T_&>(*other_) : hxnull) { }
+		: m_value_(other_.has_value() ? &static_cast<T_&>(*other_) : hxnull) {
+	static_assert(hxbinds_directly<T_, U_>::value,
+		"U& must bind to T& without creating a temporary");
+}
 
 template<typename T_>
 T_& hxref<T_>::operator*(void) const {
@@ -41,28 +49,22 @@ T_* hxref<T_>::operator->(void) const {
 }
 
 template<typename T_>
-hxref<T_>& hxref<T_>::operator=(const hxref& other_) {
-	hxassertmsg(this != &other_, "self_assignment");
-	m_value_ = other_.m_value_;
-	return *this;
-}
-
-template<typename T_>
 template<typename U_, hxenable_if_t<
 	!hxdetail_::hxis_hxref_<hxremove_cvref_t<U_>>::value &&
-	!hxdetail_::hxis_hxoptional_<hxremove_cvref_t<U_>>::value &&
-	hxis_lvalue_reference<U_&>::value, bool>>
+	!hxdetail_::hxis_hxoptional_<hxremove_cvref_t<U_>>::value, bool>>
 hxref<T_>& hxref<T_>::operator=(U_& value_) {
+	static_assert(hxbinds_directly<T_, U_>::value,
+		"U& must bind to T& without creating a temporary");
 	m_value_ = &static_cast<T_&>(value_);
 	return *this;
 }
 
 template<typename T_>
 bool hxref<T_>::operator==(const hxref& rhs_) const {
-	if ((m_value_ == hxnull) != (rhs_.m_value_ == hxnull)) {
-		return false;
+	if (m_value_ == hxnull || rhs_.m_value_ == hxnull) {
+		return m_value_ == rhs_.m_value_;
 	}
-	return m_value_ == hxnull || (*m_value_ == *rhs_.m_value_);
+	return *m_value_ == *rhs_.m_value_;
 }
 
 template<typename T_>
@@ -78,6 +80,15 @@ auto hxref<T_>::and_then(function_t_&& callable_) const
 		return hxforward<function_t_>(callable_)(*m_value_);
 	}
 	return hxnullopt;
+}
+
+template<typename T_>
+template<typename U_>
+T_& hxref<T_>::emplace(U_& value_) {
+	static_assert(hxbinds_directly<T_, U_>::value,
+		"U& must bind to T& without creating a temporary");
+	m_value_ = &static_cast<T_&>(value_);
+	return *m_value_;
 }
 
 template<typename T_>

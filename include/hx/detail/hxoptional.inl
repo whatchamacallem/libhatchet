@@ -10,6 +10,14 @@
 #ifndef HX_DOXYGEN_PARSER
 HX_BEGIN_INL_
 
+// Fixes a gcc + optimizer -Wmaybe-uninitialized bug. Every method here does
+// placement-new into m_storage_ behind an m_engaged_/has_value() check, and
+// gcc's inliner intermittently loses track of that guard.
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
+
 template<typename T_>
 hxoptional<T_>::hxoptional(const hxoptional& other_) noexcept : m_engaged_(other_.m_engaged_) {
 	if (m_engaged_) {
@@ -48,7 +56,6 @@ hxoptional<T_>::hxoptional(hxoptional<U_>&& other_) noexcept
 
 template<typename T_>
 template<typename U_, hxenable_if_t<
-	!hxis_same<hxremove_cvref_t<U_>, hxoptional<T_>>::value &&
 	!hxdetail_::hxis_hxoptional_<hxremove_cvref_t<U_>>::value, bool>>
 hxoptional<T_>::hxoptional(U_&& value_) noexcept : m_engaged_(true) {
 	::new(static_cast<void*>(&m_storage_)) T_(hxforward<U_>(value_));
@@ -57,10 +64,16 @@ hxoptional<T_>::hxoptional(U_&& value_) noexcept : m_engaged_(true) {
 template<typename T_>
 hxoptional<T_>& hxoptional<T_>::operator=(const hxoptional& other_) noexcept {
 	hxassertmsg(this != &other_, "self_assignment");
-	this->reset();
 	if (other_.m_engaged_) {
-		::new(static_cast<void*>(&m_storage_)) T_(*reinterpret_cast<const T_*>(&other_.m_storage_));
-		m_engaged_ = true;
+		const T_& src_ = *reinterpret_cast<const T_*>(&other_.m_storage_);
+		if (m_engaged_) {
+			*reinterpret_cast<T_*>(&m_storage_) = src_;
+		} else {
+			::new(static_cast<void*>(&m_storage_)) T_(src_);
+			m_engaged_ = true;
+		}
+	} else {
+		this->reset();
 	}
 	return *this;
 }
@@ -68,20 +81,24 @@ hxoptional<T_>& hxoptional<T_>::operator=(const hxoptional& other_) noexcept {
 template<typename T_>
 hxoptional<T_>& hxoptional<T_>::operator=(hxoptional&& other_) noexcept {
 	hxassertmsg(this != &other_, "self_assignment");
-	this->reset();
 	if (other_.m_engaged_) {
 		T_* const src_ = reinterpret_cast<T_*>(&other_.m_storage_);
-		::new(static_cast<void*>(&m_storage_)) T_(hxmove(*src_));
-		m_engaged_ = true;
+		if (m_engaged_) {
+			*reinterpret_cast<T_*>(&m_storage_) = hxmove(*src_);
+		} else {
+			::new(static_cast<void*>(&m_storage_)) T_(hxmove(*src_));
+			m_engaged_ = true;
+		}
 		src_->T_::~T_();
 		other_.m_engaged_ = false;
+	} else {
+		this->reset();
 	}
 	return *this;
 }
 
 template<typename T_>
 template<typename U_, hxenable_if_t<
-	!hxis_same<hxremove_cvref_t<U_>, hxoptional<T_>>::value &&
 	!hxdetail_::hxis_hxoptional_<hxremove_cvref_t<U_>>::value, bool>>
 hxoptional<T_>& hxoptional<T_>::operator=(U_&& value_) noexcept {
 	if (m_engaged_) {
@@ -155,9 +172,12 @@ bool hxoptional<T_>::operator==(const hxoptional& rhs_) const {
 	if (m_engaged_ != rhs_.m_engaged_) {
 		return false;
 	}
+	if (!m_engaged_) {
+		return true;
+	}
 	const T_& l_ = *reinterpret_cast<const T_*>(&m_storage_);
 	const T_& r_ = *reinterpret_cast<const T_*>(&rhs_.m_storage_);
-	return !m_engaged_ || (l_ == r_);
+	return l_ == r_;
 }
 
 template<typename T_>
@@ -248,6 +268,10 @@ T_ hxoptional<T_>::value_or(U_&& default_value_) const {
 	return m_engaged_ ? *reinterpret_cast<const T_*>(&m_storage_)
 		: static_cast<T_>(hxforward<U_>(default_value_));
 }
+
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 
 HX_END_INL_
 #endif // HX_DOXYGEN_PARSER

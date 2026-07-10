@@ -105,7 +105,14 @@ TEST_F(hxhash_table_test_f, null) {
 		EXPECT_EQ(table.cbegin(), table.cend());
 		EXPECT_EQ(const_table.begin(), const_table.cend());
 		table.clear();
+		table.release_all();
 		EXPECT_EQ(table.load_factor(), 0.0f);
+	}
+	{
+		using table_dynamic_t = hxhash_table<hxtest_integer, hxdefault_delete, false>;
+		const table_dynamic_t dynamic_table;
+		EXPECT_EQ(dynamic_table.bucket_count(), 0);
+		EXPECT_EQ(dynamic_table.load_factor(), 0.0f);
 	}
 	EXPECT_EQ(m_constructed, 0);
 	EXPECT_EQ(m_destructed, 0);
@@ -157,17 +164,50 @@ TEST_F(hxhash_table_test_f, raw_pointer_insert_duplicate_invokes_deleter) {
 	{
 		table_t table;
 		hxtest_integer* node = hxnew<hxtest_integer>(55);
+		hxtest_integer* const colliding = hxnew<hxtest_integer>(2); // Shares 55's bucket at table_size_bits 4.
 		EXPECT_EQ(&*table.insert(node), node);
-		EXPECT_EQ(table.size(), 1);
+		EXPECT_EQ(&*table.insert(colliding), colliding);
+		EXPECT_EQ(table.size(), 2);
 		EXPECT_EQ(m_destructed, 0);
 		hxtest_integer* dup = hxnew<hxtest_integer>(55);
 		EXPECT_EQ(&*table.insert(dup), node);
-		EXPECT_EQ(table.size(), 1);
+		EXPECT_EQ(table.size(), 2);
 		EXPECT_EQ(m_destructed, 1);
 		EXPECT_EQ(table.find(55), node);
 	}
-	EXPECT_EQ(m_constructed, 2);
-	EXPECT_EQ(m_destructed, 2);
+	EXPECT_EQ(m_constructed, 3);
+	EXPECT_EQ(m_destructed, 3);
+	{
+		using no_delete_table_t = hxhash_table<hxtest_integer, hxdo_not_delete, false, 4>;
+		no_delete_table_t table;
+		hxtest_integer* node = hxnew<hxtest_integer>(55);
+		hxtest_integer* const colliding = hxnew<hxtest_integer>(2); // Shares 55's bucket at table_size_bits 4.
+		EXPECT_EQ(&*table.insert(node), node);
+		EXPECT_EQ(&*table.insert(colliding), colliding);
+		hxtest_integer* dup = hxnew<hxtest_integer>(55);
+		EXPECT_EQ(&*table.insert(dup), node);
+		EXPECT_EQ(table.size(), 2);
+		hxdelete(dup);
+		table.release_all();
+		hxdelete(node);
+		hxdelete(colliding);
+	}
+	{
+		using single_bucket_table_t = hxhash_table<hxtest_integer, hxdo_not_delete, false, 1>;
+		single_bucket_table_t table;
+		hxtest_integer* original = hxnew<hxtest_integer>(0);
+		hxtest_integer* nonmatching = hxnew<hxtest_integer>(2);
+		EXPECT_EQ(&*table.insert(original), original);
+		EXPECT_EQ(&*table.insert(nonmatching), nonmatching);
+		hxtest_integer* dup = hxnew<hxtest_integer>(0);
+		EXPECT_EQ(&*table.insert(dup), original);
+		EXPECT_EQ(table.size(), 2);
+		EXPECT_EQ(table.find(0), original);
+		hxdelete(dup);
+		table.release_all();
+		hxdelete(original);
+		hxdelete(nonmatching);
+	}
 }
 
 TEST_F(hxhash_table_test_f, map_node_usage) {
@@ -367,12 +407,13 @@ TEST(hxhash_table_set_node_test, copy_move_construct_and_assign) {
 TEST(hxhash_table_map_node_test, hash_next_type) {
 	using node_t = hxhash_table_map_node<int32_t, int32_t>;
 	using table_t = hxhash_table<node_t, hxdo_not_delete, true, 4>;
-	node_t a(1, 10), b(1, 20), c(2, 30);
+	node_t a(1, 10), b(1, 20), c(2, 30), d(4, 40); // d shares 1's bucket at table_size_bits 4.
 	table_t table;
 	table.insert(hxptr<node_t, hxdo_not_delete>(&a));
+	table.insert(hxptr<node_t, hxdo_not_delete>(&d));
 	table.insert(hxptr<node_t, hxdo_not_delete>(&b));
 	table.insert(hxptr<node_t, hxdo_not_delete>(&c));
-	EXPECT_EQ(table.size(), 3);
+	EXPECT_EQ(table.size(), 4);
 	const node_t* first = table.find(1);
 	ASSERT_NE(first, hxnullptr);
 	const node_t* second = table.find(1, first);
@@ -383,7 +424,7 @@ TEST(hxhash_table_map_node_test, hash_next_type) {
 	for(table_t::const_iterator it = table.begin(); it != table.end(); ++it) {
 		++count;
 	}
-	EXPECT_EQ(count, 3);
+	EXPECT_EQ(count, 4);
 	table.release_all();
 }
 struct hxtest_map_node_t : hxhash_table_map_node<int32_t, int32_t> {
@@ -519,16 +560,44 @@ TEST_F(hxhash_table_test_f, find_second_duplicate_via_previous) {
 	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, true, 4>;
 	table_t table;
 	hxtest_integer* n1 = hxnew<hxtest_integer>(34);
+	hxtest_integer* const colliding = hxnew<hxtest_integer>(3); // Shares 34's bucket at table_size_bits 4.
 	hxtest_integer* n2 = hxnew<hxtest_integer>(34);
 	table.insert(hxptr<hxtest_integer>(n1));
+	table.insert(hxptr<hxtest_integer>(colliding));
 	table.insert(hxptr<hxtest_integer>(n2));
-	EXPECT_EQ(table.size(), 2u);
+	EXPECT_EQ(table.size(), 3u);
 	const hxtest_integer* first = table.find(34);
 	ASSERT_NE(first, hxnullptr);
 	const hxtest_integer* second = table.find(34, first);
 	ASSERT_NE(second, hxnullptr);
 	EXPECT_NE(second, first);
 	EXPECT_EQ(table.find(34, second), hxnullptr);
+
+	using single_bucket_table_t = hxhash_table<hxtest_integer, hxdefault_delete, true, 1>;
+	single_bucket_table_t single_bucket_table;
+	hxtest_integer* tail_match = hxnew<hxtest_integer>(0);
+	hxtest_integer* middle_other = hxnew<hxtest_integer>(2);
+	hxtest_integer* head_match = hxnew<hxtest_integer>(0);
+	single_bucket_table.insert(hxptr<hxtest_integer>(tail_match));
+	single_bucket_table.insert(hxptr<hxtest_integer>(middle_other));
+	single_bucket_table.insert(hxptr<hxtest_integer>(head_match));
+	const hxtest_integer* found_head = single_bucket_table.find(0);
+	EXPECT_EQ(found_head, head_match);
+	const hxtest_integer* found_tail = single_bucket_table.find(0, found_head);
+	EXPECT_EQ(found_tail, tail_match);
+	EXPECT_EQ(single_bucket_table.find(0, found_tail), hxnullptr);
+	EXPECT_EQ(single_bucket_table.find(2, middle_other), hxnullptr);
+}
+
+TEST_F(hxhash_table_test_f, find_with_previous_skips_colliding_key_in_single_table) {
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
+	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, false, 4>;
+	table_t table;
+	hxtest_integer* const node_17 = hxnew<hxtest_integer>(17); // Shares 77's bucket at table_size_bits 4.
+	hxtest_integer* const node_77 = hxnew<hxtest_integer>(77);
+	table.insert(hxptr<hxtest_integer>(node_17));
+	table.insert(hxptr<hxtest_integer>(node_77));
+	EXPECT_EQ(table.find(77, node_77), hxnullptr);
 }
 
 TEST_F(hxhash_table_test_f, find_absent_key_in_nonempty_bucket_chain) {
@@ -560,11 +629,34 @@ TEST_F(hxhash_table_test_f, erase_head_node_updates_size) {
 	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, false, 4>;
 	table_t table;
 	table.insert(hxptr<hxtest_integer>(hxnew<hxtest_integer>(5)));
-	table.insert(hxptr<hxtest_integer>(hxnew<hxtest_integer>(6)));
-	EXPECT_EQ(table.erase(5), 1u);
+	hxtest_integer* const node_6 = hxnew<hxtest_integer>(6);
+	table.insert(hxptr<hxtest_integer>(node_6));
+	EXPECT_EQ(table.erase(6, hxdo_not_delete()), 1u);
 	EXPECT_EQ(table.size(), 1u);
+	EXPECT_EQ(table.find(6), hxnullptr);
+	EXPECT_NE(table.find(5), hxnullptr);
+	hxdelete(node_6);
+	EXPECT_EQ(table.erase(5), 1u);
+	EXPECT_EQ(table.size(), 0u);
 	EXPECT_EQ(table.find(5), hxnullptr);
-	EXPECT_NE(table.find(6), hxnullptr);
+
+	using single_bucket_table_t = hxhash_table<hxtest_integer, hxdefault_delete, false, 1>;
+	single_bucket_table_t single_bucket_table;
+	single_bucket_table.insert(hxptr<hxtest_integer>(hxnew<hxtest_integer>(1)));
+	hxtest_integer* const node_2 = hxnew<hxtest_integer>(2);
+	single_bucket_table.insert(hxptr<hxtest_integer>(node_2));
+	EXPECT_EQ(single_bucket_table.erase(2, hxdo_not_delete()), 1u);
+	EXPECT_EQ(single_bucket_table.size(), 1u);
+	EXPECT_EQ(single_bucket_table.find(2), hxnullptr);
+	EXPECT_NE(single_bucket_table.find(1), hxnullptr);
+	hxdelete(node_2);
+
+	using fn_deleter_table_t = hxhash_table<hxtest_integer, hxdefault_delete, false, 4>;
+	fn_deleter_table_t fn_deleter_table;
+	fn_deleter_table.insert(hxptr<hxtest_integer>(hxnew<hxtest_integer>(9)));
+	EXPECT_EQ(fn_deleter_table.erase(9, &hxdelete<hxtest_integer>), 1u);
+	EXPECT_EQ(fn_deleter_table.size(), 0u);
+	EXPECT_EQ(fn_deleter_table.find(9), hxnullptr);
 }
 
 TEST_F(hxhash_table_test_f, erase_interior_node_in_bucket_chain) {
@@ -581,6 +673,72 @@ TEST_F(hxhash_table_test_f, erase_interior_node_in_bucket_chain) {
 	EXPECT_EQ(table.find(3), hxnullptr);
 	EXPECT_NE(table.find(1), hxnullptr);
 	EXPECT_NE(table.find(5), hxnullptr);
+
+	using single_bucket_table_t = hxhash_table<hxtest_integer, hxdefault_delete, true, 1>;
+	{
+		single_bucket_table_t all_matching_table;
+		hxtest_integer* const all_first = hxnew<hxtest_integer>(0);
+		hxtest_integer* const all_second = hxnew<hxtest_integer>(0);
+		hxtest_integer* const all_third = hxnew<hxtest_integer>(0);
+		all_matching_table.insert(hxptr<hxtest_integer>(all_first));
+		all_matching_table.insert(hxptr<hxtest_integer>(all_second));
+		all_matching_table.insert(hxptr<hxtest_integer>(all_third));
+		EXPECT_EQ(all_matching_table.erase(0, &hxdelete<hxtest_integer>), 3u);
+		EXPECT_EQ(all_matching_table.size(), 0u);
+		EXPECT_EQ(all_matching_table.find(0), hxnullptr);
+	}
+	{
+		single_bucket_table_t all_matching_no_delete_table;
+		hxtest_integer* const nd_first = hxnew<hxtest_integer>(0);
+		hxtest_integer* const nd_second = hxnew<hxtest_integer>(0);
+		all_matching_no_delete_table.insert(hxptr<hxtest_integer>(nd_first));
+		all_matching_no_delete_table.insert(hxptr<hxtest_integer>(nd_second));
+		EXPECT_EQ(all_matching_no_delete_table.erase(0, hxdo_not_delete()), 2u);
+		EXPECT_EQ(all_matching_no_delete_table.size(), 0u);
+		hxdelete(nd_first);
+		hxdelete(nd_second);
+	}
+	{
+		single_bucket_table_t suffix_matching_table;
+		hxtest_integer* const suffix_first = hxnew<hxtest_integer>(0);
+		hxtest_integer* const suffix_second = hxnew<hxtest_integer>(0);
+		suffix_matching_table.insert(hxptr<hxtest_integer>(suffix_first));
+		suffix_matching_table.insert(hxptr<hxtest_integer>(suffix_second));
+		suffix_matching_table.insert(hxptr<hxtest_integer>(hxnew<hxtest_integer>(2)));
+		EXPECT_EQ(suffix_matching_table.erase(0, &hxdelete<hxtest_integer>), 2u);
+		EXPECT_EQ(suffix_matching_table.size(), 1u);
+		EXPECT_EQ(suffix_matching_table.find(0), hxnullptr);
+		EXPECT_NE(suffix_matching_table.find(2), hxnullptr);
+	}
+	{
+		single_bucket_table_t prefix_run_then_mismatch_table;
+		prefix_run_then_mismatch_table.insert(hxptr<hxtest_integer>(hxnew<hxtest_integer>(2)));
+		hxtest_integer* const prefix_second = hxnew<hxtest_integer>(0);
+		hxtest_integer* const prefix_first = hxnew<hxtest_integer>(0);
+		prefix_run_then_mismatch_table.insert(hxptr<hxtest_integer>(prefix_second));
+		prefix_run_then_mismatch_table.insert(hxptr<hxtest_integer>(prefix_first));
+		EXPECT_EQ(prefix_run_then_mismatch_table.erase(0, &hxdelete<hxtest_integer>), 2u);
+		EXPECT_EQ(prefix_run_then_mismatch_table.size(), 1u);
+		EXPECT_EQ(prefix_run_then_mismatch_table.find(0), hxnullptr);
+		EXPECT_NE(prefix_run_then_mismatch_table.find(2), hxnullptr);
+	}
+	{
+		single_bucket_table_t interior_matching_table;
+		hxtest_integer* const interior_head = hxnew<hxtest_integer>(2);
+		hxtest_integer* const interior_match = hxnew<hxtest_integer>(0);
+		hxtest_integer* const interior_tail = hxnew<hxtest_integer>(2);
+		interior_matching_table.insert(hxptr<hxtest_integer>(interior_tail));
+		interior_matching_table.insert(hxptr<hxtest_integer>(interior_match));
+		interior_matching_table.insert(hxptr<hxtest_integer>(interior_head));
+		EXPECT_EQ(interior_matching_table.erase(0, hxdo_not_delete()), 1u);
+		EXPECT_EQ(interior_matching_table.size(), 2u);
+		EXPECT_EQ(interior_matching_table.find(0), hxnullptr);
+		EXPECT_EQ(interior_matching_table.count(2), 2);
+		hxdelete(interior_match);
+		interior_matching_table.release_all();
+		hxdelete(interior_head);
+		hxdelete(interior_tail);
+	}
 }
 
 TEST_F(hxhash_table_test_f, erase_returns_zero_for_absent_key) {
@@ -619,6 +777,121 @@ TEST_F(hxhash_table_test_f, extract_interior_node_keeps_others) {
 	EXPECT_NE(table.find(1), hxnullptr);
 	EXPECT_NE(table.find(5), hxnullptr);
 	EXPECT_EQ(table.find(3), hxnullptr);
+}
+
+TEST_F(hxhash_table_test_f, erase_iterator_head_node_returns_next) {
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
+	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, true, 1>;
+	table_t table;
+	hxtest_integer* const node_2 = hxnew<hxtest_integer>(2);
+	table.insert(hxptr<hxtest_integer>(node_2));
+	hxtest_integer* const node_0 = hxnew<hxtest_integer>(0);
+	table.insert(hxptr<hxtest_integer>(node_0));
+	const table_t::iterator it = table.begin();
+	EXPECT_EQ(&*it, node_0);
+	const table_t::iterator next = table.erase(it);
+	EXPECT_EQ(&*next, node_2);
+	EXPECT_EQ(table.size(), 1u);
+	EXPECT_EQ(table.find(0), hxnullptr);
+	EXPECT_NE(table.find(2), hxnullptr);
+	hxdelete(node_0);
+}
+
+TEST_F(hxhash_table_test_f, erase_iterator_interior_node_returns_next) {
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
+	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, true, 1>;
+	table_t table;
+	hxtest_integer* const node_10 = hxnew<hxtest_integer>(10);
+	table.insert(hxptr<hxtest_integer>(node_10));
+	hxtest_integer* const node_9 = hxnew<hxtest_integer>(9);
+	table.insert(hxptr<hxtest_integer>(node_9));
+	hxtest_integer* const node_2 = hxnew<hxtest_integer>(2);
+	table.insert(hxptr<hxtest_integer>(node_2));
+	hxtest_integer* const node_0 = hxnew<hxtest_integer>(0);
+	table.insert(hxptr<hxtest_integer>(node_0));
+	table_t::iterator it = table.begin();
+	while(&*it != node_9) {
+		++it;
+	}
+	const table_t::iterator next = table.erase(it);
+	EXPECT_EQ(&*next, node_10);
+	EXPECT_EQ(table.size(), 3u);
+	EXPECT_EQ(table.find(9), hxnullptr);
+	hxdelete(node_9);
+}
+
+TEST_F(hxhash_table_test_f, erase_iterator_tail_node_returns_end) {
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
+	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, true, 1>;
+	table_t table;
+	hxtest_integer* const node_2 = hxnew<hxtest_integer>(2);
+	table.insert(hxptr<hxtest_integer>(node_2));
+	hxtest_integer* const node_0 = hxnew<hxtest_integer>(0);
+	table.insert(hxptr<hxtest_integer>(node_0));
+	table_t::iterator it = table.begin();
+	while(&*it != node_2) {
+		++it;
+	}
+	const table_t::iterator next = table.erase(it);
+	EXPECT_EQ(next, table.end());
+	EXPECT_EQ(table.size(), 1u);
+	EXPECT_EQ(table.find(2), hxnullptr);
+	EXPECT_NE(table.find(0), hxnullptr);
+	hxdelete(node_2);
+}
+
+TEST_F(hxhash_table_test_f, replace_no_match_inserts_new_node) {
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
+	using table_t = hxhash_table<hxtest_integer, hxdo_not_delete, false, 4>;
+	table_t table;
+	hxtest_integer* const node_1 = hxnew<hxtest_integer>(1);
+	const hxptr<hxtest_integer, hxdo_not_delete> replaced = table.replace(node_1);
+	EXPECT_EQ(replaced.get(), hxnullptr);
+	EXPECT_EQ(table.size(), 1u);
+	EXPECT_EQ(table.find(1), node_1);
+	hxdelete(node_1);
+}
+
+TEST_F(hxhash_table_test_f, replace_head_match_keeps_size_and_swaps_node) {
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
+	using table_t = hxhash_table<hxtest_integer, hxdo_not_delete, false, 1>;
+	table_t table;
+	hxtest_integer* const node_2 = hxnew<hxtest_integer>(2);
+	table.insert(hxptr<hxtest_integer>(node_2));
+	hxtest_integer* const node_0a = hxnew<hxtest_integer>(0);
+	table.insert(hxptr<hxtest_integer>(node_0a));
+	hxtest_integer* const node_0b = hxnew<hxtest_integer>(0);
+	const hxptr<hxtest_integer, hxdo_not_delete> replaced = table.replace(node_0b);
+	EXPECT_EQ(replaced.get(), node_0a);
+	EXPECT_EQ(table.size(), 2u);
+	EXPECT_EQ(table.find(0), node_0b);
+	EXPECT_NE(table.find(2), hxnullptr);
+	hxdelete(node_0a);
+	hxdelete(node_0b);
+	hxdelete(node_2);
+}
+
+TEST_F(hxhash_table_test_f, replace_interior_match_keeps_size_and_swaps_node) {
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
+	using table_t = hxhash_table<hxtest_integer, hxdo_not_delete, false, 1>;
+	table_t table;
+	hxtest_integer* const node_9 = hxnew<hxtest_integer>(9);
+	table.insert(hxptr<hxtest_integer>(node_9));
+	hxtest_integer* const node_0a = hxnew<hxtest_integer>(0);
+	table.insert(hxptr<hxtest_integer>(node_0a));
+	hxtest_integer* const node_2 = hxnew<hxtest_integer>(2);
+	table.insert(hxptr<hxtest_integer>(node_2));
+	hxtest_integer* const node_0b = hxnew<hxtest_integer>(0);
+	const hxptr<hxtest_integer, hxdo_not_delete> replaced = table.replace(node_0b);
+	EXPECT_EQ(replaced.get(), node_0a);
+	EXPECT_EQ(table.size(), 3u);
+	EXPECT_EQ(table.find(0), node_0b);
+	EXPECT_NE(table.find(2), hxnullptr);
+	EXPECT_NE(table.find(9), hxnullptr);
+	hxdelete(node_0a);
+	hxdelete(node_0b);
+	hxdelete(node_2);
+	hxdelete(node_9);
 }
 
 TEST(hxhash_table_node_integer_test, conforms_to_forward_iter_api) {

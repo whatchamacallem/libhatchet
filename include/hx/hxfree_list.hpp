@@ -53,8 +53,9 @@ public:
 		explicit deleter_t(hxfree_list& owner_) noexcept : m_owner_(&owner_) { }
 
 		/// Destructs `*p` and returns its slot to the owning `hxfree_list`.
-		/// - `p` : A non-null pointer previously returned by `allocate`.
-		void operator()(T_* p_) const noexcept { m_owner_->release(p_); }
+		/// WARNING: Made non-const to indicate deletion is not thread-safe.
+		/// - `p` : A pointer previously returned by `allocate` or `hxnull`.
+		void operator()(T_* p_) noexcept { if(p_ != hxnull) { m_owner_->release(p_); } }
 
 		/// Always returns true, indicating the deleter is valid.
 		operator bool(void) const { return true; }
@@ -102,8 +103,8 @@ public:
 
 	/// Returns true if `ptr` points into this free list's storage.
 	/// - `ptr` : The `hxptr` to test.
-	template<typename ptr_deleter_t_>
-	hxattr_nodiscard bool is_allocator(const hxptr<T_, ptr_deleter_t_>& ptr_) const noexcept;
+	template<typename deleter_t_>
+	hxattr_nodiscard bool is_allocator(const hxptr<T_, deleter_t_>& ptr_) const noexcept;
 
 	/// Returns the capacity of the pool.
 	hxattr_nodiscard hxsize_t max_size(void) const { return this->capacity(); }
@@ -114,8 +115,8 @@ public:
 
 	/// Destructs the object owned by `ptr` and returns its slot to the free list.
 	/// - `ptr` : An `hxptr` previously returned by `allocate`. Must not be null.
-	template<typename ptr_deleter_t_>
-	void release(hxptr<T_, ptr_deleter_t_>&& ptr_) noexcept;
+	template<typename deleter_t_>
+	void release(hxptr<T_, deleter_t_>&& ptr_) noexcept;
 
 	/// Allocates storage for `size` slots and enqueues them when `capacity` is
 	/// `hxallocator_dynamic_capacity`. The current capacity becomes `size`

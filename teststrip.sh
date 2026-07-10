@@ -34,7 +34,7 @@ HX_DIR=$PWD
 # Build artifacts are not retained.
 rm -rf "$(readlink -f build)" build; ln -s "$(mktemp -d)" build && cd build
 
-if [ "${1:-}" != "--headless" ]; then
+if [ "${1:-}" = "--verbose" ]; then
 	set -o xtrace
 fi
 
@@ -57,10 +57,9 @@ done
 # Only process and display the c++23 version.
 strip -o hxtest-strip --strip-unneeded hxtest
 
-# Turn off tracing silently and make sure the command returns 0.
 { set +o xtrace; } 2> /dev/null
 
-if [ "${1:-}" != "--headless" ]; then
+if [ "${1:-}" = "--verbose" ]; then
 	./hxtest-strip
 else
 	if ./hxtest-strip > console_output.txt 2>&1; then
@@ -73,14 +72,13 @@ fi
 
 cd ..
 
-# --headless skips all output.
-if [ "${1:-}" != "--headless" ]; then
+if [ "${1:-}" = "--verbose" ]; then
 	./listsymbols.sh
 fi
 
 SYMBOLS=$(nm --radix=d --print-size build/hxtest)
 echo "$SYMBOLS" | awk 'NF == 4 && $4 ~ /hx/ && $4 !~ /test/ && !seen[$1]++ {total += $2} \
- END {printf "= Total non-test libhatchet bytes: %d\n", total}'
+	END {printf "= Total non-test libhatchet bytes: %d\n", total}'
 
 size build/hxtest-strip
 

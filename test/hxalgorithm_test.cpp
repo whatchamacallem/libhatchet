@@ -30,7 +30,55 @@ TEST(hxtest_test, iter_api_types) {
 		hxtest_rand_iter_api_t(values), hxtest_rand_iter_api_t(values + 2)));
 }
 
-TEST(hxalgorithm_test, hxmerge_iterator_support) {
+TEST(hxmerge_test, pointer_range_tails) {
+	const int left1[1] = { 1 };
+	const int right2[2] = { 2, 3 };
+	int dest3a[3] = { };
+	const int* merge_end_a = hxmerge(left1 + 0, left1 + 1, right2 + 0, right2 + 2, dest3a + 0);
+	EXPECT_EQ(merge_end_a - dest3a, ptrdiff_t{3});
+	EXPECT_EQ(dest3a[0], 1);
+	EXPECT_EQ(dest3a[1], 2);
+	EXPECT_EQ(dest3a[2], 3);
+	const int left2[2] = { 1, 3 };
+	const int right1[1] = { 2 };
+	int dest3b[3] = { };
+	const int* merge_end_b = hxmerge(left2 + 0, left2 + 2, right1 + 0, right1 + 1, dest3b + 0);
+	EXPECT_EQ(merge_end_b - dest3b, ptrdiff_t{3});
+	EXPECT_EQ(dest3b[0], 1);
+	EXPECT_EQ(dest3b[1], 2);
+	EXPECT_EQ(dest3b[2], 3);
+}
+
+TEST(hxmerge_test, preserves_stable_ordering) {
+	struct hxmerge_test_record_t {
+		int key;
+		int ticket;
+		bool operator<(const hxmerge_test_record_t& other) const {
+			return key < other.key;
+		}
+	};
+	hxmerge_test_record_t left[] = {
+		{ 1, 0 }, { 3, 0 }, { 5, 0 }, { 5, 1 }
+	};
+	hxmerge_test_record_t right[] = {
+		{ 1, 1 }, { 3, 1 }, { 5, 2 }, { 7, 0 }
+	};
+	hxmerge_test_record_t dest[8] = { };
+	const hxsize_t left_count = hxsize(left);
+	const hxsize_t right_count = hxsize(right);
+	const hxmerge_test_record_t* merge_end = hxmerge(left+0, left + left_count, right+0, right + right_count, dest+0);
+	EXPECT_EQ(merge_end - dest, hxsize_t{8});
+	const hxmerge_test_record_t expected[] = {
+		{ 1, 0 }, { 1, 1 }, { 3, 0 }, { 3, 1 },
+		{ 5, 0 }, { 5, 1 }, { 5, 2 }, { 7, 0 }
+	};
+	for(hxsize_t i = 0; i < left_count + right_count; ++i) {
+		EXPECT_EQ(dest[i].key, expected[i].key);
+		EXPECT_EQ(dest[i].ticket, expected[i].ticket);
+	}
+}
+
+TEST(hxmerge_test, iterator_support) {
 	hxtest_ref_tracker_t left[3] = { hxtest_ref_tracker_t(1), hxtest_ref_tracker_t(3), hxtest_ref_tracker_t(5) };
 	hxtest_ref_tracker_t right[3] = { hxtest_ref_tracker_t(2), hxtest_ref_tracker_t(4), hxtest_ref_tracker_t(6) };
 	hxtest_ref_tracker_t dest[6] = {
@@ -63,7 +111,7 @@ TEST(hxalgorithm_test, hxmerge_iterator_support) {
 	}
 }
 
-TEST(hxalgorithm_test, hxbinary_search_iterator_support) {
+TEST(hxbinary_search_test, iterator_support) {
 	hxtest_ref_tracker_t values[7] = {
 		hxtest_ref_tracker_t(-5), hxtest_ref_tracker_t(-1), hxtest_ref_tracker_t(0), hxtest_ref_tracker_t(3),
 		hxtest_ref_tracker_t(5), hxtest_ref_tracker_t(8), hxtest_ref_tracker_t(12)
@@ -85,40 +133,60 @@ TEST(hxalgorithm_test, hxbinary_search_iterator_support) {
 	EXPECT_EQ(result, begin);
 }
 
+TEST(hxbinary_search_test, two_element_boundary) {
+	const int values[2] = { 3, 7 };
+	const int* found = hxbinary_search(values + 0, values + 2, 3, hxkey_less_t<int>{});
+	EXPECT_NE(found, values + 2);
+	EXPECT_EQ(*found, 3);
+	found = hxbinary_search(values + 0, values + 2, 7, hxkey_less_t<int>{});
+	EXPECT_NE(found, values + 2);
+	EXPECT_EQ(*found, 7);
+	found = hxbinary_search(values + 0, values + 2, 5, hxkey_less_t<int>{});
+	EXPECT_EQ(found, values + 2);
+}
+
 #if HX_CPLUSPLUS >= 201402L
-TEST(hxset_algorithms_test, single_element_ranges) {
-	const int left[1] = { 2 };
-	const int right[1] = { 3 };
+TEST(hxset_algorithms_test, edge_cases) {
+	const int single_left[1] = { 2 };
+	const int single_right[1] = { 3 };
 	int dest_union[2] = { };
 	int dest_intersection[1] = { };
 	int dest_difference[1] = { };
-	const int* union_end = hxset_union(left + 0, left + 1, right + 0, right + 1, dest_union + 0);
+	const int* union_end = hxset_union(single_left + 0, single_left + 1, single_right + 0, single_right + 1, dest_union + 0);
 	EXPECT_EQ(union_end - dest_union, ptrdiff_t{2});
 	EXPECT_EQ(dest_union[0], 2);
 	EXPECT_EQ(dest_union[1], 3);
-	const int* intersection_end = hxset_intersection(left + 0, left + 1, right + 0, right + 1, dest_intersection + 0);
+	const int* intersection_end = hxset_intersection(single_left + 0, single_left + 1, single_right + 0, single_right + 1, dest_intersection + 0);
 	EXPECT_EQ(intersection_end - dest_intersection, ptrdiff_t{0});
-	const int* difference_end = hxset_difference(left + 0, left + 1, right + 0, right + 1, dest_difference + 0);
+	const int* difference_end = hxset_difference(single_left + 0, single_left + 1, single_right + 0, single_right + 1, dest_difference + 0);
 	EXPECT_EQ(difference_end - dest_difference, ptrdiff_t{1});
 	EXPECT_EQ(dest_difference[0], 2);
+	const int left3[3] = { 1, 5, 9 };
+	const int right1[1] = { 5 };
+	int dest3[3] = { };
+	const int* diff_end = hxset_difference(left3 + 0, left3 + 3, right1 + 0, right1 + 1, dest3 + 0);
+	EXPECT_EQ(diff_end - dest3, ptrdiff_t{2});
+	EXPECT_EQ(dest3[0], 1);
+	EXPECT_EQ(dest3[1], 9);
+	int dest4[1] = { };
+	const int* inter_end = hxset_intersection(left3 + 0, left3 + 3, right1 + 0, right1 + 1, dest4 + 0);
+	EXPECT_EQ(inter_end - dest4, ptrdiff_t{1});
+	EXPECT_EQ(dest4[0], 5);
 }
 
-TEST(hxset_algorithms_test, last_left_element_is_largest) {
-	const int left[3] = { 1, 3, 9 };
-	const int right[2] = { 2, 4 };
-	int dest[5] = { };
-	const int* union_end = hxset_union(left + 0, left + 3, right + 0, right + 2, dest + 0);
-	EXPECT_EQ(union_end - dest, ptrdiff_t{5});
-	EXPECT_EQ(dest[4], 9);
-}
-
-TEST(hxset_algorithms_test, last_right_element_is_largest) {
-	const int left[2] = { 1, 3 };
-	const int right[3] = { 2, 4, 9 };
-	int dest[5] = { };
-	const int* union_end = hxset_union(left + 0, left + 2, right + 0, right + 3, dest + 0);
-	EXPECT_EQ(union_end - dest, ptrdiff_t{5});
-	EXPECT_EQ(dest[4], 9);
+TEST(hxset_algorithms_test, largest_element_at_tail) {
+	const int left_a[3] = { 1, 3, 9 };
+	const int right_a[2] = { 2, 4 };
+	int dest_a[5] = { };
+	const int* union_end_a = hxset_union(left_a + 0, left_a + 3, right_a + 0, right_a + 2, dest_a + 0);
+	EXPECT_EQ(union_end_a - dest_a, ptrdiff_t{5});
+	EXPECT_EQ(dest_a[4], 9);
+	const int left_b[2] = { 1, 3 };
+	const int right_b[3] = { 2, 4, 9 };
+	int dest_b[5] = { };
+	const int* union_end_b = hxset_union(left_b + 0, left_b + 2, right_b + 0, right_b + 3, dest_b + 0);
+	EXPECT_EQ(union_end_b - dest_b, ptrdiff_t{5});
+	EXPECT_EQ(dest_b[4], 9);
 }
 
 TEST(hxset_algorithms_test, int_pointer_ranges) {
@@ -202,65 +270,65 @@ TEST(hxset_algorithms_test, hxarray_output_iterator_support) {
 	expect_hxarray(difference_output, expected_difference, hxsize(expected_difference));
 }
 
-TEST(hxset_algorithms_test, difference_left_tail_after_right_exhausted) {
-	const int left[3] = { 1, 5, 9 };
-	const int right[1] = { 5 };
-	int dest[3] = { };
-	const int* difference_end = hxset_difference(left + 0, left + 3, right + 0, right + 1, dest + 0);
-	EXPECT_EQ(difference_end - dest, ptrdiff_t{2});
-	EXPECT_EQ(dest[0], 1);
-	EXPECT_EQ(dest[1], 9);
-}
-
-TEST(hxmerge_test, right_tail_appended_after_left_exhausted) {
-	const int left[1] = { 1 };
-	const int right[2] = { 2, 3 };
-	int dest[3] = { };
-	const int* merge_end = hxmerge(left + 0, left + 1, right + 0, right + 2, dest + 0);
-	EXPECT_EQ(merge_end - dest, ptrdiff_t{3});
-	EXPECT_EQ(dest[0], 1);
-	EXPECT_EQ(dest[1], 2);
-	EXPECT_EQ(dest[2], 3);
-}
-
-TEST(hxmerge_test, left_tail_appended_after_right_exhausted) {
-	const int left[2] = { 1, 3 };
-	const int right[1] = { 2 };
-	int dest[3] = { };
-	const int* merge_end = hxmerge(left + 0, left + 2, right + 0, right + 1, dest + 0);
-	EXPECT_EQ(merge_end - dest, ptrdiff_t{3});
-	EXPECT_EQ(dest[0], 1);
-	EXPECT_EQ(dest[1], 2);
-	EXPECT_EQ(dest[2], 3);
-}
-
-TEST(hxmerge_test, preserves_stable_ordering) {
-	struct hxmerge_test_record_t {
-		int key;
-		int ticket;
-		bool operator<(const hxmerge_test_record_t& other) const {
-			return key < other.key;
+TEST(hxset_algorithms_test, hxarray_output_iterator_right_exhausted_first) {
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
+	auto expect_hxarray = [](const hxvector<hxtest_ref_tracker_t>& actual, const int* expected, hxsize_t count) {
+		ASSERT_EQ(actual.size(), count);
+		for(hxsize_t i = 0; i < count; ++i) {
+			EXPECT_EQ(actual[i].value, expected[i]);
 		}
 	};
-	hxmerge_test_record_t left[] = {
-		{ 1, 0 }, { 3, 0 }, { 5, 0 }, { 5, 1 }
-	};
-	hxmerge_test_record_t right[] = {
-		{ 1, 1 }, { 3, 1 }, { 5, 2 }, { 7, 0 }
-	};
-	hxmerge_test_record_t dest[8] = { };
-	const hxsize_t left_count = hxsize(left);
-	const hxsize_t right_count = hxsize(right);
-	const hxmerge_test_record_t* merge_end = hxmerge(left+0, left + left_count, right+0, right + right_count, dest+0);
-	EXPECT_EQ(merge_end - dest, hxsize_t{8});
-	const hxmerge_test_record_t expected[] = {
-		{ 1, 0 }, { 1, 1 }, { 3, 0 }, { 3, 1 },
-		{ 5, 0 }, { 5, 1 }, { 5, 2 }, { 7, 0 }
-	};
-	for(hxsize_t i = 0; i < left_count + right_count; ++i) {
-		EXPECT_EQ(dest[i].key, expected[i].key);
-		EXPECT_EQ(dest[i].ticket, expected[i].ticket);
+	hxtest_ref_tracker_t left[] = { hxtest_ref_tracker_t(1), hxtest_ref_tracker_t(2), hxtest_ref_tracker_t(4) };
+	hxtest_ref_tracker_t right[] = { hxtest_ref_tracker_t(3) };
+	hxvector<hxtest_ref_tracker_t> union_output;
+	union_output.reserve(hxsize(left) + hxsize(right));
+	{
+		const hxvector<hxtest_ref_tracker_t>& union_ret = hxset_union(
+			hxtest_rand_iter_api_t(left), hxtest_rand_iter_api_t(left + hxsize(left)),
+			hxtest_rand_iter_api_t(right), hxtest_rand_iter_api_t(right + hxsize(right)), union_output);
+		EXPECT_EQ(&union_ret, &union_output);
 	}
+	const int expected_union[] = { 1, 2, 3, 4 };
+	expect_hxarray(union_output, expected_union, hxsize(expected_union));
+	hxvector<hxtest_ref_tracker_t> intersection_output;
+	intersection_output.reserve(hxsize(left));
+	{
+		const hxvector<hxtest_ref_tracker_t>& intersection_ret = hxset_intersection(
+			hxtest_rand_iter_api_t(left), hxtest_rand_iter_api_t(left + hxsize(left)),
+			hxtest_rand_iter_api_t(right), hxtest_rand_iter_api_t(right + hxsize(right)), intersection_output);
+		EXPECT_EQ(&intersection_ret, &intersection_output);
+	}
+	EXPECT_EQ(intersection_output.size(), hxsize_t{0});
+	hxvector<hxtest_ref_tracker_t> difference_output;
+	difference_output.reserve(hxsize(left));
+	{
+		const hxvector<hxtest_ref_tracker_t>& difference_ret = hxset_difference(
+			hxtest_rand_iter_api_t(left), hxtest_rand_iter_api_t(left + hxsize(left)),
+			hxtest_rand_iter_api_t(right), hxtest_rand_iter_api_t(right + hxsize(right)), difference_output);
+		EXPECT_EQ(&difference_ret, &difference_output);
+	}
+	const int expected_difference[] = { 1, 2, 4 };
+	expect_hxarray(difference_output, expected_difference, hxsize(expected_difference));
+}
+#endif // HX_CPLUSPLUS >= 201402L
+
+TEST(hxminmax_test, small_ranges) {
+	const int one[1] = { 34 };
+	hxminmax_result<const int*> result = hxminmax(one, one + 1);
+	EXPECT_EQ(result.min, one);
+	EXPECT_EQ(result.max, one);
+	const int ascending[2] = { 7, 11 };
+	result = hxminmax(ascending, ascending + 2);
+	EXPECT_EQ(result.min, ascending);
+	EXPECT_EQ(result.max, ascending + 1);
+	const int descending[2] = { 11, 7 };
+	result = hxminmax(descending, descending + 2);
+	EXPECT_EQ(result.min, descending + 1);
+	EXPECT_EQ(result.max, descending);
+	const int ties[6] = { 3, 1, 2, 1, 5, 5 };
+	result = hxminmax(ties, ties + 6);
+	EXPECT_EQ(result.min, ties + 1);
+	EXPECT_EQ(result.max, ties + 4);
 }
 
 TEST(hxminmax_test, simple_case) {
@@ -280,46 +348,6 @@ TEST(hxminmax_test, simple_case) {
 	result = hxminmax(ints, ints);
 	EXPECT_EQ(result.min, ints);
 	EXPECT_EQ(result.max, ints);
-}
-
-TEST(hxminmax_test, first_of_equal_minima_and_maxima) {
-	const int ints[6] = { 3, 1, 2, 1, 5, 5 };
-	const hxminmax_result<const int*> result = hxminmax(ints, ints + 6);
-	EXPECT_EQ(result.min, ints + 1);
-	EXPECT_EQ(result.max, ints + 4);
-}
-
-TEST(hxminmax_test, single_element_returns_begin_for_both) {
-	const int ints[1] = { 34 };
-	const hxminmax_result<const int*> result = hxminmax(ints, ints + 1);
-	EXPECT_EQ(result.min, ints);
-	EXPECT_EQ(result.max, ints);
-}
-
-TEST(hxminmax_test, two_elements_ascending) {
-	const int ints[2] = { 7, 11 };
-	const hxminmax_result<const int*> result = hxminmax(ints, ints + 2);
-	EXPECT_EQ(result.min, ints);
-	EXPECT_EQ(result.max, ints + 1);
-}
-
-TEST(hxminmax_test, two_elements_descending) {
-	const int ints[2] = { 11, 7 };
-	const hxminmax_result<const int*> result = hxminmax(ints, ints + 2);
-	EXPECT_EQ(result.min, ints + 1);
-	EXPECT_EQ(result.max, ints);
-}
-
-TEST(hxbinary_search_test, two_element_boundary) {
-	const int values[2] = { 3, 7 };
-	const int* found = hxbinary_search(values + 0, values + 2, 3, hxkey_less_t<int>{});
-	EXPECT_NE(found, values + 2);
-	EXPECT_EQ(*found, 3);
-	found = hxbinary_search(values + 0, values + 2, 7, hxkey_less_t<int>{});
-	EXPECT_NE(found, values + 2);
-	EXPECT_EQ(*found, 7);
-	found = hxbinary_search(values + 0, values + 2, 5, hxkey_less_t<int>{});
-	EXPECT_EQ(found, values + 2);
 }
 
 TEST(hxminmax_test, iterator_support) {
@@ -352,14 +380,11 @@ TEST(hxcount_if_test, simple_case) {
 	EXPECT_EQ(hxcount_if(begin, begin, [](const hxtest_ref_tracker_t& x) { return x.value == 1; }), hxsize_t{0});
 }
 
-TEST(hxcount_if_test, only_last_element_matches) {
-	const int ints[4] = { 1, 3, 5, 6 };
-	EXPECT_EQ(hxcount_if(ints, ints + 4, [](const int& x) { return x % 2 == 0; }), hxsize_t{1});
-}
-
-TEST(hxcount_if_test, only_first_element_matches) {
-	const int ints[4] = { 6, 1, 3, 5 };
-	EXPECT_EQ(hxcount_if(ints, ints + 4, [](const int& x) { return x % 2 == 0; }), hxsize_t{1});
+TEST(hxcount_if_test, boundary_matches) {
+	const int last_matches[4] = { 1, 3, 5, 6 };
+	EXPECT_EQ(hxcount_if(last_matches, last_matches + 4, [](const int& x) { return x % 2 == 0; }), hxsize_t{1});
+	const int first_matches[4] = { 6, 1, 3, 5 };
+	EXPECT_EQ(hxcount_if(first_matches, first_matches + 4, [](const int& x) { return x % 2 == 0; }), hxsize_t{1});
 }
 
 TEST(hxunique_test, simple_case) {
@@ -376,35 +401,51 @@ TEST(hxunique_test, simple_case) {
 	EXPECT_EQ(values[1].value, 2);
 	EXPECT_EQ(values[2].value, 3);
 	EXPECT_EQ(values[3].value, 4);
+	hxtest_ref_tracker_t no_dup_values[3] = {
+		hxtest_ref_tracker_t(1), hxtest_ref_tracker_t(2), hxtest_ref_tracker_t(3)
+	};
+	const hxtest_forward_iter_api_t no_dup_begin(no_dup_values);
+	const hxtest_forward_iter_api_t no_dup_end(no_dup_values + 3);
+	const hxtest_forward_iter_api_t no_dup_new_end =
+		hxunique(no_dup_begin, no_dup_end, hxtest_value_equal);
+	EXPECT_EQ(no_dup_new_end, no_dup_end);
 }
 
-TEST(hxunique_test, all_duplicates) {
-	int ints[5] = { 7, 7, 7, 7, 7 };
-	const int* new_end = hxunique(ints, ints + 5);
-	EXPECT_EQ(new_end - ints, ptrdiff_t{1});
-	EXPECT_EQ(ints[0], 7);
-	new_end = hxunique(ints, ints + 1);
-	EXPECT_EQ(new_end, ints + 1);
+TEST(hxunique_test, boundary_counts) {
+	int all_dup[5] = { 7, 7, 7, 7, 7 };
+	const int* new_end = hxunique(all_dup, all_dup + 5);
+	EXPECT_EQ(new_end - all_dup, ptrdiff_t{1});
+	EXPECT_EQ(all_dup[0], 7);
+	new_end = hxunique(all_dup, all_dup + 1);
+	EXPECT_EQ(new_end, all_dup + 1);
+	int no_dup[3] = { 1, 2, 3 };
+	new_end = hxunique(no_dup, no_dup + 3);
+	EXPECT_EQ(new_end - no_dup, ptrdiff_t{3});
+	int two_none[2] = { 4, 5 };
+	new_end = hxunique(two_none, two_none + 2);
+	EXPECT_EQ(new_end - two_none, ptrdiff_t{2});
+	EXPECT_EQ(two_none[0], 4);
+	EXPECT_EQ(two_none[1], 5);
+	int two_dup[2] = { 9, 9 };
+	new_end = hxunique(two_dup, two_dup + 2);
+	EXPECT_EQ(new_end - two_dup, ptrdiff_t{1});
+	int mixed[7] = { 1, 1, 2, 3, 3, 3, 4 };
+	new_end = hxunique(mixed, mixed + 7);
+	EXPECT_EQ(new_end - mixed, ptrdiff_t{4});
+	EXPECT_EQ(mixed[0], 1);
+	EXPECT_EQ(mixed[1], 2);
+	EXPECT_EQ(mixed[2], 3);
+	EXPECT_EQ(mixed[3], 4);
+	int* const empty_end = hxunique(mixed + 0, mixed + 0);
+	EXPECT_EQ(empty_end, mixed + 0);
 }
 
-TEST(hxunique_test, return_value_is_one_past_last_unique) {
-	int ints[3] = { 1, 2, 3 };
-	const int* new_end = hxunique(ints, ints + 3);
-	EXPECT_EQ(new_end - ints, ptrdiff_t{3});
-}
-
-TEST(hxunique_test, two_element_no_duplicate) {
-	int ints[2] = { 4, 5 };
-	const int* new_end = hxunique(ints, ints + 2);
-	EXPECT_EQ(new_end - ints, ptrdiff_t{2});
-	EXPECT_EQ(ints[0], 4);
-	EXPECT_EQ(ints[1], 5);
-}
-
-TEST(hxunique_test, two_element_duplicate) {
-	int ints[2] = { 9, 9 };
-	const int* new_end = hxunique(ints, ints + 2);
-	EXPECT_EQ(new_end - ints, ptrdiff_t{1});
+TEST(hxunique_test, empty_range_explicit_equal) {
+	hxtest_ref_tracker_t value[1] = { hxtest_ref_tracker_t(1) };
+	const hxtest_forward_iter_api_t begin(value);
+	const hxtest_forward_iter_api_t empty_end =
+		hxunique(begin, begin, hxtest_value_equal);
+	EXPECT_EQ(empty_end, begin);
 }
 
 TEST(hxfind_if_test, simple_case) {
@@ -465,28 +506,16 @@ TEST(hxfind_if_test, flat_map_iterator) {
 	EXPECT_EQ(result, m.begin());
 }
 
-TEST(hxall_of_test, iterator_support) {
+TEST(hxquantifier_test, all_of_any_of_and_for_each) {
 	hxtest_ref_tracker_t values[3] = { hxtest_ref_tracker_t(10), hxtest_ref_tracker_t(20), hxtest_ref_tracker_t(30) };
 	const hxtest_forward_iter_api_t begin(values);
 	const hxtest_forward_iter_api_t end(values + 3);
 	EXPECT_TRUE(hxall_of(begin, end, [](const hxtest_ref_tracker_t& x) { return x.value >= 10; }));
 	EXPECT_FALSE(hxall_of(begin, end, [](const hxtest_ref_tracker_t& x) { return x.value >= 30; }));
 	EXPECT_TRUE(hxall_of(begin, begin, [](const hxtest_ref_tracker_t& x) { return x.value >= 100; }));
-}
-
-TEST(hxany_of_test, iterator_support) {
-	hxtest_ref_tracker_t values[3] = { hxtest_ref_tracker_t(10), hxtest_ref_tracker_t(20), hxtest_ref_tracker_t(30) };
-	const hxtest_forward_iter_api_t begin(values);
-	const hxtest_forward_iter_api_t end(values + 3);
 	EXPECT_TRUE(hxany_of(begin, end, [](const hxtest_ref_tracker_t& x) { return x.value == 30; }));
 	EXPECT_FALSE(hxany_of(begin, end, [](const hxtest_ref_tracker_t& x) { return x.value == 99; }));
 	EXPECT_FALSE(hxany_of(begin, begin, [](const hxtest_ref_tracker_t& x) { return x.value == 10; }));
-}
-
-TEST(hxfor_each_test, iterator_support) {
-	hxtest_ref_tracker_t values[3] = { hxtest_ref_tracker_t(10), hxtest_ref_tracker_t(20), hxtest_ref_tracker_t(30) };
-	const hxtest_forward_iter_api_t begin(values);
-	const hxtest_forward_iter_api_t end(values + 3);
 	struct hxfor_each_test_accumulator_t {
 		int total;
 		void operator()(const hxtest_ref_tracker_t& x) { total += x.value; }
@@ -505,5 +534,3 @@ TEST(hxexchange_test, move_only_type) {
 	EXPECT_EQ(old.value, 34);
 	EXPECT_EQ(a.value, 99);
 }
-
-#endif // HX_CPLUSPLUS >= 201402L

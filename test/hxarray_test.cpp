@@ -10,6 +10,21 @@
 
 HX_NS_USE
 
+#if !defined _MSC_VER && !defined __wasm__
+static_assert(sizeof(size_t) != 4 || (
+		sizeof(hxarray<int32_t, hxallocator_dynamic_capacity>) == 8u
+		&& sizeof(hxarray<int32_t, 4>) == 16u),
+	"hxarray must pack dynamic storage as a hxsize_t capacity and a T* data"
+	" pointer with no padding, and fixed storage as capacity * sizeof(T) with"
+	" no padding");
+static_assert(sizeof(size_t) != 8 || (
+		sizeof(hxarray<int32_t, hxallocator_dynamic_capacity>) == 16u
+		&& sizeof(hxarray<int32_t, 4>) == 16u),
+	"hxarray must pack dynamic storage as a hxsize_t capacity and a T* data"
+	" pointer with no padding, and fixed storage as capacity * sizeof(T) with"
+	" no padding");
+#endif
+
 hxattr_noinline static void hxtest_gdb_break_hxarray_static(void) { }
 hxattr_noinline static void hxtest_gdb_break_hxarray_dynamic(void) { }
 
@@ -438,6 +453,12 @@ TEST_F(hxarray_test_f, hxarray_dynamic_assign_from_iterators) {
 		EXPECT_EQ(a[0].id, 3);
 		EXPECT_EQ(a[1].id, 6);
 		EXPECT_EQ(a[2].id, 9);
+		hxtest_object src2[3] = { hxtest_object(30), hxtest_object(60), hxtest_object(90) };
+		a.assign(src2 + 0, src2 + 3);
+		EXPECT_EQ(a.size(), 3);
+		EXPECT_EQ(a[0].id, 30);
+		EXPECT_EQ(a[1].id, 60);
+		EXPECT_EQ(a[2].id, 90);
 	}
 }
 
@@ -458,6 +479,19 @@ TEST_F(hxarray_test_f, hxarray_dynamic_assign_range_rvalue) {
 		for(hxsize_t i = 0; i < 2; ++i) {
 			EXPECT_FALSE(a[i].moved_from);
 			EXPECT_TRUE(source_elements[i].moved_from);
+		}
+		hxtest_object more_elements[] = {
+			hxtest_object(10),
+			hxtest_object(20)
+		};
+		a.assign_range(hxtest_pointer_range(
+			more_elements, more_elements + 2));
+		EXPECT_EQ(a.size(), 2);
+		EXPECT_EQ(a[0].id, 10);
+		EXPECT_EQ(a[1].id, 20);
+		for(hxsize_t i = 0; i < 2; ++i) {
+			EXPECT_FALSE(a[i].moved_from);
+			EXPECT_TRUE(more_elements[i].moved_from);
 		}
 	}
 }

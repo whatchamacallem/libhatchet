@@ -25,9 +25,8 @@ from typing import Iterator, Optional, Tuple
 #		typename deleter_t_=hxdefault_delete,
 #		bool multi_t_ = false,
 #		hxhash_t table_size_bits_=hxallocator_dynamic_capacity>
-#	class hxhash_table {
+#	class hxhash_table : private deleter_t_ {
 #		// ...
-#		deleter_t_ m_deleter_;
 #		hxsize_t m_size_;
 #		hxhash_table_internal_allocator_<node_t_, table_size_bits_> m_table_;
 #	};

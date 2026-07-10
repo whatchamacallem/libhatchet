@@ -22,20 +22,27 @@ HX_NS_BEGIN_
 /// `reset`. Only one `hxptr` may own a given object at a time. Move
 /// construction and move assignment transfer ownership. Copy construction and
 /// copy assignment are deleted.
-/// - `T` : The pointed-to type.
-/// - `deleter_t` : A callable that frees the owned pointer. Defaults to
-///    `hxdefault_delete`. Use `hxconsteval_delete` for `consteval` work.
+/// - `T` : The pointed-to type. Must not be an array, reference or pointer
+///    type.
+/// - `deleter_t` : A class type invoked as `bool deleter(T*)` to potentially
+///    free the owned pointer. Use `hxconsteval_delete` for `consteval` work.
 template<typename T_, typename deleter_t_=hxdefault_delete>
-class hxptr {
+class hxptr : private deleter_t_ {
 public:
+	// No arrays allowed because there is no delete[] equivalent. Use hxref for
+	// pointer and reference types..
+	static_assert(!hxis_array<T_>::value, "hxptr does not support array types");
+	static_assert(!hxis_reference<T_>::value, "hxptr does not support reference types");
+	static_assert(!hxis_pointer<T_>::value, "hxptr does not support pointer types");
+
 	/// `element_t` - Publishes the pointed-to type.
 	using element_t = T_;
 
 	/// Constructs an `hxptr` that takes ownership of `ptr` with a specific
 	/// deleter instance.
 	/// - `ptr` : The pointer to take ownership of. May be null.
-	/// - `deleter` : The deleter instance to use when freeing `ptr`.
-	hxconstexpr hxptr(T_* ptr_=hxnull, deleter_t_ deleter_=deleter_t_()) noexcept;
+	/// - `deleter` : Callable with signature `bool deleter(T*)`.
+	hxconstexpr explicit hxptr(T_* ptr_=hxnull, deleter_t_ deleter_=deleter_t_()) noexcept;
 
 	/// Move constructor. Transfers ownership from `other` to this. `other` is
 	/// left null.
@@ -76,18 +83,6 @@ public:
 	hxattr_nodiscard hxconstexpr bool operator!=(hxnullptr_t) const;
 #endif
 
-	/// Returns the owned pointer without releasing ownership.
-	hxattr_nodiscard hxconstexpr T_* get(void) const { return m_ptr_; }
-
-	/// Releases ownership and returns the previously owned pointer without
-	/// invoking the deleter. The caller takes responsibility for freeing it.
-	hxattr_nodiscard hxconstexpr T_* release(void);
-
-	/// Destroys the currently owned object using `deleter_t` if non-null, then
-	/// takes ownership of `ptr`.
-	/// - `ptr` : The new pointer to own. May be null.
-	hxconstexpr void reset(T_* ptr_=hxnull) noexcept;
-
 	/// Returns the result of calling `callable` with the owned object if
 	/// non-null, otherwise returns a null `hxptr` of the same type. `callable`
 	/// must return an `hxptr`.
@@ -96,7 +91,15 @@ public:
 	hxattr_nodiscard hxconstexpr auto and_then(function_t_&& callable_) const
 		-> hxremove_cvref_t<decltype(hxforward<function_t_>(callable_)(hxdeclval<T_&>()))>;
 
-#if HX_CPLUSPLUS >= 201103L
+	/// Returns a const reference to the stored deleter.
+	hxattr_nodiscard hxconstexpr const deleter_t_& deleter(void) const;
+
+	/// Returns a reference to the stored deleter.
+	hxattr_nodiscard hxconstexpr deleter_t_& deleter(void);
+
+	/// Returns the owned pointer without releasing ownership.
+	hxattr_nodiscard hxconstexpr T_* get(void) const { return m_ptr_; }
+
 	/// Returns this `hxptr` moved out if non-null, otherwise returns the result
 	/// of calling `callable`. `callable` must return an `hxptr`. Rvalue
 	/// qualified because ownership is transferred out of this `hxptr`.
@@ -107,7 +110,15 @@ public:
 	// An lvalue `hxptr` cannot yield ownership without leaving a dangling copy.
 	template<typename function_t_>
 	hxptr or_else(function_t_&& callable_) const& = delete;
-#endif
+
+	/// Releases ownership and returns the previously owned pointer without
+	/// invoking the deleter. The caller takes responsibility for freeing it.
+	hxattr_nodiscard hxconstexpr T_* release(void);
+
+	/// Destroys the currently owned object using `deleter_t` if non-null, then
+	/// takes ownership of `ptr`.
+	/// - `ptr` : The new pointer to own. May be null.
+	hxconstexpr void reset(T_* ptr_=hxnull) noexcept;
 
 	/// Exchanges ownership with `other`. Neither pointer is deleted.
 	/// - `other` : The `hxptr` to swap with.
@@ -124,15 +135,6 @@ private:
 	hxptr& operator=(const hxptr&) = delete;
 
 	T_* m_ptr_;
-	deleter_t_ m_deleter_;
-};
-
-/// `hxptr<T[], deleter_t>` - Partial specialization of `hxptr` for array types.
-/// Use is not allowed as delete[] is not required to exist.
-template<typename T_, typename deleter_t_>
-class hxptr<T_[], deleter_t_> {
-public:
-	static_assert(sizeof(T_) == 0, "hxptr does not support array types");
 };
 
 /// `hxmake_ptr<T, allocator, align>(args...)` - Allocates and constructs an
@@ -144,8 +146,8 @@ public:
 /// - `align` : Alignment to use when allocating. Defaults to `hxalignment`.
 template<typename T_, hxsystem_allocator_t allocator_=hxsystem_allocator_current,
 	hxalignment_t align_=hxalignment, typename... args_t_>
-hxattr_nodiscard hxptr<T_> hxmake_ptr(args_t_&&... args_) {
-	return hxptr<T_>(::new(hxmalloc_ext(sizeof(T_), allocator_, align_)) T_(static_cast<args_t_&&>(args_)...));
+hxattr_nodiscard hxptr<T_> hxmake_ptr(args_t_&&... args_) noexcept {
+	return hxptr<T_>(hxnew<T_, allocator_, align_>(hxforward<args_t_>(args_)...));
 }
 
 #include "detail/hxptr.inl"

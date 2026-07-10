@@ -8,6 +8,52 @@
 
 HX_NS_USE
 
+namespace {
+
+enum class hxutility_test_forward {
+	none,
+	lvalue,
+	const_lvalue,
+	rvalue,
+	const_rvalue
+};
+class hxutility_test_forward_t {
+public:
+	int value;
+};
+
+hxutility_test_forward_t hxutility_test_forward_make_forwarded() { return { 11 }; }
+hxutility_test_forward_t hxutility_test_forward_make_const_forwarded() { return { 13 }; }
+hxutility_test_forward hxutility_test_forward_detect(hxutility_test_forward_t&) { return hxutility_test_forward::lvalue; }
+hxutility_test_forward hxutility_test_forward_detect(const hxutility_test_forward_t&) { return hxutility_test_forward::const_lvalue; }
+hxutility_test_forward hxutility_test_forward_detect(hxutility_test_forward_t&&) { return hxutility_test_forward::rvalue; }
+hxutility_test_forward hxutility_test_forward_detect(const hxutility_test_forward_t&&) { return hxutility_test_forward::const_rvalue; }
+template<typename T>
+hxutility_test_forward hxutility_test_forward_through_template(T&& value) {
+	return hxutility_test_forward_detect(hxforward<T>(value));
+}
+
+class hxutility_test_binds_base_t {
+public:
+	int value;
+};
+class hxutility_test_binds_derived_t : public hxutility_test_binds_base_t { };
+class hxutility_test_binds_ref_conversion_t {
+public:
+	// GCOVR_EXCL_START. Only used at compile time.
+	operator long&() { return value; }
+	// GCOVR_EXCL_STOP
+	long value;
+};
+class hxutility_test_binds_value_conversion_t {
+public:
+	// GCOVR_EXCL_START. Only used at compile time.
+	operator long() const { return value; }
+	// GCOVR_EXCL_STOP
+	long value;
+};
+} // namespace
+
 static_assert(hxtrue_t::value, "hxtrue_t must report true");
 static_assert(!hxfalse_t::value, "hxfalse_t must report false");
 static_assert(hxis_same<hxenable_if_t<true, int>, int>::value,
@@ -79,32 +125,26 @@ static_assert(hxis_same<hxrestrict_t<int>, int>::value,
 	"hxrestrict_t should leave non-pointers untouched");
 static_assert(sizeof(hxrestrict_t<int*>) == sizeof(int*),
 	"hxrestrict_t should preserve pointer representation");
-
-namespace {
-
-enum class hxutility_test_forward {
-	none,
-	lvalue,
-	const_lvalue,
-	rvalue,
-	const_rvalue
-};
-class hxutility_test_forward_t {
-public:
-	int value;
-};
-
-hxutility_test_forward_t hxutility_test_forward_make_forwarded() { return { 11 }; }
-hxutility_test_forward_t hxutility_test_forward_make_const_forwarded() { return { 13 }; }
-hxutility_test_forward hxutility_test_forward_detect(hxutility_test_forward_t&) { return hxutility_test_forward::lvalue; }
-hxutility_test_forward hxutility_test_forward_detect(const hxutility_test_forward_t&) { return hxutility_test_forward::const_lvalue; }
-hxutility_test_forward hxutility_test_forward_detect(hxutility_test_forward_t&&) { return hxutility_test_forward::rvalue; }
-hxutility_test_forward hxutility_test_forward_detect(const hxutility_test_forward_t&&) { return hxutility_test_forward::const_rvalue; }
-template<typename T>
-hxutility_test_forward hxutility_test_forward_through_template(T&& value) {
-	return hxutility_test_forward_detect(hxforward<T>(value));
-}
-} // namespace
+static_assert(hxbinds_directly<int, int>::value,
+	"hxbinds_directly should accept identical types");
+static_assert(hxbinds_directly<const int, int>::value,
+	"hxbinds_directly should accept adding const");
+static_assert(!hxbinds_directly<int, const int>::value,
+	"hxbinds_directly should reject removing const");
+static_assert(!hxbinds_directly<const short, int>::value,
+	"hxbinds_directly should reject a type requiring conversion, even as a const reference");
+static_assert(!hxbinds_directly<short, int>::value,
+	"hxbinds_directly should reject a type requiring conversion");
+static_assert(hxbinds_directly<hxutility_test_binds_base_t, hxutility_test_binds_derived_t>::value,
+	"hxbinds_directly should accept derived to base");
+static_assert(!hxbinds_directly<hxutility_test_binds_derived_t, hxutility_test_binds_base_t>::value,
+	"hxbinds_directly should reject base to derived");
+static_assert(hxbinds_directly<long, hxutility_test_binds_ref_conversion_t>::value,
+	"hxbinds_directly should accept conversion operators returning references");
+static_assert(!hxbinds_directly<long, const hxutility_test_binds_ref_conversion_t>::value,
+	"hxbinds_directly should reject conversion operators requiring non-const");
+static_assert(!hxbinds_directly<const long, hxutility_test_binds_value_conversion_t>::value,
+	"hxbinds_directly should reject conversion operators returning values");
 
 TEST(hxutility_test, hxabs_double) {
 	const double negative = -34.75;
@@ -144,12 +184,13 @@ TEST(hxutility_test, hxnullptr_converts_only_to_null) {
 }
 
 TEST(hxutility_test, hxlog2i_returns_highest_set_bit) {
+	// 2^31 is not tested due to potential rounding error in the WASM path.
+	for(int i=0u; i < 31; ++i) {
+		EXPECT_EQ(hxlog2i(1u << i), i);
+	}
 	EXPECT_EQ(hxlog2i(1u), 0);
-	EXPECT_EQ(hxlog2i(2u), 1);
 	EXPECT_EQ(hxlog2i(3u), 1);
-	EXPECT_EQ(hxlog2i(4u), 2);
-	EXPECT_EQ(hxlog2i(16u), 4);
-	EXPECT_EQ(hxlog2i(1u << 20), 20);
+	EXPECT_EQ(hxlog2i(1u << 31), 31);
 }
 
 TEST(hxutility_test, arithmetic_helpers_cover_min_max_abs_clamp) {
@@ -221,9 +262,7 @@ TEST(hxutility_test, hxisspace) {
 		const bool hx = hxisspace(static_cast<char>(c));
 		EXPECT_EQ(hx, false);
 	}
-}
 
-TEST(hxutility_test, hxisspace_boundaries) {
 	EXPECT_FALSE(hxisspace(static_cast<char>(0x08)));
 	EXPECT_TRUE(hxisspace(static_cast<char>(0x09)));
 	EXPECT_TRUE(hxisspace(static_cast<char>(0x0D)));
@@ -236,20 +275,35 @@ TEST(hxutility_test, hxisspace_boundaries) {
 TEST(hxutility_test, hxisgraph) {
 	for (int c = 0; c <= 255; ++c) {
 		const bool hx = hxisgraph(static_cast<char>(c));
-		const bool expected = (c >= 0x21 && c <= 0x7E) || (c >= 0x80);
-		EXPECT_EQ(hx, expected);
 		if (c < 0x80) {
 			const bool st = ::isgraph(c) != 0;
 			EXPECT_EQ(hx, st);
 		}
+		else {
+			EXPECT_EQ(hx, true);
+		}
 	}
-}
 
-TEST(hxutility_test, hxisgraph_boundaries) {
 	EXPECT_FALSE(hxisgraph(static_cast<char>(0x20)));
 	EXPECT_TRUE(hxisgraph(static_cast<char>(0x21)));
 	EXPECT_TRUE(hxisgraph(static_cast<char>(0x7E)));
 	EXPECT_FALSE(hxisgraph(static_cast<char>(0x7F)));
 	EXPECT_TRUE(hxisgraph(static_cast<char>(0x80)));
 	EXPECT_TRUE(hxisgraph(static_cast<char>(0xFF)));
+}
+
+TEST(hxutility_test, hxhex_dump) {
+	const uint8_t bytes[32] = { 0 };
+	hxhex_dump(bytes, 0u, false);
+	hxhex_dump(bytes, sizeof bytes, false);
+	hxhex_dump(bytes, sizeof bytes, true);
+	SUCCEED();
+}
+
+TEST(hxutility_test, hxfloat_dump) {
+	const float floats[8] = { 0.0f };
+	hxfloat_dump(floats, 0u);
+	hxfloat_dump(floats, 4u);
+	hxfloat_dump(floats, sizeof floats / sizeof floats[0]);
+	SUCCEED();
 }

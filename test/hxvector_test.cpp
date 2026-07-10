@@ -15,6 +15,21 @@ HX_NS_USE
 hxattr_noinline static void hxtest_gdb_break_hxvector_static(void) { }
 hxattr_noinline static void hxtest_gdb_break_hxvector_dynamic(void) { }
 
+#if !defined _MSC_VER && !defined __wasm__
+static_assert(sizeof(size_t) != 4 || (
+		sizeof(hxvector<int32_t, hxallocator_dynamic_capacity>) == 12u
+		&& sizeof(hxvector<int32_t, 4>) == 20u),
+	"hxvector must pack dynamic storage as a hxsize_t capacity, a T*, and a"
+	" T* end with no padding, and fixed storage as capacity * sizeof(T) plus"
+	" a single T* end with no padding");
+static_assert(sizeof(size_t) != 8 || (
+		sizeof(hxvector<int32_t, hxallocator_dynamic_capacity>) == 24u
+		&& sizeof(hxvector<int32_t, 4>) == 24u),
+	"hxvector must pack dynamic storage as a hxsize_t capacity, a T*, and a"
+	" T* end with no padding, and fixed storage as capacity * sizeof(T) plus"
+	" a single T* end with no padding");
+#endif
+
 namespace {
 class hxvector_test_f : public hxtest_object_fixture { };
 

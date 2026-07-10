@@ -21,7 +21,7 @@ export POSIXLY_CORRECT=1
 
 if [ ! -f build/CMakeCache.txt ]; then
 	rm -rf "$(readlink -f build)" build; mkdir build
-	if [ "${1:-}" != "--headless" ]; then
+	if [ "${1:-}" = "--verbose" ]; then
 		cmake -S . -B build -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 	else
 		cmake -S . -B build -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON >build/testcmake.sh.log 2>&1 \
@@ -31,7 +31,7 @@ else
 	echo "Found build/CMakeCache.txt..."
 fi
 
-if [ "${1:-}" != "--headless" ]; then
+if [ "${1:-}" = "--verbose" ]; then
 	ninja -C build
 else
 	ninja -C build >build/testcmake.sh.log 2>&1 \
@@ -60,7 +60,7 @@ $2 = [4] int = {7, 14, 21, 28}
 $3 = 1010000000000000000000000000000000000000000000000000000000000000001 = {m_data_[0] = 1, m_data_[1] = 5}
 $4 = 1010000000000000000000000000000000000000000000000000000000000000001 = {m_data_[0] = 1, m_data_[1] = 5}
 $5 = [3] hxtest_const_list_node_t = {1, 2, 3}
-$6 = [4/4] int = {-1, 0, 1, 2}
+$6 = [4/4] int = {3, 4, 5, 6}
 $7 = [8/8] int = {4, 5, 6, 7, 8, 9, 10, 11}
 $8 = [3/4] int->hxtest_object = {[1] = {moved_from = false, id = 10}, [2] = {moved_from = false, id = 20}, [3] = {moved_from = false, id = 30}}
 $9 = [3/8] int->hxtest_object = {[1] = {moved_from = false, id = 10}, [2] = {moved_from = false, id = 20}, [3] = {moved_from = false, id = 30}}

@@ -9,6 +9,19 @@ HX_NS_USE
 
 hxattr_noinline static void hxtest_gdb_break_hxbitset(void) { }
 
+#if !defined _MSC_VER && !defined __wasm__
+static_assert(sizeof(size_t) != 4 || (
+		sizeof(hxbitset<sizeof(size_t) * 8u>) == 4u
+		&& sizeof(hxbitset<sizeof(size_t) * 8u + 1u>) == 8u),
+	"hxbitset must pack storage as exactly ceil(bit_count / bits_per_word) *"
+	" sizeof(size_t) words with no padding");
+static_assert(sizeof(size_t) != 8 || (
+		sizeof(hxbitset<sizeof(size_t) * 8u>) == 8u
+		&& sizeof(hxbitset<sizeof(size_t) * 8u + 1u>) == 16u),
+	"hxbitset must pack storage as exactly ceil(bit_count / bits_per_word) *"
+	" sizeof(size_t) words with no padding");
+#endif
+
 TEST(hxbitset_test, default_ctor_zero_initializes) {
 	const hxbitset<1> b1;
 	EXPECT_FALSE(b1[0]);
@@ -284,6 +297,10 @@ TEST(hxbitset_test, left_shift_by_more_than_bits_zeros_all) {
 	b.set();
 	b <<= hxbitset<sizeof(size_t) * 8u + 3u>::size();
 	EXPECT_TRUE(b.none());
+	hxbitset<sizeof(size_t) * 8u * 2u + 1u> b3;
+	b3.set();
+	b3 <<= sizeof(size_t) * 8u * 3u + 1u;
+	EXPECT_TRUE(b3.none());
 }
 
 TEST(hxbitset_test, left_shift_off_by_one_at_word_boundary) {
@@ -345,6 +362,10 @@ TEST(hxbitset_test, right_shift_by_more_than_bits_zeros_all) {
 	b.set();
 	b >>= hxbitset<sizeof(size_t) * 8u + 3u>::size();
 	EXPECT_TRUE(b.none());
+	hxbitset<sizeof(size_t) * 8u * 2u + 1u> b3;
+	b3.set();
+	b3 >>= sizeof(size_t) * 8u * 3u + 1u;
+	EXPECT_TRUE(b3.none());
 }
 
 TEST(hxbitset_test, right_shift_off_by_one_at_word_boundary) {
@@ -381,6 +402,9 @@ TEST(hxbitset_test, load_copies_bytes_into_storage) {
 	for(size_t i = 0u; i < 8u; ++i) {
 		EXPECT_EQ(b[i], ((0xcbu >> i) & 1u) != 0u);
 	}
+	const size_t full = ~static_cast<size_t>(0u);
+	b.load(&full, hxbitset<8u>::bytes());
+	EXPECT_TRUE(b.all());
 }
 
 TEST(hxbitset_test, load_masks_trailing_bits) {

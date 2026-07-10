@@ -370,6 +370,71 @@ TEST(hxtask_queue_test, wait_for_all_with_thread_pool) {
 		EXPECT_EQ(tasks[i].count, 1);
 	}
 }
+
+TEST(hxtask_queue_test, wait_for_all_rechecks_completion_while_tasks_queued) {
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
+	class hxtask_queue_test_gate_task_t : public hxtask {
+	public:
+		bool execute(hxtask_queue*) override {
+			hxunique_lock lock(mutex);
+			started = true;
+			condition.notify_all();
+			condition.wait(lock, [this](void) { return released; });
+			++exec_count;
+			return true;
+		}
+		hxmutex mutex;
+		hxcondition_variable condition;
+		bool started = false;
+		bool released = false;
+		int32_t exec_count = 0;
+	};
+	class hxtask_queue_test_hammer_task_t : public hxtask {
+	public:
+		bool execute(hxtask_queue*) override { ++exec_count; return true; }
+		// The gate task keeps the pool busy so the thread in wait_for_all stays
+		// in the completion wait. Each successful cancel empties the queue and
+		// notifies that thread, and the next enqueue races its wakeup so that
+		// it rechecks completion with a task queued.
+		static hxthread::return_t hammer(hxtask_queue_test_hammer_task_t* task) {
+			for(int32_t i = 0; i < task->iterations; ++i) {
+				task->queue->enqueue(task);
+				if(task->queue->cancel(task)) {
+					++task->cancel_count;
+				}
+			}
+			const hxunique_lock lock(task->gate->mutex);
+			task->gate->released = true;
+			task->gate->condition.notify_all();
+			return hxnull;
+		}
+		hxtask_queue* queue = hxnull;
+		hxtask_queue_test_gate_task_t* gate = hxnull;
+		int32_t iterations = 0;
+		int32_t exec_count = 0;
+		int32_t cancel_count = 0;
+	};
+	hxtask_queue_test_gate_task_t gate;
+	hxtask_queue_test_hammer_task_t hammer;
+	hxtask_queue q(1, 1);
+	hammer.queue = &q;
+	hammer.gate = &gate;
+	hammer.iterations = 10000;
+	q.enqueue(&gate);
+	{
+		hxunique_lock lock(gate.mutex);
+		gate.condition.wait(lock, [&gate](void) { return gate.started; });
+	}
+	hxthread hammer_thread(hxtask_queue_test_hammer_task_t::hammer, &hammer);
+	q.wait_for_all();
+	hammer_thread.join();
+	EXPECT_EQ(gate.exec_count, 1);
+	EXPECT_EQ(hammer.exec_count + hammer.cancel_count, hammer.iterations);
+	q.enqueue(&hammer);
+	q.wait_for_all();
+	EXPECT_EQ(hammer.exec_count + hammer.cancel_count, hammer.iterations + 1);
+	EXPECT_TRUE(q.empty());
+}
 #endif
 
 TEST(hxtask_queue_test, size_boundaries) {

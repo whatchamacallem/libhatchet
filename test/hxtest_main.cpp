@@ -20,6 +20,19 @@ bool hxtest_assert_handler(void) {
 	++hxs_test_assert_handler_count;
 	return true;
 }
+
+#if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
+bool hxtest_assert_handler_declines(void) {
+	++hxs_test_assert_handler_count;
+	return false;
+}
+#endif // (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
+
+#if HX_USE_CONSOLE
+bool hxs_test_console_fn_void_called = false;
+bool hxtest_console_fn_void(void) { hxs_test_console_fn_void_called = true; return true; }
+bool hxtest_console_failing_command(void) { return false; }
+#endif // HX_USE_CONSOLE
 } // namespace
 
 TEST(hxtest_main, set_assert_handler) {
@@ -30,7 +43,58 @@ TEST(hxtest_main, set_assert_handler) {
 	hxassert_always((bool)failing, "hxtest_set_assert_handler_intentional");
 	hxset_assert_handler(hxnull);
 	EXPECT_EQ(hxs_test_assert_handler_count, 1);
+
+#if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
+	// Normally hxassert_handler returning false causes a breakpoint.
+
+	hxset_assert_handler(hxtest_assert_handler);
+	EXPECT_TRUE(hxassert_handler("no_slash_or_backslash.cpp", 1u));
+	EXPECT_TRUE(hxassert_handler("dir\\backslash_only.cpp", 1u));
+	hxset_assert_handler(hxnull);
+
+	hxlog_warning("EXPECTING_ASSERT_FAILURE");
+	hxset_assert_handler(hxtest_assert_handler_declines);
+	EXPECT_FALSE(hxassert_handler(__FILE__, __LINE__));
+	hxset_assert_handler(hxnull);
+
+	hxlog_warning("EXPECTING_ASSERT_FAILURE");
+	EXPECT_FALSE(hxassert_handler(__FILE__, __LINE__));
+#endif
 }
+
+TEST(hxtest_main, hxinit_internal_already_initialized) {
+	hxinit_internal(LIBHATCHET_VER);
+	EXPECT_EQ(hxg_init_ver_, LIBHATCHET_VER);
+}
+
+TEST(hxtest_main, hxshutdown_not_initialized) {
+	const int previous = hxg_init_ver_;
+	hxg_init_ver_ = 0;
+	hxshutdown();
+	EXPECT_EQ(hxg_init_ver_, 0);
+	hxg_init_ver_ = previous;
+}
+
+// This is here because trailing underscores are allowed in this file.
+#if HX_USE_CONSOLE
+TEST(hxconsole_test, register_command_replaces_duplicate) {
+	hxlog_warning("EXPECTING_TEST_WARNINGS");
+	static const hxdetail_::hxconsole_constructor_ first_(
+		hxdetail_::hxconsole_command_factory_(&hxtest_console_fn_void),
+		"hxconsole_test_reregistered");
+	hxs_test_console_fn_void_called = false;
+	EXPECT_TRUE(hxconsole_exec_line("hxconsole_test_reregistered"));
+	EXPECT_TRUE(hxs_test_console_fn_void_called);
+
+	static const hxdetail_::hxconsole_constructor_ second_(
+		hxdetail_::hxconsole_command_factory_(&hxtest_console_failing_command),
+		"hxconsole_test_reregistered");
+
+	hxs_test_console_fn_void_called = false;
+	EXPECT_FALSE(hxconsole_exec_line("hxconsole_test_reregistered"));
+	EXPECT_FALSE(hxs_test_console_fn_void_called);
+}
+#endif // HX_USE_CONSOLE
 
 bool run_all_tests(const char* test_suite_filter) {
 	hxlog_console("libhatchet 🪓🪓🪓 " LIBHATCHET_TAG "\n");

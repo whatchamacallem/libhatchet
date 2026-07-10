@@ -1,7 +1,8 @@
 # libhatchet
 
 Please use the most recent [tagged release](https://github.com/whatchamacallem/libhatchet).
-It has been exhaustively tested.
+The `include` and `src` directory now report 100% line and branch coverage
+although a few things were exempted.
 
 ## Overview
 
@@ -112,6 +113,13 @@ system allocators.
   used is `<`. This codebase tries not to give an AI rope to hang itself with.
   Showing inner-loop assembly to an AI is also advised.
 
+- **Smart Pointers**: Due to the non-dynamic allocation focus shared and weak
+  pointers are not provided. However, `hxhandle_table` is provided for weak
+  references. `hxptr` implements `std::unique_ptr`. `hxoptional` implements
+  `std::optional` providing optional temporary allocation semantics with safe
+  access semantics without the temporary allocation. `hxref` is a non-owing
+  pointer wrapper that provides the same safe access semantics.
+
 - **Performance Focus**: This is systems code. Everything should be optimized
   and cache-coherent without causing code bloat. This codebase avoids exceptions
   and RTTI for efficiency. Exceptions will be caught by the test driver and the
@@ -120,7 +128,9 @@ system allocators.
 - **C99 Compatibility**: Logging, asserts, and memory management are available
   in plain C99 via `<hx/libhatchet.h>`.
 
-- **64-bit Ready**: Designed for both 32-bit and 64-bit targets.
+- **64-bit Ready**: Designed for both 32-bit and 64-bit targets. `hxsize_t` is a
+  signed type because that enables important optimizations. It is equivalent to
+  `ptrdiff_t` but could be converted to 32-bit on a 64-bit platform if desired.
 
 - **Fast builds**: Blazing fast builds when used with `ccache` and no `.pch`.
   `ninja` + `ccache` is recommended when using `cmake`. Precompiled headers have

@@ -8,6 +8,21 @@
 
 HX_NS_USE
 
+#if !defined _MSC_VER && !defined __wasm__
+static_assert(sizeof(size_t) != 4 || (
+		sizeof(hxoptional<char>) == 2u
+		&& sizeof(hxref<int>) == 4u),
+	"hxoptional<char> must pack its one byte value and one byte engaged flag"
+	" with no padding, and hxref<T> must pack a single pointer with no"
+	" padding regardless of T");
+static_assert(sizeof(size_t) != 8 || (
+		sizeof(hxoptional<char>) == 2u
+		&& sizeof(hxref<int>) == 8u),
+	"hxoptional<char> must pack its one byte value and one byte engaged flag"
+	" with no padding, and hxref<T> must pack a single pointer with no"
+	" padding regardless of T");
+#endif
+
 namespace {
 
 int hxs_test_ctor_count = 0;
@@ -29,50 +44,47 @@ struct hxtest_optional_counted_t {
 	bool operator!=(const hxtest_optional_counted_t& o) const = delete;
 	int value;
 };
-hxoptional<int> hxtest_make_int(bool engaged, int v = 0) {
-	if (engaged) { return v; }
-	return hxnullopt;
-}
-hxoptional<hxtest_optional_counted_t> hxtest_make_counted(bool engaged, int v = 0) {
-	if (engaged) { return hxtest_optional_counted_t(v); }
-	return hxnullopt;
-}
+
 } // namespace
 
-TEST(hxoptional_test, nullopt_constructs_disengaged) {
-	const hxoptional<int> o = hxnullopt;
-	EXPECT_FALSE((bool)o);
-	EXPECT_TRUE(o == hxnullopt);
+TEST(hxoptional_test, construction_disengaged) {
+	const hxoptional<int> a = hxnullopt;
+	EXPECT_FALSE((bool)a);
+	EXPECT_TRUE(a == hxnullopt);
+	const hxoptional<int> b;
+	EXPECT_FALSE((bool)b);
+	EXPECT_FALSE(b.has_value());
+	EXPECT_TRUE(b == hxnullopt);
+	EXPECT_FALSE(b != hxnullopt);
 }
 
-TEST(hxoptional_test, default_construction_is_disengaged) {
-	const hxoptional<int> o;
-	EXPECT_FALSE((bool)o);
-	EXPECT_FALSE(o.has_value());
-	EXPECT_TRUE(o == hxnullopt);
-	EXPECT_FALSE(o != hxnullopt);
-}
-
-TEST(hxoptional_test, value_construction_is_engaged) {
-	const hxoptional<int> o = hxtest_make_int(true, 34);
-	EXPECT_TRUE((bool)o);
-	EXPECT_TRUE(o.has_value());
-	EXPECT_EQ(*o, 34);
+TEST(hxoptional_test, construction_engaged) {
+	const hxoptional<int> a = 34;
+	EXPECT_TRUE((bool)a);
+	EXPECT_TRUE(a.has_value());
+	EXPECT_EQ(*a, 34);
 }
 
 TEST(hxoptional_test, copy_construction) {
-	const hxoptional<int> disengaged = hxtest_make_int(false);
+	const hxoptional<int> disengaged = hxnullopt;
 	EXPECT_FALSE((bool)hxoptional<int>(disengaged));
-	const hxoptional<int> engaged = hxtest_make_int(true, 99);
+	const hxoptional<int> engaged = 99;
 	EXPECT_TRUE((bool)hxoptional<int>(engaged));
 	EXPECT_EQ(*hxoptional<int>(engaged), 99);
 }
 
-TEST(hxoptional_test, move_construction_from_engaged) {
-	hxoptional<int> a = hxtest_make_int(true, 5);
+TEST(hxoptional_test, move_construction) {
+	hxoptional<int> a = 5;
 	const hxoptional<int> b(hxmove(a));
 	EXPECT_TRUE((bool)b);
 	EXPECT_EQ(*b, 5);
+	EXPECT_FALSE((bool)a);
+}
+
+TEST(hxoptional_test, move_construction_disengaged) {
+	hxoptional<int> a;
+	const hxoptional<int> b(hxmove(a));
+	EXPECT_FALSE((bool)b);
 	EXPECT_FALSE((bool)a);
 }
 
@@ -80,67 +92,66 @@ TEST(hxoptional_test, destructor_engaged_and_disengaged) {
 	hxs_test_ctor_count = 0;
 	hxs_test_dtor_count = 0;
 	{
-		const hxoptional<hxtest_optional_counted_t> o = hxtest_make_counted(true, 1);
+		const hxoptional<hxtest_optional_counted_t> o = hxtest_optional_counted_t(1);
 	}
 	EXPECT_TRUE(hxs_test_ctor_count == 1 || hxs_test_ctor_count == 2);
 	EXPECT_EQ(hxs_test_dtor_count, hxs_test_ctor_count);
 	EXPECT_GE(hxs_test_dtor_count, 1);
 	hxs_test_dtor_count = 0;
 	{
-		const hxoptional<hxtest_optional_counted_t> o = hxtest_make_counted(false);
+		const hxoptional<hxtest_optional_counted_t> o = hxnullopt;
 	}
 	EXPECT_EQ(hxs_test_dtor_count, 0);
 }
 
 TEST(hxoptional_test, deref_operator_returns_reference) {
-	hxoptional<int> o = hxtest_make_int(true, 10);
+	hxoptional<int> o = 10;
 	*o = 20;
 	EXPECT_EQ(*o, 20);
+	const hxoptional<int> co = 30;
+	EXPECT_EQ(*co, 30);
 }
 
-TEST(hxoptional_test, arrow_operator_accesses_methods) {
-	hxoptional<hxtest_optional_counted_t> o = hxtest_make_counted(true, 4);
+TEST(hxoptional_test, arrow_operator_accesses_fields) {
+	hxoptional<hxtest_optional_counted_t> o = hxtest_optional_counted_t(4);
 	EXPECT_EQ(o->value, 4);
 	o->value = 8;
 	EXPECT_EQ(o->value, 8);
-}
-
-TEST(hxoptional_test, const_arrow_operator_accesses_fields) {
-	const hxoptional<hxtest_optional_counted_t> o = hxtest_make_counted(true, 4);
-	EXPECT_EQ(o->value, 4);
-	EXPECT_EQ(&o->value, &(*o).value);
+	const hxoptional<hxtest_optional_counted_t> co = hxtest_optional_counted_t(4);
+	EXPECT_EQ(co->value, 4);
+	EXPECT_EQ(&co->value, &(*co).value);
 }
 
 TEST(hxoptional_test, copy_assign) {
-	const hxoptional<int> engaged = hxtest_make_int(true, 55);
-	hxoptional<int> to_disengaged = hxtest_make_int(false);
+	const hxoptional<int> engaged = 55;
+	hxoptional<int> to_disengaged = hxnullopt;
 	to_disengaged = engaged;
 	EXPECT_TRUE((bool)to_disengaged);
 	EXPECT_EQ(*to_disengaged, 55);
-	const hxoptional<int> disengaged = hxtest_make_int(false);
-	hxoptional<int> to_engaged = hxtest_make_int(true, 77);
+	const hxoptional<int> disengaged = hxnullopt;
+	hxoptional<int> to_engaged = 77;
 	to_engaged = disengaged;
 	EXPECT_FALSE((bool)to_engaged);
-	const hxoptional<int> eleven = hxtest_make_int(true, 11);
-	hxoptional<int> twentytwo = hxtest_make_int(true, 22);
+	const hxoptional<int> eleven = 11;
+	hxoptional<int> twentytwo = 22;
 	twentytwo = eleven;
 	EXPECT_TRUE((bool)twentytwo);
 	EXPECT_EQ(*twentytwo, 11);
 }
 
 TEST(hxoptional_test, move_assign) {
-	hxoptional<int> engaged = hxtest_make_int(true, 9);
-	hxoptional<int> to_disengaged = hxtest_make_int(false);
+	hxoptional<int> engaged = 9;
+	hxoptional<int> to_disengaged = hxnullopt;
 	to_disengaged = hxmove(engaged);
 	EXPECT_TRUE((bool)to_disengaged);
 	EXPECT_EQ(*to_disengaged, 9);
 	EXPECT_FALSE((bool)engaged);
-	hxoptional<int> disengaged = hxtest_make_int(false);
-	hxoptional<int> to_engaged = hxtest_make_int(true, 44);
+	hxoptional<int> disengaged = hxnullopt;
+	hxoptional<int> to_engaged = 44;
 	to_engaged = hxmove(disengaged);
 	EXPECT_FALSE((bool)to_engaged);
-	hxoptional<int> thirteen = hxtest_make_int(true, 13);
-	hxoptional<int> twentysix = hxtest_make_int(true, 26);
+	hxoptional<int> thirteen = 13;
+	hxoptional<int> twentysix = 26;
 	twentysix = hxmove(thirteen);
 	EXPECT_TRUE((bool)twentysix);
 	EXPECT_EQ(*twentysix, 13);
@@ -148,40 +159,37 @@ TEST(hxoptional_test, move_assign) {
 }
 
 TEST(hxoptional_test, assign_nullopt_disengages) {
-	hxoptional<int> o = hxtest_make_int(true, 5);
+	hxoptional<int> o = 5;
 	o = hxnullopt;
 	EXPECT_FALSE((bool)o);
 }
 
-TEST(hxoptional_test, value_copy_assign) {
-	hxoptional<int> to_disengaged = hxtest_make_int(false);
+TEST(hxoptional_test, value_assign) {
+	hxoptional<int> to_disengaged = hxnullopt;
 	const int v = 17;
 	to_disengaged = v;
 	EXPECT_TRUE((bool)to_disengaged);
 	EXPECT_EQ(*to_disengaged, 17);
-	hxoptional<int> to_engaged = hxtest_make_int(true, 1);
+	hxoptional<int> to_engaged = 1;
 	const int w = 2;
 	to_engaged = w;
 	EXPECT_EQ(*to_engaged, 2);
-}
-
-TEST(hxoptional_test, value_move_assign) {
-	hxoptional<int> to_disengaged = hxtest_make_int(false);
-	int v = 19;
-	to_disengaged = hxmove(v);
-	EXPECT_TRUE((bool)to_disengaged);
-	EXPECT_EQ(*to_disengaged, 19);
-	hxoptional<int> to_engaged = hxtest_make_int(true, 3);
-	int w = 4;
-	to_engaged = hxmove(w);
-	EXPECT_EQ(*to_engaged, 4);
+	hxoptional<int> moved_to_disengaged = hxnullopt;
+	int mv = 19;
+	moved_to_disengaged = hxmove(mv);
+	EXPECT_TRUE((bool)moved_to_disengaged);
+	EXPECT_EQ(*moved_to_disengaged, 19);
+	hxoptional<int> moved_to_engaged = 3;
+	int mw = 4;
+	moved_to_engaged = hxmove(mw);
+	EXPECT_EQ(*moved_to_engaged, 4);
 }
 
 TEST(hxoptional_test, eq_optional) {
-	const hxoptional<int> empty = hxtest_make_int(false);
-	const hxoptional<int> one = hxtest_make_int(true, 1);
-	const hxoptional<int> one_b = hxtest_make_int(true, 1);
-	const hxoptional<int> two = hxtest_make_int(true, 2);
+	const hxoptional<int> empty = hxnullopt;
+	const hxoptional<int> one = 1;
+	const hxoptional<int> one_b = 1;
+	const hxoptional<int> two = 2;
 	EXPECT_TRUE(empty == empty);
 	EXPECT_FALSE(empty != empty);
 	EXPECT_FALSE(empty == one);
@@ -190,8 +198,8 @@ TEST(hxoptional_test, eq_optional) {
 	EXPECT_FALSE(one != one_b);
 	EXPECT_FALSE(one == two);
 	EXPECT_TRUE(one != two);
-	const hxoptional<int> zero = hxtest_make_int(true, 0);
-	const hxoptional<int> zero_b = hxtest_make_int(true, 0);
+	const hxoptional<int> zero = 0;
+	const hxoptional<int> zero_b = 0;
 	EXPECT_TRUE(zero == zero_b);
 	EXPECT_FALSE(zero != zero_b);
 	EXPECT_FALSE(zero == one);
@@ -199,8 +207,8 @@ TEST(hxoptional_test, eq_optional) {
 }
 
 TEST(hxoptional_test, eq_nullopt_and_value) {
-	const hxoptional<int> empty = hxtest_make_int(false);
-	const hxoptional<int> seven = hxtest_make_int(true, 7);
+	const hxoptional<int> empty = hxnullopt;
+	const hxoptional<int> seven = 7;
 	EXPECT_TRUE(empty == hxnullopt);
 	EXPECT_FALSE(empty != hxnullopt);
 	EXPECT_FALSE(seven == hxnullopt);
@@ -211,13 +219,13 @@ TEST(hxoptional_test, eq_nullopt_and_value) {
 	EXPECT_TRUE(seven != 8);
 	EXPECT_FALSE(empty == 0);
 	EXPECT_TRUE(empty != 0);
-	const hxoptional<int> zero = hxtest_make_int(true, 0);
+	const hxoptional<int> zero = 0;
 	EXPECT_TRUE(zero == 0);
 	EXPECT_FALSE(zero != 0);
 }
 
 TEST(hxoptional_test, reset_engaged_and_disengaged) {
-	hxoptional<hxtest_optional_counted_t> engaged = hxtest_make_counted(true, 1);
+	hxoptional<hxtest_optional_counted_t> engaged = hxtest_optional_counted_t(1);
 	hxs_test_dtor_count = 0;
 	engaged.reset();
 	EXPECT_FALSE((bool)engaged);
@@ -225,35 +233,42 @@ TEST(hxoptional_test, reset_engaged_and_disengaged) {
 	engaged.reset();
 	EXPECT_EQ(hxs_test_dtor_count, 1);
 	hxs_test_dtor_count = 0;
-	hxoptional<hxtest_optional_counted_t> disengaged = hxtest_make_counted(false);
+	hxoptional<hxtest_optional_counted_t> disengaged = hxnullopt;
 	disengaged.reset();
 	EXPECT_FALSE((bool)disengaged);
 	EXPECT_EQ(hxs_test_dtor_count, 0);
 }
 
-TEST(hxoptional_test, swap) {
-	hxoptional<int> a = hxtest_make_int(true, 1);
-	hxoptional<int> b = hxtest_make_int(true, 2);
+TEST(hxoptional_test, swap_both_engaged) {
+	hxoptional<int> a = 1;
+	hxoptional<int> b = 2;
 	a.swap(b);
 	EXPECT_EQ(*a, 2);
 	EXPECT_EQ(*b, 1);
-	hxoptional<int> c = hxtest_make_int(false);
+}
+
+TEST(hxoptional_test, swap_with_disengaged) {
+	hxoptional<int> a = 1;
+	hxoptional<int> c = hxnullopt;
 	a.swap(c);
 	EXPECT_FALSE((bool)a);
-	EXPECT_EQ(*c, 2);
+	EXPECT_EQ(*c, 1);
 	c.swap(a);
 	EXPECT_FALSE((bool)c);
 	EXPECT_TRUE((bool)a);
-	EXPECT_EQ(*a, 2);
-	hxoptional<int> d = hxtest_make_int(false);
-	hxoptional<int> e = hxtest_make_int(true, 88);
+	EXPECT_EQ(*a, 1);
+	hxoptional<int> d = hxnullopt;
+	hxoptional<int> e = 88;
 	d.swap(e);
 	EXPECT_TRUE((bool)d);
 	EXPECT_EQ(*d, 88);
 	EXPECT_FALSE((bool)e);
+}
+
+TEST(hxoptional_test, swap_both_disengaged) {
 	hxs_test_dtor_count = 0;
-	hxoptional<hxtest_optional_counted_t> f = hxtest_make_counted(false);
-	hxoptional<hxtest_optional_counted_t> g = hxtest_make_counted(false);
+	hxoptional<hxtest_optional_counted_t> f = hxnullopt;
+	hxoptional<hxtest_optional_counted_t> g = hxnullopt;
 	f.swap(g);
 	EXPECT_FALSE((bool)f);
 	EXPECT_FALSE((bool)g);
@@ -261,36 +276,36 @@ TEST(hxoptional_test, swap) {
 }
 
 TEST(hxoptional_test, value_returns_reference) {
-	hxoptional<int> o = hxtest_make_int(true, 34);
+	hxoptional<int> o = 34;
 	EXPECT_EQ(o.value(), 34);
 	o.value() = 99;
 	EXPECT_EQ(o.value(), 99);
-	const hxoptional<int> co = hxtest_make_int(true, 10);
+	const hxoptional<int> co = 10;
 	EXPECT_EQ(co.value(), 10);
 }
 
 TEST(hxoptional_test, value_or) {
-	const hxoptional<int> engaged = hxtest_make_int(true, 3);
-	const hxoptional<int> empty = hxtest_make_int(false);
+	const hxoptional<int> engaged = 3;
+	const hxoptional<int> empty = hxnullopt;
 	EXPECT_EQ(engaged.value_or(99), 3);
 	EXPECT_EQ(empty.value_or(7), 7);
-	const hxoptional<int> zero = hxtest_make_int(true, 0);
+	const hxoptional<int> zero = 0;
 	EXPECT_EQ(zero.value_or(99), 0);
 }
 
 TEST(hxoptional_test, converting_copy_construction) {
-	const hxoptional<int> disengaged = hxtest_make_int(false);
+	const hxoptional<int> disengaged = hxnullopt;
 	EXPECT_FALSE((bool)hxoptional<long>(disengaged));
-	const hxoptional<int> engaged = hxtest_make_int(true, 34);
+	const hxoptional<int> engaged = 34;
 	const hxoptional<long> converted(engaged);
 	EXPECT_TRUE((bool)converted);
 	EXPECT_EQ(*converted, 34);
 }
 
 TEST(hxoptional_test, converting_move_construction) {
-	hxoptional<int> disengaged = hxtest_make_int(false);
+	hxoptional<int> disengaged = hxnullopt;
 	EXPECT_FALSE((bool)hxoptional<long>(hxmove(disengaged)));
-	hxoptional<int> engaged = hxtest_make_int(true, 7);
+	hxoptional<int> engaged = 7;
 	const hxoptional<long> converted(hxmove(engaged));
 	EXPECT_TRUE((bool)converted);
 	EXPECT_EQ(*converted, 7);
@@ -298,17 +313,17 @@ TEST(hxoptional_test, converting_move_construction) {
 }
 
 TEST(hxoptional_test, converting_copy_assign) {
-	const hxoptional<int> engaged = hxtest_make_int(true, 55);
-	hxoptional<long> to_disengaged = hxtest_make_int(false);
+	const hxoptional<int> engaged = 55;
+	hxoptional<long> to_disengaged = hxnullopt;
 	to_disengaged = engaged;
 	EXPECT_TRUE((bool)to_disengaged);
 	EXPECT_EQ(*to_disengaged, 55);
-	const hxoptional<int> disengaged = hxtest_make_int(false);
-	hxoptional<long> to_engaged = hxtest_make_int(true, 77);
+	const hxoptional<int> disengaged = hxnullopt;
+	hxoptional<long> to_engaged = 77;
 	to_engaged = disengaged;
 	EXPECT_FALSE((bool)to_engaged);
-	const hxoptional<int> eleven = hxtest_make_int(true, 11);
-	hxoptional<long> twentytwo = hxtest_make_int(true, 22);
+	const hxoptional<int> eleven = 11;
+	hxoptional<long> twentytwo = 22;
 	twentytwo = eleven;
 	EXPECT_TRUE((bool)twentytwo);
 	EXPECT_EQ(*twentytwo, 11);
@@ -317,19 +332,19 @@ TEST(hxoptional_test, converting_copy_assign) {
 }
 
 TEST(hxoptional_test, converting_move_assign) {
-	hxoptional<int> engaged = hxtest_make_int(true, 9);
-	hxoptional<long> to_disengaged = hxtest_make_int(false);
+	hxoptional<int> engaged = 9;
+	hxoptional<long> to_disengaged = hxnullopt;
 	to_disengaged = hxmove(engaged);
 	EXPECT_TRUE((bool)to_disengaged);
 	EXPECT_EQ(*to_disengaged, 9);
 	EXPECT_FALSE((bool)engaged);
-	hxoptional<int> disengaged = hxtest_make_int(false);
-	hxoptional<long> to_engaged = hxtest_make_int(true, 44);
+	hxoptional<int> disengaged = hxnullopt;
+	hxoptional<long> to_engaged = 44;
 	to_engaged = hxmove(disengaged);
 	EXPECT_FALSE((bool)to_engaged);
 	EXPECT_FALSE((bool)disengaged);
-	hxoptional<int> thirteen = hxtest_make_int(true, 13);
-	hxoptional<long> twentysix = hxtest_make_int(true, 26);
+	hxoptional<int> thirteen = 13;
+	hxoptional<long> twentysix = 26;
 	twentysix = hxmove(thirteen);
 	EXPECT_TRUE((bool)twentysix);
 	EXPECT_EQ(*twentysix, 13);
@@ -337,7 +352,7 @@ TEST(hxoptional_test, converting_move_assign) {
 }
 
 TEST(hxoptional_test, emplace) {
-	hxoptional<hxtest_optional_counted_t> o = hxtest_make_counted(false);
+	hxoptional<hxtest_optional_counted_t> o = hxnullopt;
 	o.emplace(34);
 	EXPECT_TRUE((bool)o);
 	EXPECT_EQ(o->value, 34);
@@ -345,7 +360,7 @@ TEST(hxoptional_test, emplace) {
 	o.emplace(2);
 	EXPECT_EQ(hxs_test_dtor_count, 1);
 	EXPECT_EQ(o->value, 2);
-	hxoptional<int> n = hxtest_make_int(false);
+	hxoptional<int> n = hxnullopt;
 	int& ref = n.emplace(55);
 	EXPECT_EQ(ref, 55);
 	ref = 66;
@@ -360,13 +375,21 @@ TEST(hxoptional_test, destructor_exactly_one_call) {
 	EXPECT_GE(hxs_test_dtor_count, 1);
 }
 
-TEST(hxoptional_test, and_then_engaged_and_disengaged) {
-	hxoptional<int> engaged = hxtest_make_int(true, 3);
+TEST(hxoptional_test, and_then_engaged) {
+	hxoptional<int> engaged = 3;
 	const hxoptional<long> r = engaged.and_then([](int& v) { return hxoptional<long>(v + 1); });
 	EXPECT_TRUE((bool)r);
 	EXPECT_EQ(*r, 4);
 	EXPECT_FALSE((bool)engaged.and_then([](int&) { return hxoptional<int>(hxnullopt); }));
-	hxoptional<int> disengaged = hxtest_make_int(false);
+	const hxoptional<int> const_engaged = 5;
+	const hxoptional<int> const_r =
+		const_engaged.and_then([](const int& v) { return hxoptional<int>(v * 2); });
+	EXPECT_TRUE((bool)const_r);
+	EXPECT_EQ(*const_r, 10);
+}
+
+TEST(hxoptional_test, and_then_disengaged) {
+	hxoptional<int> disengaged = hxnullopt;
 	bool called = false;
 	const hxoptional<long> empty = disengaged.and_then([&called](int& v) {
 		// GCOVR_EXCL_START
@@ -375,19 +398,12 @@ TEST(hxoptional_test, and_then_engaged_and_disengaged) {
 	});
 	EXPECT_FALSE((bool)empty);
 	EXPECT_FALSE(called);
-}
-
-TEST(hxoptional_test, and_then_const_engaged_and_disengaged) {
-	const hxoptional<int> engaged = hxtest_make_int(true, 5);
-	const hxoptional<int> r = engaged.and_then([](const int& v) { return hxoptional<int>(v * 2); });
-	EXPECT_TRUE((bool)r);
-	EXPECT_EQ(*r, 10);
-	const hxoptional<int> disengaged = hxtest_make_int(false);
-	EXPECT_FALSE((bool)disengaged.and_then([](const int& v) { return hxoptional<int>(v); }));
+	const hxoptional<int> const_disengaged = hxnullopt;
+	EXPECT_FALSE((bool)const_disengaged.and_then([](const int& v) { return hxoptional<int>(v); }));
 }
 
 TEST(hxoptional_test, or_else_engaged_and_disengaged) {
-	const hxoptional<int> engaged = hxtest_make_int(true, 8);
+	const hxoptional<int> engaged = 8;
 	bool called = false;
 	const hxoptional<int> self = engaged.or_else([&called]() {
 		// GCOVR_EXCL_START
@@ -397,7 +413,7 @@ TEST(hxoptional_test, or_else_engaged_and_disengaged) {
 	EXPECT_TRUE((bool)self);
 	EXPECT_EQ(*self, 8);
 	EXPECT_FALSE(called);
-	const hxoptional<int> disengaged = hxtest_make_int(false);
+	const hxoptional<int> disengaged = hxnullopt;
 	const hxoptional<int> r = disengaged.or_else([&called]() {
 		called = true; return hxoptional<int>(42);
 	});
@@ -407,7 +423,7 @@ TEST(hxoptional_test, or_else_engaged_and_disengaged) {
 	EXPECT_FALSE((bool)disengaged.or_else([]() { return hxoptional<int>(hxnullopt); }));
 }
 
-TEST(hxref_test, construction_and_observers) {
+TEST(hxref_test, construction_disengaged) {
 	const hxref<int> disengaged;
 	EXPECT_FALSE((bool)disengaged);
 	EXPECT_FALSE(disengaged.has_value());
@@ -415,6 +431,9 @@ TEST(hxref_test, construction_and_observers) {
 	EXPECT_FALSE(disengaged != hxnullopt);
 	const hxref<int> from_null = hxnullopt;
 	EXPECT_FALSE((bool)from_null);
+}
+
+TEST(hxref_test, construction_engaged) {
 	int v = 34;
 	const hxref<int> engaged = v;
 	EXPECT_TRUE((bool)engaged);
@@ -534,6 +553,8 @@ TEST(hxref_test, eq_optional_and_value) {
 	EXPECT_FALSE(empty != empty);
 	EXPECT_FALSE(empty == o_one_a);
 	EXPECT_TRUE(empty != o_one_a);
+	EXPECT_FALSE(o_one_a == empty);
+	EXPECT_TRUE(o_one_a != empty);
 	EXPECT_TRUE(o_one_a == o_one_b);
 	EXPECT_FALSE(o_one_a != o_one_b);
 	EXPECT_FALSE(o_one_a == o_two);

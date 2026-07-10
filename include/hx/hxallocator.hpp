@@ -55,9 +55,8 @@ public:
 	void reserve_storage(hxsize_t size_,
 			hxsystem_allocator_t allocator_=hxsystem_allocator_current,
 			hxalignment_t alignment_=hxalignment) {
-		(void)size_; (void)allocator_; (void)alignment_;
-		hxassert_always(static_cast<size_t>(size_) == static_cast<size_t>(fixed_capacity_),
-			"reallocation_disallowed");
+		(void)allocator_; (void)alignment_;
+		hxassert_always(size_ == fixed_capacity_, "reallocation_disallowed");
 	}
 
 private:

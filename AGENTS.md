@@ -26,16 +26,22 @@ indicates intent instead of being in error, while uncommitted changes may still
 be exploratory. Make a checklist for any multi-step task. E.g. when a change
 touches two different places.
 
+Be extremely terse in your communication. Do not add tokens to the context
+window that are not required for future correct operation or to inform the user
+of actionable information. If an assumption is being made that modifies the
+interpretation of the prompt then that is actionable. Otherwise, if you can
+understand context well enough to analyze it correctly then your analysis does
+not need to accompany it. If a loop command references a file containing a
+checklist to be modified then have the subagent update the file directly without
+outputting the checklist into context.
+
 If the prompt is only an error message or warning assume it is a request to have
 the error fixed.
-
-Use the --headless switch when running `test*.sh` scripts if supported whenever
-it will save tokens and not impair debugging.
 
 ## Style Guide
 
 Add code like you are adding weight to an airplane. Use K&R style. Use tabs of
-size 4 instead of spaces.
+size 4 instead of spaces in all text files.
 
 This is a bespoke C17/C++23 alternative to the C++ standard library. Never use
 the `std` namespace. The ranges library should not be implemented and do not go
@@ -135,10 +141,11 @@ small integer overflows in `size_t`, `ptrdiff_t` or `hxsize_t` calculations.
 ## Testing
 
 Use `debugbuild.sh --run` to test changes by default and not cmake. 🪓🪓🪓
-output indicates success. When asked to run tests execute `build/hxtest` with
-`build` as the current directory. Consider all `.sh` files in the project except
+output indicates success. When running tests execute `build/hxtest` with `build`
+as the current directory. Consider all `.sh` files in the project except
 `debian_packages.sh` safe to run at any time. On Windows, fall back to the VS
-Code CMake win32 debug task.
+Code CMake win32 debug task. Use `testcoverage.sh` after writing new tests to
+identify missing line coverage.
 
 Tests that compile with a C++11 compiler against C99 libraries are required.
 Support for `ILP32`, `LP64` and `LLP64` is required to pass tests. All
@@ -162,13 +169,14 @@ identical tests for them. However, testing for as many mutants as possible is
 important. Test names are the only test documentation, add no other comments.
 
 Prefer `EXPECT_*` macros to `ASSERT_*` macros unless the failure looks like it
-will cause memory corruption or other failures in subsequent tests.
+will cause memory corruption or other failures in subsequent tests. Keep all
+tests for the same function in the same `TEST` or `TEST_F` body. Do not use
+helper functions or classes unless they are part of the functionality being
+tested.
 
-Never fix a failing test except when instructed to do so or those failures are a
-direct consequence of changes you are making. Do not fix a failing test in a
-manner that defeats the intent of the test except by removing it entirely.
-Prompt the user with a list of failing tests when they are unrelated to your
-work or the intent preserving fix is unclear.
+Do not fix a failing test in a manner that defeats the intent of the test except
+by removing it entirely. Prompt the user with a list of failing tests when they
+are unrelated to your work or the intent preserving fix is unclear.
 
 100% line coverage is required by `testcoverage.sh`. Use `// GCOVR_EXCL_START`
 and `// GCOVR_EXCL_STOP` to exclude uncallable lines. Exclusions should only be

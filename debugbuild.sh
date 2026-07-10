@@ -33,25 +33,25 @@ trap '{ set +o xtrace; } 2> /dev/null
 set -eu
 
 OPT_GRIND=0
-OPT_HEADLESS=0
+OPT_VERBOSE=0
 OPT_RUN=0
 for ARG in "$@"; do
 	case "$ARG" in
-		--grind)    OPT_GRIND=1 ;;
-		--headless) OPT_HEADLESS=1 ;;
-		--run)      OPT_RUN=1 ;;
+		--grind)   OPT_GRIND=1 ;;
+		--verbose) OPT_VERBOSE=1 ;;
+		--run)     OPT_RUN=1 ;;
 		*)
-			echo "Usage: $0 [--grind] [--headless] [--run]"
-			echo "  --grind    Build all configuration combinations."
-			echo "  --headless Reduce hxtest output to pass and fail lines."
-			echo "  --run      Run hxtest after building."
+			echo "Usage: $0 [--grind] [--verbose] [--run]"
+			echo "  --grind   Build all configuration combinations."
+			echo "  --verbose Full hxtest output."
+			echo "  --run     Run hxtest after building."
 			exit 1
 			;;
 	esac
 done
 
 # Clear the output window when building from the editor.
-if [ "$OPT_HEADLESS" = "0" ] && [ "$OPT_RUN" = "0" ] && [ -z "${CLAUDECODE:-}" ]; then
+if [ "$OPT_VERBOSE" = "1" ] && [ "$OPT_RUN" = "0" ] && [ -z "${CLAUDECODE:-}" ]; then
 	export TERM=xterm-256color
 	clear
 fi
@@ -109,17 +109,17 @@ if [ "$OPT_GRIND" = "1" ]; then
 		BUILD="$BUILD -DHX_USE_PROFILER=$PROFILER"
 		BUILD="$BUILD -DHX_USE_THREADS=$THREADS"
 
-		if [ "$OPT_HEADLESS" = "1" ]; then
+		if [ "$OPT_VERBOSE" = "1" ]; then
+			echo "[$COUNT] $BUILD"
+		else
 			SPINNER_STATE=$(((SPINNER_STATE % 8) + 1))
 			eval "printf '\\r%s' \"\${$SPINNER_STATE}\""
-		else
-			echo "[$COUNT] $BUILD"
 		fi
 
 		build_hxtest
 	done; done; done; done; done; done; done; done
 
-	if [ "$OPT_HEADLESS" = "1" ]; then
+	if [ "$OPT_VERBOSE" = "0" ]; then
 		printf "\r      \r"
 	fi
 fi
@@ -129,21 +129,21 @@ BUILD="-DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG -DHX_USE_CONSOLE=2 -DHX_USE_P
 build_hxtest ccache
 
 # Show stats or save tokens.
-if [ "$OPT_HEADLESS" = "0" ] && [ -z "${CLAUDECODE:-}" ]; then
+if [ "$OPT_VERBOSE" = "1" ] && [ -z "${CLAUDECODE:-}" ]; then
 	ccache --show-stats
 fi
 
 if [ "$OPT_RUN" = "1" ]; then
 	cd build
-	if [ "$OPT_HEADLESS" = "1" ]; then
+	if [ "$OPT_VERBOSE" = "1" ]; then
+		./hxtest
+	else
 		if ./hxtest > console_output.txt 2>&1; then
 			grep -E '\[  PASSED  \]|\[  FAILED  \]|FAILED TESTS' console_output.txt
 		else
 			cat console_output.txt
 			exit 1
 		fi
-	else
-		./hxtest
 	fi
 fi
 

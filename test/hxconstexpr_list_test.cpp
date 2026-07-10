@@ -9,6 +9,22 @@
 
 HX_NS_USE
 
+#if !defined _MSC_VER && !defined __wasm__
+static_assert(sizeof(size_t) != 4 || (
+		sizeof(hxconstexpr_list_node) == 8u),
+	"hxconstexpr_list_node must pack its prev and next pointers with no padding");
+static_assert(sizeof(size_t) != 8 || (
+		sizeof(hxconstexpr_list_node) == 16u),
+	"hxconstexpr_list_node must pack its prev and next pointers with no padding");
+
+static_assert(sizeof(size_t) != 4 || (
+		sizeof(hxconstexpr_list<hxconstexpr_list_node, hxdo_not_delete>) == 12u),
+	"hxconstexpr_list must pack its size and sentinel with no padding");
+static_assert(sizeof(size_t) != 8 || (
+		sizeof(hxconstexpr_list<hxconstexpr_list_node, hxdo_not_delete>) == 24u),
+	"hxconstexpr_list must pack its size and sentinel with no padding");
+#endif
+
 #if HX_CPLUSPLUS >= 202302L
 namespace {
 

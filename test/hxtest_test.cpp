@@ -162,6 +162,7 @@ TEST(hxtest_error_handling, add_failure) {
 	for(int i = 10; i--;) {
 		ADD_FAILURE();
 	}
+	SUCCEED();
 }
 
 TEST(hxtest_error_handling, add_failure_at) {

@@ -83,6 +83,7 @@ export {
 #include "../include/hx/hxfree_list.hpp"
 #include "../include/hx/hxflat_map.hpp"
 #include "../include/hx/hxflat_set.hpp"
+#include "../include/hx/hxhandle_table.hpp"
 #include "../include/hx/hxhash_table.hpp"
 #include "../include/hx/hxhash_table_nodes.hpp"
 #include "../include/hx/hxinitializer_list.hpp"

@@ -60,8 +60,8 @@ bool hxfree_list<T_, capacity_>::is_allocator(const T_* p_) const noexcept {
 }
 
 template<hxfree_list_concept_ T_, hxsize_t capacity_>
-template<typename ptr_deleter_t_>
-bool hxfree_list<T_, capacity_>::is_allocator(const hxptr<T_, ptr_deleter_t_>& ptr_) const noexcept {
+template<typename deleter_t_>
+bool hxfree_list<T_, capacity_>::is_allocator(const hxptr<T_, deleter_t_>& ptr_) const noexcept {
 	return this->is_allocator(ptr_.get());
 }
 
@@ -79,8 +79,8 @@ void hxfree_list<T_, capacity_>::release(T_* p_) noexcept {
 }
 
 template<hxfree_list_concept_ T_, hxsize_t capacity_>
-template<typename ptr_deleter_t_>
-void hxfree_list<T_, capacity_>::release(hxptr<T_, ptr_deleter_t_>&& ptr_) noexcept {
+template<typename deleter_t_>
+void hxfree_list<T_, capacity_>::release(hxptr<T_, deleter_t_>&& ptr_) noexcept {
 	this->release(ptr_.release());
 }
 

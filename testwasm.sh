@@ -36,7 +36,7 @@ emcc -O2 -fno-exceptions -fno-rtti -fdiagnostics-absolute-paths		     \
 	-flto=auto -I"$HX_DIR/include" *.o "$HX_DIR"/src/*.cpp			     \
 	"$HX_DIR"/test/*.cpp -o index.html
 
-if [ "${1:-}" != "--headless" ]; then
+if [ "${1:-}" = "--verbose" ]; then
 
 	echo "Serving http://0.0.0.0:9876/"
 

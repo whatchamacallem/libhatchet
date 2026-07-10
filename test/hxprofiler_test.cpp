@@ -83,6 +83,19 @@ TEST(hxprofiler_test, single_scope_runs_for_1ms) {
 #endif
 }
 
+TEST(hxprofiler_test, scope_exit_when_records_full_is_dropped) {
+	hxprofiler_start();
+	for(hxsize_t i = 0; i < static_cast<hxsize_t>(HX_PROFILER_MAX_RECORDS + 8u); ++i) {
+		hxprofile_scope("Overflow");
+	}
+	hxprofiler_start();
+	{
+		hxprofile_scope("Overflow");
+	}
+	hxprofiler_log();
+	SUCCEED();
+}
+
 #if HX_USE_CONSOLE
 TEST(hxprofiler_test, start_and_stop_console_commands) {
 	EXPECT_TRUE(hxconsole_exec_line("profilestart"));
@@ -114,6 +127,13 @@ TEST(hxprofiler_test, write_to_chrome_tracing_command) {
 	SUCCEED();
 #endif
 	hxprofiler_log();
+}
+
+TEST(hxprofiler_test, write_to_chrome_tracing_with_no_records) {
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
+	hxprofiler_start();
+	hxprofiler_write_to_chrome_tracing("profile_empty.json");
+	SUCCEED();
 }
 #endif // HX_USE_FILE_IO
 #endif // HX_USE_PROFILER

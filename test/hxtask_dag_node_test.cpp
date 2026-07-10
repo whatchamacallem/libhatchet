@@ -7,6 +7,19 @@
 
 HX_NS_USE
 
+#if !defined _MSC_VER && !defined __wasm__
+static_assert(sizeof(size_t) != 4 || (
+		sizeof(hxtask_dag_node<4>) == 44u),
+	"hxtask_dag_node<4> must be the vtable pointer, two int32_t counters and"
+	" four naturally aligned {node pointer, int} successor edges with no"
+	" padding");
+static_assert(sizeof(size_t) != 8 || (
+		sizeof(hxtask_dag_node<4>) == 80u),
+	"hxtask_dag_node<4> must be the vtable pointer, two int32_t counters and"
+	" four naturally aligned {node pointer, int} successor edges with no"
+	" padding");
+#endif
+
 namespace {
 
 class hxtask_dag_node_test_tracker_t : public hxtask_dag_node<4> {

@@ -36,9 +36,9 @@ static_assert(0, "Warning: C++ exceptions are not supported");
 #if !(HX_USE_LIBCXX)
 
 #if defined __arm__ && !defined __aarch64__
-    typedef int guard_t;
+	typedef int guard_t;
 #else
-    typedef long long guard_t;
+	typedef long long guard_t;
 #endif
 
 // Support for thread-safe initialization of static variables. Use
@@ -51,10 +51,10 @@ void __cxa_pure_virtual(void);
 
 hxattr_weak int __cxa_guard_acquire(guard_t* guard) {
 	uint8_t *status = reinterpret_cast<uint8_t*>(guard);
-	if (__atomic_load_n(status, __ATOMIC_ACQUIRE) == 2) { return 0; }
+	if (__atomic_load_n(status, __ATOMIC_ACQUIRE) == 2) { return 0; } // GCOVR_EXCL_LINE
 
 	uint8_t expected = 0;
-	while (!__atomic_compare_exchange_n(status, &expected, 1, false, __ATOMIC_ACQ_REL, __ATOMIC_ACQUIRE)) {
+	while (!__atomic_compare_exchange_n(status, &expected, 1, false, __ATOMIC_ACQ_REL, __ATOMIC_ACQUIRE)) { // GCOVR_EXCL_LINE
 		// GCOVR_EXCL_START
 		if (expected == 2) { return 0; }
 		expected = 0;
@@ -127,7 +127,7 @@ hxattr_weak hxattr_noexcept void hxlog_handler(hxlog_level_t level, const char* 
 }
 
 hxattr_weak hxattr_noexcept void hxlog_handler_v(hxlog_level_t level, const char* format, va_list args) {
-	if((hxg_init_ver_ != 0) && hxg_settings.log_level > level) {
+	if(hxg_settings.log_level > level && (hxg_init_ver_ != 0)) { // GCOVR_EXCL_LINE
 		return;
 	}
 
@@ -166,7 +166,7 @@ hxattr_weak hxattr_noexcept void hxlog_handler_v(hxlog_level_t level, const char
 }
 
 hxattr_weak void hxshutdown(void) {
-	if(hxg_init_ver_ != 0) {
+	if(hxg_init_ver_ != 0) { // GCOVR_EXCL_LINE. Should only be called once.
 		hxmemory_manager_shut_down_();
 
 #if HX_USE_FLOATING_POINT_TRAPS

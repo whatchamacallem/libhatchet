@@ -16,26 +16,26 @@
 HX_NS_USE
 
 static int run_all_tests(void) {
-    hxinit();
-    hxlog_console("libhatchet 🪓🪓🪓 " LIBHATCHET_TAG "\n");
+	hxinit();
+	hxlog_console("libhatchet 🪓🪓🪓 " LIBHATCHET_TAG "\n");
 
-    const size_t tests_failing = static_cast<size_t>(RUN_ALL_TESTS());
+	const size_t tests_failing = static_cast<size_t>(RUN_ALL_TESTS());
 
-    hxshutdown();
-    return (tests_failing == 0u) ? EXIT_SUCCESS : EXIT_FAILURE;
+	hxshutdown();
+	return (tests_failing == 0u) ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
 int main(void) {
-    stdio_init_all();
+	stdio_init_all();
 
-    while (!stdio_usb_connected()) {
-        sleep_ms(100);
-    }
+	while (!stdio_usb_connected()) {
+		sleep_ms(100);
+	}
 
-    int result = run_all_tests();
+	int result = run_all_tests();
 
-    puts("Rebooting into BOOTSEL...");
-    stdio_flush();
-    reset_usb_boot(0, 0);
-    return result;
+	puts("Rebooting into BOOTSEL...");
+	stdio_flush();
+	reset_usb_boot(0, 0);
+	return result;
 }

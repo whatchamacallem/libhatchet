@@ -8,6 +8,15 @@
 
 HX_NS_USE
 
+#if !defined _MSC_VER && !defined __wasm__
+static_assert(sizeof(size_t) != 4 || (
+		sizeof(hxrandom) == 8u),
+	"hxrandom must hold exactly one uint64_t of state and nothing more");
+static_assert(sizeof(size_t) != 8 || (
+		sizeof(hxrandom) == 8u),
+	"hxrandom must hold exactly one uint64_t of state and nothing more");
+#endif
+
 TEST(hxrandom_test, generation) {
 	hxrandom rng(1);
 	uint8_t uint8 = 0u;

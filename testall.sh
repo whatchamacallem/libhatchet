@@ -19,21 +19,27 @@ trap '{ set +o xtrace; } 2> /dev/null
 
 set -euo pipefail
 
-HEADLESS=""
-if [ "${1:-}" = "--headless" ]; then
-	HEADLESS="--headless"
+VERBOSE=""
+if [ "${1:-}" = "--verbose" ]; then
+	VERBOSE="--verbose"
+elif [ -n "${1:-}" ]; then
+	echo "Usage: $0 [--verbose]"
+	exit 1
 fi
 
 # Delete files matching .gitignore and reset ccache. Required for following
 # tests to avoid matches with intermediates.
 ./clean.sh
 
+# Tabs size 4 not spaces.
+if grep -nE '^  ' */*.c */*.cpp */*.h */*.hpp */*.inl *.sh >&2; then
+	echo "error: Lines starting with a space are not allowed in text files."
+	exit 1
+fi
+
 # The test directory should not use names ending with an underscore. Those names
-# are reserved for internal symbols. Two underscores are allowed. Coverage
-# testing should be possible without using internal symbols. Symbols ending with
-# an underscore are not intended to be used externally and may change without
-# notice.
-if grep -nE '(^|[^[:alnum:]_])[[:alpha:]_][[:alnum:]_]*[[:alnum:]]_([^[:alnum:]_]|$)' \
+# are reserved for internal symbols. Two underscores are allowed.
+if grep -nE --exclude=hxtest_main.cpp '(^|[^[:alnum:]_])[[:alpha:]_][[:alnum:]_]*[[:alnum:]]_([^[:alnum:]_]|$)' \
 		test/*.c test/*.cpp test/*.h test/*.hpp test/*.inl >&2; then
 	echo "error: Alphanumeric sequences ending with '_' are not allowed in the test directory."
 	exit 1
@@ -104,15 +110,15 @@ PS4='\e[38;5;208m[${SECONDS}s] ${BASH_SOURCE}:${LINENO}: \e[0m'
 set -o xtrace
 
 git fsck
-./testcmake.sh $HEADLESS
-./testcoverage.sh $HEADLESS
+./testcmake.sh $VERBOSE
+./testcoverage.sh $VERBOSE
 ./testerrorhandling.sh
-./testexample.sh $HEADLESS
+./testexample.sh $VERBOSE
 ./testmatrix.sh
-./teststrip.sh $HEADLESS
-./testwasm.sh --headless
+./teststrip.sh $VERBOSE
+./testwasm.sh
 
-./debugbuild.sh --grind $HEADLESS --run
+./debugbuild.sh $VERBOSE --grind --run
 doxygen
 
 ./clean.sh

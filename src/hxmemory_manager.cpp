@@ -39,8 +39,7 @@ hxattr_hot void* operator new(size_t size) {
 hxattr_hot void* operator new[](size_t size) {
 	return hxmalloc_checked_(size);
 }
-// GCOVR_EXCL_START
-// It is unspecified which of these functions is called.
+// GCOVR_EXCL_START. It is unspecified which of these functions is called.
 hxattr_hot void operator delete(void* ptr) noexcept {
 	::free(ptr);
 }
@@ -562,7 +561,7 @@ hxmemory_manager_stats hxmemory_manager::utilization(bool stacks_only, bool log)
 
 // -- hxsystem_allocator_scope -------------------------------------------------
 hxattr_noexcept hxsystem_allocator_scope::hxsystem_allocator_scope(hxsystem_allocator_t id) {
-	hxinit();
+	hxinit(); // GCOVR_EXCL_LINE
 	m_this_allocator_ = id;
 	m_initial_allocator_ = hxs_memory_manager.begin_allocation_scope(this, id);
 }
@@ -572,12 +571,12 @@ hxattr_noexcept hxsystem_allocator_scope::~hxsystem_allocator_scope(void) {
 }
 
 size_t hxsystem_allocator_scope::get_current_allocation_count(void) const {
-	hxinit();
+	hxinit(); // GCOVR_EXCL_LINE
 	return hxs_memory_manager.get_allocation_count(m_this_allocator_);
 }
 
 size_t hxsystem_allocator_scope::get_current_bytes_allocated(void) const {
-	hxinit();
+	hxinit(); // GCOVR_EXCL_LINE
 	return hxs_memory_manager.get_bytes_allocated(m_this_allocator_);
 }
 
@@ -598,12 +597,12 @@ void hxmemory_manager_shut_down_(void) {
 }
 
 void hxmemory_manager_allocate_stacks(const size_t* sizes_, size_t stack_count_) {
-	hxinit();
+	hxinit(); // GCOVR_EXCL_LINE
 	hxs_memory_manager.allocate_stacks(sizes_, stack_count_);
 }
 
 hxmemory_manager_stats hxmemory_manager_utilization(bool stacks_only, bool log) {
-	hxinit();
+	hxinit(); // GCOVR_EXCL_LINE
 	return hxs_memory_manager.utilization(stacks_only, log);
 }
 
@@ -617,7 +616,7 @@ hxattr_noexcept void* hxmalloc(size_t size) {
 
 extern "C"
 hxattr_noexcept void* hxmalloc_ext(size_t size, hxsystem_allocator_t id, hxalignment_t alignment) {
-	hxinit();
+	hxinit(); // GCOVR_EXCL_LINE
 	void* ptr = HX_NS_PREFIX_ hxs_memory_manager.allocate(size, id, alignment);
 #if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
 	::memset(ptr, 0xcd, size);
@@ -627,7 +626,7 @@ hxattr_noexcept void* hxmalloc_ext(size_t size, hxsystem_allocator_t id, hxalign
 
 extern "C"
 hxattr_noexcept void hxfree(void *ptr) {
-	hxinit();
+	hxinit(); // GCOVR_EXCL_LINE
 
 	// Nothing allocated from the OS memory manager can be freed here unless it is
 	// wrapped with hxmemory_allocator_os_heap.

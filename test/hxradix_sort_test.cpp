@@ -10,6 +10,17 @@
 
 HX_NS_USE
 
+#if !defined _MSC_VER && !defined __wasm__
+static_assert(sizeof(size_t) != 4 || (
+		sizeof(hxradix_sort_key<uint32_t, uint32_t>) == 8u),
+	"hxradix_sort_key must pack a uint32_t key and a value/void* union with no"
+	" padding beyond value/pointer alignment");
+static_assert(sizeof(size_t) != 8 || (
+		sizeof(hxradix_sort_key<uint32_t, uint32_t>) == 16u),
+	"hxradix_sort_key must pack a uint32_t key and a value/void* union with no"
+	" padding beyond value/pointer alignment");
+#endif
+
 namespace {
 class hxradix_sort_test_f :
 	public testing::Test
@@ -217,6 +228,160 @@ TEST_F(hxradix_sort_test_f, four_pass_upper_bytes_differ) {
 		rs.push_back(hxradix_sort_key<uint32_t, uint32_t>(key, key));
 	}
 	hxradix_sort(rs.begin(), rs.end(), hxsystem_allocator_stack_0);
+	for(hxsize_t i = 1; i < rs.size(); ++i) {
+		EXPECT_LE(rs[i - 1].get_value(), rs[i].get_value());
+	}
+}
+
+TEST_F(hxradix_sort_test_f, skip_pass0_byte0_constant) {
+	const hxsystem_allocator_scope scope2(hxsystem_allocator_stack_0);
+	hxvector<hxradix_sort_key<uint32_t, uint32_t>> rs;
+	rs.reserve(32);
+	for(uint32_t i = 0u; i < 32u; ++i) {
+		const uint32_t key = ((31u - i) << 8) | 0x7fu;
+		rs.push_back(hxradix_sort_key<uint32_t, uint32_t>(key, key));
+	}
+	hxradix_sort(rs.begin(), rs.end(), hxsystem_allocator_stack_0);
+	for(hxsize_t i = 1; i < rs.size(); ++i) {
+		EXPECT_LE(rs[i - 1].get_value(), rs[i].get_value());
+	}
+}
+
+TEST_F(hxradix_sort_test_f, skip_pass1_byte1_constant) {
+	const hxsystem_allocator_scope scope2(hxsystem_allocator_stack_0);
+	hxvector<hxradix_sort_key<uint32_t, uint32_t>> rs;
+	rs.reserve(32);
+	for(uint32_t i = 0u; i < 32u; ++i) {
+		const uint32_t key = (31u - i) | (0x7fu << 8);
+		rs.push_back(hxradix_sort_key<uint32_t, uint32_t>(key, key));
+	}
+	hxradix_sort(rs.begin(), rs.end(), hxsystem_allocator_stack_0);
+	for(hxsize_t i = 1; i < rs.size(); ++i) {
+		EXPECT_LE(rs[i - 1].get_value(), rs[i].get_value());
+	}
+}
+
+TEST_F(hxradix_sort_test_f, skip_pass2_byte2_constant) {
+	const hxsystem_allocator_scope scope2(hxsystem_allocator_stack_0);
+	hxvector<hxradix_sort_key<uint32_t, uint32_t>> rs;
+	rs.reserve(32);
+	for(uint32_t i = 0u; i < 32u; ++i) {
+		const uint32_t key = (31u - i) | (0x7fu << 16);
+		rs.push_back(hxradix_sort_key<uint32_t, uint32_t>(key, key));
+	}
+	hxradix_sort(rs.begin(), rs.end(), hxsystem_allocator_stack_0);
+	for(hxsize_t i = 1; i < rs.size(); ++i) {
+		EXPECT_LE(rs[i - 1].get_value(), rs[i].get_value());
+	}
+}
+
+TEST_F(hxradix_sort_test_f, skip_pass3_byte3_constant) {
+	const hxsystem_allocator_scope scope2(hxsystem_allocator_stack_0);
+	hxvector<hxradix_sort_key<uint32_t, uint32_t>> rs;
+	rs.reserve(32);
+	for(uint32_t i = 0u; i < 32u; ++i) {
+		const uint32_t key = (31u - i) | (0x7fu << 24);
+		rs.push_back(hxradix_sort_key<uint32_t, uint32_t>(key, key));
+	}
+	hxradix_sort(rs.begin(), rs.end(), hxsystem_allocator_stack_0);
+	for(hxsize_t i = 1; i < rs.size(); ++i) {
+		EXPECT_LE(rs[i - 1].get_value(), rs[i].get_value());
+	}
+}
+
+TEST_F(hxradix_sort_test_f, skip11_pass0_low11_constant) {
+	const hxsystem_allocator_scope scope2(hxsystem_allocator_stack_0);
+	hxvector<hxradix_sort_key<uint32_t, uint32_t>> rs;
+	rs.reserve(32);
+	for(uint32_t i = 0u; i < 32u; ++i) {
+		const uint32_t key = ((31u - i) << 11) | 0x3ffu;
+		rs.push_back(hxradix_sort_key<uint32_t, uint32_t>(key, key));
+	}
+	hxradix_sort11(rs.begin(), rs.end(), hxsystem_allocator_stack_0);
+	for(hxsize_t i = 1; i < rs.size(); ++i) {
+		EXPECT_LE(rs[i - 1].get_value(), rs[i].get_value());
+	}
+}
+
+TEST_F(hxradix_sort_test_f, skip11_pass1_mid11_constant) {
+	const hxsystem_allocator_scope scope2(hxsystem_allocator_stack_0);
+	hxvector<hxradix_sort_key<uint32_t, uint32_t>> rs;
+	rs.reserve(32);
+	for(uint32_t i = 0u; i < 32u; ++i) {
+		const uint32_t key = (31u - i) | (0x3ffu << 11);
+		rs.push_back(hxradix_sort_key<uint32_t, uint32_t>(key, key));
+	}
+	hxradix_sort11(rs.begin(), rs.end(), hxsystem_allocator_stack_0);
+	for(hxsize_t i = 1; i < rs.size(); ++i) {
+		EXPECT_LE(rs[i - 1].get_value(), rs[i].get_value());
+	}
+}
+
+TEST_F(hxradix_sort_test_f, skip_pass1_only_ternary_false_at_pass2) {
+	const hxsystem_allocator_scope scope2(hxsystem_allocator_stack_0);
+	hxvector<hxradix_sort_key<uint32_t, uint32_t>> rs;
+	rs.reserve(32);
+	for(uint32_t i = 0u; i < 32u; ++i) {
+		const uint32_t key = ((31u - i) << 16) | (31u - i) | (0x7fu << 8);
+		rs.push_back(hxradix_sort_key<uint32_t, uint32_t>(key, key));
+	}
+	hxradix_sort(rs.begin(), rs.end(), hxsystem_allocator_stack_0);
+	for(hxsize_t i = 1; i < rs.size(); ++i) {
+		EXPECT_LE(rs[i - 1].get_value(), rs[i].get_value());
+	}
+}
+
+TEST_F(hxradix_sort_test_f, skip_pass0_and_pass1_ternary_true_at_pass2) {
+	const hxsystem_allocator_scope scope2(hxsystem_allocator_stack_0);
+	hxvector<hxradix_sort_key<uint32_t, uint32_t>> rs;
+	rs.reserve(32);
+	for(uint32_t i = 0u; i < 32u; ++i) {
+		const uint32_t key = ((31u - i) << 16) | 0x7fu | (0x7fu << 8);
+		rs.push_back(hxradix_sort_key<uint32_t, uint32_t>(key, key));
+	}
+	hxradix_sort(rs.begin(), rs.end(), hxsystem_allocator_stack_0);
+	for(hxsize_t i = 1; i < rs.size(); ++i) {
+		EXPECT_LE(rs[i - 1].get_value(), rs[i].get_value());
+	}
+}
+
+TEST_F(hxradix_sort_test_f, skip_pass0_pass1_pass2_ternary_true_at_pass3) {
+	const hxsystem_allocator_scope scope2(hxsystem_allocator_stack_0);
+	hxvector<hxradix_sort_key<uint32_t, uint32_t>> rs;
+	rs.reserve(32);
+	for(uint32_t i = 0u; i < 32u; ++i) {
+		const uint32_t key = ((31u - i) << 24) | 0x7fu | (0x7fu << 8) | (0x7fu << 16);
+		rs.push_back(hxradix_sort_key<uint32_t, uint32_t>(key, key));
+	}
+	hxradix_sort(rs.begin(), rs.end(), hxsystem_allocator_stack_0);
+	for(hxsize_t i = 1; i < rs.size(); ++i) {
+		EXPECT_LE(rs[i - 1].get_value(), rs[i].get_value());
+	}
+}
+
+TEST_F(hxradix_sort_test_f, skip11_pass0_and_pass1_ternary_true_at_pass2) {
+	const hxsystem_allocator_scope scope2(hxsystem_allocator_stack_0);
+	hxvector<hxradix_sort_key<uint32_t, uint32_t>> rs;
+	rs.reserve(32);
+	for(uint32_t i = 0u; i < 32u; ++i) {
+		const uint32_t key = ((31u - i) << 22) | 0x3ffu | (0x3ffu << 11);
+		rs.push_back(hxradix_sort_key<uint32_t, uint32_t>(key, key));
+	}
+	hxradix_sort11(rs.begin(), rs.end(), hxsystem_allocator_stack_0);
+	for(hxsize_t i = 1; i < rs.size(); ++i) {
+		EXPECT_LE(rs[i - 1].get_value(), rs[i].get_value());
+	}
+}
+
+TEST_F(hxradix_sort_test_f, skip11_pass2_high10_constant) {
+	const hxsystem_allocator_scope scope2(hxsystem_allocator_stack_0);
+	hxvector<hxradix_sort_key<uint32_t, uint32_t>> rs;
+	rs.reserve(32);
+	for(uint32_t i = 0u; i < 32u; ++i) {
+		const uint32_t key = (31u - i) | (0x3ffu << 22);
+		rs.push_back(hxradix_sort_key<uint32_t, uint32_t>(key, key));
+	}
+	hxradix_sort11(rs.begin(), rs.end(), hxsystem_allocator_stack_0);
 	for(hxsize_t i = 1; i < rs.size(); ++i) {
 		EXPECT_LE(rs[i - 1].get_value(), rs[i].get_value());
 	}

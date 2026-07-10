@@ -15,13 +15,13 @@ BRANCH=$(git branch --show-current)
 TARGET="main"
 
 if [[ "$TAG" != v* ]]; then
-    echo "error: Invalid tag. TAG=\"$TAG\" does not start with a v."
-    exit 1
+	echo "error: Invalid tag. TAG=\"$TAG\" does not start with a v."
+	exit 1
 fi
 
 if git tag --list | grep -qxF "$TAG"; then
-    echo "error: Tag $TAG already exists. Update libhatchet.h."
-    exit 1
+	echo "error: Tag $TAG already exists. Update libhatchet.h."
+	exit 1
 fi
 
 clear
@@ -29,17 +29,17 @@ clear
 echo -e "\e[38;5;208mThis will release $TAG from $BRANCH onto $TARGET.\e[0m"
 read -ep "Do you want to proceed? [y/n] " -n 1 answer
 if [ "$answer" != "y" ] && [ "$answer" != "Y" ]; then
-    exit 1
+	exit 1
 fi
 
-./testall.sh --headless
+./testall.sh
 
 set -o xtrace
 
 if ! git diff --quiet || ! git diff --cached --quiet \
-    || [ -n "$(git ls-files --others --exclude-standard)" ]; then
-    git add .
-    git commit -m "$BRANCH $TAG"
+		|| [ -n "$(git ls-files --others --exclude-standard)" ]; then
+	git add .
+	git commit -m "$BRANCH $TAG"
 fi
 git checkout "$TARGET"
 git merge --squash "$BRANCH"

@@ -159,6 +159,7 @@ TEST(hxconsole_test, register_command) {
 	EXPECT_FALSE(hxconsole_exec_line("hxconsole_test_fn_ints 7 8 9 "));
 	EXPECT_EQ(static_cast<int32_t>(-2), hxs_console_test_fn_ints_i32);
 	EXPECT_FALSE(hxconsole_exec_line("Not_exist"));
+	EXPECT_FALSE(hxconsole_exec_line("hxconsole_test_register0a8 77 ..."));
 	hxconsole_deregister("hxconsole_test_register0");
 	EXPECT_FALSE(hxconsole_exec_line("hxconsole_test_register0 77 ..."));
 }
@@ -597,10 +598,24 @@ TEST(hxconsole_test, long_long_parsing) {
 	EXPECT_EQ(hxs_console_test_fn_ll, 456ll);
 }
 
+TEST(hxconsole_test, long_long_overflow) {
+	hxlog_warning("EXPECTING_TEST_WARNINGS");
+	hxs_console_test_fn_ll = 11;
+	EXPECT_FALSE(hxconsole_exec_line("hxconsole_test_fn_ll 99999999999999999999"));
+	EXPECT_EQ(hxs_console_test_fn_ll, 11ll);
+}
+
 TEST(hxconsole_test, unsigned_long_long_parsing) {
 	hxs_console_test_fn_ull = 0;
 	EXPECT_TRUE(hxconsole_exec_line("hxconsole_test_fn_ull 789"));
 	EXPECT_EQ(hxs_console_test_fn_ull, 789ull);
+}
+
+TEST(hxconsole_test, unsigned_long_long_overflow) {
+	hxlog_warning("EXPECTING_TEST_WARNINGS");
+	hxs_console_test_fn_ull = 22;
+	EXPECT_FALSE(hxconsole_exec_line("hxconsole_test_fn_ull 99999999999999999999"));
+	EXPECT_EQ(hxs_console_test_fn_ull, 22ull);
 }
 
 TEST(hxconsole_test, unsigned_long_long_rejects_negative) {
@@ -742,6 +757,18 @@ TEST(hxconsole_test, file_overlong_line_flushed) {
 	}
 	EXPECT_TRUE(hxconsole_exec_filename("hxconsole_test_file_test.txt"));
 	EXPECT_EQ(hxs_console_test_file_var1, 63.0f);
+}
+
+TEST(hxconsole_test, file_failure_before_eof_exits_loop_top) {
+	hxlog_warning("EXPECTING_TEST_WARNINGS");
+	{
+		hxfile f(hxfile::open_mode_out, "hxconsole_test_file_test.txt");
+		f << "hxconsole_test_failing_command\n";
+		for(hxsize_t i = 0; i < 200; ++i) {
+			f << "hxconsole_test_file_var 7\n";
+		}
+	}
+	EXPECT_FALSE(hxconsole_exec_filename("hxconsole_test_file_test.txt"));
 }
 #endif
 #endif // HX_USE_FILE_IO

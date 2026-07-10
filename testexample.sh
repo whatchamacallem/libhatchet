@@ -17,9 +17,12 @@ set -eu
 
 export POSIXLY_CORRECT=1
 
-HEADLESS=0
-if [ "${1:-}" = "--headless" ]; then
-	HEADLESS=1
+VERBOSE=""
+if [ "${1:-}" = "--verbose" ]; then
+	VERBOSE="--verbose"
+elif [ -n "${1:-}" ]; then
+	echo "Usage: $0 [--verbose]"
+	exit 1
 fi
 
 # Builds a module that uses MUSL lic headers only.
@@ -33,14 +36,14 @@ CORRECT="example/example_correct.txt"
 run_example() {
 	# Build artifacts are not retained.
 	rm -rf "$(readlink -f build)" build
-	if [ "$HEADLESS" = 1 ]; then
-		meson setup build --buildtype=debug -Dc_args="$C_FLAGS" -Dcpp_args="$CPP_FLAGS" \
-			-Dcpp_link_args="$LINK_FLAGS" -Dbuild_example=true "$@" >/dev/null
-		ninja -C build >/dev/null
-	else
+	if [ "$VERBOSE" = 1 ]; then
 		meson setup build --buildtype=debug -Dc_args="$C_FLAGS" -Dcpp_args="$CPP_FLAGS" \
 			-Dcpp_link_args="$LINK_FLAGS" -Dbuild_example=true "$@"
 		ninja -v -C build
+	else
+		meson setup build --buildtype=debug -Dc_args="$C_FLAGS" -Dcpp_args="$CPP_FLAGS" \
+			-Dcpp_link_args="$LINK_FLAGS" -Dbuild_example=true "$@" >/dev/null
+		ninja -C build >/dev/null
 	fi
 
 	cp example/example.cfg build

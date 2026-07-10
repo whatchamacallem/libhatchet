@@ -148,6 +148,129 @@ TEST(hxsort_test, sort_grinder_generic) {
 	}
 }
 
+TEST(hxsort_test, partition_sort_network_all_ascending_takes_no_swaps) {
+	int arr[33] = {
+		1000, 1001, 1002, 1003, 1004, 1005, 10, 1007, 1008, 1009, 1010,
+		20, 1012, 1013, 1014, 1015, 30, 1017, 1018, 1019, 1020, 40, 1022,
+		1023, 1024, 1025, 50, 1027, 1028, 1029, 1030, 1031, 1032
+	};
+	const int expected[33] = {
+		10, 20, 30, 40, 50, 1000, 1001, 1002, 1003, 1004, 1005, 1007,
+		1008, 1009, 1010, 1012, 1013, 1014, 1015, 1017, 1018, 1019, 1020,
+		1022, 1023, 1024, 1025, 1027, 1028, 1029, 1030, 1031, 1032
+	};
+	hxsort(arr, arr + 33, test_compare_int);
+	EXPECT_EQ(::memcmp(arr, expected, sizeof arr), 0);
+}
+
+TEST(hxsort_test, partition_sort_network_p3_p0_p4_p1_p2_p1_p4_p3_swap) {
+	int arr[33] = {
+		1000, 1001, 1002, 1003, 1004, 1005, 50, 1007, 1008, 1009, 1010,
+		20, 1012, 1013, 1014, 1015, 30, 1017, 1018, 1019, 1020, 40, 1022,
+		1023, 1024, 1025, 10, 1027, 1028, 1029, 1030, 1031, 1032
+	};
+	const int expected[33] = {
+		10, 20, 30, 40, 50, 1000, 1001, 1002, 1003, 1004, 1005, 1007,
+		1008, 1009, 1010, 1012, 1013, 1014, 1015, 1017, 1018, 1019, 1020,
+		1022, 1023, 1024, 1025, 1027, 1028, 1029, 1030, 1031, 1032
+	};
+	hxsort(arr, arr + 33, test_compare_int);
+	EXPECT_EQ(::memcmp(arr, expected, sizeof arr), 0);
+}
+
+TEST(hxsort_test, partition_sort_network_p3_p1_and_p3_p2_swap) {
+	int arr[33] = {
+		1000, 1001, 1002, 1003, 1004, 1005, 10, 1007, 1008, 1009, 1010,
+		30, 1012, 1013, 1014, 1015, 40, 1017, 1018, 1019, 1020, 20, 1022,
+		1023, 1024, 1025, 50, 1027, 1028, 1029, 1030, 1031, 1032
+	};
+	const int expected[33] = {
+		10, 20, 30, 40, 50, 1000, 1001, 1002, 1003, 1004, 1005, 1007,
+		1008, 1009, 1010, 1012, 1013, 1014, 1015, 1017, 1018, 1019, 1020,
+		1022, 1023, 1024, 1025, 1027, 1028, 1029, 1030, 1031, 1032
+	};
+	hxsort(arr, arr + 33, test_compare_int);
+	EXPECT_EQ(::memcmp(arr, expected, sizeof arr), 0);
+}
+
+TEST(hxsort_test, partition_sort_loop_lt_swap_taken_and_skipped) {
+	int arr[33] = {
+		100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112,
+		113, 114, 1, 116, 117, 118, 119, 2, 121, 122, 123, 124, 3, 126,
+		127, 128, 129, 130, 131, 132
+	};
+	const int expected[33] = {
+		1, 2, 3, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110,
+		111, 112, 113, 114, 116, 117, 118, 119, 121, 122, 123, 124, 126,
+		127, 128, 129, 130, 131, 132
+	};
+	hxsort(arr, arr + 33, test_compare_int);
+	EXPECT_EQ(::memcmp(arr, expected, sizeof arr), 0);
+}
+
+TEST(hxsort_test, partition_sort_all_equal_takes_no_pivot_swaps) {
+	int arr[33];
+	for(int i = 0; i < 33; ++i) {
+		arr[i] = 7;
+	}
+	hxsort(arr, arr + 33, test_compare_int);
+	for(int i = 0; i < 33; ++i) {
+		EXPECT_EQ(arr[i], 7);
+	}
+}
+
+TEST(hxsort_test, partition_sort_function_pointer_comparator_distinct_and_equal) {
+	int arr[33];
+	for(int i = 0; i < 33; ++i) {
+		arr[i] = 32 - i;
+	}
+	hxsort<int*, bool (*)(int, int)>(arr, arr + 33, test_compare_int);
+	for(int i = 0; i < 33; ++i) {
+		EXPECT_EQ(arr[i], i);
+	}
+	for(int i = 0; i < 33; ++i) {
+		arr[i] = 7;
+	}
+	hxsort<int*, bool (*)(int, int)>(arr, arr + 33, test_compare_int);
+	for(int i = 0; i < 33; ++i) {
+		EXPECT_EQ(arr[i], 7);
+	}
+}
+
+TEST(hxsort_test, partition_sort_all_equal_ref_tracker_takes_no_pivot_swaps) {
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
+	hxvector<hxtest_ref_tracker_t> values; values.reserve(33);
+	for(int i = 33; i-- != 0; ) {
+		values.push_back(hxtest_ref_tracker_t(7));
+	}
+	hxsort(values.begin(), values.end());
+	for(hxsize_t i = 0; i < 33; ++i) {
+		EXPECT_EQ(values[i].value, 7);
+	}
+}
+
+TEST(hxsort_test, intro_sort_cutoff_boundary_thirty_two_uses_insertion_sort) {
+	hxvector<int> values; values.reserve(32);
+	for(int i = 32; i-- != 0; ) {
+		values.push_back(31 - i);
+	}
+	hxsort(values.begin(), values.end());
+	for(hxsize_t i = 0; i < 32; ++i) {
+		EXPECT_EQ(values[i], static_cast<int>(i));
+	}
+}
+
+TEST(hxsort_test, intro_sort_cutoff_boundary_thirty_three_uses_partition_sort) {
+	hxvector<int> values; values.reserve(33);
+	for(int i = 33; i-- != 0; ) {
+		values.push_back(32 - i);
+	}
+	hxsort(values.begin(), values.end());
+	for(hxsize_t i = 0; i < 33; ++i) {
+		EXPECT_EQ(values[i], static_cast<int>(i));
+	}
+}
+
 TEST(hxsort_test, hxsort_empty_range) {
 	int ints[3] = { 3, 1, 2 };
 	hxsort(ints, ints, test_compare_int);
@@ -266,6 +389,82 @@ TEST(hxsort_test, iterator_support) {
 	do_sort_iter_case([](hxtest_rand_iter_api_t begin, hxtest_rand_iter_api_t end, const auto& less) {
 		hxsort(begin, end, less);
 	});
+}
+
+static void do_sort_iter_partition_case(const int (&initial_values)[33], const int (&expected_sorted)[33]) {
+	hxtest_ref_tracker_t values[33] = {
+		hxtest_ref_tracker_t(initial_values[0]), hxtest_ref_tracker_t(initial_values[1]),
+		hxtest_ref_tracker_t(initial_values[2]), hxtest_ref_tracker_t(initial_values[3]),
+		hxtest_ref_tracker_t(initial_values[4]), hxtest_ref_tracker_t(initial_values[5]),
+		hxtest_ref_tracker_t(initial_values[6]), hxtest_ref_tracker_t(initial_values[7]),
+		hxtest_ref_tracker_t(initial_values[8]), hxtest_ref_tracker_t(initial_values[9]),
+		hxtest_ref_tracker_t(initial_values[10]), hxtest_ref_tracker_t(initial_values[11]),
+		hxtest_ref_tracker_t(initial_values[12]), hxtest_ref_tracker_t(initial_values[13]),
+		hxtest_ref_tracker_t(initial_values[14]), hxtest_ref_tracker_t(initial_values[15]),
+		hxtest_ref_tracker_t(initial_values[16]), hxtest_ref_tracker_t(initial_values[17]),
+		hxtest_ref_tracker_t(initial_values[18]), hxtest_ref_tracker_t(initial_values[19]),
+		hxtest_ref_tracker_t(initial_values[20]), hxtest_ref_tracker_t(initial_values[21]),
+		hxtest_ref_tracker_t(initial_values[22]), hxtest_ref_tracker_t(initial_values[23]),
+		hxtest_ref_tracker_t(initial_values[24]), hxtest_ref_tracker_t(initial_values[25]),
+		hxtest_ref_tracker_t(initial_values[26]), hxtest_ref_tracker_t(initial_values[27]),
+		hxtest_ref_tracker_t(initial_values[28]), hxtest_ref_tracker_t(initial_values[29]),
+		hxtest_ref_tracker_t(initial_values[30]), hxtest_ref_tracker_t(initial_values[31]),
+		hxtest_ref_tracker_t(initial_values[32])
+	};
+	hxsort(hxtest_rand_iter_api_t(values), hxtest_rand_iter_api_t(values + 33), hxtest_value_less);
+	for(hxsize_t i = 0; i < 33; ++i) {
+		EXPECT_EQ(values[i].value, expected_sorted[i]);
+	}
+}
+
+TEST(hxsort_test, iterator_support_partition_sort_network_all_ascending_takes_no_swaps) {
+	const int initial_values[33] = {
+		1000, 1001, 1002, 1003, 1004, 1005, 10, 1007, 1008, 1009, 1010,
+		20, 1012, 1013, 1014, 1015, 30, 1017, 1018, 1019, 1020, 40, 1022,
+		1023, 1024, 1025, 50, 1027, 1028, 1029, 1030, 1031, 1032
+	};
+	const int expected_sorted[33] = {
+		10, 20, 30, 40, 50, 1000, 1001, 1002, 1003, 1004, 1005, 1007,
+		1008, 1009, 1010, 1012, 1013, 1014, 1015, 1017, 1018, 1019, 1020,
+		1022, 1023, 1024, 1025, 1027, 1028, 1029, 1030, 1031, 1032
+	};
+	do_sort_iter_partition_case(initial_values, expected_sorted);
+}
+
+TEST(hxsort_test, iterator_support_partition_sort_network_p3_p0_p4_p1_p2_p1_p4_p3_swap) {
+	const int initial_values[33] = {
+		1000, 1001, 1002, 1003, 1004, 1005, 50, 1007, 1008, 1009, 1010,
+		20, 1012, 1013, 1014, 1015, 30, 1017, 1018, 1019, 1020, 40, 1022,
+		1023, 1024, 1025, 10, 1027, 1028, 1029, 1030, 1031, 1032
+	};
+	const int expected_sorted[33] = {
+		10, 20, 30, 40, 50, 1000, 1001, 1002, 1003, 1004, 1005, 1007,
+		1008, 1009, 1010, 1012, 1013, 1014, 1015, 1017, 1018, 1019, 1020,
+		1022, 1023, 1024, 1025, 1027, 1028, 1029, 1030, 1031, 1032
+	};
+	do_sort_iter_partition_case(initial_values, expected_sorted);
+}
+
+TEST(hxsort_test, iterator_support_partition_sort_network_p3_p1_and_p3_p2_swap) {
+	const int initial_values[33] = {
+		1000, 1001, 1002, 1003, 1004, 1005, 10, 1007, 1008, 1009, 1010,
+		30, 1012, 1013, 1014, 1015, 40, 1017, 1018, 1019, 1020, 20, 1022,
+		1023, 1024, 1025, 50, 1027, 1028, 1029, 1030, 1031, 1032
+	};
+	const int expected_sorted[33] = {
+		10, 20, 30, 40, 50, 1000, 1001, 1002, 1003, 1004, 1005, 1007,
+		1008, 1009, 1010, 1012, 1013, 1014, 1015, 1017, 1018, 1019, 1020,
+		1022, 1023, 1024, 1025, 1027, 1028, 1029, 1030, 1031, 1032
+	};
+	do_sort_iter_partition_case(initial_values, expected_sorted);
+}
+
+TEST(hxsort_test, iterator_support_partition_sort_all_equal_takes_no_pivot_swaps) {
+	const int all_equal[33] = {
+		7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+		7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7
+	};
+	do_sort_iter_partition_case(all_equal, all_equal);
 }
 
 TEST(hxsort_test, iterator_api_types) {

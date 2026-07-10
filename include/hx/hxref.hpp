@@ -36,10 +36,14 @@ template<typename U_> struct hxis_hxref_<hxref<U_>> : hxtrue_t { };
 /// post condition is independent of the engaged state. Const is shallow,
 /// matching the rebinding behavior. Use `hxref<const T>` where write through
 /// should be prevented. This is weird but so is the standard.
-/// - `T` : The referenced value type. Must not be a reference or pointer type.
+/// - `T` : The referenced value type. Must not be an array, reference or
+///    pointer type.
 template<typename T_>
 class hxref {
 public:
+	// Use hxremove_reference_t<T> if needed.
+	static_assert(!hxis_reference<T_>::value, "hxref does not support reference types");
+
 	/// `value_type` - Publishes the referenced value type. Doesn't end with `_t`
 	/// because of the standard.
 	using value_type = T_&;
@@ -51,17 +55,12 @@ public:
 	/// - `nullopt` : The disengaged sentinel.
 	hxref(hxnullopt_t) : m_value_(hxnull) { }
 
-	/// Copy constructor. Copies the bound pointer from `other`.
-	/// - `other` : The `hxref` to copy from.
-	hxref(const hxref& other_) : m_value_(other_.m_value_) { }
-
 	/// Binds a reference to `value`. `U&` must bind to `T&` without creating a
 	/// temporary.
 	/// - `value` : The lvalue to reference.
 	template<typename U_, hxenable_if_t<
 		!hxdetail_::hxis_hxref_<hxremove_cvref_t<U_>>::value &&
-		!hxdetail_::hxis_hxoptional_<hxremove_cvref_t<U_>>::value &&
-		hxis_lvalue_reference<U_&>::value, bool> = true>
+		!hxdetail_::hxis_hxoptional_<hxremove_cvref_t<U_>>::value, bool> = true>
 	hxref(U_& value_);
 
 	/// Binds a reference by converting the referent of `other`. The referent of
@@ -78,9 +77,6 @@ public:
 	template<typename U_>
 	hxref(hxoptional<U_>& other_);
 
-	/// Destroys the reference. The referent is not affected.
-	~hxref(void) { }
-
 	/// Returns a reference to the referenced value. The reference must be engaged.
 	hxattr_nodiscard T_& operator*(void) const;
 
@@ -90,10 +86,6 @@ public:
 	/// Returns `true` if the reference is engaged.
 	hxattr_nodiscard operator bool(void) const { return m_value_ != hxnull; }
 
-	/// Rebinds the reference from `other`. Only the pointer is copied.
-	/// - `other` : The `hxref` to copy from.
-	hxref& operator=(const hxref& other_);
-
 	/// Disengages the reference. The referent is not affected.
 	/// - `nullopt` : The disengaged sentinel.
 	hxref& operator=(hxnullopt_t) { m_value_ = hxnull; return *this; }
@@ -102,8 +94,7 @@ public:
 	/// - `value` : The lvalue to reference.
 	template<typename U_, hxenable_if_t<
 		!hxdetail_::hxis_hxref_<hxremove_cvref_t<U_>>::value &&
-		!hxdetail_::hxis_hxoptional_<hxremove_cvref_t<U_>>::value &&
-		hxis_lvalue_reference<U_&>::value, bool> = true>
+		!hxdetail_::hxis_hxoptional_<hxremove_cvref_t<U_>>::value, bool> = true>
 	hxref& operator=(U_& value_);
 
 	/// Returns `true` if both references are disengaged or both reference equal
@@ -147,7 +138,7 @@ public:
 	/// to `T&` without creating a temporary. Returns the referenced value.
 	/// - `value` : The lvalue to reference.
 	template<typename U_>
-	T_& emplace(U_& value_) { m_value_ = &static_cast<T_&>(value_); return *m_value_; }
+	T_& emplace(U_& value_);
 
 	/// Returns `true` if the reference is engaged.
 	hxattr_nodiscard bool has_value(void) const { return m_value_ != hxnull; }
@@ -177,22 +168,6 @@ public:
 
 private:
 	T_* m_value_;
-};
-
-/// `hxref<T&>` - Reference to a reference is not supported.
-/// - `T` : The referenced value type.
-template<typename T_>
-class hxref<T_&> {
-public:
-	static_assert(sizeof(T_) == 0, "hxref does not support reference types");
-};
-
-/// `hxref<T*>` - Reference to a pointer is not supported.
-/// - `T` : The referenced value type.
-template<typename T_>
-class hxref<T_*> {
-public:
-	static_assert(sizeof(T_) == 0, "hxref does not support pointer types");
 };
 
 /// `hxkey_hash(hxref<T>)` - Returns the hash of the referenced value if engaged,

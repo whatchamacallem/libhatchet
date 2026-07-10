@@ -588,9 +588,8 @@ void hxvector<T_, capacity_>::reserve(hxsize_t size_, hxsystem_allocator_t alloc
 	if(size_ > this->capacity()) {
 		// reserve_storage asserts unallocated or size is equivalent.
 		this->reserve_storage(size_, allocator_, alignment_);
-		if(m_end_ == hxnull) {
-			m_end_ = this->data();
-		}
+		hxassertmsg(m_end_ == hxnull, "internal_error");
+		m_end_ = this->data();
 	}
 }
 

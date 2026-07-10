@@ -16,9 +16,8 @@ from typing import Iterator, Optional, Set, Tuple
 #	};
 #
 #	template<typename node_t_, typename deleter_t_=hxdefault_delete>
-#	class hxlist {
+#	class hxlist : private deleter_t_ {
 #		// ...
-#		deleter_t_   m_deleter_;
 #		hxsize_t     m_size_;
 #		hxlist_node  m_sentinel_;  // m_sentinel_.m_list_link_ == tail XOR front
 #		hxlist_node* m_tail_;      // points to last node, or &m_sentinel_ when empty

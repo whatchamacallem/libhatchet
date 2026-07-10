@@ -46,10 +46,15 @@ hxinline_constexpr hxnullopt_t hxnullopt{0};
 /// `std::optional`. See `hxref` for a std::optional<T&> equivalent. The value
 /// is stored in aligned internal storage without dynamic allocation. A
 /// disengaged optional compares equal to `hxnullopt`.
-/// - `T` : The contained value type. Must not be a reference or array type.
+/// - `T` : The contained value type. Must not be a reference or pointer type.
+///   Use `hxref<T>` for reference or pointer types.
 template<typename T_>
 class hxoptional {
 public:
+	// These are for safety. Use hxref for pointer and reference types.
+	static_assert(!hxis_reference<T_>::value, "hxoptional does not support reference types");
+	static_assert(!hxis_pointer<T_>::value, "hxoptional does not support pointer types");
+
 	/// `value_type` - Publishes the contained value type. Doesn't end with `_t`
 	/// because of the standard.
 	using value_type = T_;
@@ -86,7 +91,6 @@ public:
 	/// Constructs an engaged `hxoptional` by forwarding `value` into storage.
 	/// - `value` : The value to construct from. Must be convertible to `T`.
 	template<typename U_=T_, hxenable_if_t<
-		!hxis_same<hxremove_cvref_t<U_>, hxoptional>::value &&
 		!hxdetail_::hxis_hxoptional_<hxremove_cvref_t<U_>>::value, bool> = true>
 	hxoptional(U_&& value_) noexcept;
 
@@ -111,12 +115,12 @@ public:
 	/// Returns `true` if the optional contains a value.
 	hxattr_nodiscard operator bool(void) const { return m_engaged_; }
 
-	/// Copy assignment. Destroys any current value, then copies from `other`.
+	/// Copy assignment. Copies the engaged state and value from `other`.
 	/// - `other` : The `hxoptional` to copy from.
 	hxoptional& operator=(const hxoptional& other_) noexcept;
 
-	/// Move assignment. Destroys any current value, then moves from `other`.
-	/// `other` is left disengaged.
+	/// Move assignment. Moves the engaged state and value from `other`. `other`
+	/// is left disengaged.
 	/// - `other` : The `hxoptional` to move from.
 	hxoptional& operator=(hxoptional&& other_) noexcept;
 
@@ -127,7 +131,6 @@ public:
 	/// Assigns `value` by forwarding, engaging the optional.
 	/// - `value` : The value to assign from. Must be convertible to `T`.
 	template<typename U_=T_, hxenable_if_t<
-		!hxis_same<hxremove_cvref_t<U_>, hxoptional>::value &&
 		!hxdetail_::hxis_hxoptional_<hxremove_cvref_t<U_>>::value, bool> = true>
 	hxoptional& operator=(U_&& value_) noexcept;
 
@@ -230,28 +233,11 @@ private:
 	bool m_engaged_;
 };
 
-/// `hxoptional<T&>` - Optionals over reference types are not supported. Use
-/// `hxref<T>` instead.
-/// - `T` : The referenced value type.
-template<typename T_>
-class hxoptional<T_&> {
-public:
-	static_assert(sizeof(T_) == 0, "hxoptional does not support reference types");
-};
-
-/// `hxoptional<T&>` - Optionals over pointer types are not supported. Use
-/// `hxref<T>` instead.
-template<typename T_>
-class hxoptional<T_*> {
-public:
-	static_assert(sizeof(T_) == 0, "hxoptional does not support pointer types");
-};
-
 /// `hxmake_optional` - Returns an engaged `hxoptional<hxremove_cvref_t<T>>`
 /// constructed by forwarding `value`.
 /// - `value_` : The value to forward into the optional.
 template<typename T_>
-hxoptional<hxremove_cvref_t<T_>> hxmake_optional(T_&& value_) {
+hxattr_nodiscard hxoptional<hxremove_cvref_t<T_>> hxmake_optional(T_&& value_) {
 	return hxoptional<hxremove_cvref_t<T_>>(hxforward<T_>(value_));
 }
 
@@ -259,7 +245,7 @@ hxoptional<hxremove_cvref_t<T_>> hxmake_optional(T_&& value_) {
 /// place by forwarding `args` to the constructor of `T`.
 /// - `args` : Arguments forwarded to the constructor of `T`.
 template<typename T_, typename... args_t_>
-hxoptional<T_> hxmake_optional(args_t_&&... args_) {
+hxattr_nodiscard hxoptional<T_> hxmake_optional(args_t_&&... args_) {
 	hxoptional<T_> result_;
 	result_.emplace(hxforward<args_t_>(args_)...);
 	return result_;

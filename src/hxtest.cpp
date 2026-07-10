@@ -82,7 +82,7 @@ hxtest_::hxtest_(void) {
 }
 
 hxtest_& hxtest_::dispatcher_(void) {
-	static hxtest_ hxs_test_static_alloc;
+	static hxtest_ hxs_test_static_alloc; // GCOVR_EXCL_LINE
 	return hxs_test_static_alloc;
 }
 
@@ -100,10 +100,10 @@ void hxtest_::condition_check_(bool condition, const char* file, int line, const
 		++m_total_assert_count_;
 		++m_assert_count_;
 
+		// GCOVR_EXCL_START
 		if(is_assert) {
 			// ASSERT_* macros halt the test suite on failure. Always log and exit
 			// regardless of the message limit so control flow never continues.
-			// GCOVR_EXCL_START
 			hxlog_handler(hxlog_level_assert, "test_fail %s.%s", m_current_test_->suite_(), m_current_test_->case_());
 			hxlog_handler(hxlog_level_assert, "test_fail_at %s(%d): %s", file, line, message);
 			hxlog_handler(hxlog_level_assert, "test_assert_fail ❌");
@@ -111,8 +111,8 @@ void hxtest_::condition_check_(bool condition, const char* file, int line, const
 				m_pass_count_, m_fail_count_ + 1, m_total_assert_count_);
 			hxbreakpoint();
 			hxexit(EXIT_FAILURE);
-			// GCOVR_EXCL_STOP
 		}
+		// GCOVR_EXCL_STOP
 
 		if(m_assert_count_ > hxmax_fail_messages_) {
 			if(m_assert_count_ == hxmax_fail_messages_ + 1) {
@@ -134,12 +134,12 @@ void hxtest_::condition_check_(bool condition, const char* file, int line, const
 }
 
 int hxtest_::run_all_tests_(const char* test_suite_filter) {
-	hxinit(); // RUN_ALL_TESTS could be called first.
+	hxinit(); // GCOVR_EXCL_LINE. RUN_ALL_TESTS could be called first.
 
-	if(test_suite_filter != hxnull && test_suite_filter[0] == 0) {
+	if(test_suite_filter != hxnull && test_suite_filter[0] == 0) { // GCOVR_EXCL_LINE
 		test_suite_filter = hxnull;
 	}
-	hxlog_console("[==========] Running tests: %s\n", (test_suite_filter ? test_suite_filter : "All"));
+	hxlog_console("[==========] Running tests: %s\n", (test_suite_filter ? test_suite_filter : "All")); // GCOVR_EXCL_LINE
 
 	m_pass_count_ = m_fail_count_ = 0;
 	m_total_assert_count_ = 0;
@@ -161,7 +161,7 @@ int hxtest_::run_all_tests_(const char* test_suite_filter) {
 
 	for(hxtest_case_interface_** it = m_test_cases_; it != (m_test_cases_ + m_num_test_cases_); ++it) {
 		if((test_suite_filter == hxnull)
-				|| (::strcmp(test_suite_filter, (*it)->suite_()) == 0)) {
+				|| (::strcmp(test_suite_filter, (*it)->suite_()) == 0)) { // GCOVR_EXCL_LINE
 			hxlog_console("[ RUN      ] %s.%s\n", (*it)->suite_(), (*it)->case_());
 			m_current_test_ = *it;
 			m_test_state_ = test_state_::nothing_asserted_;
@@ -175,12 +175,12 @@ int hxtest_::run_all_tests_(const char* test_suite_filter) {
 
 				// Expect the test to use another scope to reset the stack if needed.
 				hxmemory_manager_stats stats = hxmemory_manager_utilization(true, false);
+				// GCOVR_EXCL_START
 				if(stats.allocations_outstanding != 0u || stats.bytes_outstanding != 0u) {
-					// GCOVR_EXCL_START
 					this->condition_check_(false, (*it)->file_(), (*it)->line_(),
 						"test_leaks All tests must reset the temp stack.", true);
-					// GCOVR_EXCL_STOP
 				}
+				// GCOVR_EXCL_STOP
 			}
 #ifdef __cpp_exceptions
 			catch (...) {
@@ -218,7 +218,7 @@ int hxtest_::run_all_tests_(const char* test_suite_filter) {
 	}
 	else {
 		hxlog_handler(hxlog_level_console, "%d FAILED TEST%s ❌\n", m_fail_count_,
-			m_fail_count_ == 1 ? "" : "S");
+			m_fail_count_ == 1 ? "" : "S"); // GCOVR_EXCL_LINE
 		// Count nothing tested as one failure.
 		m_fail_count_ = hxmax(m_fail_count_, 1);
 	}

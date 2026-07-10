@@ -21,14 +21,14 @@ echo "= Largest elf symbols..."
 
 # Duplicate names for the same function are ignored. The C++ ABI requires them.
 LINES=200
-echo "$SYMBOLS" | awk 'NF == 4 && !seen[$1]++ {print $2, $3, $4}' | sort -r 2>/dev/null | head -n "$LINES"            \
- | python3 -c 'import re,sys;[print(re.sub(r"\b0+(?=\d)",lambda m:" "*len(m.group()),l),end="") for l in sys.stdin]' \
- | c++filt
+echo "$SYMBOLS" | awk 'NF == 4 && !seen[$1]++ {print $2, $3, $4}' | sort -r 2>/dev/null | head -n "$LINES"              \
+	| python3 -c 'import re,sys;[print(re.sub(r"\b0+(?=\d)",lambda m:" "*len(m.group()),l),end="") for l in sys.stdin]' \
+	| c++filt
 
 echo
 echo "=========================================================================="
 echo "= Non-test libhatchet symbols.."
 
-echo "$SYMBOLS" | awk 'NF == 4 && $4 ~ /hx/ && $4 !~ /test/ && !seen[$1]++ {print $2, $3, $4}' | sort -r 2>/dev/null \
- | python3 -c 'import re,sys;[print(re.sub(r"\b0+(?=\d)",lambda m:" "*len(m.group()),l),end="") for l in sys.stdin]' \
- | c++filt
+echo "$SYMBOLS" | awk 'NF == 4 && $4 ~ /hx/ && $4 !~ /test/ && !seen[$1]++ {print $2, $3, $4}' | sort -r 2>/dev/null    \
+	| python3 -c 'import re,sys;[print(re.sub(r"\b0+(?=\d)",lambda m:" "*len(m.group()),l),end="") for l in sys.stdin]' \
+	| c++filt
