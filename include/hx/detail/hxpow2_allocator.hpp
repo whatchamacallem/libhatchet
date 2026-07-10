@@ -12,10 +12,10 @@
 namespace hxdetail_ {
 
 template<typename slot_t_, uint32_t c_table_size_bits_, bool zero_init_>
-class hxpow2_table_allocator_
+class hxpow2_allocator_
 	: public hxallocator<slot_t_, static_cast<hxsize_t>(1) << c_table_size_bits_> {
 public:
-	hxpow2_table_allocator_(void) {
+	hxpow2_allocator_(void) {
 		hxif_constexpr(zero_init_) {
 			::memset(this->data(), 0x00, sizeof(slot_t_) * static_cast<size_t>(this->capacity()));
 		}
@@ -32,10 +32,10 @@ public:
 };
 
 template<typename slot_t_, bool zero_init_>
-class hxpow2_table_allocator_<slot_t_, hxallocator_dynamic_capacity, zero_init_>
+class hxpow2_allocator_<slot_t_, hxallocator_dynamic_capacity, zero_init_>
 	: public hxallocator<slot_t_, hxallocator_dynamic_capacity> {
 public:
-	hxpow2_table_allocator_(void) : m_cached_value_(0) { }
+	hxpow2_allocator_(void) : m_cached_value_(0) { }
 
 	uint32_t get_hash_shift_(void) const { return m_cached_value_; }
 	uint32_t get_mask_(void) const { return m_cached_value_; }

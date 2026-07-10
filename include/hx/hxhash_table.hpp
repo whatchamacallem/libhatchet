@@ -16,12 +16,11 @@
 
 #include "hxkey.hpp"
 #include "hxptr.hpp"
-#include "hxutility.h"
 #include "hxallocator.hpp"
 
 HX_NS_BEGIN_
 
-#include "detail/hxpow2_table_allocator.hpp"
+#include "detail/hxpow2_allocator.hpp"
 
 #if HX_CPLUSPLUS >= 202002L
 /// `hxhash_table_concept` - Concept capturing the interface requirements for
@@ -415,7 +414,7 @@ private:
 	const node_t_*const* get_bucket_head_(hxhash_t hash_) const;
 
 	hxsize_t m_size_;
-	hxdetail_::hxpow2_table_allocator_<node_t_*, table_size_bits_, true> m_table_;
+	hxdetail_::hxpow2_allocator_<node_t_*, table_size_bits_, true> m_table_;
 };
 
 #include "detail/hxhash_table.inl"
