@@ -63,6 +63,6 @@ git push -q --force origin "$DOCS_COMMIT:refs/heads/gh-pages"
 rm -f "$GIT_INDEX_FILE"
 unset GIT_INDEX_FILE
 git update-ref -d "refs/remotes/origin/gh-pages" 2> /dev/null || true
-git prune -q --expire=now
+git prune --expire=now
 
 echo -e "\e[38;5;208mDone releasing $TAG ($DESCRIBE).\e[0m"
