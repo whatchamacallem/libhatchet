@@ -34,23 +34,21 @@ fi
 
 ./testall.sh
 
-set -o xtrace
-
 if ! git diff --quiet || ! git diff --cached --quiet \
 		|| [ -n "$(git ls-files --others --exclude-standard)" ]; then
 	git add .
-	git commit -m "$BRANCH $TAG"
+	git commit -q -m "$BRANCH $TAG"
 fi
-git checkout "$TARGET"
+git checkout -q "$TARGET"
 git merge --squash "$BRANCH"
-git commit -m "$TAG"
+git commit -q -m "$TAG"
 DESCRIBE=$(git describe --tags "$TARGET^{commit}")
 git tag -a -m "$DESCRIBE" "$TAG"
-git push
-git push --tags
-git checkout "$BRANCH"
-git reset --hard "$TARGET"
-git push --force
+git push -q
+git push -q --tags
+git checkout -q "$BRANCH"
+git reset -q --hard "$TARGET"
+git push -q --force
 
 # Publish docs to the gh-pages branch served by GitHub Pages. The commit
 # has no parent and the branch is purged afterwards.
@@ -61,12 +59,10 @@ export GIT_INDEX_FILE
 GIT_WORK_TREE="docs" git add -A
 DOCS_TREE_OBJECT=$(git write-tree)
 DOCS_COMMIT=$(git commit-tree "$DOCS_TREE_OBJECT" -m "docs $TAG")
-git push --force origin "$DOCS_COMMIT:refs/heads/gh-pages"
+git push -q --force origin "$DOCS_COMMIT:refs/heads/gh-pages"
 rm -f "$GIT_INDEX_FILE"
 unset GIT_INDEX_FILE
 git update-ref -d "refs/remotes/origin/gh-pages" 2> /dev/null || true
-git prune --expire=now
-
-{ set +o xtrace; } 2> /dev/null
+git prune -q --expire=now
 
 echo -e "\e[38;5;208mDone releasing $TAG ($DESCRIBE).\e[0m"

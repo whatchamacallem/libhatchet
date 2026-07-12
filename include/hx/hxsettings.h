@@ -217,8 +217,10 @@
 
 #define hxattr_cold __attribute__((cold))
 // Use -Dhxattr_flatten= to disable.
-#ifndef hxattr_flatten
+#if !defined hxattr_flatten && (defined __clang__ || __GNUC__ >= 11)
 #define hxattr_flatten __attribute__((flatten))
+#else
+#define hxattr_flatten
 #endif
 #define hxattr_hot __attribute__((hot))
 #define hxattr_nodiscard __attribute__((warn_unused_result))
