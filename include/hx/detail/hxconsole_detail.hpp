@@ -27,52 +27,52 @@ template<typename arg_t_>
 arg_t_ hxconsole_parse_arg_(const char* str_, char** next_) = delete;
 
 // Floating-point types.
-template<> inline float hxconsole_parse_arg_<float>(const char* str_, char** next_) {
+template<> inline hxattr_cold float hxconsole_parse_arg_<float>(const char* str_, char** next_) {
 	return hxconsole_strtof_(str_, next_);
 }
-template<> inline double hxconsole_parse_arg_<double>(const char* str_, char** next_) {
+template<> inline hxattr_cold double hxconsole_parse_arg_<double>(const char* str_, char** next_) {
 	return hxconsole_strtod_(str_, next_);
 }
 
 // char: range CHAR_MIN..CHAR_MAX (platform-defined signedness).
-template<> inline char hxconsole_parse_arg_<char>(const char* str_, char** next_) {
+template<> inline hxattr_cold char hxconsole_parse_arg_<char>(const char* str_, char** next_) {
 	return static_cast<char>(hxconsole_strtol_(str_, next_, CHAR_MIN, CHAR_MAX));
 }
 
 // bool: only 0 or 1 are valid. Anything else is a parse error.
-template<> inline bool hxconsole_parse_arg_<bool>(const char* str_, char** next_) {
+template<> inline hxattr_cold bool hxconsole_parse_arg_<bool>(const char* str_, char** next_) {
 	return hxconsole_strtol_(str_, next_, 0l, 1l) != 0l;
 }
 
-template<> inline signed char hxconsole_parse_arg_<signed char>(const char* str_, char** next_) {
+template<> inline hxattr_cold signed char hxconsole_parse_arg_<signed char>(const char* str_, char** next_) {
 	return static_cast<signed char>(hxconsole_strtol_(str_, next_, SCHAR_MIN, SCHAR_MAX));
 }
-template<> inline short hxconsole_parse_arg_<short>(const char* str_, char** next_) {
+template<> inline hxattr_cold short hxconsole_parse_arg_<short>(const char* str_, char** next_) {
 	return static_cast<short>(hxconsole_strtol_(str_, next_, SHRT_MIN, SHRT_MAX));
 }
-template<> inline int hxconsole_parse_arg_<int>(const char* str_, char** next_) {
+template<> inline hxattr_cold int hxconsole_parse_arg_<int>(const char* str_, char** next_) {
 	return static_cast<int>(hxconsole_strtol_(str_, next_, INT_MIN, INT_MAX));
 }
-template<> inline long hxconsole_parse_arg_<long>(const char* str_, char** next_) {
+template<> inline hxattr_cold long hxconsole_parse_arg_<long>(const char* str_, char** next_) {
 	return hxconsole_strtol_(str_, next_, LONG_MIN, LONG_MAX);
 }
-template<> inline long long hxconsole_parse_arg_<long long>(const char* str_, char** next_) {
+template<> inline hxattr_cold long long hxconsole_parse_arg_<long long>(const char* str_, char** next_) {
 	return hxconsole_strtoll_(str_, next_);
 }
 
-template<> inline unsigned char hxconsole_parse_arg_<unsigned char>(const char* str_, char** next_) {
+template<> inline hxattr_cold unsigned char hxconsole_parse_arg_<unsigned char>(const char* str_, char** next_) {
 	return static_cast<unsigned char>(hxconsole_strtoul_(str_, next_, UCHAR_MAX));
 }
-template<> inline unsigned short hxconsole_parse_arg_<unsigned short>(const char* str_, char** next_) {
+template<> inline hxattr_cold unsigned short hxconsole_parse_arg_<unsigned short>(const char* str_, char** next_) {
 	return static_cast<unsigned short>(hxconsole_strtoul_(str_, next_, USHRT_MAX));
 }
-template<> inline unsigned int hxconsole_parse_arg_<unsigned int>(const char* str_, char** next_) {
+template<> inline hxattr_cold unsigned int hxconsole_parse_arg_<unsigned int>(const char* str_, char** next_) {
 	return static_cast<unsigned int>(hxconsole_strtoul_(str_, next_, UINT_MAX));
 }
-template<> inline unsigned long hxconsole_parse_arg_<unsigned long>(const char* str_, char** next_) {
+template<> inline hxattr_cold unsigned long hxconsole_parse_arg_<unsigned long>(const char* str_, char** next_) {
 	return hxconsole_strtoul_(str_, next_, ULONG_MAX);
 }
-template<> inline unsigned long long hxconsole_parse_arg_<unsigned long long>(const char* str_, char** next_) {
+template<> inline hxattr_cold unsigned long long hxconsole_parse_arg_<unsigned long long>(const char* str_, char** next_) {
 	return hxconsole_strtoull_(str_, next_);
 }
 
@@ -111,7 +111,7 @@ concept hxconsole_parseable_ = requires(const char* s_, char** n_) {
 
 // Checks for printing characters.
 
-inline bool hxconsole_is_end_of_line_(const char* str_) {
+inline hxattr_cold bool hxconsole_is_end_of_line_(const char* str_) {
 	while(hxisspace(*str_)) { ++str_; }
 	return *str_ == '\0' || *str_ == '#'; // Skip comments
 }
@@ -132,7 +132,7 @@ class hxconsole_command_impl_ : public hxconsole_command_ {
 public:
 	hxconsole_command_impl_(bool(*fn_)(args_t_...)) : m_fn_(fn_) { }
 
-	bool execute_(const char* str_) override {
+	hxattr_cold bool execute_(const char* str_) override {
 		if constexpr (sizeof...(args_t_) == 0) {
 			if(hxconsole_is_end_of_line_(str_)) {
 				return m_fn_();
@@ -147,7 +147,7 @@ public:
 		}
 	}
 
-	void usage_(const char* id_=hxnull) override {
+	hxattr_cold void usage_(const char* id_=hxnull) override {
 		static constexpr const char* labels_[] = { hxconsole_arg_label_<args_t_>()..., hxnull };
 		hxconsole_usage_(id_, labels_);
 	}
@@ -155,7 +155,7 @@ public:
 private:
 	// Terminal: all args parsed, check end of line and call.
 	template<typename fn_t_, typename... parsed_t_>
-	static bool call_(fn_t_ fn_, const char* pos_, char*, parsed_t_... parsed_) {
+	static hxattr_cold bool call_(fn_t_ fn_, const char* pos_, char*, parsed_t_... parsed_) {
 		if(hxconsole_is_end_of_line_(pos_)) {
 			return fn_(parsed_...);
 		}
@@ -164,7 +164,7 @@ private:
 
 	// Recursive: parse one arg, recurse with remaining types.
 	template<typename first_t_, typename... rest_t_, typename fn_t_, typename... parsed_t_>
-	static bool call_(fn_t_ fn_, const char* pos_, char* next_, parsed_t_... parsed_) {
+	static hxattr_cold bool call_(fn_t_ fn_, const char* pos_, char* next_, parsed_t_... parsed_) {
 		first_t_ val_ = hxconsole_parse_arg_<first_t_>(pos_, &next_);
 		// Empty strings are valid string args.
 		if constexpr(hxis_same<first_t_, const char*>::value) {
@@ -184,7 +184,7 @@ class hxconsole_variable_ : public hxconsole_command_ {
 public:
 	hxconsole_variable_(volatile var_t_* var_) : m_var_(var_) { }
 
-	bool execute_(const char* str_) override {
+	hxattr_cold bool execute_(const char* str_) override {
 		if(hxconsole_is_end_of_line_(str_)) {
 			// 0 parameters is a query.
 			hxlog_handler(hxlog_level_console, "%.15g\n", static_cast<double>(*m_var_));
@@ -201,7 +201,7 @@ public:
 		return false;
 	}
 
-	void usage_(const char* id_=hxnull) override {
+	hxattr_cold void usage_(const char* id_=hxnull) override {
 		static constexpr const char* labels_[] = { "<optional-value>", hxnull };
 		hxconsole_usage_(id_, labels_);
 	}
@@ -213,20 +213,20 @@ private:
 // pointer.
 
 template<typename... args_t_>
-inline hxconsole_command_impl_<args_t_...> hxconsole_command_factory_(bool(*fn_)(args_t_...)) {
+hxattr_cold hxconsole_command_impl_<args_t_...> hxconsole_command_factory_(bool(*fn_)(args_t_...)) {
 	return hxconsole_command_impl_<args_t_...>(fn_);
 }
 
 template<typename var_t_>
-inline hxconsole_variable_<var_t_> hxconsole_variable_factory_(volatile var_t_* var_) {
+hxattr_cold hxconsole_variable_<var_t_> hxconsole_variable_factory_(volatile var_t_* var_) {
 	return hxconsole_variable_<var_t_>(var_);
 }
 
 // ERROR: Pointers cannot be console variables.
 template<typename var_t_>
-inline void hxconsole_variable_factory_(var_t_** var_) = delete;
+void hxconsole_variable_factory_(var_t_** var_) = delete;
 template<typename var_t_>
-inline void hxconsole_variable_factory_(const var_t_** var_) = delete;
+void hxconsole_variable_factory_(const var_t_** var_) = delete;
 
 // Hash table infrastructure.
 
@@ -238,7 +238,7 @@ public:
 };
 
 // Uses FNV-1a string hashing. Stops at whitespace.
-inline hxhash_t hxkey_hash(hxconsole_hash_table_key_ k_) {
+inline hxattr_cold hxhash_t hxkey_hash(hxconsole_hash_table_key_ k_) {
 	hxhash_t x_ = static_cast<hxhash_t>(0x811c9dc5);
 	while(hxisgraph(*k_.str_)) {
 		x_ ^= static_cast<hxhash_t>(*k_.str_++);
@@ -248,7 +248,7 @@ inline hxhash_t hxkey_hash(hxconsole_hash_table_key_ k_) {
 }
 
 // A version of ::strcmp that stops at the first non-graphical characters.
-inline bool hxkey_equal(hxconsole_hash_table_key_ a_, hxconsole_hash_table_key_ b_) {
+inline hxattr_cold bool hxkey_equal(hxconsole_hash_table_key_ a_, hxconsole_hash_table_key_ b_) {
 	while(hxisgraph(*a_.str_) && *a_.str_ == *b_.str_) { ++a_.str_; ++b_.str_; }
 	return !hxisgraph(*a_.str_) && !hxisgraph(*b_.str_);
 }
@@ -258,7 +258,7 @@ class hxconsole_hash_table_node_ {
 public:
 	using key_t = hxconsole_hash_table_key_;
 
-	hxconsole_hash_table_node_(hxconsole_hash_table_key_ key_)
+	hxattr_cold hxconsole_hash_table_node_(hxconsole_hash_table_key_ key_)
 			: m_hash_next_(hxnull), m_key_(key_), m_hash_(hxkey_hash(key_)), m_command_(hxnull) {
 #if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
 		const char* k_ = key_.str_;
@@ -293,7 +293,7 @@ void hxconsole_register_(hxconsole_hash_table_node_* node);
 class hxconsole_constructor_ {
 public:
 	template<typename command_t_>
-	hxconsole_constructor_(command_t_ fn_, const char* id_)
+	hxattr_cold hxconsole_constructor_(command_t_ fn_, const char* id_)
 			: m_node_(hxconsole_hash_table_key_(id_)) {
 		static_assert(hxsizeof<command_t_>() <= storage_size_, "command_storage_overflow");
 		::new(m_storage_ + 0) command_t_(hxmove(fn_));

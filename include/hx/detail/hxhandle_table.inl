@@ -11,7 +11,7 @@
 HX_BEGIN_INL_
 
 template<typename T_, typename deleter_t_, uint32_t table_size_bits_>
-inline hxhandle_table<T_, deleter_t_, table_size_bits_>::hxhandle_table(deleter_t_ deleter_)
+inline hxattr_flatten hxhandle_table<T_, deleter_t_, table_size_bits_>::hxhandle_table(deleter_t_ deleter_)
 		: deleter_t_(hxmove(deleter_)), m_size_(0), m_free_head_(hxnull) {
 	hxif_constexpr(table_size_bits_ != hxallocator_dynamic_capacity) {
 		this->build_free_list_();
@@ -19,7 +19,7 @@ inline hxhandle_table<T_, deleter_t_, table_size_bits_>::hxhandle_table(deleter_
 }
 
 template<typename T_, typename deleter_t_, uint32_t table_size_bits_>
-inline hxhandle_table<T_, deleter_t_, table_size_bits_>::~hxhandle_table(void) {
+inline hxattr_flatten hxhandle_table<T_, deleter_t_, table_size_bits_>::~hxhandle_table(void) {
 	deleter_t_& deleter_ = static_cast<deleter_t_&>(*this);
 	if(m_size_ != 0 && deleter_) {
 		const size_t begin_ = reinterpret_cast<size_t>(m_table_.data());
@@ -36,7 +36,8 @@ inline hxhandle_table<T_, deleter_t_, table_size_bits_>::~hxhandle_table(void) {
 
 template<typename T_, typename deleter_t_, uint32_t table_size_bits_>
 template<typename deleter_u_>
-inline void hxhandle_table<T_, deleter_t_, table_size_bits_>::clear(deleter_u_&& deleter_) noexcept {
+inline hxattr_flatten void hxhandle_table<T_, deleter_t_, table_size_bits_>::clear(
+		deleter_u_&& deleter_) noexcept {
 	if(m_size_ != 0) {
 		const uint32_t increment_ = static_cast<uint32_t>(m_table_.capacity()) << 1;
 		const size_t begin_ = reinterpret_cast<size_t>(m_table_.data());
@@ -60,7 +61,7 @@ inline void hxhandle_table<T_, deleter_t_, table_size_bits_>::clear(deleter_u_&&
 
 template<typename T_, typename deleter_t_, uint32_t table_size_bits_>
 template<typename deleter_u_>
-inline bool hxhandle_table<T_, deleter_t_, table_size_bits_>::erase(
+hxinline hxattr_flatten bool hxhandle_table<T_, deleter_t_, table_size_bits_>::erase(
 		hxhandle_t handle_, deleter_u_&& deleter_) noexcept {
 	hxassertmsg(m_table_.capacity() != 0, "table_unallocated");
 	const uint32_t mask_ = m_table_.get_mask_();
@@ -79,7 +80,7 @@ inline bool hxhandle_table<T_, deleter_t_, table_size_bits_>::erase(
 }
 
 template<typename T_, typename deleter_t_, uint32_t table_size_bits_>
-inline hxptr<T_, deleter_t_>
+hxinline hxattr_flatten hxptr<T_, deleter_t_>
 hxhandle_table<T_, deleter_t_, table_size_bits_>::extract(hxhandle_t handle_) noexcept {
 	hxassertmsg(m_table_.capacity() != 0, "table_unallocated");
 	const uint32_t mask_ = m_table_.get_mask_();
@@ -96,7 +97,7 @@ hxhandle_table<T_, deleter_t_, table_size_bits_>::extract(hxhandle_t handle_) no
 }
 
 template<typename T_, typename deleter_t_, uint32_t table_size_bits_>
-inline T_* hxhandle_table<T_, deleter_t_, table_size_bits_>::get(hxhandle_t handle_) noexcept {
+hxinline hxattr_flatten T_* hxhandle_table<T_, deleter_t_, table_size_bits_>::get(hxhandle_t handle_) noexcept {
 	hxassertmsg(m_table_.capacity() != 0, "table_unallocated");
 	const slot_t_* const slot_ = m_table_.data()
 		+ (static_cast<uint32_t>(handle_) & m_table_.get_mask_());
@@ -104,7 +105,7 @@ inline T_* hxhandle_table<T_, deleter_t_, table_size_bits_>::get(hxhandle_t hand
 }
 
 template<typename T_, typename deleter_t_, uint32_t table_size_bits_>
-inline const T_*
+hxinline hxattr_flatten const T_*
 hxhandle_table<T_, deleter_t_, table_size_bits_>::get(hxhandle_t handle_) const noexcept {
 	hxassertmsg(m_table_.capacity() != 0, "table_unallocated");
 	const slot_t_* const slot_ = m_table_.data()
@@ -113,18 +114,18 @@ hxhandle_table<T_, deleter_t_, table_size_bits_>::get(hxhandle_t handle_) const 
 }
 
 template<typename T_, typename deleter_t_, uint32_t table_size_bits_>
-inline const deleter_t_&
+hxinline const deleter_t_&
 hxhandle_table<T_, deleter_t_, table_size_bits_>::deleter(void) const {
 	return static_cast<const deleter_t_&>(*this);
 }
 
 template<typename T_, typename deleter_t_, uint32_t table_size_bits_>
-inline deleter_t_& hxhandle_table<T_, deleter_t_, table_size_bits_>::deleter(void) {
+hxinline deleter_t_& hxhandle_table<T_, deleter_t_, table_size_bits_>::deleter(void) {
 	return static_cast<deleter_t_&>(*this);
 }
 
 template<typename T_, typename deleter_t_, uint32_t table_size_bits_>
-inline hxhandle_t hxhandle_table<T_, deleter_t_, table_size_bits_>::insert(T_* ptr_) noexcept {
+hxinline hxattr_flatten hxhandle_t hxhandle_table<T_, deleter_t_, table_size_bits_>::insert(T_* ptr_) noexcept {
 	hxassertmsg(m_table_.capacity() != 0, "table_unallocated");
 	hxassert_hard(m_free_head_ != hxnull, "table_full");
 	if(ptr_ == hxnull) {
@@ -139,13 +140,13 @@ inline hxhandle_t hxhandle_table<T_, deleter_t_, table_size_bits_>::insert(T_* p
 
 template<typename T_, typename deleter_t_, uint32_t table_size_bits_>
 template<typename deleter_u_>
-inline hxhandle_t hxhandle_table<T_, deleter_t_, table_size_bits_>::insert(
+hxinline hxattr_flatten hxhandle_t hxhandle_table<T_, deleter_t_, table_size_bits_>::insert(
 		hxptr<T_, deleter_u_>&& ptr_) noexcept {
 	return this->insert(ptr_.release());
 }
 
 template<typename T_, typename deleter_t_, uint32_t table_size_bits_>
-inline void hxhandle_table<T_, deleter_t_, table_size_bits_>::set_table_size_bits(uint32_t bits_) {
+hxinline hxattr_flatten void hxhandle_table<T_, deleter_t_, table_size_bits_>::set_table_size_bits(uint32_t bits_) {
 	static_assert(table_size_bits_ == hxallocator_dynamic_capacity,
 		"set_table_size_bits requires dynamic capacity");
 	m_table_.set_table_size_bits_(bits_, (1u << bits_) - 1u);
@@ -153,7 +154,7 @@ inline void hxhandle_table<T_, deleter_t_, table_size_bits_>::set_table_size_bit
 }
 
 template<typename T_, typename deleter_t_, uint32_t table_size_bits_>
-inline void hxhandle_table<T_, deleter_t_, table_size_bits_>::build_free_list_(void) {
+inline hxattr_flatten void hxhandle_table<T_, deleter_t_, table_size_bits_>::build_free_list_(void) {
 	const uint32_t capacity_ = static_cast<uint32_t>(m_table_.capacity());
 	slot_t_* hxrestrict slot_ = m_table_.data();
 	for(uint32_t index_ = 0u; index_ < capacity_; ++index_, ++slot_) {

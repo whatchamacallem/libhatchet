@@ -11,35 +11,35 @@
 HX_BEGIN_INL_
 
 template<hxhash_table_concept_ node_t_, typename deleter_t_, bool multi_t_, uint32_t table_size_bits_>
-inline const node_t_&
+hxinline const node_t_&
 hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::const_iterator::operator*(void) const {
 	hxassertmsg(m_current_node_ != hxnull, "invalid_iterator");
 	return *m_current_node_;
 }
 
 template<hxhash_table_concept_ node_t_, typename deleter_t_, bool multi_t_, uint32_t table_size_bits_>
-inline const node_t_*
+hxinline const node_t_*
 hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::const_iterator::operator->(void) const {
 	hxassertmsg(m_current_node_ != hxnull, "invalid_iterator");
 	return m_current_node_;
 }
 
 template<hxhash_table_concept_ node_t_, typename deleter_t_, bool multi_t_, uint32_t table_size_bits_>
-inline node_t_&
+hxinline node_t_&
 hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::iterator::operator*(void) const {
 	hxassertmsg(this->m_current_node_ != hxnull, "invalid_iterator");
 	return *this->m_current_node_;
 }
 
 template<hxhash_table_concept_ node_t_, typename deleter_t_, bool multi_t_, uint32_t table_size_bits_>
-inline node_t_*
+hxinline node_t_*
 hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::iterator::operator->(void) const {
 	hxassertmsg(this->m_current_node_ != hxnull, "invalid_iterator");
 	return this->m_current_node_;
 }
 
 template<hxhash_table_concept_ node_t_, typename deleter_t_, bool multi_t_, uint32_t table_size_bits_>
-inline hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::const_iterator::const_iterator(const hxhash_table* table_)
+hxinline hxattr_flatten hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::const_iterator::const_iterator(const hxhash_table* table_)
 	: m_next_bucket_(const_cast<hxhash_table*>(table_)->m_table_.data())
 	, m_bucket_end_(m_next_bucket_ + table_->m_table_.capacity())
 	, m_current_node_(hxnull)
@@ -48,7 +48,7 @@ inline hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::const_iter
 }
 
 template<hxhash_table_concept_ node_t_, typename deleter_t_, bool multi_t_, uint32_t table_size_bits_>
-inline hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::const_iterator::const_iterator(
+hxinline hxattr_flatten hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::const_iterator::const_iterator(
 		const hxhash_table* table_, node_t_* node_)
 	: m_next_bucket_(const_cast<hxhash_table*>(table_)->get_bucket_head_(node_->hash_value()) + 1)
 	, m_bucket_end_(const_cast<hxhash_table*>(table_)->m_table_.data() + table_->m_table_.capacity())
@@ -57,7 +57,7 @@ inline hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::const_iter
 }
 
 template<hxhash_table_concept_ node_t_, typename deleter_t_, bool multi_t_, uint32_t table_size_bits_>
-inline auto hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::const_iterator::operator++(void)
+hxinline hxattr_flatten auto hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::const_iterator::operator++(void)
 		-> const_iterator& {
 	hxassertmsg(m_current_node_, "invalid_iterator"); // !end
 	m_current_node_ = m_current_node_->hash_next();
@@ -68,15 +68,13 @@ inline auto hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::const
 }
 
 template<hxhash_table_concept_ node_t_, typename deleter_t_, bool multi_t_, uint32_t table_size_bits_>
-inline bool
-hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::const_iterator::operator==(
+hxinline bool hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::const_iterator::operator==(
 		const const_iterator& x_) const {
 	return m_current_node_ == x_.m_current_node_;
 }
 
 template<hxhash_table_concept_ node_t_, typename deleter_t_, bool multi_t_, uint32_t table_size_bits_>
-inline void
-hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::const_iterator::next_bucket_(void) {
+hxinline void hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::const_iterator::next_bucket_(void) {
 	hxassertmsg(m_current_node_ == hxnull, "internal_error");
 	node_t_** hxrestrict it_ = m_next_bucket_;
 	while(it_ != m_bucket_end_) {
@@ -92,7 +90,7 @@ hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::const_iterator::n
 // hxhash_table out-of-line implementations
 
 template<hxhash_table_concept_ node_t_, typename deleter_t_, bool multi_t_, uint32_t table_size_bits_>
-inline hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::hxhash_table(deleter_t_ deleter_)
+hxattr_flatten hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::hxhash_table(deleter_t_ deleter_)
 		: deleter_t_(hxmove(deleter_)), m_size_(0) {
 	// Pre-requires keyword checks.
 	static_assert(hxis_same<decltype(hxdeclval<const node_t_&>().hash_next()),
@@ -111,7 +109,7 @@ inline hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::hxhash_tab
 
 template<hxhash_table_concept_ node_t_, typename deleter_t_, bool multi_t_, uint32_t table_size_bits_>
 template<typename deleter_u_>
-inline void hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::clear(
+hxattr_flatten void hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::clear(
 		deleter_u_&& deleter_) noexcept {
 	if(m_size_ != 0) {
 		if(deleter_) {
@@ -136,7 +134,7 @@ inline void hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::clear
 }
 
 template<hxhash_table_concept_ node_t_, typename deleter_t_, bool multi_t_, uint32_t table_size_bits_>
-inline hxsize_t hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::count(
+hxinline hxattr_flatten hxsize_t hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::count(
 		const typename node_t_::key_t& key_) const {
 	hxsize_t total_ = 0; // NOLINT(misc-const-correctness)
 	const hxhash_t hash_ = node_t_::hash_value(key_);
@@ -155,7 +153,7 @@ inline hxsize_t hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::c
 
 template<hxhash_table_concept_ node_t_, typename deleter_t_, bool multi_t_, uint32_t table_size_bits_>
 template<hxsystem_allocator_t allocator_, hxalignment_t alignment_, bool multi_, class... args_t_>
-inline auto hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::emplace(args_t_&&... args_) noexcept
+hxinline hxattr_flatten auto hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::emplace(args_t_&&... args_) noexcept
 		-> hxenable_if_t<multi_, iterator> {
 	node_t_* const ptr_ = hxnew<node_t_, allocator_, alignment_>(hxforward<args_t_>(args_)...);
 	return this->insert(ptr_);
@@ -163,7 +161,7 @@ inline auto hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::empla
 
 template<hxhash_table_concept_ node_t_, typename deleter_t_, bool multi_t_, uint32_t table_size_bits_>
 template<typename deleter_u_>
-inline hxsize_t hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::erase(
+hxattr_flatten hxsize_t hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::erase(
 		const typename node_t_::key_t& key_, deleter_u_&& deleter_) noexcept {
 	const hxhash_t hash_ = node_t_::hash_value(key_);
 	node_t_** const head_ = this->get_bucket_head_(hash_);
@@ -230,12 +228,12 @@ inline hxsize_t hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::e
 }
 
 template<hxhash_table_concept_ node_t_, typename deleter_t_, bool multi_t_, uint32_t table_size_bits_>
-inline hxsize_t hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::erase(const typename node_t_::key_t& key_) noexcept {
+hxinline hxattr_flatten hxsize_t hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::erase(const typename node_t_::key_t& key_) noexcept {
 	return this->erase(key_, static_cast<deleter_t_&>(*this));
 }
 
 template<hxhash_table_concept_ node_t_, typename deleter_t_, bool multi_t_, uint32_t table_size_bits_>
-inline typename hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::iterator
+hxattr_flatten typename hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::iterator
 hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::erase(const const_iterator& it_) noexcept {
 	node_t_* const node_ = it_.m_current_node_;
 	hxassertmsg(node_ != hxnull, "invalid_iterator");
@@ -257,7 +255,7 @@ hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::erase(const const
 }
 
 template<hxhash_table_concept_ node_t_, typename deleter_t_, bool multi_t_, uint32_t table_size_bits_>
-inline hxptr<node_t_, deleter_t_>
+hxattr_flatten hxptr<node_t_, deleter_t_>
 hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::extract(
 		const typename node_t_::key_t& key_) noexcept {
 	const hxhash_t hash_ = node_t_::hash_value(key_);
@@ -280,7 +278,7 @@ hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::extract(
 }
 
 template<hxhash_table_concept_ node_t_, typename deleter_t_, bool multi_t_, uint32_t table_size_bits_>
-inline node_t_* hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::find(
+hxattr_flatten node_t_* hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::find(
 		const typename node_t_::key_t& key_, const node_t_* previous_) {
 	const hxhash_t hash_ = node_t_::hash_value(key_);
 	if(previous_ == hxnull) {
@@ -303,7 +301,7 @@ inline node_t_* hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::f
 }
 
 template<hxhash_table_concept_ node_t_, typename deleter_t_, bool multi_t_, uint32_t table_size_bits_>
-inline const node_t_*
+hxinline hxattr_flatten const node_t_*
 hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::find(
 		const typename node_t_::key_t& key_, const node_t_* previous_) const {
 	// This code calls the non-const version for brevity.
@@ -311,18 +309,18 @@ hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::find(
 }
 
 template<hxhash_table_concept_ node_t_, typename deleter_t_, bool multi_t_, uint32_t table_size_bits_>
-inline const deleter_t_&
+hxinline hxattr_flatten const deleter_t_&
 hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::deleter(void) const {
 	return static_cast<const deleter_t_&>(*this);
 }
 
 template<hxhash_table_concept_ node_t_, typename deleter_t_, bool multi_t_, uint32_t table_size_bits_>
-inline deleter_t_& hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::deleter(void) {
+hxinline hxattr_flatten deleter_t_& hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::deleter(void) {
 	return static_cast<deleter_t_&>(*this);
 }
 
 template<hxhash_table_concept_ node_t_, typename deleter_t_, bool multi_t_, uint32_t table_size_bits_>
-inline typename hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::iterator
+hxattr_flatten typename hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::iterator
 hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::insert(node_t_* ptr_) noexcept {
 	hxassertmsg(ptr_ != hxnull, "null_node");
 	hxassertmsg(this->find(ptr_->hash_key()) != ptr_, "container_reinsert");
@@ -346,7 +344,7 @@ hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::insert(node_t_* p
 
 template<hxhash_table_concept_ node_t_, typename deleter_t_, bool multi_t_, uint32_t table_size_bits_>
 template<typename deleter_u_>
-inline typename hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::iterator
+hxattr_flatten typename hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::iterator
 hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::insert(hxptr<node_t_, deleter_u_>&& ptr_) noexcept {
 	hxassertmsg(ptr_.get() != hxnull, "null_node");
 	node_t_* const raw_ = ptr_.get();
@@ -367,14 +365,14 @@ hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::insert(hxptr<node
 }
 
 template<hxhash_table_concept_ node_t_, typename deleter_t_, bool multi_t_, uint32_t table_size_bits_>
-inline float hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::load_factor(void) const {
+hxinline hxattr_flatten float hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::load_factor(void) const {
 	return m_table_.capacity()
 		? (static_cast<float>(m_size_) / static_cast<float>(m_table_.capacity()))
 		: 0.0f;
 }
 
 template<hxhash_table_concept_ node_t_, typename deleter_t_, bool multi_t_, uint32_t table_size_bits_>
-inline hxsize_t hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::load_max(void) const {
+hxattr_flatten hxsize_t hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::load_max(void) const {
 	hxsize_t maximum_ = 0;
 	const node_t_*const* const it_end_ = m_table_.data() + m_table_.capacity();
 	for(const node_t_*const* hxrestrict it_ = m_table_.data(); it_ != it_end_; ++it_) {
@@ -388,7 +386,7 @@ inline hxsize_t hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::l
 }
 
 template<hxhash_table_concept_ node_t_, typename deleter_t_, bool multi_t_, uint32_t table_size_bits_>
-inline void hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::release_all(void) {
+hxinline hxattr_flatten void hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::release_all(void) {
 	if(m_size_ != 0) {
 		::memset(m_table_.data(), 0x00, sizeof(node_t_*) * static_cast<size_t>(m_table_.capacity()));
 		m_size_ = 0;
@@ -396,14 +394,14 @@ inline void hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::relea
 }
 
 template<hxhash_table_concept_ node_t_, typename deleter_t_, bool multi_t_, uint32_t table_size_bits_>
-inline hxsize_t hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::release_key(
+hxinline hxattr_flatten hxsize_t hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::release_key(
 		const typename node_t_::key_t& key_) {
 	// Pass a null pointer for the deleter. Just to show off.
 	return this->erase(key_, static_cast<void(*)(node_t_*)>(hxnull));
 }
 
 template<hxhash_table_concept_ node_t_, typename deleter_t_, bool multi_t_, uint32_t table_size_bits_>
-inline hxptr<node_t_, deleter_t_>
+hxattr_flatten hxptr<node_t_, deleter_t_>
 hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::replace(node_t_* ptr_) noexcept {
 	hxassertmsg(ptr_ != hxnull, "null_node");
 	const key_t& key_ = ptr_->hash_key();
@@ -429,7 +427,7 @@ hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::replace(node_t_* 
 }
 
 template<hxhash_table_concept_ node_t_, typename deleter_t_, bool multi_t_, uint32_t table_size_bits_>
-inline void hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::set_table_size_bits(hxhash_t bits_) {
+hxinline hxattr_flatten void hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::set_table_size_bits(hxhash_t bits_) {
 	static_assert(table_size_bits_ == hxallocator_dynamic_capacity,
 		"set_table_size_bits requires dynamic capacity");
 	m_table_.set_table_size_bits_(bits_, hxhash_bits - bits_);
@@ -437,7 +435,7 @@ inline void hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::set_t
 
 template<hxhash_table_concept_ node_t_, typename deleter_t_, bool multi_t_, uint32_t table_size_bits_>
 template<hxsystem_allocator_t allocator_, hxalignment_t alignment_, bool multi_, class... args_t_>
-inline auto hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::try_emplace(
+hxinline hxattr_flatten auto hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::try_emplace(
 		const typename node_t_::key_t& key_, args_t_&&... args_) noexcept -> hxenable_if_t<!multi_, iterator> {
 	node_t_* const existing_ = this->find(key_);
 	if(existing_ != hxnull) {
@@ -448,7 +446,7 @@ inline auto hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::try_e
 }
 
 template<hxhash_table_concept_ node_t_, typename deleter_t_, bool multi_t_, uint32_t table_size_bits_>
-inline node_t_** hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::get_bucket_head_(hxhash_t hash_) {
+hxinline hxattr_flatten node_t_** hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::get_bucket_head_(hxhash_t hash_) {
 	const uint32_t shift_ = m_table_.get_hash_shift_();
 	const hxhash_t index_ = hash_ >> shift_;
 	hxassertmsg(static_cast<hxsize_t>(index_) < m_table_.capacity(), "internal_error");
@@ -456,7 +454,7 @@ inline node_t_** hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::
 }
 
 template<hxhash_table_concept_ node_t_, typename deleter_t_, bool multi_t_, uint32_t table_size_bits_>
-inline const node_t_*const* hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::get_bucket_head_(hxhash_t hash_) const {
+hxinline hxattr_flatten const node_t_*const* hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::get_bucket_head_(hxhash_t hash_) const {
 	const uint32_t shift_ = m_table_.get_hash_shift_();
 	const hxhash_t index_ = hash_ >> shift_;
 	hxassertmsg(static_cast<hxsize_t>(index_) < m_table_.capacity(), "internal_error");

@@ -56,11 +56,11 @@ public:
 
 	/// Shifts all bits left by `count` positions, filling vacated bits with 0.
 	/// - `count` : Number of positions to shift left.
-	hxattr_hot hxconstexpr hxbitset& operator<<=(size_t count_);
+	hxconstexpr hxbitset& operator<<=(size_t count_);
 
 	/// Shifts all bits right by `count` positions, filling vacated bits with 0.
 	/// - `count` : Number of positions to shift right.
-	hxattr_hot hxconstexpr hxbitset& operator>>=(size_t count_);
+	hxconstexpr hxbitset& operator>>=(size_t count_);
 
 	/// Returns `true` if all bits compare equal to those of `x`.
 	/// - `x` : The `hxbitset` to compare with.
@@ -69,7 +69,7 @@ public:
 #if HX_CPLUSPLUS < 202002L // C++20 defaults != from ==.
 	/// Returns `true` if any bits differ from those of `x`.
 	/// - `x` : The `hxbitset` to compare with.
-	hxattr_nodiscard bool operator!=(const hxbitset& x_) const { return !(*this == x_); }
+	hxattr_nodiscard hxinline hxconstexpr bool operator!=(const hxbitset& x_) const;
 #endif
 
 	/// Returns `true` if all bits are set.
@@ -79,13 +79,13 @@ public:
 	hxattr_nodiscard hxconstexpr bool any(void) const;
 
 	/// Returns the size of the underlying storage in bytes.
-	hxattr_nodiscard static constexpr size_t bytes(void) { return s_words_ * sizeof(size_t); }
+	hxattr_nodiscard static hxinline constexpr size_t bytes(void) { return s_words_ * sizeof(size_t); }
 
 	/// Returns a pointer to the underlying word storage.
-	hxattr_nodiscard hxconstexpr size_t* data(void) { return m_data_; }
+	hxattr_nodiscard hxinline hxconstexpr size_t* data(void) { return m_data_; }
 
 	/// Returns a const pointer to the underlying word storage.
-	hxattr_nodiscard hxconstexpr const size_t* data(void) const { return m_data_; }
+	hxattr_nodiscard hxinline hxconstexpr const size_t* data(void) const { return m_data_; }
 
 	/// Flips all bits.
 	hxconstexpr hxbitset& flip(void);
@@ -101,7 +101,7 @@ public:
 	void load(const void* src_, size_t len_);
 
 	/// Returns `true` if no bits are set.
-	hxattr_nodiscard hxconstexpr bool none(void) const { return !this->any(); }
+	hxattr_nodiscard hxinline hxconstexpr bool none(void) const { return !this->any(); }
 
 	/// Clears all bits to 0.
 	hxconstexpr hxbitset& reset(void);
@@ -119,7 +119,7 @@ public:
 	hxconstexpr hxbitset& set(size_t pos_, bool value_=true);
 
 	/// Returns the number of bits.
-	hxattr_nodiscard static constexpr size_t size(void) { return bit_count_; }
+	hxattr_nodiscard static hxinline constexpr size_t size(void) { return bit_count_; }
 
 	/// Returns the value of the bit at position `pos`.
 	/// - `pos` : Bit index must be less than `bit_count`.

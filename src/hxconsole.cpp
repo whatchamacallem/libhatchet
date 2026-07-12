@@ -21,7 +21,7 @@ namespace hxdetail_ {
 // constraints. The next_ pointer is reset when parse errors, out of range
 // values or negative numbers are encountered.
 
-float hxconsole_strtof_(const char* str, char** next) {
+hxattr_cold float hxconsole_strtof_(const char* str, char** next) {
 #if defined HX_USE_FLOATING_POINT_TRAPS
 	fenv_t fenv_;
 	::feholdexcept(&fenv_);
@@ -36,7 +36,7 @@ float hxconsole_strtof_(const char* str, char** next) {
 	return v;
 }
 
-double hxconsole_strtod_(const char* str, char** next) {
+hxattr_cold double hxconsole_strtod_(const char* str, char** next) {
 #if defined HX_USE_FLOATING_POINT_TRAPS
 	fenv_t fenv_;
 	::feholdexcept(&fenv_);
@@ -51,21 +51,21 @@ double hxconsole_strtod_(const char* str, char** next) {
 	return v;
 }
 
-long hxconsole_strtol_(const char* str, char** next, long min, long max) {
+hxattr_cold long hxconsole_strtol_(const char* str, char** next, long min, long max) {
 	errno = 0;
 	const long v = ::strtol(str, next, 0);
 	if(errno == ERANGE || v < min || v > max) { *next = const_cast<char*>(str); }
 	return v;
 }
 
-long long hxconsole_strtoll_(const char* str, char** next) {
+hxattr_cold long long hxconsole_strtoll_(const char* str, char** next) {
 	errno = 0;
 	const long long v = ::strtoll(str, next, 0);
 	if(errno == ERANGE) { *next = const_cast<char*>(str); }
 	return v;
 }
 
-unsigned long hxconsole_strtoul_(const char* str, char** next, unsigned long max) {
+hxattr_cold unsigned long hxconsole_strtoul_(const char* str, char** next, unsigned long max) {
 	// The standard treats negative numbers as large positive values. This doesn't.
 	const char* p = str;
 	while(hxisspace(*p)) { ++p; }
@@ -80,7 +80,7 @@ unsigned long hxconsole_strtoul_(const char* str, char** next, unsigned long max
 	return v;
 }
 
-unsigned long long hxconsole_strtoull_(const char* str, char** next) {
+hxattr_cold unsigned long long hxconsole_strtoull_(const char* str, char** next) {
 	// The standard treats negative numbers as large positive values. This doesn't.
 	const char* p = str;
 	while(hxisspace(*p)) { ++p; }
@@ -97,13 +97,13 @@ unsigned long long hxconsole_strtoull_(const char* str, char** next) {
 
 // const char* captures remainder of line including comments starting with #'s.
 // Leading whitespace is discarded and the string is allowed to be empty.
-template<> const char* hxconsole_parse_arg_<const char*>(const char* str, char** next) {
+template<> hxattr_cold const char* hxconsole_parse_arg_<const char*>(const char* str, char** next) {
 	while(hxisspace(*str)) { ++str; }
 	*next = const_cast<char*>(str) + ::strlen(str);
 	return str;
 }
 
-void hxconsole_usage_(const char* id, const char* const* labels) {
+hxattr_cold void hxconsole_usage_(const char* id, const char* const* labels) {
 	hxlog_handler(hxlog_level_console, "%s", (id != hxnull) ? id : "usage:");
 	for(const char* const* label = labels; *label != hxnull; ++label) {
 		hxlog_handler(hxlog_level_console, " %s", *label);
@@ -120,7 +120,7 @@ void hxconsole_usage_(const char* id, const char* const* labels) {
 namespace {
 class hxconsole_less {
 public:
-	bool operator()(const hxdetail_::hxconsole_hash_table_node_* a,
+	hxattr_cold bool operator()(const hxdetail_::hxconsole_hash_table_node_* a,
 			const hxdetail_::hxconsole_hash_table_node_* b) const {
 		return hxkey_less(a->hash_key().str_, b->hash_key().str_);
 	}
@@ -131,7 +131,7 @@ class hxconsole_command_table
 };
 
 // Local static to enforce construction-order. Destruction is no-op.
-hxconsole_command_table& hxconsole_commands_(void) {
+hxattr_cold hxconsole_command_table& hxconsole_commands_(void) {
 	static hxconsole_command_table table_; // GCOVR_EXCL_LINE
 	return table_;
 }
@@ -140,7 +140,7 @@ hxconsole_command_table& hxconsole_commands_(void) {
 // -- Console API --------------------------------------------------------------
 
 // hxconsole_register_ is internal only.
-void hxdetail_::hxconsole_register_(hxconsole_hash_table_node_* node) {
+hxattr_cold void hxdetail_::hxconsole_register_(hxconsole_hash_table_node_* node) {
 	hxconsole_command_table& commands = hxconsole_commands_();
 	hxassertmsg(node->hash_key().str_ && node->command_(), "invalid_parameter");
 	if(commands.replace(node)) {
@@ -149,11 +149,11 @@ void hxdetail_::hxconsole_register_(hxconsole_hash_table_node_* node) {
 }
 
 // Nodes are statically allocated. Do not delete.
-void hxconsole_deregister(const char* id) {
+hxattr_cold void hxconsole_deregister(const char* id) {
 	hxconsole_commands_().release_key(hxdetail_::hxconsole_hash_table_key_(id));
 }
 
-bool hxconsole_exec_line(const char* command) {
+hxattr_cold bool hxconsole_exec_line(const char* command) {
 	// Skip leading whitespace.
 	const char* pos = command;
 	while(hxisspace(*pos)) {
@@ -193,7 +193,7 @@ bool hxconsole_exec_line(const char* command) {
 }
 
 // Lists variables and commands in order.
-bool hxconsole_help(void) {
+hxattr_cold bool hxconsole_help(void) {
 	hxinit(); // GCOVR_EXCL_LINE
 	const hxsystem_allocator_scope temp_mem(hxsystem_allocator_heap);
 	const hxconsole_command_table& commands = hxconsole_commands_();
@@ -218,7 +218,7 @@ bool hxconsole_help(void) {
 }
 
 #if HX_USE_FILE_IO
-bool hxconsole_exec_file(hxfile& file) {
+hxattr_cold bool hxconsole_exec_file(hxfile& file) {
 	// POSIX would require a system call per-character if this didn't read past
 	// the end.
 	char line_buf[HX_MAX_LINE];
@@ -264,7 +264,7 @@ bool hxconsole_exec_file(hxfile& file) {
 	return result;
 }
 
-bool hxconsole_exec_filename(const char* filename) {
+hxattr_cold bool hxconsole_exec_filename(const char* filename) {
 	// Please don't assert.
 	hxfile file(hxfile::open_mode_in, "%s", filename);
 	hxwarn_msg(file, "cannot open: %s", filename);
@@ -287,14 +287,14 @@ bool hxconsole_exec_filename(const char* filename) {
 #if (HX_USE_CONSOLE) > 1
 namespace {
 
-bool hxconsole_peek(uint64_t address, uint32_t bytes) {
+hxattr_cold bool hxconsole_peek(uint64_t address, uint32_t bytes) {
 	hxhex_dump(reinterpret_cast<const void*>(static_cast<uintptr_t>(address)), bytes, false);
 	return true;
 }
 
 // Writes bytes from a hex value in little-endian format (LSB first). The value
 // repeats every 8 bytes (64 bits) in memory. The hex input is also 64-bit.
-bool hxconsole_poke(uint64_t address, uint32_t bytes, uint64_t hex) {
+hxattr_cold bool hxconsole_poke(uint64_t address, uint32_t bytes, uint64_t hex) {
 	volatile uint8_t* addr = reinterpret_cast<volatile uint8_t*>(static_cast<uintptr_t>(address));
 	while(bytes-- != 0u) {
 		*addr++ = static_cast<uint8_t>(hex);
@@ -303,12 +303,12 @@ bool hxconsole_poke(uint64_t address, uint32_t bytes, uint64_t hex) {
 	return true;
 }
 
-bool hxconsole_hex_dump(uint64_t address, uint32_t bytes) {
+hxattr_cold bool hxconsole_hex_dump(uint64_t address, uint32_t bytes) {
 	hxhex_dump(reinterpret_cast<const void*>(static_cast<uintptr_t>(address)), bytes, true);
 	return true;
 }
 
-bool hxconsole_float_dump(uint64_t address, uint32_t bytes) {
+hxattr_cold bool hxconsole_float_dump(uint64_t address, uint32_t bytes) {
 	hxfloat_dump(reinterpret_cast<const float*>(static_cast<uintptr_t>(address)), bytes);
 	return true;
 }

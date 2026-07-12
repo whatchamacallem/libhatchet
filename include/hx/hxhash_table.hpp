@@ -280,7 +280,7 @@ public:
 
 	/// Counts the number of nodes with the given key.
 	/// - `key` : The key to count occurrences of in the hash table.
-	hxattr_nodiscard hxattr_hot hxsize_t count(const typename node_t_::key_t& key_) const;
+	hxattr_nodiscard hxsize_t count(const typename node_t_::key_t& key_) const;
 
 	/// `emplace` - Returns an iterator to the node constructed with `hxnew`.
 	/// The table must have `multi_t` set to `true`.
@@ -331,13 +331,13 @@ public:
 	/// The previous object is non-const as it may be modified.
 	/// - `key` : The key to search for in the hash table.
 	/// - `previous` : A previously found `node_t` with the same key, or hxnull.
-	hxattr_nodiscard hxattr_hot node_t_* find(
+	hxattr_nodiscard hxattr_flatten node_t_* find(
 		const typename node_t_::key_t& key_, const node_t_* previous_=hxnull);
 
 	/// `const` version of `find`.
 	/// - `key` : The key to search for in the hash table.
 	/// - `previous` : A previously found `node_t` with the same key, or hxnull.
-	hxattr_nodiscard hxattr_hot const node_t_* find(
+	hxattr_nodiscard hxattr_flatten const node_t_* find(
 		const typename node_t_::key_t& key_, const node_t_* previous_=hxnull) const;
 
 	/// Returns a const reference to the stored deleter.

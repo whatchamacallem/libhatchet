@@ -11,18 +11,18 @@
 HX_BEGIN_INL_
 
 template<typename key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
-inline hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::hxflat_set(void)
+hxinline hxattr_flatten hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::hxflat_set(void)
 	: m_end_(this->data()) {
 }
 
 template<typename key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
-inline hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::hxflat_set(const hxflat_set& x_) noexcept
+hxinline hxattr_flatten hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::hxflat_set(const hxflat_set& x_) noexcept
 	: m_end_(this->data()) {
 	this->operator=(x_);
 }
 
 template<typename key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
-inline hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::hxflat_set(hxflat_set&& x_) noexcept {
+hxinline hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::hxflat_set(hxflat_set&& x_) noexcept {
 	static_assert(capacity_ == hxallocator_dynamic_capacity,
 		"hxallocator_dynamic_capacity required for temporaries");
 	::memcpy(static_cast<void*>(this), &x_, sizeof x_); // NOLINT(bugprone-undefined-memory-manipulation)
@@ -30,12 +30,12 @@ inline hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::hxflat_set(hxflat_se
 }
 
 template<typename key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
-inline hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::~hxflat_set(void) noexcept {
+hxinline hxattr_flatten hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::~hxflat_set(void) noexcept {
 	this->clear();
 }
 
 template<typename key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
-inline void hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::operator=(
+hxinline hxattr_flatten void hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::operator=(
 		const hxflat_set& x_) noexcept {
 	hxassertmsg(static_cast<const void*>(this) != static_cast<const void*>(&x_),
 		"invalid_reference");
@@ -53,7 +53,7 @@ inline void hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::operator=(
 
 template<typename key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
 template<hxsize_t capacity_x_>
-inline void hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::operator=(
+hxinline hxattr_flatten void hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::operator=(
 		const hxflat_set<key_t_, compare_t_, multi_t_, capacity_x_>& x_) noexcept {
 	hxassertmsg(static_cast<const void*>(this) != static_cast<const void*>(&x_),
 		"invalid_reference");
@@ -70,7 +70,7 @@ inline void hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::operator=(
 }
 
 template<typename key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
-inline void hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::operator=(
+hxinline hxattr_flatten void hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::operator=(
 		hxflat_set&& x_) noexcept {
 	hxassertmsg(static_cast<const void*>(this) != static_cast<const void*>(&x_),
 		"invalid_reference");
@@ -78,7 +78,7 @@ inline void hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::operator=(
 }
 
 template<typename key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
-inline auto hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::operator[](
+hxinline hxattr_flatten auto hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::operator[](
 		hxsize_t index_) const -> const key_t_* {
 	const key_t_* const p_ = this->data() + index_;
 	hxassert_hard(p_ < m_end_, "invalid_index %zu", index_);
@@ -86,12 +86,12 @@ inline auto hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::operator[](
 }
 
 template<typename key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
-inline hxsize_t hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::capacity(void) const {
+hxinline hxattr_flatten hxsize_t hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::capacity(void) const {
 	return hxallocator<key_t_, capacity_>::capacity();
 }
 
 template<typename key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
-inline void hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::clear(void) noexcept {
+hxinline hxattr_flatten void hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::clear(void) noexcept {
 	key_t_* it_ = this->data();
 	const key_t_* const end_ = m_end_;
 	m_end_ = this->data();
@@ -101,7 +101,7 @@ inline void hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::clear(void) noe
 }
 
 template<typename key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
-inline hxsize_t hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::count(const key_t_& key_) const {
+hxinline hxattr_flatten hxsize_t hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::count(const key_t_& key_) const {
 	const compare_t_ comp_;
 	const key_t_* const end_ = m_end_;
 	const key_t_* const pos_ = hxlower_bound(this->data(), end_, key_, comp_);
@@ -114,7 +114,7 @@ inline hxsize_t hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::count(const
 }
 
 template<typename key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
-inline hxsize_t hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::erase(const key_t_& key_) noexcept {
+hxattr_flatten hxsize_t hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::erase(const key_t_& key_) noexcept {
 	const compare_t_ comp_;
 	key_t_* end_ = m_end_;
 	key_t_* const pos_ = hxlower_bound(this->data(), end_, key_, comp_);
@@ -142,7 +142,7 @@ inline hxsize_t hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::erase(const
 }
 
 template<typename key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
-inline auto hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::erase(const key_t_* pos_) noexcept -> const key_t_* {
+hxinline hxattr_flatten auto hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::erase(const key_t_* pos_) noexcept -> const key_t_* {
 	hxassertmsg(pos_ != hxnull && static_cast<size_t>(pos_ - this->data()) < static_cast<size_t>(m_end_ - this->data()),
 		"invalid_iterator");
 	key_t_* const k_ = const_cast<key_t_*>(pos_);
@@ -156,7 +156,7 @@ inline auto hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::erase(const key
 }
 
 template<typename key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
-inline auto hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::find(const key_t_& key_) const
+hxinline hxattr_flatten auto hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::find(const key_t_& key_) const
 		-> const key_t_* {
 	const compare_t_ comp_;
 	const key_t_* const end_ = m_end_;
@@ -168,7 +168,7 @@ inline auto hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::find(const key_
 }
 
 template<typename key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
-inline auto hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::insert(const key_t_& key_) noexcept -> const key_t_* {
+hxinline hxattr_flatten auto hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::insert(const key_t_& key_) noexcept -> const key_t_* {
 	const compare_t_ comp_;
 	key_t_* const pos_ = hxlower_bound(this->data(), m_end_, key_, comp_);
 	hxif_constexpr(!multi_t_) {
@@ -180,7 +180,7 @@ inline auto hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::insert(const ke
 }
 
 template<typename key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
-inline auto hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::insert(key_t_&& key_) noexcept -> const key_t_* {
+hxinline hxattr_flatten auto hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::insert(key_t_&& key_) noexcept -> const key_t_* {
 	const compare_t_ comp_;
 	key_t_* const pos_ = hxlower_bound(this->data(), m_end_, key_, comp_);
 	hxif_constexpr(!multi_t_) {
@@ -192,7 +192,7 @@ inline auto hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::insert(key_t_&&
 }
 
 template<typename key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
-inline auto hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::lower_bound(const key_t_& key_) const
+hxinline hxattr_flatten auto hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::lower_bound(const key_t_& key_) const
 		-> const key_t_* {
 	const compare_t_ comp_;
 	const key_t_* const end_ = m_end_;
@@ -200,7 +200,7 @@ inline auto hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::lower_bound(con
 }
 
 template<typename key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
-inline void hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::reserve(hxsize_t cap_,
+hxinline hxattr_flatten void hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::reserve(hxsize_t cap_,
 		hxsystem_allocator_t allocator_, hxalignment_t alignment_) {
 	this->reserve_storage(cap_, allocator_, alignment_);
 	if(m_end_ == hxnull) {
@@ -209,7 +209,7 @@ inline void hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::reserve(hxsize_
 }
 
 template<typename key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
-inline void hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::swap(
+hxinline hxattr_flatten void hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::swap(
 		hxflat_set& x_) noexcept {
 	static_assert(capacity_ == hxallocator_dynamic_capacity,
 		"hxallocator_dynamic_capacity required for hxflat_set::swap");
@@ -217,7 +217,7 @@ inline void hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::swap(
 }
 
 template<typename key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
-inline auto hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::upper_bound(const key_t_& key_) const
+hxinline hxattr_flatten auto hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::upper_bound(const key_t_& key_) const
 		-> const key_t_* {
 	const compare_t_ comp_;
 	const key_t_* const end_ = m_end_;
@@ -226,7 +226,7 @@ inline auto hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::upper_bound(con
 
 template<typename key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
 template<typename key_u_>
-inline auto hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::insert_at_(
+hxinline hxattr_flatten auto hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::insert_at_(
 		key_t_* pos_, key_u_&& key_) noexcept -> const key_t_* {
 	key_t_* const end_ = m_end_;
 	hxassert_hard(end_ != this->data() + this->capacity(), "hxflat_set full");
@@ -246,7 +246,7 @@ inline auto hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::insert_at_(
 
 template<typename key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
 template<hxsize_t capacity_x_>
-inline bool hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::equal(
+hxinline hxattr_flatten bool hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::equal(
 		const hxflat_set<key_t_, compare_t_, multi_t_, capacity_x_>& x_) const {
 	const hxsize_t size_ = static_cast<hxsize_t>(m_end_ - this->data());
 	if(size_ != static_cast<hxsize_t>(x_.m_end_ - x_.data())) { return false; }
@@ -260,7 +260,7 @@ inline bool hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::equal(
 
 template<typename key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
 template<hxsize_t capacity_x_>
-inline bool hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::less(
+hxinline hxattr_flatten bool hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::less(
 		const hxflat_set<key_t_, compare_t_, multi_t_, capacity_x_>& x_) const {
 	const hxsize_t size0_ = static_cast<hxsize_t>(m_end_ - this->data());
 	const hxsize_t size1_ = static_cast<hxsize_t>(x_.m_end_ - x_.data());

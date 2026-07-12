@@ -49,7 +49,7 @@ hxinline_constexpr double hxmicroseconds_per_cycle = 1.0e+6 / hxcycles_per_secon
 
 /// `hxtime_sample_cycles(void)` - Set up the processor cycle counter for your
 /// architecture. This is callable without enabling `HX_USE_PROFILER`.
-inline hxcycles_t hxtime_sample_cycles(void);
+hxinline hxcycles_t hxtime_sample_cycles(void);
 
 HX_NS_END_
 

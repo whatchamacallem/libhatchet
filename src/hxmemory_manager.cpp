@@ -61,7 +61,7 @@ hxattr_hot void operator delete[](void* ptr, size_t) noexcept {
 HX_NS_BEGIN_
 
 // Friend function that restricts direct access to these variables to this file.
-inline void hxsystem_allocator_scope_init_(hxsystem_allocator_scope* scope,
+hxinline void hxsystem_allocator_scope_init_(hxsystem_allocator_scope* scope,
 		size_t allocation_count, size_t bytes_allocated) {
 	scope->m_initial_allocation_count_ = allocation_count;
 	scope->m_initial_bytes_allocated_ = bytes_allocated;

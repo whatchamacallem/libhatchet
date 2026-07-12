@@ -134,14 +134,14 @@ char* hxstring_duplicate(const char* string_,
 /// `hxmalloc` - Add `hxmalloc_ext` args to `hxmalloc` C interface. Allocates
 /// memory with a specific memory manager and alignment. NOTE: This is not in
 /// the libhatchet namespace.
-inline void* hxmalloc( size_t size_, hxsystem_allocator_t allocator_, hxalignment_t alignment_=hxalignment) {
+hxinline void* hxmalloc( size_t size_, hxsystem_allocator_t allocator_, hxalignment_t alignment_=hxalignment) {
 	return hxmalloc_ext(size_, allocator_, alignment_);
 }
 
 /// `hxstring_duplicate` - Add default args to C interface. The allocator is
 /// `hxsystem_allocator_current`. Duplicates a string using the default memory
 /// manager. NOTE: This is not in the libhatchet namespace.
-inline char* hxstring_duplicate(const char* s_) {
+hxinline char* hxstring_duplicate(const char* s_) {
 	return hxstring_duplicate(s_, hxsystem_allocator_current);
 }
 
@@ -154,8 +154,8 @@ inline char* hxstring_duplicate(const char* s_) {
 constexpr void* operator new(size_t, void* ptr_) noexcept { return ptr_; }
 constexpr void* operator new[](size_t, void* ptr_) noexcept { return ptr_; }
 #else
-inline void* operator new(size_t, void* ptr_) noexcept { return ptr_; }
-inline void* operator new[](size_t, void* ptr_) noexcept { return ptr_; }
+hxinline void* operator new(size_t, void* ptr_) noexcept { return ptr_; }
+hxinline void* operator new[](size_t, void* ptr_) noexcept { return ptr_; }
 #endif
 
 #if (HX_PROVIDE_NEW_DELETE) != -1
@@ -211,7 +211,7 @@ private:
 	// The hxsystem_allocator_* classes are responsible for setting
 	// m_initial_allocation_count_ and m_initial_bytes_allocated_.
 	// This avoids a number of potential cache misses.
-	friend inline void hxsystem_allocator_scope_init_(hxsystem_allocator_scope* scope_,
+	friend hxinline void hxsystem_allocator_scope_init_(hxsystem_allocator_scope* scope_,
 		size_t allocation_count_, size_t bytes_allocated_);
 
 	// Deleted copy constructor to prevent copying.

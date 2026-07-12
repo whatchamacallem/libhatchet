@@ -28,7 +28,8 @@ HX_NS_BEGIN_
 /// Unsorted data will lead to errors. The `less` callable returns true if the
 /// first argument is ordered before (i.e., is less than) the second. Requires a
 /// `random-iterator`.
-template<typename iterator_t_, typename value_t_, typename less_t_> hxattr_hot hxattr_nodiscard hxconstexpr
+template<typename iterator_t_, typename value_t_, typename less_t_>
+hxinline hxattr_flatten hxattr_nodiscard hxconstexpr
 iterator_t_ hxlower_bound(iterator_t_ begin_, iterator_t_ end_, const value_t_& value_, const less_t_& less_) {
 	// Does not dereference null pointer args.
 	hxsize_t count_ = end_ - begin_;
@@ -48,7 +49,8 @@ iterator_t_ hxlower_bound(iterator_t_ begin_, iterator_t_ end_, const value_t_& 
 
 /// `hxlower_bound` (specialization) - An overload of `hxlower_bound` over the
 /// range `[begin, end)` that uses `hxkey_less`. Requires a `random-iterator`.
-template<typename iterator_t_, typename value_t_> hxattr_hot hxattr_nodiscard hxconstexpr
+template<typename iterator_t_, typename value_t_>
+hxinline hxattr_flatten hxattr_nodiscard hxconstexpr
 iterator_t_ hxlower_bound(iterator_t_ begin_, iterator_t_ end_, const value_t_& value_) {
 	return hxlower_bound<iterator_t_>(begin_, end_, value_,
 		hxkey_less_t<decltype(*begin_)>{});
@@ -59,7 +61,8 @@ iterator_t_ hxlower_bound(iterator_t_ begin_, iterator_t_ end_, const value_t_& 
 /// element exists. Unsorted data will lead to errors. The `less` callable
 /// returns true if the first argument is ordered before (i.e., is less than)
 /// the second. Requires a `random-iterator`.
-template<typename iterator_t_, typename value_t_, typename less_t_> hxattr_hot hxattr_nodiscard hxconstexpr
+template<typename iterator_t_, typename value_t_, typename less_t_>
+hxinline hxattr_flatten hxattr_nodiscard hxconstexpr
 iterator_t_ hxupper_bound(iterator_t_ begin_, iterator_t_ end_, const value_t_& value_, const less_t_& less_) {
 	// Does not dereference null pointer args.
 	hxsize_t count_ = end_ - begin_;
@@ -79,7 +82,8 @@ iterator_t_ hxupper_bound(iterator_t_ begin_, iterator_t_ end_, const value_t_& 
 
 /// `hxupper_bound` (specialization) - An overload of `hxupper_bound` over the
 /// range `[begin, end)` that uses `hxkey_less`. Requires a `random-iterator`.
-template<typename iterator_t_, typename value_t_> hxattr_hot hxattr_nodiscard hxconstexpr
+template<typename iterator_t_, typename value_t_>
+hxinline hxattr_flatten hxattr_nodiscard hxconstexpr
 iterator_t_ hxupper_bound(iterator_t_ begin_, iterator_t_ end_, const value_t_& value_) {
 	return hxupper_bound<iterator_t_>(begin_, end_, value_,
 		hxkey_less_t<decltype(*begin_)>{});
@@ -90,7 +94,8 @@ iterator_t_ hxupper_bound(iterator_t_ begin_, iterator_t_ end_, const value_t_& 
 /// lead to errors. The first of non-unique values is returned. The `less`
 /// callable returns true if the first argument is ordered before (i.e., is less
 /// than) the second. Requires a `random-iterator`.
-template<typename iterator_t_, typename value_t_, typename less_t_> hxattr_hot hxattr_nodiscard hxconstexpr
+template<typename iterator_t_, typename value_t_, typename less_t_>
+hxinline hxattr_flatten hxattr_nodiscard hxconstexpr
 iterator_t_ hxbinary_search(iterator_t_ begin_, iterator_t_ end_, const value_t_& value_, const less_t_& less_) {
 	const iterator_t_ pos_ = hxlower_bound<iterator_t_>(begin_, end_, value_, less_);
 	return (pos_ != end_ && !less_(value_, *pos_)) ? pos_ : end_;
@@ -99,7 +104,8 @@ iterator_t_ hxbinary_search(iterator_t_ begin_, iterator_t_ end_, const value_t_
 /// `hxbinary_search` (specialization) - An overload of `hxbinary_search` that
 /// searches for `value` in the range `[begin, end)` using `hxkey_less`. Requires
 /// a `random-iterator`.
-template<typename iterator_t_, typename value_t_> hxattr_hot hxattr_nodiscard hxconstexpr
+template<typename iterator_t_, typename value_t_>
+hxinline hxattr_flatten hxattr_nodiscard hxconstexpr
 iterator_t_ hxbinary_search(iterator_t_ begin_, iterator_t_ end_, const value_t_& value_) {
 	return hxbinary_search<iterator_t_>(begin_, end_, value_,
 		hxkey_less_t<decltype(*begin_)>{});
@@ -112,7 +118,8 @@ iterator_t_ hxbinary_search(iterator_t_ begin_, iterator_t_ end_, const value_t_
 /// `noexcept` or turn off exceptions. All of `T::T(&&)`, `T::~T()` and
 /// `T::operator=(T&&)` are used. The `less` callable defines the less-than
 /// ordering relationship. Requires a `random-iterator`.
-template<typename iterator_t_, typename less_t_> hxattr_hot hxconstexpr
+template<typename iterator_t_, typename less_t_>
+hxinline hxattr_flatten hxconstexpr
 void hxinsertion_sort(iterator_t_ begin_, iterator_t_ end_, const less_t_& less_) {
 	// Address sanitizer: Avoids adding 1 to null iterators.
 	if(begin_ == end_) { return; }
@@ -132,7 +139,8 @@ void hxinsertion_sort(iterator_t_ begin_, iterator_t_ end_, const less_t_& less_
 /// `hxinsertion_sort` (specialization) - An overload of `hxinsertion_sort` over
 /// the range `[begin, end)` that uses `hxkey_less`. Requires a
 /// `random-iterator`.
-template<typename iterator_t_> hxattr_hot hxconstexpr
+template<typename iterator_t_>
+hxinline hxattr_flatten hxconstexpr
 void hxinsertion_sort(iterator_t_ begin_, iterator_t_ end_) {
 	hxinsertion_sort<iterator_t_>(begin_, end_, hxkey_less_t<decltype(*begin_)>{});
 }
@@ -140,7 +148,8 @@ void hxinsertion_sort(iterator_t_ begin_, iterator_t_ end_) {
 /// `hxheapsort` - Sorts the elements in the range `[begin, end)` using the
 /// heapsort algorithm. The `less` callable defines the less-than ordering
 /// relationship. Requires a `random-iterator`.
-template<typename iterator_t_, typename less_t_> hxattr_hot hxconstexpr
+template<typename iterator_t_, typename less_t_>
+hxinline hxconstexpr
 void hxheapsort(iterator_t_ begin_, iterator_t_ end_, const less_t_& less_) {
 	if(begin_ == end_) { return; } // Prevents UB.
 	hxdetail_::hxmake_heap_<iterator_t_>(begin_, end_, less_);
@@ -152,7 +161,8 @@ void hxheapsort(iterator_t_ begin_, iterator_t_ end_, const less_t_& less_) {
 
 /// `hxheapsort` (specialization) - An overload of `hxheapsort` over the range
 /// `[begin, end)` that uses `hxkey_less`. Requires a `random-iterator`.
-template<typename iterator_t_> hxattr_hot hxconstexpr
+template<typename iterator_t_>
+hxinline hxconstexpr
 void hxheapsort(iterator_t_ begin_, iterator_t_ end_) {
 	hxheapsort<iterator_t_>(begin_, end_, hxkey_less_t<decltype(*begin_)>{});
 }
@@ -162,20 +172,23 @@ void hxheapsort(iterator_t_ begin_, iterator_t_ end_) {
 /// defaults to `hxkey_less`. Sorts the range `[begin, end)`. This version is
 /// intended for sorting large numbers of small objects. Requires a
 /// `random-iterator`.
-template<typename iterator_t_, typename less_t_> hxattr_hot hxconstexpr
+template<typename iterator_t_, typename less_t_>
+hxinline hxconstexpr
 void hxsort(iterator_t_ begin_, iterator_t_ end_, const less_t_& less_) {
-	// hxlog2i(0) is undefined but unused in this case.
-	hxdetail_::hxintro_sort_<iterator_t_>(begin_, end_, less_, 2 * hxlog2i(static_cast<uint32_t>(end_ - begin_)));
+	const hxsize_t size_ = end_ - begin_;
+	hxdetail_::hxintro_sort_<iterator_t_>(begin_, end_, less_,
+		size_ > 0 ? 2 * hxlog2i(static_cast<uint32_t>(size_)) : 0);
 }
 
 /// `hxsort` (specialization) - An overload of `hxsort` over the range `[begin,
 /// end)` that uses `hxkey_less`. This version is intended for sorting large
 /// numbers of small objects. Requires a `random-iterator`.
-template<typename iterator_t_> hxattr_hot hxconstexpr
+template<typename iterator_t_>
+hxinline hxconstexpr
 void hxsort(iterator_t_ begin_, iterator_t_ end_) {
-	// hxlog2i(0) is undefined but unused in this case.
+	const hxsize_t size_ = end_ - begin_;
 	hxdetail_::hxintro_sort_<iterator_t_>(begin_, end_, hxkey_less_t<decltype(*begin_)>{},
-		2 * hxlog2i(static_cast<uint32_t>(end_ - begin_)));
+		size_ > 0 ? 2 * hxlog2i(static_cast<uint32_t>(size_)) : 0);
 }
 
 HX_NS_END_

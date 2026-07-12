@@ -9,10 +9,10 @@
 
 #ifndef HX_DOXYGEN_PARSER
 
-template<typename iterator_t_, typename less_t_> hxattr_hot hxconstexpr
+template<typename iterator_t_, typename less_t_> hxconstexpr
 void hxinsertion_sort(iterator_t_ begin_, iterator_t_ end_, const less_t_& less_);
 
-template<typename iterator_t_, typename less_t_> hxattr_hot hxconstexpr
+template<typename iterator_t_, typename less_t_> hxconstexpr
 void hxheapsort(iterator_t_ begin_, iterator_t_ end_, const less_t_& less_);
 
 namespace hxdetail_ {
@@ -22,7 +22,8 @@ hxinline_constexpr hxsize_t hxpartition_sort_cutoff_ = 32;
 // Restores the heap property by sifting the current value down until it is not
 // less than its children. Holds the value in a temporary so that each level
 // costs a single move instead of a swap.
-template<typename iterator_t_, typename less_t_> hxattr_hot hxconstexpr
+template<typename iterator_t_, typename less_t_>
+inline hxattr_flatten hxconstexpr
 void hxheapsort_heapify_(const iterator_t_ begin_, iterator_t_ current_,
 		const iterator_t_ end_, const less_t_& less_) {
 	const hxsize_t size_ = end_ - begin_;
@@ -48,7 +49,8 @@ void hxheapsort_heapify_(const iterator_t_ begin_, iterator_t_ current_,
 
 // `hxmake_heap_` - Converts the range `[begin, end)` into a max heap using the
 // provided comparator and Floyd's linear time bottom-up construction.
-template<typename iterator_t_, typename less_t_> hxattr_hot hxconstexpr
+template<typename iterator_t_, typename less_t_>
+hxinline hxconstexpr
 void hxmake_heap_(iterator_t_ begin_, iterator_t_ end_, const less_t_& less_) {
 	for(hxsize_t i_ = (end_ - begin_) >> 1; i_ > hxsize_t{0}; ) {
 		--i_;
@@ -61,7 +63,8 @@ void hxmake_heap_(iterator_t_ begin_, iterator_t_ end_, const less_t_& less_) {
 // Average time: `Θ(n log n)`, worst time: `Θ(n²)`. This algorithm is only
 // intended to sort ranges over a minimum length before calling back to the
 // `sort_callback` parameter.
-template<typename iterator_t_, typename less_t_, typename sort_callback_t_>  hxattr_hot hxconstexpr
+template<typename iterator_t_, typename less_t_, typename sort_callback_t_>
+hxinline hxattr_flatten hxconstexpr
 void hxpartition_sort_(iterator_t_ begin_, iterator_t_ end_, const less_t_& less_,
 						const sort_callback_t_& sort_callback_, int depth_) {
 	hxassertmsg((end_ - begin_) > hxpartition_sort_cutoff_, "range_error Use hxinsertion_sort");
@@ -148,9 +151,10 @@ void hxpartition_sort_(iterator_t_ begin_, iterator_t_ end_, const less_t_& less
 }
 
 // Implements the introsort algorithm which is a hybrid of quicksort, heapsort
-// and insertion sort. `hxsort` is implemented using `hxintro_sort_`.
-// `hxintro_sort_` calls itself recursively until it hits its depth limit.
-template<typename iterator_t_, typename less_t_> hxattr_hot hxconstexpr
+// and insertion sort. hxattr_noinline prevent this function from recursively
+// inlining itself and blowing out the instruction cache.
+ template<typename iterator_t_, typename less_t_>
+inline hxattr_noinline hxconstexpr
 void hxintro_sort_(iterator_t_ begin_, iterator_t_ end_, const less_t_& less_, int depth_) {
 	hxassertmsg(!(end_ < begin_), "range_error hxsort");
 

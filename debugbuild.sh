@@ -11,10 +11,11 @@
 # with ccache. It won't work as expected.
 
 # -Wno-unused-variable is only for debugging.
+# -Wno-ambiguous-reversed-operator is for legacy clang++.
 ERRORS="-Wall -Wextra -pedantic-errors -Werror -Wfatal-errors -Wcast-qual \
 	-Wdisabled-optimization -Wshadow -Wundef -Wconversion -Wdate-time     \
-	-Wmissing-declarations -Wno-unused-variable -Wno-c2y-extensions       \
-	-Wno-unknown-warning-option"
+	-Wmissing-declarations -Wno-ambiguous-reversed-operator               \
+	-Wno-unused-variable -Wno-c2y-extensions -Wno-unknown-warning-option"
 
 FLAGS="-O0 -m32 -ggdb3 -fdiagnostics-absolute-paths -fdiagnostics-color=always"
 
@@ -32,16 +33,19 @@ trap '{ set +o xtrace; } 2> /dev/null
 
 set -eu
 
+OPT_CLEAR=0
 OPT_GRIND=0
 OPT_VERBOSE=0
 OPT_RUN=0
 for ARG in "$@"; do
 	case "$ARG" in
+		--clear)   OPT_CLEAR=1 ;;
 		--grind)   OPT_GRIND=1 ;;
 		--verbose) OPT_VERBOSE=1 ;;
 		--run)     OPT_RUN=1 ;;
 		*)
-			echo "Usage: $0 [--grind] [--verbose] [--run]"
+			echo "Usage: $0 [--clear] [--grind] [--verbose] [--run]"
+			echo "  --clear   Clear the terminal before building."
 			echo "  --grind   Build all configuration combinations."
 			echo "  --verbose Full hxtest output."
 			echo "  --run     Run hxtest after building."
@@ -51,9 +55,15 @@ for ARG in "$@"; do
 done
 
 # Clear the output window when building from the editor.
-if [ "$OPT_VERBOSE" = "1" ] && [ "$OPT_RUN" = "0" ] && [ -z "${CLAUDECODE:-}" ]; then
+if [ "$OPT_CLEAR" = "1" ]; then
 	export TERM=xterm-256color
 	clear
+fi
+
+CXX="-std=c++23"
+if [ -z "$(echo | clang++ -std=c++23 -dM -E -x c++ - 2>/dev/null | grep __cplusplus)" ]; then
+	CXX="-std=c++20"
+	echo "C++23 not supported..."
 fi
 
 build_hxtest() {
@@ -68,7 +78,7 @@ build_hxtest() {
 	done
 
 	for FILE in src/*.cpp test/*.cpp; do
-		$CCACHE clang++ $BUILD $ERRORS $FLAGS -Iinclude -std=c++23 -fno-exceptions -fno-rtti \
+		$CCACHE clang++ $BUILD $ERRORS $FLAGS -Iinclude $CXX -fno-exceptions -fno-rtti \
 			-c $FILE -o build/$(basename "$FILE" .cpp).o & PIDS="$PIDS $!"
 	done
 

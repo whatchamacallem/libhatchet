@@ -19,14 +19,16 @@ HX_BEGIN_INL_
 #endif
 
 template<typename T_>
-hxoptional<T_>::hxoptional(const hxoptional& other_) noexcept : m_engaged_(other_.m_engaged_) {
+hxinline hxattr_flatten hxoptional<T_>::hxoptional(const hxoptional& other_) noexcept
+		: m_engaged_(other_.m_engaged_) {
 	if (m_engaged_) {
 		::new(static_cast<void*>(&m_storage_)) T_(*reinterpret_cast<const T_*>(&other_.m_storage_));
 	}
 }
 
 template<typename T_>
-hxoptional<T_>::hxoptional(hxoptional&& other_) noexcept : m_engaged_(other_.m_engaged_) {
+hxinline hxattr_flatten hxoptional<T_>::hxoptional(hxoptional&& other_) noexcept
+		: m_engaged_(other_.m_engaged_) {
 	if (m_engaged_) {
 		T_* const src_ = reinterpret_cast<T_*>(&other_.m_storage_);
 		::new(static_cast<void*>(&m_storage_)) T_(hxmove(*src_));
@@ -37,7 +39,7 @@ hxoptional<T_>::hxoptional(hxoptional&& other_) noexcept : m_engaged_(other_.m_e
 
 template<typename T_>
 template<typename U_>
-hxoptional<T_>::hxoptional(const hxoptional<U_>& other_) noexcept
+hxinline hxattr_flatten hxoptional<T_>::hxoptional(const hxoptional<U_>& other_) noexcept
 		: m_engaged_(other_.has_value()) {
 	if (m_engaged_) {
 		::new(static_cast<void*>(&m_storage_)) T_(*other_);
@@ -46,7 +48,7 @@ hxoptional<T_>::hxoptional(const hxoptional<U_>& other_) noexcept
 
 template<typename T_>
 template<typename U_>
-hxoptional<T_>::hxoptional(hxoptional<U_>&& other_) noexcept
+hxinline hxattr_flatten hxoptional<T_>::hxoptional(hxoptional<U_>&& other_) noexcept
 		: m_engaged_(other_.has_value()) {
 	if (m_engaged_) {
 		::new(static_cast<void*>(&m_storage_)) T_(hxmove(*other_));
@@ -57,12 +59,13 @@ hxoptional<T_>::hxoptional(hxoptional<U_>&& other_) noexcept
 template<typename T_>
 template<typename U_, hxenable_if_t<
 	!hxdetail_::hxis_hxoptional_<hxremove_cvref_t<U_>>::value, bool>>
-hxoptional<T_>::hxoptional(U_&& value_) noexcept : m_engaged_(true) {
+hxinline hxattr_flatten hxoptional<T_>::hxoptional(U_&& value_) noexcept : m_engaged_(true) {
 	::new(static_cast<void*>(&m_storage_)) T_(hxforward<U_>(value_));
 }
 
 template<typename T_>
-hxoptional<T_>& hxoptional<T_>::operator=(const hxoptional& other_) noexcept {
+hxinline hxattr_flatten hxoptional<T_>&
+hxoptional<T_>::operator=(const hxoptional& other_) noexcept {
 	hxassertmsg(this != &other_, "self_assignment");
 	if (other_.m_engaged_) {
 		const T_& src_ = *reinterpret_cast<const T_*>(&other_.m_storage_);
@@ -79,7 +82,7 @@ hxoptional<T_>& hxoptional<T_>::operator=(const hxoptional& other_) noexcept {
 }
 
 template<typename T_>
-hxoptional<T_>& hxoptional<T_>::operator=(hxoptional&& other_) noexcept {
+hxinline hxattr_flatten hxoptional<T_>& hxoptional<T_>::operator=(hxoptional&& other_) noexcept {
 	hxassertmsg(this != &other_, "self_assignment");
 	if (other_.m_engaged_) {
 		T_* const src_ = reinterpret_cast<T_*>(&other_.m_storage_);
@@ -100,7 +103,7 @@ hxoptional<T_>& hxoptional<T_>::operator=(hxoptional&& other_) noexcept {
 template<typename T_>
 template<typename U_, hxenable_if_t<
 	!hxdetail_::hxis_hxoptional_<hxremove_cvref_t<U_>>::value, bool>>
-hxoptional<T_>& hxoptional<T_>::operator=(U_&& value_) noexcept {
+hxinline hxattr_flatten hxoptional<T_>& hxoptional<T_>::operator=(U_&& value_) noexcept {
 	if (m_engaged_) {
 		*reinterpret_cast<T_*>(&m_storage_) = hxforward<U_>(value_);
 	} else {
@@ -112,7 +115,8 @@ hxoptional<T_>& hxoptional<T_>::operator=(U_&& value_) noexcept {
 
 template<typename T_>
 template<typename U_>
-hxoptional<T_>& hxoptional<T_>::operator=(const hxoptional<U_>& other_) noexcept {
+hxinline hxattr_flatten hxoptional<T_>&
+hxoptional<T_>::operator=(const hxoptional<U_>& other_) noexcept {
 	if (other_.has_value()) {
 		if (m_engaged_) {
 			*reinterpret_cast<T_*>(&m_storage_) = *other_;
@@ -128,7 +132,8 @@ hxoptional<T_>& hxoptional<T_>::operator=(const hxoptional<U_>& other_) noexcept
 
 template<typename T_>
 template<typename U_>
-hxoptional<T_>& hxoptional<T_>::operator=(hxoptional<U_>&& other_) noexcept {
+hxinline hxattr_flatten hxoptional<T_>&
+hxoptional<T_>::operator=(hxoptional<U_>&& other_) noexcept {
 	if (other_.has_value()) {
 		if (m_engaged_) {
 			*reinterpret_cast<T_*>(&m_storage_) = hxmove(*other_);
@@ -144,31 +149,31 @@ hxoptional<T_>& hxoptional<T_>::operator=(hxoptional<U_>&& other_) noexcept {
 }
 
 template<typename T_>
-T_& hxoptional<T_>::operator*(void) {
+hxinline hxattr_flatten T_& hxoptional<T_>::operator*(void) {
 	hxassertmsg(m_engaged_, "optional_disengaged");
 	return *reinterpret_cast<T_*>(&m_storage_);
 }
 
 template<typename T_>
-const T_& hxoptional<T_>::operator*(void) const {
+hxinline hxattr_flatten const T_& hxoptional<T_>::operator*(void) const {
 	hxassertmsg(m_engaged_, "optional_disengaged");
 	return *reinterpret_cast<const T_*>(&m_storage_);
 }
 
 template<typename T_>
-T_* hxoptional<T_>::operator->(void) {
+hxinline hxattr_flatten T_* hxoptional<T_>::operator->(void) {
 	hxassertmsg(m_engaged_, "optional_disengaged");
 	return reinterpret_cast<T_*>(&m_storage_);
 }
 
 template<typename T_>
-const T_* hxoptional<T_>::operator->(void) const {
+hxinline hxattr_flatten const T_* hxoptional<T_>::operator->(void) const {
 	hxassertmsg(m_engaged_, "optional_disengaged");
 	return reinterpret_cast<const T_*>(&m_storage_);
 }
 
 template<typename T_>
-bool hxoptional<T_>::operator==(const hxoptional& rhs_) const {
+hxinline hxattr_flatten bool hxoptional<T_>::operator==(const hxoptional& rhs_) const {
 	if (m_engaged_ != rhs_.m_engaged_) {
 		return false;
 	}
@@ -181,13 +186,13 @@ bool hxoptional<T_>::operator==(const hxoptional& rhs_) const {
 }
 
 template<typename T_>
-bool hxoptional<T_>::operator==(const T_& value_) const {
+hxinline hxattr_flatten bool hxoptional<T_>::operator==(const T_& value_) const {
 	return m_engaged_ && (*reinterpret_cast<const T_*>(&m_storage_) == value_);
 }
 
 template<typename T_>
 template<typename function_t_>
-auto hxoptional<T_>::and_then(function_t_&& callable_)
+hxinline hxattr_flatten auto hxoptional<T_>::and_then(function_t_&& callable_)
 		-> hxremove_cvref_t<decltype(hxforward<function_t_>(callable_)(hxdeclval<T_&>()))> {
 	if (m_engaged_) {
 		return hxforward<function_t_>(callable_)(*reinterpret_cast<T_*>(&m_storage_));
@@ -197,7 +202,7 @@ auto hxoptional<T_>::and_then(function_t_&& callable_)
 
 template<typename T_>
 template<typename function_t_>
-auto hxoptional<T_>::and_then(function_t_&& callable_) const
+hxinline hxattr_flatten auto hxoptional<T_>::and_then(function_t_&& callable_) const
 		-> hxremove_cvref_t<decltype(hxforward<function_t_>(callable_)(hxdeclval<const T_&>()))> {
 	if (m_engaged_) {
 		return hxforward<function_t_>(callable_)(*reinterpret_cast<const T_*>(&m_storage_));
@@ -207,7 +212,7 @@ auto hxoptional<T_>::and_then(function_t_&& callable_) const
 
 template<typename T_>
 template<typename... args_t_>
-T_& hxoptional<T_>::emplace(args_t_&&... args_) noexcept {
+hxinline hxattr_flatten T_& hxoptional<T_>::emplace(args_t_&&... args_) noexcept {
 	this->reset();
 	T_* const p_ = ::new(static_cast<void*>(&m_storage_)) T_(hxforward<args_t_>(args_)...);
 	m_engaged_ = true;
@@ -216,7 +221,7 @@ T_& hxoptional<T_>::emplace(args_t_&&... args_) noexcept {
 
 template<typename T_>
 template<typename function_t_>
-hxoptional<T_> hxoptional<T_>::or_else(function_t_&& callable_) const {
+hxinline hxattr_flatten hxoptional<T_> hxoptional<T_>::or_else(function_t_&& callable_) const {
 	if (m_engaged_) {
 		return *this;
 	}
@@ -224,7 +229,7 @@ hxoptional<T_> hxoptional<T_>::or_else(function_t_&& callable_) const {
 }
 
 template<typename T_>
-void hxoptional<T_>::reset(void) noexcept {
+hxinline hxattr_flatten void hxoptional<T_>::reset(void) noexcept {
 	if (m_engaged_) {
 		reinterpret_cast<T_*>(&m_storage_)->T_::~T_();
 		m_engaged_ = false;
@@ -232,7 +237,7 @@ void hxoptional<T_>::reset(void) noexcept {
 }
 
 template<typename T_>
-void hxoptional<T_>::swap(hxoptional& other_) noexcept {
+hxinline hxattr_flatten void hxoptional<T_>::swap(hxoptional& other_) noexcept {
 	T_* const l_ = reinterpret_cast<T_*>(&m_storage_);
 	T_* const r_ = reinterpret_cast<T_*>(&other_.m_storage_);
 	if (m_engaged_ && other_.m_engaged_) {
@@ -251,20 +256,20 @@ void hxoptional<T_>::swap(hxoptional& other_) noexcept {
 }
 
 template<typename T_>
-T_& hxoptional<T_>::value(void) {
+hxinline hxattr_flatten T_& hxoptional<T_>::value(void) {
 	hxassertmsg(m_engaged_, "optional_disengaged");
 	return *reinterpret_cast<T_*>(&m_storage_);
 }
 
 template<typename T_>
-const T_& hxoptional<T_>::value(void) const {
+hxinline hxattr_flatten const T_& hxoptional<T_>::value(void) const {
 	hxassertmsg(m_engaged_, "optional_disengaged");
 	return *reinterpret_cast<const T_*>(&m_storage_);
 }
 
 template<typename T_>
 template<typename U_>
-T_ hxoptional<T_>::value_or(U_&& default_value_) const {
+hxinline hxattr_flatten T_ hxoptional<T_>::value_or(U_&& default_value_) const {
 	return m_engaged_ ? *reinterpret_cast<const T_*>(&m_storage_)
 		: static_cast<T_>(hxforward<U_>(default_value_));
 }

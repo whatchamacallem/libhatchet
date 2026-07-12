@@ -60,7 +60,7 @@ template<typename A_, typename B_>
 #if HX_CPLUSPLUS >= 202002L
 requires requires(const A_& a_, const B_& b_) { { a_ == b_ } -> hxconvertible_to<bool>; }
 #endif
-hxattr_nodiscard constexpr bool hxkey_equal(const A_& a_, const B_& b_) {
+hxattr_nodiscard hxinline hxattr_flatten  constexpr bool hxkey_equal(const A_& a_, const B_& b_) {
 	return a_ == b_;
 }
 
@@ -68,16 +68,16 @@ hxattr_nodiscard constexpr bool hxkey_equal(const A_& a_, const B_& b_) {
 /// equal (`strcmp(a, b) == 0`).
 /// - `a` : The first C string.
 /// - `b` : The second C string.
-hxattr_nodiscard inline bool hxkey_equal(const hxcstring_const_& a_, const hxcstring_const_& b_) {
+hxattr_nodiscard hxinline bool hxkey_equal(const hxcstring_const_& a_, const hxcstring_const_& b_) {
 	return ::strcmp(a_, b_) == 0;
 }
-hxattr_nodiscard inline bool hxkey_equal(const hxcstring_const_& a_, const hxcstring_& b_) {
+hxattr_nodiscard hxinline bool hxkey_equal(const hxcstring_const_& a_, const hxcstring_& b_) {
 	return ::strcmp(a_, b_) == 0;
 }
-hxattr_nodiscard inline bool hxkey_equal(const hxcstring_& a_, const hxcstring_const_& b_) {
+hxattr_nodiscard hxinline bool hxkey_equal(const hxcstring_& a_, const hxcstring_const_& b_) {
 	return ::strcmp(a_, b_) == 0;
 }
-hxattr_nodiscard inline bool hxkey_equal(const hxcstring_& a_, const hxcstring_& b_) {
+hxattr_nodiscard hxinline bool hxkey_equal(const hxcstring_& a_, const hxcstring_& b_) {
 	return ::strcmp(a_, b_) == 0;
 }
 
@@ -86,7 +86,7 @@ hxattr_nodiscard inline bool hxkey_equal(const hxcstring_& a_, const hxcstring_&
 template<typename T_>
 class hxkey_equal_t {
 public:
-	hxattr_nodiscard constexpr bool operator()(const hxremove_cvref_t<T_>& a_,
+	hxattr_nodiscard hxinline hxattr_flatten  constexpr bool operator()(const hxremove_cvref_t<T_>& a_,
 			const hxremove_cvref_t<T_>& b_) const {
 		return hxkey_equal(a_, b_);
 	}
@@ -103,7 +103,7 @@ template<typename A_, typename B_>
 #if HX_CPLUSPLUS >= 202002L
 requires requires(const A_& a_, const B_& b_) { { a_ < b_ } -> hxconvertible_to<bool>; }
 #endif
-hxattr_nodiscard constexpr bool hxkey_less(const A_& a_, const B_& b_) {
+hxattr_nodiscard hxinline hxattr_flatten  constexpr bool hxkey_less(const A_& a_, const B_& b_) {
 	return a_ < b_;
 }
 
@@ -112,16 +112,16 @@ hxattr_nodiscard constexpr bool hxkey_less(const A_& a_, const B_& b_) {
 /// stable ordering without looking up a locale. Uses (`strcmp(a, b) < 0`).
 /// - `a` : The first C string.
 /// - `b` : The second C string.
-hxattr_nodiscard inline bool hxkey_less(const hxcstring_const_& a_, const hxcstring_const_& b_) {
+hxattr_nodiscard hxinline bool hxkey_less(const hxcstring_const_& a_, const hxcstring_const_& b_) {
 	return ::strcmp(a_, b_) < 0;
 }
-hxattr_nodiscard inline bool hxkey_less(const hxcstring_const_& a_, const hxcstring_& b_) {
+hxattr_nodiscard hxinline bool hxkey_less(const hxcstring_const_& a_, const hxcstring_& b_) {
 	return ::strcmp(a_, b_) < 0;
 }
-hxattr_nodiscard inline bool hxkey_less(const hxcstring_& a_, const hxcstring_const_& b_) {
+hxattr_nodiscard hxinline bool hxkey_less(const hxcstring_& a_, const hxcstring_const_& b_) {
 	return ::strcmp(a_, b_) < 0;
 }
-hxattr_nodiscard inline bool hxkey_less(const hxcstring_& a_, const hxcstring_& b_) {
+hxattr_nodiscard hxinline bool hxkey_less(const hxcstring_& a_, const hxcstring_& b_) {
 	return ::strcmp(a_, b_) < 0;
 }
 
@@ -130,7 +130,7 @@ hxattr_nodiscard inline bool hxkey_less(const hxcstring_& a_, const hxcstring_& 
 template<typename T_>
 class hxkey_less_t {
 public:
-	hxattr_nodiscard constexpr bool operator()(const hxremove_cvref_t<T_>& a_,
+	hxattr_nodiscard hxinline hxattr_flatten  constexpr bool operator()(const hxremove_cvref_t<T_>& a_,
 			const hxremove_cvref_t<T_>& b_) const {
 		return hxkey_less(a_, b_);
 	}
@@ -146,7 +146,7 @@ hxinline_constexpr hxhash_t hxhash_prime4_ = hxhash_t{0x27D4EB2Fu};
 hxinline_constexpr hxhash_t hxhash_prime5_ = hxhash_t{0x165667B1u};
 
 // xxhash32 avalanche: x ^= x >> 15, x *= prime2, x ^= x >> 13, x *= prime3, x ^= x >> 16.
-hxattr_nodiscard inline hxhash_t hxhash_avalanche_(hxhash_t x_) {
+hxattr_nodiscard hxinline hxconstexpr hxhash_t hxhash_avalanche_(hxhash_t x_) {
 	x_ ^= x_ >> 15u;
 	x_ *= hxhash_prime2_;
 	x_ ^= x_ >> 13u;
@@ -162,9 +162,10 @@ hxattr_nodiscard inline hxhash_t hxhash_avalanche_(hxhash_t x_) {
 /// xxhash32 short-input path for a single 4-byte word.
 /// - `x` : The input value.
 template<typename T_>
-hxattr_nodiscard inline hxhash_t hxkey_hash(T_ x_) {
-	// xxhash32 short-input path: seed=0, length=4, single 4-byte word mix then avalanche.
+hxattr_nodiscard hxinline hxhash_t hxkey_hash(T_ x_) {
+	// xxhash32 short-input path: seed=0, length=4, single 4-byte word.
 	hxhash_t h_ = hxhash_prime5_ + hxhash_t{4u};
+	// Did you write a custom hxkey_hash()?
 	h_ += static_cast<hxhash_t>(x_) * hxhash_prime3_;
 	h_  = ((h_ << 17u) | (h_ >> 15u)) * hxhash_prime4_;
 	return hxhash_avalanche_(h_);
@@ -174,7 +175,7 @@ hxattr_nodiscard inline hxhash_t hxkey_hash(T_ x_) {
 /// Mixes each byte with the xxhash32 primes in a single pass and applies the
 /// xxhash32 avalanche.
 /// - `s` : The C string.
-hxattr_nodiscard hxattr_hot inline hxhash_t hxkey_hash(const char* s_) {
+hxattr_nodiscard hxinline hxhash_t hxkey_hash(const char* s_) {
 	hxhash_t h_ = hxhash_prime5_;
 	while(*s_ != '\0') {
 		h_ += static_cast<hxhash_t>(static_cast<unsigned char>(*s_++)) * hxhash_prime5_;

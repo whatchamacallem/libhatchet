@@ -71,6 +71,10 @@
 /// `hxattr_cold` - Optimize a function for size.
 #define hxattr_cold
 
+/// `hxattr_flatten` - Inline every call inside a function's body into it,
+/// recursively, regardless of the cost heuristic used for those calls.
+#define hxattr_flatten
+
 /// `hxattr_hot` - Optimize a function more aggressively. Significantly increases
 /// code utilization. Adjust implementation according to needs.
 #define hxattr_hot
@@ -105,6 +109,10 @@
 /// formatting so it can type-check the format string.
 #define hxattr_scanf(...)
 
+/// `hxinline` - Force a function to be inlined into its callers. Also includes
+/// the `inline` keyword.
+#define hxinline inline
+
 // -- Target settings for MSVC -------------------------------------------------
 // MSVC doesn't support C++'s feature test macros very well.
 #elif defined _MSC_VER
@@ -130,6 +138,7 @@
 #define hxattr_allocator(...)
 #define hxattr_assume(condition_) __assume(condition_)
 #define hxattr_cold
+#define hxattr_flatten
 #define hxattr_hot
 #if HX_CPLUSPLUS
 #define hxattr_nodiscard [[nodiscard]]
@@ -149,6 +158,8 @@
 // #define hxattr_weak __declspec(selectany) is not used as MSVC treats all
 // library objects as weak.
 #define hxattr_weak
+
+#define hxinline inline __forceinline
 
 // -- Target settings for Clang and GCC ----------------------------------------
 // Further compilers will require customization.
@@ -201,9 +212,15 @@
 #define hxattr_assume(...) (void)0
 #endif
 
-// __attribute__ is used because it works in an extern "C" block.
+// __attribute__ is used instead of [[...]] because it works in an extern "C"
+// block.
+
 #define hxattr_cold __attribute__((cold))
-#define hxattr_hot __attribute__((hot)) __attribute__((flatten))
+// Use -Dhxattr_flatten= to disable.
+#ifndef hxattr_flatten
+#define hxattr_flatten __attribute__((flatten))
+#endif
+#define hxattr_hot __attribute__((hot))
 #define hxattr_nodiscard __attribute__((warn_unused_result))
 #define hxattr_noexcept __attribute__((nothrow))
 #define hxattr_nonnull(...)__attribute__((nonnull(__VA_ARGS__)))
@@ -212,6 +229,12 @@
 #define hxattr_printf(pos_, start_) __attribute__((format(printf, pos_, start_)))
 #define hxattr_scanf(pos_, start_) __attribute__((format(scanf, pos_, start_)))
 #define hxattr_weak __attribute__((weak))
+
+// Use -Dhxinline=inline to disable.
+#ifndef hxinline
+#define hxinline inline __attribute__((always_inline))
+#endif
+
 #endif // target specific settings
 
 // -- Target independent -------------------------------------------------------

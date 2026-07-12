@@ -123,7 +123,8 @@ system allocators.
 - **Performance Focus**: This is systems code. Everything should be optimized
   and cache-coherent without causing code bloat. This codebase avoids exceptions
   and RTTI for efficiency. Exceptions will be caught by the test driver and the
-  console if they are enabled and make it that far.
+  console if they are enabled and make it that far. `__restrict` is used
+  extensively and other compiler intrinsics as well.
 
 - **C99 Compatibility**: Logging, asserts, and memory management are available
   in plain C99 via `<hx/libhatchet.h>`.
@@ -217,6 +218,9 @@ The scripted builds exercise the following toolchains, language modes, and
 `testmsvc.bat` tests 32 and 64-bit configurations of debug and release on
 Windows. The currently installed version of MSVC should be automatically
 discovered.
+
+`debugbuild.sh` and `teststrip.sh` will detect when C++23 is missing and fall
+back to C++20 for testing g++-10 and clang-11.
 
 ## Project Structure
 

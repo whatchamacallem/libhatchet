@@ -31,6 +31,12 @@ FLAGS="-Os -march=native -static -g -ffunction-sections -fdata-sections -ffast-m
 
 HX_DIR=$PWD
 
+CXX23="23"
+if [ -z "$(echo | musl-gcc -std=c++23 -dM -E -x c++ - 2>/dev/null | grep __cplusplus)" ]; then
+	CXX23=""
+	echo "C++23 not supported..."
+fi
+
 # Build artifacts are not retained.
 rm -rf "$(readlink -f build)" build; ln -s "$(mktemp -d)" build && cd build
 
@@ -41,7 +47,7 @@ fi
 musl-gcc $BUILD $ERRORS $FLAGS -I"$HX_DIR/include" -std=c17 -c "$HX_DIR"/test/*.c
 
 # Test every supported version of the standard without libc++.
-for VERSION in 11 14 17 20 23; do
+for VERSION in 11 14 17 20 $CXX23; do
 
 musl-gcc $BUILD $ERRORS $FLAGS -I"$HX_DIR/include" -std=c++$VERSION -nostdinc++ \
 	-fno-exceptions -fno-rtti -flto=auto -c "$HX_DIR"/src/*.cpp "$HX_DIR"/test/*.cpp

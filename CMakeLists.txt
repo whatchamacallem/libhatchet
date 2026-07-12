@@ -74,6 +74,7 @@ else()
 				-Wall
 				-Wextra
 				-Werror
+				-ftrivial-auto-var-init=pattern
 		)
 	endif()
 

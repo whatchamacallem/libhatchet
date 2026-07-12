@@ -89,11 +89,11 @@ public:
 
 	/// Returns the value referenced by `handle` if it resolves, otherwise hxnull.
 	/// - `handle` : The handle identifying the value to look up.
-	hxattr_nodiscard hxattr_hot T_* get(hxhandle_t handle_) noexcept;
+	hxattr_nodiscard T_* get(hxhandle_t handle_) noexcept;
 
 	/// `const` version of `get`.
 	/// - `handle` : The handle identifying the value to look up.
-	hxattr_nodiscard hxattr_hot const T_* get(hxhandle_t handle_) const noexcept;
+	hxattr_nodiscard const T_* get(hxhandle_t handle_) const noexcept;
 
 	/// Returns a const reference to the stored deleter.
 	hxattr_nodiscard const deleter_t_& deleter(void) const;

@@ -39,7 +39,7 @@ class hxthread_local {
 
 public:
 	/// Construct to 0 or null.
-	explicit hxthread_local(void) {
+	hxinline hxattr_flatten explicit hxthread_local(void) {
 #if (HX_USE_THREADS) == 11
 		const int code_ = ::tss_create(&m_key_, 0);
 		hxassert_always(code_ == thrd_success, "tss_create %d", code_); (void)code_;
@@ -52,7 +52,7 @@ public:
 	}
 
 	/// Frees resources.
-	~hxthread_local() {
+	hxinline hxattr_flatten ~hxthread_local() {
 #if (HX_USE_THREADS) == 11
 		::tss_delete(m_key_);
 #elif HX_USE_THREADS
@@ -61,7 +61,7 @@ public:
 	}
 
 	/// Returns the thread-local value.
-	operator T_(void) {
+	hxinline hxattr_flatten operator T_(void) {
 #if (HX_USE_THREADS) == 11
 		return (T_)(intptr_t)::tss_get(m_key_); // NOLINT(google-readability-casting)
 #elif HX_USE_THREADS
@@ -72,7 +72,7 @@ public:
 	}
 
 	/// Sets the thread-local value. This is a form of "mutable when const."
-	void operator=(T_ local_) {
+	hxinline hxattr_flatten void operator=(T_ local_) {
 #if (HX_USE_THREADS) == 11
 		const int code_ = ::tss_set(m_key_, (void*)(intptr_t)local_); // NOLINT(google-readability-casting)
 		hxassert_hard(code_ == thrd_success, "tss_set %d", code_); (void)code_;
@@ -103,7 +103,7 @@ private:
 
 /// `hxthread_id` - Returns the current thread ID. Returns `0` when threads are
 /// disabled. This is used by the profiler and so it tries to be efficient.
-inline size_t hxthread_id(void) {
+hxinline size_t hxthread_id(void) {
 #if (HX_USE_THREADS) == 11
 #if defined(_WIN32)
 	return static_cast<size_t>(::thrd_current()._Tid);
@@ -127,7 +127,7 @@ class hxmutex {
 public:
 	/// Constructs a mutex and initializes it. May not return if the mutex can't
 	/// be initialized correctly. Something is very wrong if this fails.
-	inline hxmutex(void) {
+	hxinline hxmutex(void) {
 #if (HX_USE_THREADS) == 11
 		const int code_ = ::mtx_init(&m_mutex_, mtx_plain);
 		hxassert_always(code_ == thrd_success, "mtx_init %d", code_); (void)code_;
@@ -138,7 +138,7 @@ public:
 	}
 
 	/// Destroys the mutex.
-	~hxmutex(void) {
+	hxinline ~hxmutex(void) {
 #if (HX_USE_THREADS) == 11
 		::mtx_destroy(&m_mutex_);
 #else
@@ -150,7 +150,7 @@ public:
 	/// Locks the mutex. Returns true on success, asserts on invalid arguments,
 	/// and returns false on failure. Callers must check the return value and
 	/// avoid ignoring lock failures.
-	hxattr_nodiscard bool lock(void) {
+	hxinline hxattr_nodiscard bool lock(void) {
 #if (HX_USE_THREADS) == 11
 		const int code_ = ::mtx_lock(&m_mutex_);
 		hxassertmsg(code_ == thrd_success, "mtx_lock %d", code_);
@@ -165,7 +165,7 @@ public:
 	/// Unlocks the mutex. Returns true on success and false otherwise. It is
 	/// undefined to unlock a mutex that you have not locked, and such an
 	/// operation may succeed.
-	bool unlock(void) {
+	hxinline bool unlock(void) {
 #if (HX_USE_THREADS) == 11
 		const int code_ = ::mtx_unlock(&m_mutex_);
 		hxassertmsg(code_ == thrd_success, "mtx_unlock %d", code_);
@@ -179,9 +179,9 @@ public:
 
 	/// Returns a pointer to the native mutex handle.
 #if (HX_USE_THREADS) == 11
-	::mtx_t* native_handle(void) { return &m_mutex_; }
+	hxinline ::mtx_t* native_handle(void) { return &m_mutex_; }
 #else
-	::pthread_mutex_t* native_handle(void) { return &m_mutex_; }
+	hxinline ::pthread_mutex_t* native_handle(void) { return &m_mutex_; }
 #endif
 
 private:
@@ -201,26 +201,26 @@ class hxunique_lock {
 public:
 	/// Constructs with an option to defer locking.
 	/// - `defer_lock` : If true, does not lock the mutex immediately.
-	hxunique_lock(hxmutex& mtx_, bool defer_lock_=false)
+	hxinline hxunique_lock(hxmutex& mtx_, bool defer_lock_=false)
 			: m_mutex_(mtx_), m_owns_(false) {
 		if(!defer_lock_) {
 			this->lock();
 		}
 	}
 	/// Unlocks the mutex if owned.
-	~hxunique_lock(void) {
+	hxinline ~hxunique_lock(void) {
 		if(m_owns_) {
 			this->unlock();
 		}
 	}
 	/// Locks the mutex if not already locked.
-	void lock(void) {
+	hxinline void lock(void) {
 		if(!m_owns_) {
 			m_owns_ = m_mutex_.lock();
 		}
 	}
 	/// Unlocks the mutex if owned.
-	void unlock(void) {
+	hxinline void unlock(void) {
 		if(m_owns_) {
 			m_mutex_.unlock();
 			m_owns_ = false;
@@ -228,10 +228,10 @@ public:
 	}
 
 	/// Returns true if the lock owns the mutex.
-	bool owns_lock(void) const { return m_owns_; }
+	hxinline bool owns_lock(void) const { return m_owns_; }
 
 	/// Returns a reference to the associated mutex.
-	hxmutex& mutex(void) { return m_mutex_; }
+	hxinline hxmutex& mutex(void) { return m_mutex_; }
 
 private:
 	hxunique_lock(const hxunique_lock&) = delete;
@@ -246,7 +246,7 @@ private:
 class hxcondition_variable {
 public:
 	/// Constructs and initializes the condition variable.
-	hxcondition_variable(void) {
+	hxinline hxcondition_variable(void) {
 #if (HX_USE_THREADS) == 11
 		const int code_ = ::cnd_init(&m_cond_);
 		hxassert_always(code_ == thrd_success, "cnd_init %d", code_); (void)code_;
@@ -257,7 +257,7 @@ public:
 	}
 
 	/// Destroys the condition variable if valid.
-	~hxcondition_variable(void) {
+	hxinline ~hxcondition_variable(void) {
 #if (HX_USE_THREADS) == 11
 		::cnd_destroy(&m_cond_);
 #else
@@ -270,7 +270,7 @@ public:
 	/// false otherwise. Callers must check the return value to confirm the wait
 	/// succeeded.
 	/// - `mutex` : The mutex to use for waiting.
-	hxattr_nodiscard bool wait(hxmutex& mutex_) {
+	hxinline hxattr_nodiscard bool wait(hxmutex& mutex_) {
 #if (HX_USE_THREADS) == 11
 		const int code_ = ::cnd_wait(&m_cond_, mutex_.native_handle());
 		hxassertmsg(code_ == thrd_success, "cnd_wait %d", code_);
@@ -286,7 +286,7 @@ public:
 	/// otherwise. Callers must check the return value to confirm the wait
 	/// succeeded.
 	/// - `lock` : The unique lock to use for waiting.
-	hxattr_nodiscard bool wait(hxunique_lock& lock_) {
+	hxinline hxattr_nodiscard bool wait(hxunique_lock& lock_) {
 		return this->wait(lock_.mutex());
 	}
 
@@ -294,7 +294,7 @@ public:
 	/// - `lock` : The unique lock to use for waiting.
 	/// - `callable` : Predicate function to check.
 	template<typename callable_t_>
-	void wait(hxunique_lock& lock_, callable_t_&& callable_) {
+	hxinline void wait(hxunique_lock& lock_, callable_t_&& callable_) {
 		while(!callable_()) {
 			// Failure is undefined as per the standard.
 			const bool wait_result_ = this->wait(lock_);
@@ -303,7 +303,7 @@ public:
 	}
 
 	/// Notifies one waiting thread. Returns true on success, false otherwise.
-	bool notify_one(void) {
+	hxinline bool notify_one(void) {
 #if (HX_USE_THREADS) == 11
 		const int code_ = ::cnd_signal(&m_cond_);
 		hxassertmsg(code_ == thrd_success, "cnd_signal %d", code_);
@@ -316,7 +316,7 @@ public:
 	}
 
 	/// Notifies all waiting threads. Returns true on success, false otherwise.
-	bool notify_all(void) {
+	hxinline bool notify_all(void) {
 #if (HX_USE_THREADS) == 11
 		const int code_ = ::cnd_broadcast(&m_cond_);
 		hxassertmsg(code_ == thrd_success, "cnd_broadcast %d", code_);
@@ -330,9 +330,9 @@ public:
 
 	/// Returns a pointer to the native condition variable handle.
 #if (HX_USE_THREADS) == 11
-	::cnd_t* native_handle(void) { return &m_cond_; }
+	hxinline ::cnd_t* native_handle(void) { return &m_cond_; }
 #else
-	::pthread_cond_t* native_handle(void) { return &m_cond_; }
+	hxinline ::pthread_cond_t* native_handle(void) { return &m_cond_; }
 #endif
 
 private:
@@ -359,7 +359,7 @@ public:
 #endif
 
 	/// Default constructor. Thread is not started.
-	hxthread(void) : m_thread_(), m_joinable_(false) { }
+	hxinline hxthread(void) : m_thread_(), m_joinable_(false) { }
 
 	/// Constructs and starts a thread with the given function and argument. Does
 	/// not free the argument. Any function that takes a single pointer and
@@ -368,13 +368,13 @@ public:
 	/// - `entry_point` : Function pointer of type: `entry_point(T*)`.
 	/// - `parameter` : `T*` to pass to the function.
 	template<typename parameter_t_>
-	explicit hxthread(return_t (*entry_point_)(parameter_t_*), parameter_t_* parameter_)
+	hxinline explicit hxthread(return_t (*entry_point_)(parameter_t_*), parameter_t_* parameter_)
 			: hxthread() {
 		this->start(entry_point_, parameter_);
 	}
 
 	/// Destructor. Asserts that the thread was stopped correctly.
-	~hxthread(void) {
+	hxinline ~hxthread(void) {
 		hxassert_hard(!this->joinable(), "thread_still_running");
 	}
 
@@ -385,7 +385,7 @@ public:
 	/// - `entry_point` : Function pointer of type: `entry_point(T*)`.
 	/// - `parameter` : `T*` to pass to the function.
 	template<typename parameter_t_>
-	void start(return_t (*entry_point_)(parameter_t_*), parameter_t_* parameter_) {
+	hxinline void start(return_t (*entry_point_)(parameter_t_*), parameter_t_* parameter_) {
 		hxassertmsg(!this->joinable(), "thread_still_running");
 
 		// Stay on the right side of the C++ standard by avoiding assumptions
@@ -409,10 +409,10 @@ public:
 
 	/// Returns true if the thread has been started and not yet joined. Callers
 	/// must check the return value before acting on the thread state.
-	hxattr_nodiscard bool joinable(void) const { return m_joinable_; }
+	hxinline hxattr_nodiscard bool joinable(void) const { return m_joinable_; }
 
 	/// Joins the thread. Blocks until the thread finishes.
-	void join(void) {
+	hxinline void join(void) {
 		hxassertmsg(this->joinable(), "thread_not_running");
 #if (HX_USE_THREADS) == 11
 		const int code_ = ::thrd_join(m_thread_, hxnull);

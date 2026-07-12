@@ -209,7 +209,7 @@ public:
 	hxconstexpr void clear(deleter_u_&& deleter_) noexcept;
 
 	/// Removes all nodes using the stored deleter.
-	hxconstexpr void clear(void) { this->clear(this->deleter()); }
+	hxinline hxconstexpr void clear(void) { this->clear(this->deleter()); }
 
 	/// Returns `true` if the list contains no nodes.
 	hxattr_nodiscard hxconstexpr bool empty(void) const;

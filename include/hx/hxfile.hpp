@@ -160,7 +160,7 @@ public:
 	/// - `bytes` : Non-null pointer to a buffer of at least `buffer_size` bytes.
 	/// - `buffer_size` : Capacity of the buffer in bytes.
 	/// - `count` : Number of bytes to read from the file. Must not exceed `buffer_size`.
-	size_t read(void* bytes_, size_t buffer_size_, size_t count_) hxattr_nonnull(2) hxattr_hot;
+	size_t read(void* bytes_, size_t buffer_size_, size_t count_) hxattr_nonnull(2) hxattr_hot ;
 
 	/// Writes a specified number of bytes from the provided buffer to the file.
 	/// Writing will be skipped when using `hxdev_null`. Resets the failure flag
@@ -168,7 +168,7 @@ public:
 	/// - `bytes` : Non-null pointer to a buffer that provides at least `count`
 	///   bytes.
 	/// - `count` : Number of bytes to write to the file.
-	size_t write(const void* bytes_, size_t count_) hxattr_nonnull(2) hxattr_hot;
+	size_t write(const void* bytes_, size_t count_) hxattr_nonnull(2) hxattr_hot ;
 
 	/// Flushes buffered output to the underlying file. Safe to call on
 	/// `hxdev_null`. Does not reset the failure flag to false on success.
@@ -193,7 +193,7 @@ public:
 	/// - `buffer` : Non-null pointer to a char array where the line will be
 	///   stored.
 	/// - `buffer_size` : Size of the buffer array.
-	bool getline(char* buffer_, int buffer_size_) hxattr_nonnull(2) hxattr_hot;
+	bool getline(char* buffer_, int buffer_size_) hxattr_nonnull(2) hxattr_hot ;
 #endif // (HX_USE_FILE_IO) != 2
 
 	/// Writes a formatted UTF-8 string to the file. Uses `printf` conventions.
@@ -201,7 +201,7 @@ public:
 	/// modify the failure flag because it is not clear from `vfprintf`.
 	/// - `format` : Non-null `printf`-style format string.
 	/// - `...` : Additional arguments that satisfy the format string.
-	bool print(const char* format_, ...) hxattr_printf(2, 3) hxattr_hot;
+	bool print(const char* format_, ...) hxattr_printf(2, 3) hxattr_hot ;
 
 	/// Reads a formatted UTF-8 string from the file. Uses `scanf` conventions.
 	/// Returns the same value as `scanf`. Omit `hxfile::open_mode_asserts` to
@@ -210,7 +210,7 @@ public:
 	/// Returns a negative value on `EOF`.
 	/// - `format` : Non-null `scanf`-style format string.
 	/// - `...` : Additional arguments that satisfy the format string.
-	int scan(const char* format_, ...) hxattr_scanf(2, 3) hxattr_hot;
+	int scan(const char* format_, ...) hxattr_scanf(2, 3) hxattr_hot ;
 
 	/// Reads a single unformatted native-endian object from the file.
 	/// - `t` : Reference to the object where the data will be stored.

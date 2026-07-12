@@ -11,11 +11,12 @@
 HX_BEGIN_INL_
 
 template<int32_t max_successors_>
-hxtask_dag_node<max_successors_>::hxtask_dag_node(void) :
+hxinline hxattr_flatten hxtask_dag_node<max_successors_>::hxtask_dag_node(void) :
 	m_predecessor_count_(0), m_successor_count_(0) { }
 
 template<int32_t max_successors_>
-void hxtask_dag_node<max_successors_>::add_successor(hxtask_dag_node* successor_, int priority_) {
+hxinline hxattr_flatten void hxtask_dag_node<max_successors_>::add_successor(
+		hxtask_dag_node* successor_, int priority_) {
 	hxassert_always(m_successor_count_ < max_successors_, "max_successors");
 	edge_t_& edge_ = m_successors_[m_successor_count_++]; // NOLINT(clang-analyzer-security.ArrayBound)
 	edge_.node_ = successor_;
@@ -24,7 +25,8 @@ void hxtask_dag_node<max_successors_>::add_successor(hxtask_dag_node* successor_
 }
 
 template<int32_t max_successors_>
-void hxtask_dag_node<max_successors_>::dag_node_completed_(hxtask_queue* q_, bool is_cancelled_) {
+hxinline hxattr_flatten void hxtask_dag_node<max_successors_>::dag_node_completed_(
+		hxtask_queue* q_, bool is_cancelled_) {
 	edge_t_ ready_[max_successors_];
 	edge_t_* ready_end_ = ready_;
 	{

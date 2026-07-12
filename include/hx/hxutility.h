@@ -260,7 +260,7 @@ hxattr_nodiscard constexpr bool hxisspace(char ch_) {
 /// returns -127 for 0 and rounds up for `i` >= 2^32-128 returning an incorrect
 /// result.
 /// - `i` : A `uint32_t`.
-hxattr_nodiscard inline int hxlog2i(uint32_t i_) {
+hxattr_nodiscard hxinline int hxlog2i(uint32_t i_) {
 #if defined _MSC_VER
 	unsigned long index_ = 0ul;
 	::_BitScanReverse(&index_, i_);
