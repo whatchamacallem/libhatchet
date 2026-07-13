@@ -25,9 +25,7 @@ static_assert(sizeof(size_t) != 8 || (
 	" hxsize_t indices with no padding");
 #endif
 
-namespace {
-class hxdeque_test_f : public hxtest_object_fixture { };
-} // namespace
+using hxdeque_test_f = hxtest_object_fixture;
 
 TEST(hxdeque_test, operator_index) {
 	hxdeque<int, 8> d;

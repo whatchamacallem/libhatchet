@@ -124,7 +124,8 @@ system allocators.
   and cache-coherent without causing code bloat. This codebase avoids exceptions
   and RTTI for efficiency. Exceptions will be caught by the test driver and the
   console if they are enabled and make it that far. `__restrict` is used
-  extensively and other compiler intrinsics as well.
+  extensively. Inlining attributes are used to make inner loops flatter as is
+  standard practice with standard libraries.
 
 - **C99 Compatibility**: Logging, asserts, and memory management are available
   in plain C99 via `<hx/libhatchet.h>`.

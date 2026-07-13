@@ -22,7 +22,7 @@ static_assert(sizeof(size_t) != 8 || (
 #endif
 
 namespace {
-class hxfree_list_test_f : public hxtest_object_fixture { };
+using hxfree_list_test_f = hxtest_object_fixture;
 
 class hxtest_free_list_node : public hxlist_node {
 public:

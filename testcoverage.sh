@@ -51,18 +51,23 @@ if [ -n "$HX_VERBOSE" ]; then
 fi
 
 gcc -I"$HX_DIR"/include $HX_COVERAGE -DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG		\
-	-std=c99 -Wall -Werror -Wfatal-errors -pthread -c "$HX_DIR"/test/*.c
+	-DHX_USE_INLINING_ATTR=0 -std=c99 -Wall -Werror -Wfatal-errors -pthread -c          \
+	"$HX_DIR"/test/*.c
 
 g++ -I"$HX_DIR"/include $HX_COVERAGE_CXX -DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG    \
 	-DHX_TEST_ERROR_HANDLING=1 -DHX_USE_CONSOLE=2 -DHX_USE_PROFILER=1 -DHX_USE_LIBCXX=0 \
-	-std=c++23 -Wall -Werror -Wextra -Wfatal-errors -fno-exceptions -Wno-c2y-extensions \
-	-Wno-unknown-warning-option -pthread -lpthread -nostdinc++ -Dhxinline=inline        \
-	"$HX_DIR"/src/*.cpp "$HX_DIR"/test/*.cpp *.o -o hxtest
+	-DHX_USE_INLINING_ATTR=0 -std=c++23 -Wall -Werror -Wextra -Wfatal-errors            \
+	-fno-exceptions -Wno-c2y-extensions -Wno-unknown-warning-option -pthread -lpthread  \
+	-nostdinc++ "$HX_DIR"/src/*.cpp "$HX_DIR"/test/*.cpp *.o -o hxtest
 
 if [ -n "$HX_VERBOSE" ]; then
 	echo runtests | ./hxtest help execstdin
 else
-	echo runtests | ./hxtest help execstdin > /dev/null 2>&1
+	if ! echo runtests | ./hxtest help execstdin > console_output.txt 2>&1; then
+		cat console_output.txt
+		echo "error: hxtest non-zero exit."
+		exit 1
+	fi
 fi
 
 mkdir -p "$HX_TARGET"

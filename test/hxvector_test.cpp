@@ -31,7 +31,7 @@ static_assert(sizeof(size_t) != 8 || (
 #endif
 
 namespace {
-class hxvector_test_f : public hxtest_object_fixture { };
+using hxvector_test_f = hxtest_object_fixture;
 
 template<typename array_t>
 bool hxvector_test_is_max_heap(const array_t& heap) {

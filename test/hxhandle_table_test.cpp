@@ -55,18 +55,40 @@ struct hxtest_handle_disabled_deleter {
 
 } // namespace
 
-TEST_F(hxtest_object_fixture, hxhandle_table_construction) {
+using hxhandle_table_f = hxtest_object_fixture;
+
+TEST_F(hxhandle_table_f, hxhandle_table_construction) {
 	const hxhandle_table<hxtest_object, hxdo_not_delete, 2> fixed;
 	EXPECT_EQ(fixed.capacity(), (hxsize_t)4);
+	EXPECT_EQ(fixed.max_size(), (hxsize_t)4);
 	EXPECT_EQ(fixed.size(), (hxsize_t)0);
 	EXPECT_TRUE(fixed.empty());
+	EXPECT_FALSE(fixed.full());
 	const hxhandle_table<hxtest_object, hxdo_not_delete> dynamic;
 	EXPECT_EQ(dynamic.capacity(), (hxsize_t)0);
+	EXPECT_EQ(dynamic.max_size(), (hxsize_t)0);
 	EXPECT_EQ(dynamic.size(), (hxsize_t)0);
 	EXPECT_TRUE(dynamic.empty());
+	EXPECT_TRUE(dynamic.full());
 }
 
-TEST_F(hxtest_object_fixture, hxhandle_table_insert_raw_pointer) {
+TEST_F(hxhandle_table_f, hxhandle_table_full) {
+	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
+	hxhandle_table<hxtest_object, hxdefault_delete, 2> t;
+	EXPECT_FALSE(t.full());
+	t.insert(hxnew<hxtest_object>(0));
+	EXPECT_FALSE(t.full());
+	t.insert(hxnew<hxtest_object>(1));
+	EXPECT_FALSE(t.full());
+	t.insert(hxnew<hxtest_object>(2));
+	EXPECT_FALSE(t.full());
+	const hxhandle_t h3 = t.insert(hxnew<hxtest_object>(3));
+	EXPECT_TRUE(t.full());
+	EXPECT_TRUE(t.erase(h3));
+	EXPECT_FALSE(t.full());
+}
+
+TEST_F(hxhandle_table_f, hxhandle_table_insert_raw_pointer) {
 	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
 	hxhandle_table<hxtest_object, hxdefault_delete, 2> t;
 	const hxhandle_t h0 = t.insert(hxnew<hxtest_object>(0));
@@ -85,7 +107,7 @@ TEST_F(hxtest_object_fixture, hxhandle_table_insert_raw_pointer) {
 	EXPECT_EQ(t.get(h3)->id, (int32_t)3);
 }
 
-TEST_F(hxtest_object_fixture, hxhandle_table_insert_null_pointer_returns_null_handle) {
+TEST_F(hxhandle_table_f, hxhandle_table_insert_null_pointer_returns_null_handle) {
 	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
 	hxhandle_table<hxtest_object, hxdefault_delete, 2> t;
 	const hxhandle_t h = t.insert(static_cast<hxtest_object*>(hxnull));
@@ -93,7 +115,7 @@ TEST_F(hxtest_object_fixture, hxhandle_table_insert_null_pointer_returns_null_ha
 	EXPECT_EQ(t.size(), (hxsize_t)0);
 }
 
-TEST_F(hxtest_object_fixture, hxhandle_table_insert_hxptr_takes_ownership) {
+TEST_F(hxhandle_table_f, hxhandle_table_insert_hxptr_takes_ownership) {
 	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
 	hxhandle_table<hxtest_object, hxtest_handle_counting_deleter, 2> t;
 	hxptr<hxtest_object, hxtest_handle_counting_deleter> p(hxnew<hxtest_object>(88));
@@ -104,7 +126,7 @@ TEST_F(hxtest_object_fixture, hxhandle_table_insert_hxptr_takes_ownership) {
 	EXPECT_EQ(t.size(), (hxsize_t)1);
 }
 
-TEST_F(hxtest_object_fixture, hxhandle_table_get) {
+TEST_F(hxhandle_table_f, hxhandle_table_get) {
 	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
 	hxhandle_table<hxtest_object, hxdefault_delete, 2> t;
 	EXPECT_EQ(t.get(static_cast<hxhandle_t>(0)), static_cast<hxtest_object*>(hxnull));
@@ -123,7 +145,7 @@ TEST_F(hxtest_object_fixture, hxhandle_table_get) {
 	EXPECT_EQ(t.get(h), static_cast<hxtest_object*>(hxnull));
 }
 
-TEST_F(hxtest_object_fixture, hxhandle_table_erase) {
+TEST_F(hxhandle_table_f, hxhandle_table_erase) {
 	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
 	hxs_handle_table_deleted = 0;
 	hxhandle_table<hxtest_object, hxtest_handle_counting_deleter, 2> t;
@@ -137,7 +159,7 @@ TEST_F(hxtest_object_fixture, hxhandle_table_erase) {
 	EXPECT_EQ(hxs_handle_table_deleted, 1);
 }
 
-TEST_F(hxtest_object_fixture, hxhandle_table_erase_with_disabled_deleter_skips_delete) {
+TEST_F(hxhandle_table_f, hxhandle_table_erase_with_disabled_deleter_skips_delete) {
 	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
 	hxs_handle_table_deleted = 0;
 	hxhandle_table<hxtest_object, hxtest_handle_disabled_deleter, 2> t;
@@ -148,7 +170,7 @@ TEST_F(hxtest_object_fixture, hxhandle_table_erase_with_disabled_deleter_skips_d
 	hxdelete(raw);
 }
 
-TEST_F(hxtest_object_fixture, hxhandle_table_erase_from_full_table_rebuilds_free_head) {
+TEST_F(hxhandle_table_f, hxhandle_table_erase_from_full_table_rebuilds_free_head) {
 	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
 	hxhandle_table<hxtest_object, hxdefault_delete, 2> t;
 	const hxhandle_t h0 = t.insert(hxnew<hxtest_object>(10));
@@ -165,7 +187,7 @@ TEST_F(hxtest_object_fixture, hxhandle_table_erase_from_full_table_rebuilds_free
 	EXPECT_NE(t.get(h3), static_cast<hxtest_object*>(hxnull));
 }
 
-TEST_F(hxtest_object_fixture, hxhandle_table_reuse_after_full_cycle_across_all_slots) {
+TEST_F(hxhandle_table_f, hxhandle_table_reuse_after_full_cycle_across_all_slots) {
 	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
 	hxhandle_table<hxtest_object, hxdefault_delete, 2> t;
 	const hxhandle_t h0 = t.insert(hxnew<hxtest_object>(0));
@@ -188,7 +210,7 @@ TEST_F(hxtest_object_fixture, hxhandle_table_reuse_after_full_cycle_across_all_s
 	EXPECT_EQ(t.get(r3)->id, (int32_t)13);
 }
 
-TEST_F(hxtest_object_fixture, hxhandle_table_extract) {
+TEST_F(hxhandle_table_f, hxhandle_table_extract) {
 	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
 	hxs_handle_table_deleted = 0;
 	hxhandle_table<hxtest_object, hxtest_handle_counting_deleter, 2> t;
@@ -204,7 +226,7 @@ TEST_F(hxtest_object_fixture, hxhandle_table_extract) {
 	EXPECT_EQ(t.get(h), static_cast<hxtest_object*>(hxnull));
 }
 
-TEST_F(hxtest_object_fixture, hxhandle_table_extract_from_full_table_rebuilds_free_head) {
+TEST_F(hxhandle_table_f, hxhandle_table_extract_from_full_table_rebuilds_free_head) {
 	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
 	hxhandle_table<hxtest_object, hxtest_handle_counting_deleter, 2> t;
 	t.insert(hxnew<hxtest_object>(10));
@@ -219,7 +241,7 @@ TEST_F(hxtest_object_fixture, hxhandle_table_extract_from_full_table_rebuilds_fr
 	EXPECT_EQ(t.get(reused)->id, (int32_t)31);
 }
 
-TEST_F(hxtest_object_fixture, hxhandle_table_clear) {
+TEST_F(hxhandle_table_f, hxhandle_table_clear) {
 	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
 	hxs_handle_table_deleted = 0;
 	hxhandle_table<hxtest_object, hxtest_handle_counting_deleter, 2> t;
@@ -234,7 +256,7 @@ TEST_F(hxtest_object_fixture, hxhandle_table_clear) {
 	EXPECT_TRUE(t.empty());
 }
 
-TEST_F(hxtest_object_fixture, hxhandle_table_clear_with_disabled_deleter_skips_delete) {
+TEST_F(hxhandle_table_f, hxhandle_table_clear_with_disabled_deleter_skips_delete) {
 	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
 	hxs_handle_table_deleted = 0;
 	hxhandle_table<hxtest_object, hxtest_handle_disabled_deleter, 2> t;
@@ -249,7 +271,7 @@ TEST_F(hxtest_object_fixture, hxhandle_table_clear_with_disabled_deleter_skips_d
 	hxdelete(raw1);
 }
 
-TEST_F(hxtest_object_fixture, hxhandle_table_destructor_deletes_owned_values) {
+TEST_F(hxhandle_table_f, hxhandle_table_destructor_deletes_owned_values) {
 	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
 	hxs_handle_table_deleted = 0;
 	{
@@ -271,7 +293,7 @@ TEST_F(hxtest_object_fixture, hxhandle_table_destructor_deletes_owned_values) {
 	hxdelete(raw1);
 }
 
-TEST_F(hxtest_object_fixture, hxhandle_table_release_all) {
+TEST_F(hxhandle_table_f, hxhandle_table_release_all) {
 	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
 	hxs_handle_table_deleted = 0;
 	hxhandle_table<hxtest_object, hxtest_handle_disabled_deleter, 2> t;
@@ -291,7 +313,7 @@ TEST_F(hxtest_object_fixture, hxhandle_table_release_all) {
 	EXPECT_EQ(dynamic.capacity(), (hxsize_t)0);
 }
 
-TEST_F(hxtest_object_fixture, hxhandle_table_set_table_size_bits_allocates) {
+TEST_F(hxhandle_table_f, hxhandle_table_set_table_size_bits_allocates) {
 	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
 	hxhandle_table<hxtest_object, hxtest_handle_counting_deleter> t;
 	t.set_table_size_bits(3);

@@ -41,10 +41,10 @@
 
 /// `int LIBHATCHET_VER` - One digit major, and two digit minor and patch
 /// versions.
-#define LIBHATCHET_VER 14704
+#define LIBHATCHET_VER 14900
 
 /// `LIBHATCHET_TAG` - Major, minor and patch version tag name.
-#define LIBHATCHET_TAG "v1.47.4"
+#define LIBHATCHET_TAG "v1.49.0"
 
 #if !defined HX_HARDENING_MODE
 /// `HX_HARDENING_MODE` - Library hardening level. See the README.md for levels.
@@ -67,14 +67,6 @@
 #if (HX_HARDENING_MODE) < 0 || (HX_HARDENING_MODE) > 3
 #error HX_HARDENING_MODE must be [0..3]. See <hx/hxsettings.h>.
 #endif
-
-/// `hxnull` - The null pointer value for a given pointer type represented by
-/// the numeric constant `0`. The C/C++ language standards explicitly define the
-/// meaning of `0` in pointer context as a null pointer of the expected type.
-/// However they do not define whether `NULL` is `0` or `((void*)0)`. `hxnull`
-/// fills that gap by having an unambiguous type. See `hxnullptr`/`hxnullptr_t`
-/// if you need a `std::nullptr_t` replacement.
-#define hxnull 0
 
 #include "hxsettings.h"
 #if !(HX_USE_MACROS_WITH_MODULE)
@@ -190,30 +182,7 @@
 
 #if !(HX_USE_MACROS_WITH_MODULE)
 #if HX_CPLUSPLUS
-
-/// `hxsize_t` - A signed size type, same as `ssize_t` or `ptrdiff_t`. Use on a
-/// 32-bit system with more than 2 GiB RAM is undefined.
-typedef ptrdiff_t hxsize_t;
-
-/// `hxsizeof` - Returns the size of a type or expression as `hxsize_t`.
-template<typename T_> constexpr hxsize_t hxsizeof(void) { return static_cast<hxsize_t>(sizeof(T_)); }
-template<typename T_> constexpr hxsize_t hxsizeof(T_&) { return static_cast<hxsize_t>(sizeof(T_)); }
-
 extern "C" {
-#endif
-
-#if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
-/// `hxassert_handler` - Assert handler. Do not call directly, signature changes
-/// and then is removed.
-/// WARNING: Compile errors from consteval code calling this function are
-/// intentional and are how you know a compile time assert has been hit.
-bool hxassert_handler(const char* file_, size_t line_) hxattr_noexcept hxattr_nonnull(1) hxattr_cold;
-#else // HX_HARDENING_MODE != HX_HARDENING_MODE_DEBUG
-// Errors from consteval code calling this function are how you know a compile
-// time assert has been hit. hxattr_cold tells the compiler this call is
-// unlikely.
-// WARNING: THIS IS USED AS A COMPILE TIME ASSERT.
-void hxassert_handler(void) hxattr_noexcept hxattr_cold;
 #endif
 
 /// `hxlog_level_t` - Runtime setting for verbosity of log messages.
@@ -235,15 +204,15 @@ enum hxlog_level_t {
 	hxlog_level_assert
 };
 
+/// `hxsize_t` - A signed size type, same as `ssize_t` or `ptrdiff_t`. Use on a
+/// 32-bit system with more than 2 GiB RAM is undefined.
+typedef ptrdiff_t hxsize_t;
+
 /// `hxhash_t` - Unsigned 32-bit hash value. Expect collisions.
 typedef uint32_t hxhash_t;
 
-#if HX_CPLUSPLUS >= 202002L
-/// `hxhash_bits` - Number of bits in `hxhash_t`.
-inline constexpr hxhash_t hxhash_bits = 32u;
-#else
-#define hxhash_bits 32u
-#endif
+/// `hxhandle_t` - An opaque 64-bit handle.
+typedef uint64_t hxhandle_t;
 
 /// `hxinit_internal` - Internal. Use `hxinit` instead. It checks `hxg_init_ver_`.
 void hxinit_internal(int version_) hxattr_cold;
@@ -258,6 +227,26 @@ extern int hxg_init_ver_;
 /// platform and confirms all memory allocations have been released.
 void hxshutdown(void) hxattr_cold;
 
+#if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
+/// `hxassert_handler` - Assert handler. Do not call directly, signature changes
+/// and then is removed.
+/// WARNING: Compile errors from consteval code calling this function are
+/// intentional and are how you know a compile time assert has been hit.
+bool hxassert_handler(const char* file_, size_t line_) hxattr_noexcept hxattr_nonnull(1) hxattr_cold;
+#else // HX_HARDENING_MODE != HX_HARDENING_MODE_DEBUG
+// Errors from consteval code calling this function are how you know a compile
+// time assert has been hit. hxattr_cold tells the compiler this call is
+// unlikely.
+// WARNING: THIS IS USED AS A COMPILE TIME ASSERT.
+void hxassert_handler(void) hxattr_noexcept hxattr_cold;
+#endif
+
+/// `hxset_assert_handler` - Installs a custom handler called when an assertion
+/// fails. Pass `hxnull` to disable. If it returns true the assert will not exit
+/// or trigger a breakpoint.
+/// - `handler` : Function pointer of type `bool (*)(void)`, or `hxnull`.
+void hxset_assert_handler(bool (*handler_)(void)) hxattr_noexcept;
+
 /// `hxlog_handler` - Enters formatted messages in the system log.
 /// - `level` : The log level (e.g., `hxlog_level_log`, `hxlog_level_warning`).
 /// - `format` : Non-null `printf`-style format string.
@@ -270,12 +259,6 @@ void hxlog_handler(enum hxlog_level_t level_, const char* format_, ...) hxattr_n
 /// - `args` : A `va_list` containing the arguments for the format string.
 void hxlog_handler_v(enum hxlog_level_t level_, const char* format_, va_list args_) hxattr_noexcept hxattr_nonnull(2);
 
-/// `hxset_assert_handler` - Installs a custom handler called when an assertion
-/// fails. Pass `hxnull` to disable. If it returns true the assert will not exit
-/// or trigger a breakpoint.
-/// - `handler` : Function pointer of type `bool (*)(void)`, or `hxnull`.
-void hxset_assert_handler(bool (*handler_)(void)) hxattr_noexcept;
-
 /// `hxexit(int status)` - Flushes `hxout` and `hxerr` then calls `_Exit`.
 /// - `status` : The exit status passed to `_Exit`.
 hxattr_noreturn void hxexit(int status_) hxattr_noexcept hxattr_cold;
@@ -283,10 +266,38 @@ hxattr_noreturn void hxexit(int status_) hxattr_noexcept hxattr_cold;
 #if HX_CPLUSPLUS
 } // extern "C"
 #endif
+#endif // !HX_USE_MACROS_WITH_MODULE
+
+/// `hxnull` - The null pointer value for a given pointer type represented by
+/// the numeric constant `0`. The C/C++ language standards explicitly define the
+/// meaning of `0` in pointer context as a null pointer of the expected type.
+/// However they do not define whether `NULL` is `0` or `((void*)0)`. `hxnull`
+/// fills that gap by having an unambiguous type. See `hxnullptr`/`hxnullptr_t`
+/// if you need a `std::nullptr_t` replacement.
+#define hxnull 0
+
+#if HX_CPLUSPLUS
+#if !(HX_USE_MACROS_WITH_MODULE)
+/// `hxhash_bits` - Number of bits in `hxhash_t`.
+hxinline_constexpr hxhash_t hxhash_bits = 32u;
+
+/// `hxnull_handle` - A handle that will never refer to a valid object.
+hxinline_constexpr hxhandle_t hxnull_handle = 0u;
+
+/// `hxsizeof` - Returns the size of a type or expression as `hxsize_t`.
+template<typename T_> constexpr hxsize_t hxsizeof(void) { return static_cast<hxsize_t>(sizeof(T_)); }
+template<typename T_> constexpr hxsize_t hxsizeof(T_&) { return static_cast<hxsize_t>(sizeof(T_)); }
+#endif // !HX_USE_MACROS_WITH_MODULE
+#else
+#define hxhash_bits 32u
+#define hxnull_handle 0u
+#define hxsizeof(x) (hxsize_t)sizeof(x)
+#endif
 
 /// \cond HIDDEN
 // WARNING: gcc version 13 was reporting the wrong __cplusplus for C++23.
 #if HX_CPLUSPLUS >= 202302L
+#if !(HX_USE_MACROS_WITH_MODULE)
 // This allows hxassert_handler and hxlog_handler to be used by compile time
 // asserts in C++23.
 hxattr_noexcept constexpr void hxlog_handler_(enum hxlog_level_t level_, const char* format_, ...) {
@@ -297,10 +308,9 @@ hxattr_noexcept constexpr void hxlog_handler_(enum hxlog_level_t level_, const c
 		va_end(args_);
 	}
 }
+#endif // !HX_USE_MACROS_WITH_MODULE
 #else // HX_CPLUSPLUS < 202302L
 // Disable the compile time version of hxlog_handler_.
 #define hxlog_handler_ hxlog_handler
 #endif // HX_CPLUSPLUS < 202302L
 /// \endcond
-
-#endif // !HX_USE_MACROS_WITH_MODULE

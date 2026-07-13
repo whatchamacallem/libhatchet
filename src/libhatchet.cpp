@@ -119,6 +119,51 @@ hxattr_weak void hxinit_internal(int version) {
 	}
 }
 
+hxattr_weak void hxshutdown(void) {
+	if(hxg_init_ver_ != 0) { // GCOVR_EXCL_LINE. Should only be called once.
+		hxmemory_manager_shut_down_();
+
+#if HX_USE_FLOATING_POINT_TRAPS
+		::feenableexcept(0);
+#endif
+
+		// Trap reinitialization. This intentionally breaks global destructors
+		// that call hxfree. Leak tracking has to run before that. Just don't
+		// call hxshutdown() if you don't need this.
+		hxg_init_ver_ = 1;
+	}
+}
+
+#if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
+hxattr_weak hxattr_noexcept bool hxassert_handler(const char* file, size_t line) {
+	for(const char* it = file; *it != '\0'; ++it) {
+		if(*it == '/' || *it == '\\') {
+			file = it + 1;
+		}
+	}
+	if(hxg_assert_handler != hxnull && hxg_assert_handler()) {
+		return true;
+	}
+	// GCOVR_EXCL_START
+	hxlog_handler(hxlog_level_assert, "breakpoint %s(%zu)", file, line);
+	// Return to hxbreakpoint at the calling line.
+	return false;
+	// GCOVR_EXCL_STOP
+}
+#else
+hxattr_weak hxattr_noexcept void hxassert_handler(void) {
+	if(hxg_assert_handler != hxnull && hxg_assert_handler()) {
+		return;
+	}
+	hxlog_handler(hxlog_level_assert, "assert_fail\n");
+	hxexit(EXIT_FAILURE);
+}
+#endif
+
+hxattr_weak hxattr_noexcept void hxset_assert_handler(bool (*handler)(void)) {
+	hxg_assert_handler = handler;
+}
+
 hxattr_weak hxattr_noexcept void hxlog_handler(hxlog_level_t level, const char* format, ...) {
 	va_list args;
 	va_start(args, format);
@@ -164,51 +209,6 @@ hxattr_weak hxattr_noexcept void hxlog_handler_v(hxlog_level_t level, const char
 	::fwrite(line_buf, 1u, static_cast<size_t>(len), stdout);
 #endif
 }
-
-hxattr_weak void hxshutdown(void) {
-	if(hxg_init_ver_ != 0) { // GCOVR_EXCL_LINE. Should only be called once.
-		hxmemory_manager_shut_down_();
-
-#if HX_USE_FLOATING_POINT_TRAPS
-		::feenableexcept(0);
-#endif
-
-		// Trap reinitialization. This intentionally breaks global destructors
-		// that call hxfree. Leak tracking has to run before that. Just don't
-		// call hxshutdown() if you don't need this.
-		hxg_init_ver_ = 1;
-	}
-}
-
-hxattr_weak hxattr_noexcept void hxset_assert_handler(bool (*handler)(void)) {
-	hxg_assert_handler = handler;
-}
-
-#if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
-hxattr_weak hxattr_noexcept bool hxassert_handler(const char* file, size_t line) {
-	for(const char* it = file; *it != '\0'; ++it) {
-		if(*it == '/' || *it == '\\') {
-			file = it + 1;
-		}
-	}
-	if(hxg_assert_handler != hxnull && hxg_assert_handler()) {
-		return true;
-	}
-	// GCOVR_EXCL_START
-	hxlog_handler(hxlog_level_assert, "breakpoint %s(%zu)", file, line);
-	// Return to hxbreakpoint at the calling line.
-	return false;
-	// GCOVR_EXCL_STOP
-}
-#else
-hxattr_weak hxattr_noexcept void hxassert_handler(void) {
-	if(hxg_assert_handler != hxnull && hxg_assert_handler()) {
-		return;
-	}
-	hxlog_handler(hxlog_level_assert, "assert_fail\n");
-	hxexit(EXIT_FAILURE);
-}
-#endif
 
 // Make sure error messages are reported. Does not support coverage testing.
 // GCOVR_EXCL_START

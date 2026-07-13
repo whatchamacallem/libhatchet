@@ -41,9 +41,17 @@ run_example() {
 			-Dcpp_link_args="$LINK_FLAGS" -Dbuild_example=true "$@"
 		ninja -v -C build
 	else
-		meson setup build --buildtype=debug -Dc_args="$C_FLAGS" -Dcpp_args="$CPP_FLAGS" \
-			-Dcpp_link_args="$LINK_FLAGS" -Dbuild_example=true "$@" >/dev/null
-		ninja -C build >/dev/null
+		if ! meson setup build --buildtype=debug -Dc_args="$C_FLAGS" -Dcpp_args="$CPP_FLAGS" \
+			-Dcpp_link_args="$LINK_FLAGS" -Dbuild_example=true "$@" >meson_setup_out.txt 2>&1; then
+			cat meson_setup_out.txt
+			echo "error: meson setup failed"
+			exit 1
+		fi
+		if ! ninja -C build >build/ninja_out.txt 2>&1; then
+			cat build/ninja_out.txt
+			echo "error: ninja build failed"
+			exit 1
+		fi
 	fi
 
 	cp example/example.cfg build

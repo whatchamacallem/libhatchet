@@ -26,9 +26,7 @@ static_assert(sizeof(size_t) != 8 || (
 	" plus two hxsize_t/T* allocator pairs with no padding");
 #endif
 
-namespace {
-class hxflat_map_test_f : public hxtest_object_fixture { };
-} // namespace
+using hxflat_map_test_f = hxtest_object_fixture;
 
 TEST_F(hxflat_map_test_f, gdb_break) {
 	hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 4> ms;

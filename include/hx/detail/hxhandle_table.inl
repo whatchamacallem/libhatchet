@@ -114,13 +114,13 @@ hxhandle_table<T_, deleter_t_, table_size_bits_>::get(hxhandle_t handle_) const 
 }
 
 template<typename T_, typename deleter_t_, uint32_t table_size_bits_>
-hxinline const deleter_t_&
+hxinline hxattr_flatten const deleter_t_&
 hxhandle_table<T_, deleter_t_, table_size_bits_>::deleter(void) const {
 	return static_cast<const deleter_t_&>(*this);
 }
 
 template<typename T_, typename deleter_t_, uint32_t table_size_bits_>
-hxinline deleter_t_& hxhandle_table<T_, deleter_t_, table_size_bits_>::deleter(void) {
+hxinline hxattr_flatten deleter_t_& hxhandle_table<T_, deleter_t_, table_size_bits_>::deleter(void) {
 	return static_cast<deleter_t_&>(*this);
 }
 

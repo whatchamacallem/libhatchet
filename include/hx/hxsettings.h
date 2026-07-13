@@ -36,6 +36,12 @@
 #define HX_CPLUSPLUS 0
 #endif
 
+#if !defined HX_USE_INLINING_ATTR
+/// `HX_USE_INLINING_ATTR` - Controls whether `hxinline`, `hxattr_flatten`, and
+/// `hxattr_hot` are enabled.
+#define HX_USE_INLINING_ATTR 1
+#endif
+
 // -- Target settings for Doxygen ----------------------------------------------
 // See the Doxyfile. Run doxygen with no args.
 #if defined HX_DOXYGEN_PARSER
@@ -159,7 +165,11 @@
 // library objects as weak.
 #define hxattr_weak
 
+#if HX_USE_INLINING_ATTR
 #define hxinline inline __forceinline
+#else
+#define hxinline inline
+#endif
 
 // -- Target settings for Clang and GCC ----------------------------------------
 // Further compilers will require customization.
@@ -216,13 +226,16 @@
 // block.
 
 #define hxattr_cold __attribute__((cold))
-// Use -Dhxattr_flatten= to disable.
-#if !defined hxattr_flatten && (defined __clang__ || __GNUC__ >= 11)
+#if HX_USE_INLINING_ATTR && (defined __clang__ || __GNUC__ >= 11)
 #define hxattr_flatten __attribute__((flatten))
 #else
 #define hxattr_flatten
 #endif
+#if HX_USE_INLINING_ATTR
 #define hxattr_hot __attribute__((hot))
+#else
+#define hxattr_hot
+#endif
 #define hxattr_nodiscard __attribute__((warn_unused_result))
 #define hxattr_noexcept __attribute__((nothrow))
 #define hxattr_nonnull(...)__attribute__((nonnull(__VA_ARGS__)))
@@ -232,9 +245,12 @@
 #define hxattr_scanf(pos_, start_) __attribute__((format(scanf, pos_, start_)))
 #define hxattr_weak __attribute__((weak))
 
-// Use -Dhxinline=inline to disable.
 #ifndef hxinline
+#if HX_USE_INLINING_ATTR
 #define hxinline inline __attribute__((always_inline))
+#else
+#define hxinline inline
+#endif
 #endif
 
 #endif // target specific settings
@@ -262,10 +278,11 @@
 #endif
 
 #if !defined HX_USE_MACROS_WITH_MODULE
-/// `HX_USE_MACROS_WITH_MODULE` - Setting `-DHX_USE_MACROS_WITH_MODULE=1` when using modules (e.g.
-/// `import hx;`) will allow the macros in `<hx/libhatchet.h>`,
-/// `<hx/hxconsole.hpp>`, `<hx/hxprofiler.hpp>` and `<hx/hxtest.hpp>` to be
-/// textually included alongside `import hx;`. See `src/hxmodule.cppm`.
+/// `HX_USE_MACROS_WITH_MODULE` - Setting `-DHX_USE_MACROS_WITH_MODULE=1` when
+/// using modules (e.g. `import hx;`) will allow the macros in
+/// `<hx/libhatchet.h>`, `<hx/hxconsole.hpp>`, `<hx/hxprofiler.hpp>` and
+/// `<hx/hxtest.hpp>` to be textually included alongside `import hx;`. See
+/// `src/hxmodule.cppm`.
 #define HX_USE_MACROS_WITH_MODULE 0
 #endif
 
@@ -401,6 +418,7 @@ HX_CHECK_USE_(HX_USE_CONSOLE)
 HX_CHECK_USE_(HX_USE_FILE_IO)
 HX_CHECK_USE_(HX_USE_FLOATING_POINT_TRAPS)
 HX_CHECK_USE_(HX_USE_GOOGLE_TEST)
+HX_CHECK_USE_(HX_USE_INLINING_ATTR)
 HX_CHECK_USE_(HX_USE_LIBCXX)
 HX_CHECK_USE_(HX_USE_LOGGING)
 HX_CHECK_USE_(HX_USE_MEMORY_MANAGER)

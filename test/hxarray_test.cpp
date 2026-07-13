@@ -28,9 +28,7 @@ static_assert(sizeof(size_t) != 8 || (
 hxattr_noinline static void hxtest_gdb_break_hxarray_static(void) { }
 hxattr_noinline static void hxtest_gdb_break_hxarray_dynamic(void) { }
 
-namespace {
-class hxarray_test_f : public hxtest_object_fixture { };
-} // namespace
+using hxarray_test_f = hxtest_object_fixture;
 
 TEST_F(hxarray_test_f, hxarray_default_constructs_all_elements) {
 	{

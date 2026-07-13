@@ -20,12 +20,6 @@ HX_NS_BEGIN_
 
 #include "detail/hxpow2_allocator.hpp"
 
-/// `hxhandle_t` - An opaque 64-bit handle.
-using hxhandle_t = uint64_t;
-
-/// `hxnull_handle` - A handle that will never refer to a valid object.
-hxinline_constexpr hxhandle_t hxnull_handle = 0u;
-
 /// `hxhandle_table` - A table that maps 64-bit handles to owned pointers
 /// without reallocating memory or moving values. The table is a fixed
 /// power-of-two array of `{ key, ptr }` slots. If non-zero, `table_size_bits`
@@ -87,6 +81,9 @@ public:
 	/// - `handle` : The handle identifying the value to extract.
 	hxptr<T_, deleter_t_> extract(hxhandle_t handle_) noexcept;
 
+	/// Checks if the table is full.
+	hxattr_nodiscard hxinline hxattr_flatten bool full(void) const { return m_free_head_ == hxnull; }
+
 	/// Returns the value referenced by `handle` if it resolves, otherwise hxnull.
 	/// - `handle` : The handle identifying the value to look up.
 	hxattr_nodiscard T_* get(hxhandle_t handle_) noexcept;
@@ -112,6 +109,9 @@ public:
 	/// - `ptr` : The `hxptr` owning the value to insert.
 	template<typename deleter_u_>
 	hxhandle_t insert(hxptr<T_, deleter_u_>&& ptr_) noexcept;
+
+	/// Returns the maximum number of values that can be stored.
+	hxattr_nodiscard hxinline hxattr_flatten hxsize_t max_size(void) const { return this->capacity(); }
 
 	/// Clears the table without deleting any values.
 	void release_all(void) noexcept { this->clear(hxdo_not_delete()); }

@@ -26,9 +26,7 @@ static_assert(sizeof(size_t) != 8 || (
 	" plus a T* end pointer with no padding");
 #endif
 
-namespace {
-class hxflat_set_test_f : public hxtest_object_fixture { };
-} // namespace
+using hxflat_set_test_f = hxtest_object_fixture;
 
 TEST_F(hxflat_set_test_f, gdb_static) {
 	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, false, 4> s;

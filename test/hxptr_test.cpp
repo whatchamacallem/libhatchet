@@ -19,7 +19,7 @@ static_assert(sizeof(size_t) != 8 || (
 #endif
 
 namespace {
-class hxptr_test_f : public hxtest_object_fixture { };
+using hxptr_test_f = hxtest_object_fixture;
 
 int hxs_ptr_stateful_delete_count = 0;
 int hxs_ptr_stateful_delete_tag = 0;
