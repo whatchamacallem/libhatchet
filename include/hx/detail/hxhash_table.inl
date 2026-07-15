@@ -427,10 +427,10 @@ hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::replace(node_t_* 
 }
 
 template<hxhash_table_concept_ node_t_, typename deleter_t_, bool multi_t_, uint32_t table_size_bits_>
-hxinline hxattr_flatten void hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::set_table_size_bits(hxhash_t bits_) {
+hxinline hxattr_flatten void hxhash_table<node_t_, deleter_t_, multi_t_, table_size_bits_>::set_size_bits(hxhash_t bits_) {
 	static_assert(table_size_bits_ == hxallocator_dynamic_capacity,
-		"set_table_size_bits requires dynamic capacity");
-	m_table_.set_table_size_bits_(bits_, hxhash_bits - bits_);
+		"set_size_bits requires dynamic capacity");
+	m_table_.set_size_bits_(bits_, hxhash_bits - bits_);
 }
 
 template<hxhash_table_concept_ node_t_, typename deleter_t_, bool multi_t_, uint32_t table_size_bits_>

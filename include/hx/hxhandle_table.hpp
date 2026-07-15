@@ -22,10 +22,8 @@ HX_NS_BEGIN_
 
 /// `hxhandle_table` - A table that maps 64-bit handles to owned pointers
 /// without reallocating memory or moving values. The table is a fixed
-/// power-of-two array of `{ key, ptr }` slots. If non-zero, `table_size_bits`
-/// configures the table size to `2^table_size_bits`. Otherwise use
-/// `set_table_size_bits` to configure the size dynamically. WARNING: `deleter`
-/// must accept `hxnull`.
+/// `2^table_size_bits - 1` array of handles. Use `set_size_bits` to configure
+/// the size dynamically.
 /// - `T` : The pointed-to type stored in the table.
 /// - `deleter_t` : A class type invoked as `deleter(T*)` to free the owned
 ///    pointer. See also `hxdo_not_delete`.
@@ -41,8 +39,8 @@ public:
 
 	using value_t = T_;
 
-	/// Constructs an empty table with a capacity of `2^table_size_bits` and an
-	/// optional deleter instance.
+	/// Constructs an empty table with a capacity of `2^table_size_bits` slots
+	/// and an optional deleter instance.
 	/// - `deleter` : Callable with signature `bool deleter(T*)`.
 	explicit hxhandle_table(deleter_t_ deleter_=deleter_t_());
 
@@ -50,7 +48,7 @@ public:
 	~hxhandle_table(void);
 
 	/// Returns the number of slots in the table.
-	hxattr_nodiscard hxsize_t capacity(void) const { return m_table_.capacity(); }
+	hxattr_nodiscard hxsize_t capacity(void) const { return static_cast<hxsize_t>(m_table_.get_mask_()); }
 
 	/// Removes all values and if `deleter` is true then calls `deleter()` on
 	/// every value.
@@ -76,13 +74,20 @@ public:
 	/// - `handle` : The handle identifying the value to remove.
 	bool erase(hxhandle_t handle_) noexcept { return this->erase(handle_, this->deleter()); }
 
+	/// Returns the number of values destroyed. Calls `callable` with a `T&`
+	/// for every value and calls the stored deleter on those for which it
+	/// returns true.
+	/// - `callable` : Returns true for values to erase.
+	template<typename callable_t_>
+	hxsize_t erase_if(callable_t_&& callable_) noexcept;
+
 	/// Returns an `hxptr` owning the value referenced by `handle`, or an empty
 	/// `hxptr` if `handle` does not resolve. The slot is freed.
 	/// - `handle` : The handle identifying the value to extract.
 	hxptr<T_, deleter_t_> extract(hxhandle_t handle_) noexcept;
 
 	/// Checks if the table is full.
-	hxattr_nodiscard hxinline hxattr_flatten bool full(void) const { return m_free_head_ == hxnull; }
+	hxattr_nodiscard hxinline hxattr_flatten bool full(void) const { return m_free_head_ == m_table_.data(); }
 
 	/// Returns the value referenced by `handle` if it resolves, otherwise hxnull.
 	/// - `handle` : The handle identifying the value to look up.
@@ -111,7 +116,7 @@ public:
 	hxhandle_t insert(hxptr<T_, deleter_u_>&& ptr_) noexcept;
 
 	/// Returns the maximum number of values that can be stored.
-	hxattr_nodiscard hxinline hxattr_flatten hxsize_t max_size(void) const { return this->capacity(); }
+	hxattr_nodiscard hxinline hxattr_flatten hxsize_t max_size(void) const { return static_cast<hxsize_t>(m_table_.get_mask_()); }
 
 	/// Clears the table without deleting any values.
 	void release_all(void) noexcept { this->clear(hxdo_not_delete()); }
@@ -119,7 +124,7 @@ public:
 	/// Sets the number of index bits and allocates memory for the table (only
 	/// for dynamic capacity).
 	/// - `bits` : The number of index bits to set for the table.
-	void set_table_size_bits(uint32_t bits_);
+	void set_size_bits(uint32_t bits_);
 
 	/// Returns the number of values in the table.
 	hxattr_nodiscard hxsize_t size(void) const { return static_cast<hxsize_t>(m_size_); }

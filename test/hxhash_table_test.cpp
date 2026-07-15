@@ -252,7 +252,7 @@ TEST_F(hxhash_table_test_f, multiple) {
 		using table_t = hxhash_table<hxtest_integer, hxdefault_delete, true>;
 		table_t table;
 		const table_t& const_table = table;
-		table.set_table_size_bits(5);
+		table.set_size_bits(5);
 		for(int i = 0; i < size_i; ++i) {
 			hxtest_integer* n = hxnew<hxtest_integer>(i);
 			table.insert(hxptr<hxtest_integer>(n));
@@ -496,7 +496,7 @@ TEST_F(hxhash_table_test_f, bucket_count_matches_table_size_bits) {
 	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	using table_dynamic_t = hxhash_table<hxtest_integer, hxdefault_delete, false>;
 	table_dynamic_t dynamic_table;
-	dynamic_table.set_table_size_bits(5);
+	dynamic_table.set_size_bits(5);
 	EXPECT_EQ(dynamic_table.bucket_count(), 32);
 }
 
@@ -604,7 +604,7 @@ TEST_F(hxhash_table_test_f, find_absent_key_in_nonempty_bucket_chain) {
 	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, true>;
 	table_t table;
-	table.set_table_size_bits(1);
+	table.set_size_bits(1);
 	table.insert(hxptr<hxtest_integer>(hxnew<hxtest_integer>(1)));
 	table.insert(hxptr<hxtest_integer>(hxnew<hxtest_integer>(3)));
 	table.insert(hxptr<hxtest_integer>(hxnew<hxtest_integer>(5)));
@@ -616,7 +616,7 @@ TEST_F(hxhash_table_test_f, insert_two_keys_same_bucket_both_findable) {
 	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, true>;
 	table_t table;
-	table.set_table_size_bits(1);
+	table.set_size_bits(1);
 	table.insert(hxptr<hxtest_integer>(hxnew<hxtest_integer>(1)));
 	table.insert(hxptr<hxtest_integer>(hxnew<hxtest_integer>(3)));
 	EXPECT_NE(table.find(1), hxnullptr);
@@ -663,7 +663,7 @@ TEST_F(hxhash_table_test_f, erase_interior_node_in_bucket_chain) {
 	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, true>;
 	table_t table;
-	table.set_table_size_bits(1);
+	table.set_size_bits(1);
 	table.insert(hxptr<hxtest_integer>(hxnew<hxtest_integer>(1)));
 	table.insert(hxptr<hxtest_integer>(hxnew<hxtest_integer>(3)));
 	table.insert(hxptr<hxtest_integer>(hxnew<hxtest_integer>(5)));
@@ -766,7 +766,7 @@ TEST_F(hxhash_table_test_f, extract_interior_node_keeps_others) {
 	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, true>;
 	table_t table;
-	table.set_table_size_bits(1);
+	table.set_size_bits(1);
 	table.insert(hxptr<hxtest_integer>(hxnew<hxtest_integer>(1)));
 	hxtest_integer* mid = hxnew<hxtest_integer>(3);
 	table.insert(hxptr<hxtest_integer>(mid));

@@ -10,9 +10,7 @@
 #ifndef HX_DOXYGEN_PARSER
 HX_BEGIN_INL_
 
-// Fixes a gcc + optimizer -Wmaybe-uninitialized bug. Every method here does
-// placement-new into m_storage_ behind an m_engaged_/has_value() check, and
-// gcc's inliner intermittently loses track of that guard.
+// Fixes gcc + optimizer + sanitizer -Wmaybe-uninitialized bug.
 #if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"

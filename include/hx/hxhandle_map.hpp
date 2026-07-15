@@ -5,7 +5,7 @@
 
 /// \file
 /// A fixed-size table mapping 64-bit generational handles to values stored in
-/// a contiguous array.
+/// a contiguous array. Also known by some as a "slot map".
 
 #include "libhatchet.h"
 

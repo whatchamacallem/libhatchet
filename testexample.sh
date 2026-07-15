@@ -35,15 +35,15 @@ CORRECT="example/example_correct.txt"
 
 run_example() {
 	# Build artifacts are not retained.
-	rm -rf "$(readlink -f build)" build
+	rm -rf "$(readlink -f build)" build; mkdir build
 	if [ "$VERBOSE" = 1 ]; then
 		meson setup build --buildtype=debug -Dc_args="$C_FLAGS" -Dcpp_args="$CPP_FLAGS" \
 			-Dcpp_link_args="$LINK_FLAGS" -Dbuild_example=true "$@"
 		ninja -v -C build
 	else
 		if ! meson setup build --buildtype=debug -Dc_args="$C_FLAGS" -Dcpp_args="$CPP_FLAGS" \
-			-Dcpp_link_args="$LINK_FLAGS" -Dbuild_example=true "$@" >meson_setup_out.txt 2>&1; then
-			cat meson_setup_out.txt
+				-Dcpp_link_args="$LINK_FLAGS" -Dbuild_example=true "$@" > build/meson_setup_out.txt 2>&1; then
+			cat build/meson_setup_out.txt
 			echo "error: meson setup failed"
 			exit 1
 		fi

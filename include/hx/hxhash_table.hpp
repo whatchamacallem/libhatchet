@@ -172,8 +172,8 @@ private:
 ///   insertion into the list will fail when a node with the same key already
 ///   exists.
 /// - `table_size_bits` : If  non-zero, `table_size_bits` configures the hash
-///   table size to `2^table_size_bits`. Otherwise use `set_table_size_bits` to
-///   to configure hash bits dynamically.
+///   table size to `2^table_size_bits`. Otherwise use `set_size_bits` to to
+///   configure hash bits dynamically.
 template<hxhash_table_concept_ node_t_,
 	typename deleter_t_=hxdefault_delete,
 	bool multi_t_ = false,
@@ -385,7 +385,7 @@ public:
 	/// Sets the number of hash bits and allocate memory for the table. (only
 	/// for dynamic capacity).
 	/// - `bits` : The number of hash bits to set for the hash table.
-	void set_table_size_bits(hxhash_t bits_);
+	void set_size_bits(hxhash_t bits_);
 
 	/// Returns the number of elements in the hash table.
 	hxattr_nodiscard hxsize_t size(void) const { return m_size_; }
