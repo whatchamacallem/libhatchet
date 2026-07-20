@@ -5,16 +5,7 @@
 
 # Adds script arguments to the compiler command line using "$@".
 
-# Prevent leaking background tasks.
-trap '{ set +o xtrace; } 2> /dev/null
-	trap - 1 2 3 6 15
-	for pid in $(pgrep -g "$$" 2>/dev/null); do
-		[ "$pid" = "$$" ] && continue
-		kill -9 "$pid" 2>/dev/null
-	done
-	exit 1
-' 1 2 3 6 15
-
+trap 'trap "" INT; pkill -9 -P $$ 2>/dev/null; wait 2>/dev/null; exit 1' INT
 set -eu
 
 export POSIXLY_CORRECT=1

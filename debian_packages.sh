@@ -10,21 +10,12 @@
 # launched when a web page is generated, if available, but is not required or
 # installed here. emcc is required for testwasm.sh but is not installed here.
 
-# Prevent leaking background tasks.
-trap '{ set +o xtrace; } 2> /dev/null
-	trap - 1 2 3 6 15
-	for HX_PID_ in $(pgrep -g "$$" 2>/dev/null); do
-		[ "$HX_PID_" = "$$" ] && continue
-		kill -9 "$HX_PID_" 2>/dev/null
-	done
-	exit 1
-' 1 2 3 6 15
-
+trap 'trap "" INT; pkill -9 -P $$ 2>/dev/null; wait 2>/dev/null; exit 1' INT
 set -euo pipefail
 
 # bash only line art.
 HX_COLORS_=(208 214 220 226 190 154 118 82 83 84 85 86 87 45 39 33
-		27 33 39 45 87 86 85 84 83 82 118 154 190 226 220 214)
+			27 33 39 45 87 86 85 84 83 82 118 154 190 226 220 214)
 HX_TOTAL_COLORS_=${#HX_COLORS_[@]}
 HX_COLOR_OFFSET_=0
 

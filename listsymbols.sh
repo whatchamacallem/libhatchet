@@ -3,9 +3,10 @@
 # SPDX-License-Identifier: MIT
 # This file is licensed under the terms of the LICENSE.md file.
 
-set -eu
-
 export POSIXLY_CORRECT=1
+
+trap 'trap "" INT; pkill -9 -P $$ 2>/dev/null; wait 2>/dev/null; exit 1' INT
+set -eu
 
 if [ ! -f build/hxtest ]; then
 	echo "build/hxtest not found!"

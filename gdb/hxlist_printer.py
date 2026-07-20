@@ -23,10 +23,6 @@ from typing import Iterator, Optional, Set, Tuple
 #		hxlist_node* m_tail_;      // points to last node, or &m_sentinel_ when empty
 #	};
 #
-# The links store addresses of the hxlist_node base subobject of each node.
-#
-# GDB sources every printer script into one shared Python namespace, so all
-# module level symbols here must be unique across the gdb directory.
 
 def _hxlist_find_link_base(node_type: gdb.Type) -> Optional[gdb.Type]:
 	for field in node_type.fields():

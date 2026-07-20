@@ -6,16 +6,7 @@
 # Requires the the emsdk. After installing the emsdk it is recommended to add it
 # to your .bashrc.
 
-# Prevent leaking background tasks.
-trap '{ set +o xtrace; } 2> /dev/null
-	trap - 1 2 3 6 15
-	for HX_PID_ in $(pgrep -g "$$" 2>/dev/null); do
-		[ "$HX_PID_" = "$$" ] && continue
-		kill -9 "$HX_PID_" 2>/dev/null
-	done
-	exit 1
-' 1 2 3 6 15
-
+trap 'trap "" INT; pkill -9 -P $$ 2>/dev/null; wait 2>/dev/null; exit 1' INT
 set -eu
 
 export POSIXLY_CORRECT=1

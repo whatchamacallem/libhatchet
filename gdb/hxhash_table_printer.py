@@ -28,14 +28,14 @@ from typing import Iterator, Optional, Tuple
 #	class hxhash_table : private deleter_t_ {
 #		// ...
 #		hxsize_t m_size_;
-#		hxhash_table_internal_allocator_<node_t_, table_size_bits_> m_table_;
+#		hxpow2_allocator_<node_t_, table_size_bits_> m_table_;
 #	};
 #
-# hxhash_table_internal_allocator_ derives from hxallocator<node_t_*, ...> and
-# holds the bucket array. The fourth template argument table_size_bits_ selects
-# between two layouts. Dynamic layout is selected when table_size_bits_ == 0
-# and the bucket count is m_capacity_. Otherwise the layout is static and the
-# bucket count is 2^table_size_bits_. Each bucket slot is a node_t_*.
+# hxpow2_allocator_ derives from hxallocator<node_t_*, ...> and holds the bucket
+# array. The fourth template argument table_size_bits_ selects between two
+# layouts. Dynamic layout is selected when table_size_bits_ == 0 and the bucket
+# count is m_capacity_. Otherwise the layout is static and the bucket count is
+# 2^table_size_bits_. Each bucket slot is a node_t_*.
 #
 # WARNING: These fields are not guaranteed by the contract. If the client code
 # does not use the provided base classes then the pretty printer may not be
@@ -48,9 +48,6 @@ from typing import Iterator, Optional, Tuple
 #
 # hxhash_table_map_node additionally has:
 #   value_t_               m_value_;
-#
-# GDB sources every printer script into one shared Python namespace, so all
-# module level symbols here must be unique across the gdb directory.
 
 def _hxhash_table_has_value_field(node_type: gdb.Type) -> bool:
 	for field in node_type.fields():

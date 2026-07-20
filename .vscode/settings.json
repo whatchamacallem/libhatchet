@@ -155,6 +155,7 @@
         "Pico",
         "picotool",
         "PIDS",
+        "pkill",
         "pointee",
         "popd",
         "procps",
