@@ -6,9 +6,9 @@
 # Prevent leaking background tasks.
 trap '{ set +o xtrace; } 2> /dev/null
 	trap - 1 2 3 6 15
-	for pid in $(pgrep -g "$$" 2>/dev/null); do
-		[ "$pid" = "$$" ] && continue
-		kill -9 "$pid" 2>/dev/null
+	for HX_PID_ in $(pgrep -g "$$" 2>/dev/null); do
+		[ "$HX_PID_" = "$$" ] && continue
+		kill -9 "$HX_PID_" 2>/dev/null
 	done
 	exit 1
 ' 1 2 3 6 15
@@ -17,32 +17,34 @@ set -eu
 
 export POSIXLY_CORRECT=1
 
-VERBOSE=""
+HX_VERBOSE_=""
 if [ "${1:-}" = "--verbose" ]; then
-	VERBOSE="--verbose"
+	HX_VERBOSE_="--verbose"
 elif [ -n "${1:-}" ]; then
 	echo "Usage: $0 [--verbose]"
 	exit 1
 fi
 
 # Builds a module that uses MUSL lic headers only.
-C_FLAGS="-DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG -m32 -ggdb3"
-CPP_FLAGS="$C_FLAGS -DHX_USE_LIBCXX=0 -DHX_USE_NAMESPACE=hx -DHX_USE_CONSOLE=2 \
+HX_C_FLAGS_="-DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG -m32 -ggdb3"
+HX_CPP_FLAGS_="$HX_C_FLAGS_ -DHX_USE_LIBCXX=0 -DHX_USE_NAMESPACE=hx -DHX_USE_CONSOLE=2 \
 	-std=c++23 -nostdinc++ -fno-exceptions -fno-rtti"
-LINK_FLAGS="-m32 -nodefaultlibs -lc -lpthread -lm"
+HX_LINK_FLAGS_="-m32 -nodefaultlibs -lc -lpthread -lm"
 
-CORRECT="example/example_correct.txt"
+HX_CORRECT_="example/example_correct.txt"
 
 run_example() {
 	# Build artifacts are not retained.
 	rm -rf "$(readlink -f build)" build; mkdir build
-	if [ "$VERBOSE" = 1 ]; then
-		meson setup build --buildtype=debug -Dc_args="$C_FLAGS" -Dcpp_args="$CPP_FLAGS" \
-			-Dcpp_link_args="$LINK_FLAGS" -Dbuild_example=true "$@"
+	if [ "$HX_VERBOSE_" = 1 ]; then
+		meson setup build --buildtype=debug -Dc_args="$HX_C_FLAGS_"       \
+			-Dcpp_args="$HX_CPP_FLAGS_" -Dcpp_link_args="$HX_LINK_FLAGS_" \
+			-Dbuild_example=true "$@"
 		ninja -v -C build
 	else
-		if ! meson setup build --buildtype=debug -Dc_args="$C_FLAGS" -Dcpp_args="$CPP_FLAGS" \
-				-Dcpp_link_args="$LINK_FLAGS" -Dbuild_example=true "$@" > build/meson_setup_out.txt 2>&1; then
+		if ! meson setup build --buildtype=debug -Dc_args="$HX_C_FLAGS_"      \
+				-Dcpp_args="$HX_CPP_FLAGS_" -Dcpp_link_args="$HX_LINK_FLAGS_" \
+				-Dbuild_example=true "$@" > build/meson_setup_out.txt 2>&1; then
 			cat build/meson_setup_out.txt
 			echo "error: meson setup failed"
 			exit 1
@@ -57,14 +59,14 @@ run_example() {
 	cp example/example.cfg build
 	ln -sf example/hxexample build/hxtest
 
-	if [ ! -f "$CORRECT" ]; then
-		echo "WARNING: regenerating $CORRECT..."
-		echo exit | (cd build && ./hxtest) 2>/dev/null > "$CORRECT"
+	if [ ! -f "$HX_CORRECT_" ]; then
+		echo "WARNING: regenerating $HX_CORRECT_..."
+		echo exit | (cd build && ./hxtest) 2>/dev/null > "$HX_CORRECT_"
 	fi
 
 	echo exit | (cd build && ./hxtest) 2>/dev/null > build/hxexample_out.txt
-	if ! diff -u "$CORRECT" build/hxexample_out.txt; then
-		echo "error: output differs from $CORRECT"
+	if ! diff -u "$HX_CORRECT_" build/hxexample_out.txt; then
+		echo "error: output differs from $HX_CORRECT_"
 		exit 1
 	fi
 }

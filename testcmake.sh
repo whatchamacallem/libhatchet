@@ -8,9 +8,9 @@
 # Prevent leaking background tasks.
 trap '{ set +o xtrace; } 2> /dev/null
 	trap - 1 2 3 6 15
-	for pid in $(pgrep -g "$$" 2>/dev/null); do
-		[ "$pid" = "$$" ] && continue
-		kill -9 "$pid" 2>/dev/null
+	for HX_PID_ in $(pgrep -g "$$" 2>/dev/null); do
+		[ "$HX_PID_" = "$$" ] && continue
+		kill -9 "$HX_PID_" 2>/dev/null
 	done
 	exit 1
 ' 1 2 3 6 15
@@ -83,7 +83,7 @@ cd ..
 # Depends on -DCMAKE_EXPORT_COMPILE_COMMANDS=ON above. These two have to happen
 # together.
 echo "Run clang-tidy..."
-run-clang-tidy -quiet -j 0 -p build src/*.cpp test/*.c test/*.cpp 2>&1 \
+run-clang-tidy -quiet -j 0 -p build src/*.cpp test/*.c test/*.cpp 2>&1        \
 	| grep -vE '^Running clang-tidy for|^[0-9]+ warnings generated\.$|^\[|^$' \
 	&& { echo "clang-tidy errors."; exit 1; }
 

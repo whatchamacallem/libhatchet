@@ -5,15 +5,15 @@
 
 set -eu
 
-SCRIPT_NAME=$(basename "$0")
-PROJECT="$(basename "$PWD")"
-DATE="$(date +%Y-%m-%d)"
-ARCHIVE="$PROJECT-$DATE.git.txz"
+HX_SCRIPT_NAME_=$(basename "$0")
+HX_PROJECT_="$(basename "$PWD")"
+HX_DATE_="$(date +%Y-%m-%d)"
+HX_ARCHIVE_="$HX_PROJECT_-$HX_DATE_.git.txz"
 
 # Print help if the first arg starts with a - or there is more than one.
 if [ "$#" -gt 1 ] || { [ "$#" -eq 1 ] && [ "${1#-}" != "$1" ]; }; then
-	echo "$SCRIPT_NAME [destination-directory]"
-	echo "Will create $ARCHIVE in the destination-directory if"
+	echo "$HX_SCRIPT_NAME_ [destination-directory]"
+	echo "Will create $HX_ARCHIVE_ in the destination-directory if"
 	echo "provided, otherwise ~/Backups/ if it exists and in ~/ otherwise. Restores all"
 	echo "files if $0 is the only file in the directory."
 	exit 1
@@ -26,13 +26,13 @@ if [ ! -d ".git" ]; then
 fi
 
 # Extract archive if this script is the only non-hidden file.
-if [ "$(command ls)" = "$SCRIPT_NAME" ]; then
+if [ "$(command ls)" = "$HX_SCRIPT_NAME_" ]; then
 	git fsck
 	git restore .
-	echo "Extracted all files in $PROJECT."
+	echo "Extracted all files in $HX_PROJECT_."
 
-	FS_TYPE=$(stat -f -c "%T" . 2>/dev/null) || FS_TYPE=""
-	if [ "$FS_TYPE" = "v9fs" ] || [ "$FS_TYPE" = "fuseblk" ] || [ "$FS_TYPE" = "ntfs" ]; then
+	HX_FS_TYPE_=$(stat -f -c "%T" . 2>/dev/null) || HX_FS_TYPE_=""
+	if [ "$HX_FS_TYPE_" = "v9fs" ] || [ "$HX_FS_TYPE_" = "fuseblk" ] || [ "$HX_FS_TYPE_" = "ntfs" ]; then
 		echo "Windows detected. Setting config core.fileMode false."
 		git config core.fileMode false
 	fi
@@ -41,14 +41,14 @@ fi
 
 # Create archive.
 if [ "$#" -eq 1 ]; then
-	DESTINATION="$1"
+	HX_DESTINATION_="$1"
 elif [ -d "$HOME/Backups" ]; then
-	DESTINATION="$HOME/Backups"
+	HX_DESTINATION_="$HOME/Backups"
 else
-	DESTINATION="$HOME"
+	HX_DESTINATION_="$HOME"
 fi
-if [ ! -d "$DESTINATION" ]; then
-	echo "Destination directory not found: $DESTINATION" >&2
+if [ ! -d "$HX_DESTINATION_" ]; then
+	echo "Destination directory not found: $HX_DESTINATION_" >&2
 	exit 1
 fi
 
@@ -61,7 +61,7 @@ git reflog expire --expire=24.hours.ago --expire-unreachable=24.hours.ago --all
 git gc --prune=now --aggressive
 
 # Save everything including local config.
-tar -cJf "$DESTINATION/$ARCHIVE" -C ".." "$PROJECT/$SCRIPT_NAME" "$PROJECT/.git"
+tar -cJf "$HX_DESTINATION_/$HX_ARCHIVE_" -C ".." "$HX_PROJECT_/$HX_SCRIPT_NAME_" "$HX_PROJECT_/.git"
 
 printf "Wrote: "
-ls -h1s "$DESTINATION/$ARCHIVE"
+ls -h1s "$HX_DESTINATION_/$HX_ARCHIVE_"

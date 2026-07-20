@@ -10,18 +10,18 @@
 # Prevent leaking background tasks.
 trap '{ set +o xtrace; } 2> /dev/null
 	trap - 1 2 3 6 15
-	for pid in $(pgrep -g "$$" 2>/dev/null); do
-		[ "$pid" = "$$" ] && continue
-		kill -9 "$pid" 2>/dev/null
+	for HX_PID_ in $(pgrep -g "$$" 2>/dev/null); do
+		[ "$HX_PID_" = "$$" ] && continue
+		kill -9 "$HX_PID_" 2>/dev/null
 	done
 	exit 1
 ' 1 2 3 6 15
 
 set -euo pipefail
 
-VERBOSE=""
+HX_VERBOSE_=""
 if [ "${1:-}" = "--verbose" ]; then
-	VERBOSE="--verbose"
+	HX_VERBOSE_="--verbose"
 elif [ -n "${1:-}" ]; then
 	echo "Usage: $0 [--verbose]"
 	exit 1
@@ -39,7 +39,8 @@ fi
 
 # The test directory should not use names ending with an underscore. Those names
 # are reserved for internal symbols. Two underscores are allowed.
-if grep -nE --exclude=hxtest_main.cpp '(^|[^[:alnum:]_])[[:alpha:]_][[:alnum:]_]*[[:alnum:]]_([^[:alnum:]_]|$)' \
+if grep -nE --exclude=hxtest_main.cpp                                             \
+		'(^|[^[:alnum:]_])[[:alpha:]_][[:alnum:]_]*[[:alnum:]]_([^[:alnum:]_]|$)' \
 		test/*.c test/*.cpp test/*.h test/*.hpp test/*.inl >&2; then
 	echo "error: Alphanumeric sequences ending with '_' are not allowed in the test directory."
 	exit 1
@@ -57,9 +58,9 @@ fi
 
 # Some keywords are implemented when the standard library is not available.
 # These are not.
-KEYWORDS='(^|[^[:alnum:]_])(typeid|nullptr|co_await|co_yield|co_return|throw)([^[:alnum:]_]|$)'
+HX_KEYWORDS_='(^|[^[:alnum:]_])(typeid|nullptr|co_await|co_yield|co_return|throw)([^[:alnum:]_]|$)'
 if grep -nEHIR --include='*.cpp' --include='*.h' --include='*.hpp' --include='*.inl' \
-		"$KEYWORDS" include src test >&2; then
+		"$HX_KEYWORDS_" include src test >&2; then
 	echo "error: C++ keywords must not depend on the C++ standard library."
 	exit 1
 fi
@@ -72,36 +73,36 @@ fi
 
 # Use an array to avoid globbing. example_correct.txt holds captured ANSI
 # escapes and is exempted.
-TEXT_FILES=(! -name example_correct.txt \(
+HX_TEXT_FILES_=(! -name example_correct.txt \(
 	-name .clang-tidy -o -name .gdbinit -o -name .gitattributes
 	-o -name .gitignore -o -name '*.bat' -o -name '*.c' -o -name '*.cpp'
 	-o -name '*.h' -o -name '*.hpp' -o -name '*.inl' -o -name '*.json'
 	-o -name '*.md' -o -name '*.py' -o -name '*.sh' -o -name '*.txt' \))
 
 # Check for trailing whitespace.
-if find . -type f "${TEXT_FILES[@]}" -exec grep -nP '[ \t]+$' {} + >&2; then
+if find . -type f "${HX_TEXT_FILES_[@]}" -exec grep -nP '[ \t]+$' {} + >&2; then
 	echo "error: Trailing whitespace found."
 	exit 1
 fi
 
 # Check for non-ASCII characters other than the allowed set. No Unicode BOM allowed.
-NON_ASCII_ALLOW='©Θ…²₁₂≤≥❌📁🪓'
-if find . -type f \( "${TEXT_FILES[@]}" \) -exec grep -nP "[^[:ascii:]$NON_ASCII_ALLOW]" {} + >&2; then
-	echo "error: Non-ASCII characters other than '$NON_ASCII_ALLOW' found."
+HX_NON_ASCII_ALLOW_='©Θ…²₁₂≤≥❌📁🪓'
+if find . -type f \( "${HX_TEXT_FILES_[@]}" \) -exec grep -nP "[^[:ascii:]$HX_NON_ASCII_ALLOW_]" {} + >&2; then
+	echo "error: Non-ASCII characters other than '$HX_NON_ASCII_ALLOW_' found."
 	exit 1
 fi
 
 # Reject ASCII control characters below 128 that are illegal in C/C++ source.
-if find . -type f "${TEXT_FILES[@]}" \
+if find . -type f "${HX_TEXT_FILES_[@]}" \
 		-exec grep -nP '[\x00-\x08\x0b-\x1f\x7f]' {} + >&2; then
 	echo "error: Illegal control characters found in C/C++ source."
 	exit 1
 fi
 
 # Check text files end with exactly one newline.
-find . -type f "${TEXT_FILES[@]}" | while read -r FILE; do
-	if [[ $(tail -c 2 "$FILE" | tr -dc '\n' | wc -c) -ne 1 ]]; then
-		echo "error: Text files must end with exactly one newline: $FILE"
+find . -type f "${HX_TEXT_FILES_[@]}" | while read -r HX_FILE_; do
+	if [[ $(tail -c 2 "$HX_FILE_" | tr -dc '\n' | wc -c) -ne 1 ]]; then
+		echo "error: Text files must end with exactly one newline: $HX_FILE_"
 		exit 1
 	fi
 done
@@ -110,15 +111,15 @@ PS4='\e[38;5;208m[${SECONDS}s] ${BASH_SOURCE}:${LINENO}: \e[0m'
 set -o xtrace
 
 git fsck
-./testcmake.sh $VERBOSE
-./testcoverage.sh $VERBOSE
+./testcmake.sh $HX_VERBOSE_
+./testcoverage.sh $HX_VERBOSE_
 ./testerrorhandling.sh
-./testexample.sh $VERBOSE
+./testexample.sh $HX_VERBOSE_
 ./testmatrix.sh
-./teststrip.sh $VERBOSE
+./teststrip.sh $HX_VERBOSE_
 ./testwasm.sh
 
-./debugbuild.sh $VERBOSE --grind --run
+./debugbuild.sh $HX_VERBOSE_ --grind --run
 doxygen
 
 ./clean.sh

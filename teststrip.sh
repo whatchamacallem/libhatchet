@@ -6,9 +6,9 @@
 # Prevent leaking background tasks.
 trap '{ set +o xtrace; } 2> /dev/null
 	trap - 1 2 3 6 15
-	for pid in $(pgrep -g "$$" 2>/dev/null); do
-		[ "$pid" = "$$" ] && continue
-		kill -9 "$pid" 2>/dev/null
+	for HX_PID_ in $(pgrep -g "$$" 2>/dev/null); do
+		[ "$HX_PID_" = "$$" ] && continue
+		kill -9 "$HX_PID_" 2>/dev/null
 	done
 	exit 1
 ' 1 2 3 6 15
@@ -19,21 +19,21 @@ export POSIXLY_CORRECT=1
 
 # Proves test suite can run without non-placement ::new() and ::delete. This is
 # because there may be no general purpose allocator at all.
-BUILD="-DHX_HARDENING_MODE=HX_HARDENING_MODE_NONE -DHX_PROVIDE_NEW_DELETE=0 \
+HX_BUILD_="-DHX_HARDENING_MODE=HX_HARDENING_MODE_NONE -DHX_PROVIDE_NEW_DELETE=0 \
 	-DHX_USE_LIBCXX=0 -DHX_USE_LOGGING=1 -DHX_USE_THREADS=11"
 
-ERRORS="-Wall -Wextra -pedantic-errors -Werror -Wfatal-errors -Wcast-qual   \
-	-Wdisabled-optimization -Wshadow -Wundef -Wconversion -Wdate-time	   \
+HX_ERRORS_="-Wall -Wextra -pedantic-errors -Werror -Wfatal-errors -Wcast-qual \
+	-Wdisabled-optimization -Wshadow -Wundef -Wconversion -Wdate-time         \
 	-Wmissing-declarations -Wno-c2y-extensions -Wno-unknown-warning-option"
 
 # 32-bit MUSL is not tested as it is unsupported on Ubuntu.
-FLAGS="-Os -march=native -static -g -ffunction-sections -fdata-sections -ffast-math"
+HX_FLAGS_="-Os -march=native -static -g -ffunction-sections -fdata-sections -ffast-math"
 
-HX_DIR=$PWD
+HX_DIR_=$PWD
 
-CXX23="23"
+HX_CXX23_="23"
 if [ -z "$(echo | musl-gcc -std=c++23 -dM -E -x c++ - 2>/dev/null | grep __cplusplus)" ]; then
-	CXX23=""
+	HX_CXX23_=""
 	echo "C++23 not supported..."
 fi
 
@@ -44,19 +44,19 @@ if [ "${1:-}" = "--verbose" ]; then
 	set -o xtrace
 fi
 
-musl-gcc $BUILD $ERRORS $FLAGS -I"$HX_DIR/include" -std=c17 -c "$HX_DIR"/test/*.c
+musl-gcc $HX_BUILD_ $HX_ERRORS_ $HX_FLAGS_ -I"$HX_DIR_/include" -std=c17 -c "$HX_DIR_"/test/*.c
 
 # Test every supported version of the standard without libc++.
-for VERSION in 11 14 17 20 $CXX23; do
+for HX_VERSION_ in 11 14 17 20 $HX_CXX23_; do
 
-musl-gcc $BUILD $ERRORS $FLAGS -I"$HX_DIR/include" -std=c++$VERSION -nostdinc++ \
-	-fno-exceptions -fno-rtti -flto=auto -c "$HX_DIR"/src/*.cpp "$HX_DIR"/test/*.cpp
+musl-gcc $HX_BUILD_ $HX_ERRORS_ $HX_FLAGS_ -I"$HX_DIR_/include" -std=c++$HX_VERSION_ -nostdinc++ \
+	-fno-exceptions -fno-rtti -flto=auto -c "$HX_DIR_"/src/*.cpp "$HX_DIR_"/test/*.cpp
 
 # -Wno-maybe-uninitialized is passed to the link time optimizer because it has
 # false positives. -Wl,--gc-sections and -flto=12 should reduce size.
-musl-gcc $BUILD $ERRORS -Wno-maybe-uninitialized $FLAGS -std=c++$VERSION -nostdinc++ \
-	-fno-exceptions -fno-rtti -Wl,--gc-sections -nodefaultlibs -flto=auto *.o -lc	\
-	-lpthread -lm -o hxtest
+musl-gcc $HX_BUILD_ $HX_ERRORS_ -Wno-maybe-uninitialized $HX_FLAGS_ -std=c++$HX_VERSION_  \
+	-nostdinc++ -fno-exceptions -fno-rtti -Wl,--gc-sections -nodefaultlibs -flto=auto *.o \
+	-lc -lpthread -lm -o hxtest
 
 done
 
@@ -82,8 +82,8 @@ if [ "${1:-}" = "--verbose" ]; then
 	./listsymbols.sh
 fi
 
-SYMBOLS=$(nm --radix=d --print-size build/hxtest)
-echo "$SYMBOLS" | awk 'NF == 4 && $4 ~ /hx/ && $4 !~ /test/ && !seen[$1]++ {total += $2} \
+HX_SYMBOLS_=$(nm --radix=d --print-size build/hxtest)
+echo "$HX_SYMBOLS_" | awk 'NF == 4 && $4 ~ /hx/ && $4 !~ /test/ && !seen[$1]++ {total += $2} \
 	END {printf "= Total non-test libhatchet bytes: %d\n", total}'
 
 size build/hxtest-strip

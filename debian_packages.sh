@@ -13,9 +13,9 @@
 # Prevent leaking background tasks.
 trap '{ set +o xtrace; } 2> /dev/null
 	trap - 1 2 3 6 15
-	for pid in $(pgrep -g "$$" 2>/dev/null); do
-		[ "$pid" = "$$" ] && continue
-		kill -9 "$pid" 2>/dev/null
+	for HX_PID_ in $(pgrep -g "$$" 2>/dev/null); do
+		[ "$HX_PID_" = "$$" ] && continue
+		kill -9 "$HX_PID_" 2>/dev/null
 	done
 	exit 1
 ' 1 2 3 6 15
@@ -23,37 +23,37 @@ trap '{ set +o xtrace; } 2> /dev/null
 set -euo pipefail
 
 # bash only line art.
-colors=(208 214 220 226 190 154 118 82 83 84 85 86 87 45 39 33
+HX_COLORS_=(208 214 220 226 190 154 118 82 83 84 85 86 87 45 39 33
 		27 33 39 45 87 86 85 84 83 82 118 154 190 226 220 214)
-total_colors=${#colors[@]}
-color_offset=0
+HX_TOTAL_COLORS_=${#HX_COLORS_[@]}
+HX_COLOR_OFFSET_=0
 
 separator() {
-	for((i=40; i--;)); do
-		local color_index=$(((color_offset + i) % total_colors))
-		echo -ne "\033[38;5;${colors[color_index]}m--"
+	for((HX_I_=40; HX_I_--;)); do
+		local HX_COLOR_INDEX_=$(((HX_COLOR_OFFSET_ + HX_I_) % HX_TOTAL_COLORS_))
+		echo -ne "\033[38;5;${HX_COLORS_[HX_COLOR_INDEX_]}m--"
 	done
 	echo -e "\033[0m"
-	((color_offset += 3))
+	((HX_COLOR_OFFSET_ += 3))
 }
 
 separator ---------------------------------------------------------------------
-CMD=$(echo "sudo apt install                                         \
+HX_CMD_=$(echo "sudo apt install                                     \
 	ccache        clang        clang-tidy   cmake    doxygen         \
 	g++           g++-multilib gcc-multilib gcovr    gdb             \
 	gdb-multiarch libc++-dev   llvm         llvm-dev musl            \
 	musl-dev      musl-tools   ninja-build  procps   universal-ctags \
 " | tr -s '[:space:]' ' ')
-echo "$CMD" | fold -s
+echo "$HX_CMD_" | fold -s
 
 separator ---------------------------------------------------------------------
-$CMD
+$HX_CMD_
 
 separator ---------------------------------------------------------------------
-for CMD in clang cmake ctags doxygen gcc gcovr musl-gcc ninja pgrep python3
+for HX_CMD_ in clang cmake ctags doxygen gcc gcovr musl-gcc ninja pgrep python3
 do
-	echo "$CMD --version"
-	$CMD --version
+	echo "$HX_CMD_ --version"
+	$HX_CMD_ --version
 	separator -----------------------------------------------------------------
 done
 

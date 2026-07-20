@@ -6,7 +6,7 @@
 ::
 :: Set-Location "...\libhatchet"; & cmd.exe /c "...\libhatchet\testmsvc.bat"
 ::
-:: Where "..."" is replaced with the path components leading to the script.
+:: Where "..." is replaced with the path components leading to the script.
 ::
 :: The full absolute path to the .bat file is required because cmd.exe does not
 :: search the current directory for bare names when invoked from PowerShell.

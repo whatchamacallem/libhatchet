@@ -23,17 +23,17 @@ export POSIXLY_CORRECT=1
 export MALLOC_CHECK_=3
 
 # Fatal warning flags.
-ERRORS="-Wall -Wextra -pedantic-errors -Werror -Wfatal-errors -Wcast-qual   \
-	-Wdisabled-optimization -Wshadow -Wundef -Wconversion -Wdate-time       \
+HX_ERRORS_="-Wall -Wextra -pedantic-errors -Werror -Wfatal-errors -Wcast-qual \
+	-Wdisabled-optimization -Wshadow -Wundef -Wconversion -Wdate-time         \
 	-Winvalid-utf8 -Wmissing-declarations -Wno-c2y-extensions"
 
-FLAGS="-DHX_USE_FILE_IO=2 -ffast-math -ggdb3 -D_FORTIFY_SOURCE=3"
+HX_FLAGS_="-DHX_USE_FILE_IO=2 -ffast-math -ggdb3 -D_FORTIFY_SOURCE=3"
 
-SAN_UNDEF="-fsanitize=undefined,address"
-SAN_THREAD="-fsanitize=thread"
-SAN_MEMORY="-fsanitize=memory -fsanitize-memory-track-origins"
+HX_SAN_UNDEF_="-fsanitize=undefined,address"
+HX_SAN_THREAD_="-fsanitize=thread"
+HX_SAN_MEMORY_="-fsanitize=memory -fsanitize-memory-track-origins"
 
-HX_DIR=$PWD
+HX_DIR_=$PWD
 
 run_hxtest() {
 	if ./hxtest runtests > console_output.txt 2>&1; then
@@ -53,53 +53,54 @@ rm -rf "$(readlink -f build)" build; ln -s "$(mktemp -d)" build && cd build
 # -- Clang ---------------------------------------------------------------------
 
 run_clang_build() {
-	OPT=$1; SAN=$2; shift 2
-	echo "clang c17/c++23 -O$OPT $SAN $* ..."
+	HX_OPT_=$1; HX_SAN_=$2; shift 2
+	echo "clang c17/c++23 -O$HX_OPT_ $HX_SAN_ $* ..."
 
 	# compile C17
-	clang -I"$HX_DIR/include" -DHX_HARDENING_MODE=3-$OPT -O$OPT $FLAGS $ERRORS $SAN   \
-		-fdiagnostics-absolute-paths -pthread -std=c17 "$@" -c "$HX_DIR"/test/*.c
+	clang -I"$HX_DIR_/include" -DHX_HARDENING_MODE=3-$HX_OPT_ -O$HX_OPT_ $HX_FLAGS_ \
+		$HX_ERRORS_ $HX_SAN_ -fdiagnostics-absolute-paths -pthread -std=c17 "$@"    \
+		-c "$HX_DIR_"/test/*.c
 
 	# generate C++23 pch. clang does this automatically when a c++ header file
 	# is the target. This is just a test.
-	clang++ -I"$HX_DIR/include" -DHX_HARDENING_MODE=3-$OPT -O$OPT $FLAGS $ERRORS $SAN \
-		-DHX_USE_THREADS=1 -pthread -std=c++23 -fno-exceptions                        \
-		-fdiagnostics-absolute-paths "$@" "$HX_DIR"/include/hx/hxtest.hpp             \
+	clang++ -I"$HX_DIR_/include" -DHX_HARDENING_MODE=3-$HX_OPT_ -O$HX_OPT_ $HX_FLAGS_ \
+		$HX_ERRORS_ $HX_SAN_ -DHX_USE_THREADS=1 -pthread -std=c++23 -fno-exceptions   \
+		-fdiagnostics-absolute-paths "$@" "$HX_DIR_"/include/hx/hxtest.hpp            \
 		-o hxtest.hpp.pch
 
 	# compile C++23 and link
-	clang++ -I"$HX_DIR/include" -DHX_HARDENING_MODE=3-$OPT -O$OPT $FLAGS $ERRORS $SAN \
-		-DHX_USE_THREADS=1 -pthread -std=c++23 -fno-exceptions                        \
+	clang++ -I"$HX_DIR_/include" -DHX_HARDENING_MODE=3-$HX_OPT_ -O$HX_OPT_ $HX_FLAGS_ \
+		$HX_ERRORS_ $HX_SAN_ -DHX_USE_THREADS=1 -pthread -std=c++23 -fno-exceptions   \
 		-fdiagnostics-absolute-paths "$@" -include-pch hxtest.hpp.pch                 \
-		"$HX_DIR"/src/*.cpp "$HX_DIR"/test/*.cpp *.o -lpthread -lstdc++ -o hxtest
+		"$HX_DIR_"/src/*.cpp "$HX_DIR_"/test/*.cpp *.o -lpthread -lstdc++ -o hxtest
 
 	run_hxtest
 }
 
 # Test undefined behavior/address use at all build levels with clang. Uses a
 # pch.
-for I in 0 1 2 3; do
-	run_clang_build "$I" "$SAN_UNDEF" "$@"
+for HX_I_ in 0 1 2 3; do
+	run_clang_build "$HX_I_" "$HX_SAN_UNDEF_" "$@"
 done
 
 # Run the thread sanitizer with all optimizations on.
-run_clang_build 3 "$SAN_THREAD" "$@"
+run_clang_build 3 "$HX_SAN_THREAD_" "$@"
 
 # Run the memory sanitizer in debug and with all optimizations on.
-run_clang_build 3 "$SAN_MEMORY" "$@"
-run_clang_build 0 "$SAN_MEMORY" "$@"
+run_clang_build 3 "$HX_SAN_MEMORY_" "$@"
+run_clang_build 0 "$HX_SAN_MEMORY_" "$@"
 
 # -- GCC ----------------------------------------------------------------------
 
-for I in 0 1 2 3; do
-echo "gcc c99/c++11 -O$I $* ..."
+for HX_I_ in 0 1 2 3; do
+echo "gcc c99/c++11 -O$HX_I_ $* ..."
 
-gcc -I"$HX_DIR/include" -DHX_HARDENING_MODE=3-$I -O$I $FLAGS $ERRORS $SAN_UNDEF \
-	-pthread -std=c99 -m32 "$@" -c "$HX_DIR"/test/*.c
+gcc -I"$HX_DIR_/include" -DHX_HARDENING_MODE=3-$HX_I_ -O$HX_I_ $HX_FLAGS_ $HX_ERRORS_ \
+	$HX_SAN_UNDEF_ -pthread -std=c99 -m32 "$@" -c "$HX_DIR_"/test/*.c
 
-gcc -I"$HX_DIR/include" -DHX_HARDENING_MODE=3-$I -O$I $FLAGS $ERRORS $SAN_UNDEF \
-	-pthread -std=c++11 -fno-exceptions -fno-rtti "$@" "$HX_DIR"/src/*.cpp      \
-	"$HX_DIR"/test/*.cpp *.o -lpthread -lstdc++ -m32 -o hxtest
+gcc -I"$HX_DIR_/include" -DHX_HARDENING_MODE=3-$HX_I_ -O$HX_I_ $HX_FLAGS_ $HX_ERRORS_ \
+	$HX_SAN_UNDEF_ -pthread -std=c++11 -fno-exceptions -fno-rtti "$@"                 \
+	"$HX_DIR_"/src/*.cpp "$HX_DIR_"/test/*.cpp *.o -lpthread -lstdc++ -m32 -o hxtest
 
 run_hxtest
 done
