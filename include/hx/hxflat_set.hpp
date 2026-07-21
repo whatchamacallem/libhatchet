@@ -211,7 +211,8 @@ private:
 /// `bool hxkey_equal(hxflat_set<K>& x, hxflat_set<K>& y)` - Compares the
 /// contents of `x` and `y` for equivalence.
 template<typename key_t_, typename compare_t_, bool multi_t_,
-	hxsize_t capacity_x_, hxsize_t capacity_y_> bool hxkey_equal(
+	hxsize_t capacity_x_, hxsize_t capacity_y_>
+hxinline hxattr_flatten bool hxkey_equal(
 		const hxflat_set<key_t_, compare_t_, multi_t_, capacity_x_>& x_,
 		const hxflat_set<key_t_, compare_t_, multi_t_, capacity_y_>& y_) {
 	return x_.equal(y_);
@@ -221,7 +222,8 @@ template<typename key_t_, typename compare_t_, bool multi_t_,
 /// contents of `x` and `y` lexicographically using `hxkey_equal` and
 /// `hxkey_less` on each element.
 template<typename key_t_, typename compare_t_, bool multi_t_,
-	hxsize_t capacity_x_, hxsize_t capacity_y_> bool hxkey_less(
+	hxsize_t capacity_x_, hxsize_t capacity_y_>
+hxinline hxattr_flatten bool hxkey_less(
 		const hxflat_set<key_t_, compare_t_, multi_t_, capacity_x_>& x_,
 		const hxflat_set<key_t_, compare_t_, multi_t_, capacity_y_>& y_) {
 	return x_.less(y_);
@@ -230,10 +232,11 @@ template<typename key_t_, typename compare_t_, bool multi_t_,
 /// `void hxswap(hxflat_set<K>& x, hxflat_set<K>& y)` - Exchanges the contents
 /// of `x` and `y`. Only works with `hxallocator_dynamic_capacity`. Dynamically
 /// allocated arrays are swapped with very little overhead.
-template<typename key_t_, typename compare_t_, bool multi_t_> void hxswap(
+template<typename key_t_, typename compare_t_, bool multi_t_>
+hxinline hxattr_flatten void hxswap(
 		hxflat_set<key_t_, compare_t_, multi_t_, hxallocator_dynamic_capacity>& x_,
 		hxflat_set<key_t_, compare_t_, multi_t_, hxallocator_dynamic_capacity>& y_) noexcept {
-	x_.swap(y_);
+	hxswap_memcpy(x_, y_);
 }
 
 #endif // HX_CPLUSPLUS >= 202002L

@@ -99,9 +99,7 @@ hxinline hxattr_flatten hxref<T_> hxref<T_>::or_else(function_t_&& callable_) co
 
 template<typename T_>
 hxinline hxattr_flatten void hxref<T_>::swap(hxref& other_) noexcept {
-	T_* const t_ = m_value_;
-	m_value_ = other_.m_value_;
-	other_.m_value_ = t_;
+	hxswap(m_value_, other_.m_value_);
 }
 
 template<typename T_>

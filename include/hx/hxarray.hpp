@@ -294,7 +294,8 @@ private:
 /// `bool hxkey_equal(hxarray<T, N>& x, hxarray<T, N>& y)` - Compares the contents
 /// of `x` and `y` for equivalence.
 template<typename T_, hxsize_t capacity_>
-bool hxkey_equal(const hxarray<T_, capacity_>& x_, const hxarray<T_, capacity_>& y_) {
+hxinline hxattr_flatten bool hxkey_equal(const hxarray<T_, capacity_>& x_,
+		const hxarray<T_, capacity_>& y_) {
 	return x_.equal(y_);
 }
 
@@ -302,7 +303,8 @@ bool hxkey_equal(const hxarray<T_, capacity_>& x_, const hxarray<T_, capacity_>&
 /// contents of `x` and `y` lexicographically using `hxkey_equal` and
 /// `hxkey_less` on each element.
 template<typename T_, hxsize_t capacity_>
-bool hxkey_less(const hxarray<T_, capacity_>& x_, const hxarray<T_, capacity_>& y_) {
+hxinline hxattr_flatten bool hxkey_less(const hxarray<T_, capacity_>& x_,
+		const hxarray<T_, capacity_>& y_) {
 	return x_.less(y_);
 }
 
@@ -310,8 +312,8 @@ bool hxkey_less(const hxarray<T_, capacity_>& x_, const hxarray<T_, capacity_>& 
 /// and y. Only works with `hxallocator_dynamic_capacity`. Dynamically allocated
 /// arrays are swapped with very little overhead.
 template<typename T_>
-void hxswap(hxarray<T_, hxallocator_dynamic_capacity>& x_,
-			hxarray<T_, hxallocator_dynamic_capacity>& y_) noexcept {
+hxinline void hxswap(hxarray<T_, hxallocator_dynamic_capacity>& x_,
+		hxarray<T_, hxallocator_dynamic_capacity>& y_) noexcept {
 	hxswap_memcpy(x_, y_);
 }
 
