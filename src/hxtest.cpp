@@ -77,6 +77,13 @@ bool hxtest_str_ne_(const char* a, const char* b) {
 	return ::strcmp(a, b) != 0;
 }
 
+hxtest_case_::hxtest_case_(void (*run_function)(void), const char* suite_name,
+		const char* case_name, const char* file_name, int line_number)
+	: m_run_(run_function), m_suite_(suite_name), m_case_(case_name),
+		m_file_(file_name), m_line_(line_number) {
+	hxtest_::dispatcher_().add_test_(this);
+}
+
 hxtest_::hxtest_(void) {
 	::memset(static_cast<void*>(this), 0x00, sizeof *this);
 }
@@ -86,7 +93,7 @@ hxtest_& hxtest_::dispatcher_(void) {
 	return hxs_test_static_alloc;
 }
 
-void hxtest_::add_test_(hxtest_case_interface_* fn) {
+void hxtest_::add_test_(hxtest_case_* fn) {
 	// Use -DHX_TEST_MAX_CASES to provide enough room for all tests.
 	hxassert_always(m_num_test_cases_ < (int)HX_TEST_MAX_CASES, "HX_TEST_MAX_CASES overflow");
 	m_test_cases_[m_num_test_cases_++] = fn;
@@ -104,7 +111,7 @@ void hxtest_::condition_check_(bool condition, const char* file, int line, const
 		if(is_assert) {
 			// ASSERT_* macros halt the test suite on failure. Always log and exit
 			// regardless of the message limit so control flow never continues.
-			hxlog_handler(hxlog_level_assert, "test_fail %s.%s", m_current_test_->suite_(), m_current_test_->case_());
+			hxlog_handler(hxlog_level_assert, "test_fail %s.%s", m_current_test_->m_suite_, m_current_test_->m_case_);
 			hxlog_handler(hxlog_level_assert, "test_fail_at %s(%d): %s", file, line, message);
 			hxlog_handler(hxlog_level_assert, "test_assert_fail ❌");
 			hxlog_console("[==========] aborted after %d passed, %d failed, %d assertions.\n",
@@ -122,7 +129,7 @@ void hxtest_::condition_check_(bool condition, const char* file, int line, const
 		}
 
 		// Prints full-path error messages that can be clicked on in an IDE.
-		hxlog_handler(hxlog_level_assert, "test_fail %s.%s", m_current_test_->suite_(), m_current_test_->case_());
+		hxlog_handler(hxlog_level_assert, "test_fail %s.%s", m_current_test_->m_suite_, m_current_test_->m_case_);
 		hxlog_handler(hxlog_level_assert, "test_fail_at %s(%d): %s", file, line, message);
 
 		// Debug builds always set breakpoints on unexpected failures.
@@ -146,23 +153,23 @@ int hxtest_::run_all_tests_(const char* test_suite_filter) {
 
 	// Run tests by suite name and then by line number. This runs smoke tests
 	// before complex tests. Don't trust <hx/hxsort.h>.
-	::qsort(m_test_cases_, (size_t)m_num_test_cases_, sizeof(hxtest_case_interface_*),
+	::qsort(m_test_cases_, (size_t)m_num_test_cases_, sizeof(hxtest_case_*),
 		[](const void* lhs, const void* rhs) -> int {
-			const hxtest_case_interface_* a = *static_cast<const hxtest_case_interface_* const*>(lhs);
-			const hxtest_case_interface_* b = *static_cast<const hxtest_case_interface_* const*>(rhs);
-			const int compare = ::strcmp(a->suite_(), b->suite_());
+			const hxtest_case_* a = *static_cast<const hxtest_case_* const*>(lhs);
+			const hxtest_case_* b = *static_cast<const hxtest_case_* const*>(rhs);
+			const int compare = ::strcmp(a->m_suite_, b->m_suite_);
 			if(compare != 0) { return compare; }
-			return a->line_() - b->line_();
+			return a->m_line_ - b->m_line_;
 		});
 
 	// Starting point. Expected to reset to zero after each test.
 	hxassert_always(hxmemory_manager_utilization(true, false).allocations_outstanding == 0u,
 		"test_leaks Temp stacks are expected to be empty when running tests");
 
-	for(hxtest_case_interface_** it = m_test_cases_; it != (m_test_cases_ + m_num_test_cases_); ++it) {
-		if((test_suite_filter == hxnull)
-				|| (::strcmp(test_suite_filter, (*it)->suite_()) == 0)) { // GCOVR_EXCL_LINE
-			hxlog_console("[ RUN      ] %s.%s\n", (*it)->suite_(), (*it)->case_());
+	for(hxtest_case_** it = m_test_cases_; it != (m_test_cases_ + m_num_test_cases_); ++it) {
+		if((test_suite_filter == hxnull)                                  // GCOVR_EXCL_LINE
+				|| (::strcmp(test_suite_filter, (*it)->m_suite_) == 0)) { // GCOVR_EXCL_LINE
+			hxlog_console("[ RUN      ] %s.%s\n", (*it)->m_suite_, (*it)->m_case_);
 			m_current_test_ = *it;
 			m_test_state_ = test_state_::nothing_asserted_;
 			m_assert_count_ = 0;
@@ -171,32 +178,32 @@ int hxtest_::run_all_tests_(const char* test_suite_filter) {
 			try
 #endif
 			{
-				(*it)->run_test_();
+				(*it)->m_run_();
 
 				// Expect the test to use another scope to reset the stack if needed.
 				hxmemory_manager_stats stats = hxmemory_manager_utilization(true, false);
 				// GCOVR_EXCL_START
 				if(stats.allocations_outstanding != 0u || stats.bytes_outstanding != 0u) {
-					this->condition_check_(false, (*it)->file_(), (*it)->line_(),
+					this->condition_check_(false, (*it)->m_file_, (*it)->m_line_,
 						"test_leaks All tests must reset the temp stack.", true);
 				}
 				// GCOVR_EXCL_STOP
 			}
 #ifdef __cpp_exceptions
 			catch (...) {
-				this->condition_check_(false, (*it)->file_(), (*it)->line_(), "unexpected_exception", true);
+				this->condition_check_(false, (*it)->m_file_, (*it)->m_line_, "unexpected_exception", true);
 			}
 #endif
 			if(m_test_state_ == test_state_::nothing_asserted_) {
-				this->condition_check_(false, (*it)->file_(), (*it)->line_(), "nothing_tested", false);
+				this->condition_check_(false, (*it)->m_file_, (*it)->m_line_, "nothing_tested", false);
 			}
 			if(m_test_state_ == test_state_::pass_) {
 				++m_pass_count_;
-				hxlog_console("[       OK ] %s.%s\n", (*it)->suite_(), (*it)->case_());
+				hxlog_console("[       OK ] %s.%s\n", (*it)->m_suite_, (*it)->m_case_);
 			}
 			else {
 				++m_fail_count_;
-				hxlog_console("[  FAILED  ] %s.%s\n", (*it)->suite_(), (*it)->case_());
+				hxlog_console("[  FAILED  ] %s.%s\n", (*it)->m_suite_, (*it)->m_case_);
 			}
 		}
 	}

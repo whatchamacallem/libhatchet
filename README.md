@@ -1,6 +1,6 @@
 # libhatchet
 
-Use the most recent [taggedrelease](https://github.com/whatchamacallem/libhatchet).
+Use the most recent [tagged release](https://github.com/whatchamacallem/libhatchet).
 The `include` and `src` directories report 100% line and branch coverage, with a
 few exemptions made.
 
@@ -22,12 +22,11 @@ step through in the debugger.
 <img src="libhatchet.jpg" alt="banner" width="200" height="200" align="right"
 hspace="20">
 
-Expect shockingly fast compile times with `ninja`, `ccache`, `clang` and a
-C++ module.
+Expect very fast compile times with `ninja`, `ccache`, `clang` and a C++ module.
 
 The implementation stays clean under every sensible warning flag and under the
-GCC and Clang sanitizers, and asserts are used generously. `malloc` is
-avoided except when initializing system allocators.
+GCC and Clang sanitizers, and asserts are used generously. The process heap is
+unused except when initializing system allocators.
 
 ## Key Features
 
@@ -96,11 +95,11 @@ avoided except when initializing system allocators.
   tools like heaptrack, disable the memory manager with
   `-DHX_USE_MEMORY_MANAGER=0`. Leak tracking is provided.
 
-- **Testing Framework**: A safer, lighter, debuggable reimplementation of the
-  core Google Test functionality.
+- **Testing Framework**: A non-allocating, lighter, debuggable reimplementation
+  of the core Google Test functionality.
 
 - **Fast builds**: Lightweight headers result in very fast builds when used with
-   `ninja` and `ccache`. The module loads quickly with Clang.
+   `ninja` and `ccache`. The module loads quickly with Clang and MSVC.
 
 - **Pretty Printers**: GDB-compatible pretty printers let debuggers and most
   code editors display container contents in a human-readable format.
@@ -152,31 +151,6 @@ well as-is. The stylesheet was tested with Doxygen 1.15.0.
 Read `<hx/hxsettings.h>`. A number of important things can be configured on the
 compiler command line, such as whether the library is wrapped in a namespace.
 
-## Not Provided
-
-This project was started for the author's own personal use, and it tries to be
-complete enough for ordinary C++ programmers. It predates a lot of similar
-functionality in the standard. If you find something missing, odds are your
-favorite AI already knows how to add it, or it was omitted because the C library
-was deemed sufficient.
-
-That said, some functionality of the C++ standard library is not worth
-reimplementing here. If you need these things, use the standard library shipped
-with your compiler.
-
-- Atomics. The C version of `<stdatomic.h>` is incompatible with g++.
-- The iterators library. This codebase intentionally deemphasizes iterators.
-- The ranges library. This would be a large and pointless rewrite.
-- The strings library. Strings are allocation intensive. See the `{fmt}`
-  project.
-
-## Other Projects
-
-- **[musl libc](https://musl.libc.org/)** - The recommended C library for using
-  libhatchet in a freestanding environment.
-- **[{fmt}](https://fmt.dev)** - A micro-optimized version of `std::format`,
-  with nice extras like console colors and a fast `printf`.
-
 ## Tested Environments
 
 Almost every reasonable GCC and Clang warning flag should be safe to enable, and
@@ -196,14 +170,14 @@ with your board.
 The scripted builds exercise the following toolchains, language modes and
 `HX_HARDENING_MODE` combinations:
 
-| Script | Toolchain | Language Modes | `HX_HARDENING_MODE` | Notes |
+| Script | Toolchain | Modes | Hardening | Notes |
 | --- | --- | --- | --- | --- |
-| `debugbuild.sh` | `clang`/`clang++` | C17, C++23 | 3 | 32-bit debug build with ccache and no exceptions/RTTI. |
-| `testcmake.sh` | `cmake` + default compiler | C17, C++23 | 3 | Uses the real Google Test and runs `hxtest` and Clang-Tidy. |
-| `testcoverage.sh` | `gcc`, `g++` + `--coverage` | C99, C++23 | 3 | Enables `HX_TEST_ERROR_HANDLING=1` and emits `coverage_details.html`. |
-| `testmatrix.sh` | `gcc`, `clang` (ASan/UBSan/TSan/MSan) | C99, C17, C++11, C++23 | 0-3 | Sweeps optimization levels and sets `HX_USE_THREADS=1/11`. |
-| `teststrip.sh` | `musl-gcc` (static) | C17, C++11/14/17/20/23 | 0 | Size-focused static build with allocator/library stripping. |
-| `testwasm.sh` | `emcc` | Emscripten defaults (Clang-based C/C++) | 3 (default) | WebAssembly build with the memory manager disabled and pthreads enabled. |
+| `debugbuild.sh` | `clang` | C17, C++23 | 3 | 32-bit debug build with ccache and no exceptions/RTTI. |
+| `testcmake.sh` | `cmake` | C17, C++23 | 3 | Uses the default compiler and the real Google Test and runs `hxtest` and Clang-Tidy. |
+| `testcoverage.sh` | `gcc` | C99, C++23 | 3 | Builds with `--coverage`, enables `HX_TEST_ERROR_HANDLING=1` and emits `coverage_details.html`. |
+| `testmatrix.sh` | `gcc`, `clang` | C99, C17, C++11, C++23 | 0-3 | Sweeps optimization levels and ASan/UBSan/TSan/MSan and sets `HX_USE_THREADS=1/11`. |
+| `teststrip.sh` | `musl-gcc` | C17, C++11-23 | 0 | Size-focused static build with allocator/library stripping. |
+| `testwasm.sh` | `emcc` | defaults | 3 | WebAssembly build with the memory manager disabled and pthreads enabled. Emscripten defaults are Clang-based C/C++. |
 
 `testall.sh` runs all of the above and also enforces certain naming conventions.
 
@@ -220,14 +194,14 @@ C++20 to test g++-10 and clang-11.
 The test scripts are at the top level for easy access. Meson and CMake scripts
 are also available.
 
-- 📁 `.vscode` - The vscode configuration files.
-- 📁 `example` - Simple program showing usage.
-- 📁 `gdb` - GDB pretty printers, one per container, loaded by `.gdbinit`.
-- 📁 `include` - Add this directory to your include path.
-  - 📁 `hx` - The public `<hx/hx*>` headers, one class per header.
-    - 📁 `detail` - Internal implementation headers.
-- 📁 `src` - The runtime implementation. Add these files to your build.
-- 📁 `test` - Optional GoogleTest-style test suites.
+- 🗀 `.vscode` - The vscode configuration files.
+- 🗀 `example` - Simple program showing usage.
+- 🗀 `gdb` - GDB pretty printers, one per container, loaded by `.gdbinit`.
+- 🗀 `include` - Add this directory to your include path.
+  - 🗀 `hx` - The public `<hx/hx*>` headers, one class per header.
+    - 🗀 `detail` - Internal implementation headers.
+- 🗀 `src` - The runtime implementation. Add these files to your build.
+- 🗀 `test` - Optional GoogleTest-style test suites.
 
 ### Core layer
 
@@ -366,6 +340,31 @@ Differences from the standard versions are listed.
 - `hxtest` is the GoogleTest-compatible subset that the test suite itself runs
   on. Set `HX_USE_GOOGLE_TEST=1` to run the same tests against the real Google
   Test.
+
+## Not Provided
+
+This project was started for the author's own personal use, and it tries to be
+complete enough for ordinary C++ programmers. It predates a lot of similar
+functionality in the standard. If you find something missing, odds are your
+favorite AI already knows how to add it, or it was omitted because the C library
+was deemed sufficient.
+
+That said, some functionality of the C++ standard library is not worth
+reimplementing here. If you need these things, use the standard library shipped
+with your compiler.
+
+- Atomics. The C version of `<stdatomic.h>` is incompatible with g++.
+- The iterators library. This codebase intentionally deemphasizes iterators.
+- The ranges library. This would be a large and pointless rewrite.
+- The strings library. Strings are allocation intensive. See the `{fmt}`
+  project.
+
+## Other Projects
+
+- **[musl libc](https://musl.libc.org/)** - The recommended C library for using
+  libhatchet in a freestanding environment.
+- **[{fmt}](https://fmt.dev)** - A micro-optimized version of `std::format`,
+  with nice extras like console colors and a fast `printf`.
 
 ## License
 

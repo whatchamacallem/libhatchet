@@ -59,11 +59,20 @@ run_clang_build() {
 		-fdiagnostics-absolute-paths "$@" "$HX_DIR_"/include/hx/hxtest.hpp            \
 		-o hxtest.hpp.pch
 
-	# compile C++23 and link
-	clang++ -I"$HX_DIR_/include" -DHX_HARDENING_MODE=3-$HX_OPT_ -O$HX_OPT_ $HX_FLAGS_ \
-		$HX_ERRORS_ $HX_SAN_ -DHX_USE_THREADS=1 -pthread -std=c++23 -fno-exceptions   \
-		-fdiagnostics-absolute-paths "$@" -include-pch hxtest.hpp.pch                 \
-		"$HX_DIR_"/src/*.cpp "$HX_DIR_"/test/*.cpp *.o -lpthread -lstdc++ -o hxtest
+	# compile C++23
+	HX_PIDS_=""
+	for HX_FILE_ in "$HX_DIR_"/src/*.cpp "$HX_DIR_"/test/*.cpp; do
+		clang++ -I"$HX_DIR_/include" -DHX_HARDENING_MODE=3-$HX_OPT_ -O$HX_OPT_ $HX_FLAGS_ \
+			$HX_ERRORS_ $HX_SAN_ -DHX_USE_THREADS=1 -pthread -std=c++23 -fno-exceptions   \
+			-fdiagnostics-absolute-paths "$@" -include-pch hxtest.hpp.pch -c "$HX_FILE_"  \
+			-o "$(basename "$HX_FILE_" .cpp).o" & HX_PIDS_="$HX_PIDS_ $!"
+	done
+	for HX_PID_ in $HX_PIDS_; do wait "$HX_PID_" || exit 1; done
+
+	# link
+	clang++ -DHX_HARDENING_MODE=3-$HX_OPT_ -O$HX_OPT_ $HX_FLAGS_ $HX_ERRORS_ $HX_SAN_ \
+		-DHX_USE_THREADS=1 -pthread -std=c++23 -fno-exceptions "$@"                   \
+		*.o -lpthread -lstdc++ -o hxtest
 
 	run_hxtest
 }
@@ -89,9 +98,16 @@ echo "gcc c99/c++11 -O$HX_I_ $* ..."
 gcc -I"$HX_DIR_/include" -DHX_HARDENING_MODE=3-$HX_I_ -O$HX_I_ $HX_FLAGS_ $HX_ERRORS_ \
 	$HX_SAN_UNDEF_ -pthread -std=c99 -m32 "$@" -c "$HX_DIR_"/test/*.c
 
-gcc -I"$HX_DIR_/include" -DHX_HARDENING_MODE=3-$HX_I_ -O$HX_I_ $HX_FLAGS_ $HX_ERRORS_ \
-	$HX_SAN_UNDEF_ -pthread -std=c++11 -fno-exceptions -fno-rtti "$@"                 \
-	"$HX_DIR_"/src/*.cpp "$HX_DIR_"/test/*.cpp *.o -lpthread -lstdc++ -m32 -o hxtest
+HX_PIDS_=""
+for HX_FILE_ in "$HX_DIR_"/src/*.cpp "$HX_DIR_"/test/*.cpp; do
+	gcc -I"$HX_DIR_/include" -DHX_HARDENING_MODE=3-$HX_I_ -O$HX_I_ $HX_FLAGS_ $HX_ERRORS_ \
+		$HX_SAN_UNDEF_ -pthread -std=c++11 -fno-exceptions -fno-rtti -m32 "$@"           \
+		-c "$HX_FILE_" -o "$(basename "$HX_FILE_" .cpp).o" & HX_PIDS_="$HX_PIDS_ $!"
+done
+for HX_PID_ in $HX_PIDS_; do wait "$HX_PID_" || exit 1; done
+
+gcc -DHX_HARDENING_MODE=3-$HX_I_ -O$HX_I_ $HX_FLAGS_ $HX_ERRORS_ $HX_SAN_UNDEF_ -pthread \
+	-std=c++11 -fno-exceptions -fno-rtti "$@" *.o -lpthread -lstdc++ -m32 -o hxtest
 
 run_hxtest
 done

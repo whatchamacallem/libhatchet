@@ -31,8 +31,8 @@
 /// ```
 ///   class MyFixture : public testing::Test {
 ///   public:
-///	   void SetUp() override { value = 42; }
-///	   void TearDown() override { EXPECT_EQ(value, 100); }
+///	   void SetUp() { value = 42; }
+///	   void TearDown() { EXPECT_EQ(value, 100); }
 ///	   void set_value(int x) { value = x; }
 ///	   int value;
 ///   };
@@ -97,24 +97,11 @@ namespace testing {
 /// `Test` - Base class for tests required by Google Test's `TEST_F`.
 class Test {
 public:
-	/// User override for tests using `TEST_F`.
-	virtual void SetUp(void) { }
+	/// User overridable for tests using `TEST_F`.
+	void SetUp(void) { }
 
-	/// User override for tests using `TEST_F`.
-	virtual void TearDown(void) { }
-
-	/// \cond HIDDEN
-	// Not for direct use. This is the Google Test invocation protocol.
-	void hxrun_test_(void) {
-		SetUp();
-		hxrun_test_f_();
-		TearDown();
-	}
-
-protected:
-	// Provided and used by the `TEST_F` macro.
-	virtual void hxrun_test_f_() = 0;
-	/// \endcond
+	/// User overridable for tests using `TEST_F`.
+	void TearDown(void) { }
 };
 
 } // namespace testing
@@ -130,16 +117,10 @@ protected:
 /// - `suite_name` : A valid C identifier for the test suite.
 /// - `case_name` : A valid C identifier for the test case.
 #define TEST(suite_name_, case_name_) \
-	class HX_TEST_NAME_(hxtest_, suite_name_, case_name_) : public HX_NS_PREFIX_ hxdetail_::hxtest_case_interface_ { \
-	public: \
-		HX_TEST_NAME_(hxtest_, suite_name_, case_name_)(void) { HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().add_test_(this); } \
-		virtual void run_test_(void) override; \
-		virtual const char* suite_(void) const override { return #suite_name_; } \
-		virtual const char* case_(void) const override { return #case_name_; } \
-		virtual const char* file_(void) const override { return __FILE__; } \
-		virtual int line_(void) const override { return __LINE__; } \
-	} static HX_TEST_NAME_(hxs_test_, suite_name_, case_name_); \
-	void HX_TEST_NAME_(hxtest_, suite_name_, case_name_)::run_test_(void)
+	static void HX_TEST_NAME_(hxtest_, suite_name_, case_name_)(void); \
+	static HX_NS_PREFIX_ hxdetail_::hxtest_case_ HX_TEST_NAME_(hxs_test_, suite_name_, case_name_)( \
+		HX_TEST_NAME_(hxtest_, suite_name_, case_name_), #suite_name_, #case_name_, __FILE__, __LINE__); \
+	static void HX_TEST_NAME_(hxtest_, suite_name_, case_name_)(void)
 
 /// `TEST_F(suite_name, case_name)` - Google Test reimplementation for
 /// fixture-based tests. Defines a test case where the `suite_name` is a
@@ -147,17 +128,20 @@ protected:
 /// - `suite_fixture` : The test suite base class used as a fixture.
 /// - `case_name` : A valid C identifier for the test case.
 #define TEST_F(suite_fixture_, case_name_) \
-	class HX_TEST_NAME_(hxtest_f_, suite_fixture_, case_name_) : public HX_NS_PREFIX_ hxdetail_::hxtest_case_interface_ { \
+	class HX_TEST_NAME_(hxtest_f_, suite_fixture_, case_name_) : public suite_fixture_ { \
 	public: \
-		class hxtest_case_subclass_ : public suite_fixture_ { virtual void hxrun_test_f_(void) override; }; \
-		HX_TEST_NAME_(hxtest_f_, suite_fixture_, case_name_)(void) { HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().add_test_(this); } \
-		virtual void run_test_(void) override { hxtest_case_subclass_ subclass_; subclass_.hxrun_test_(); } \
-		virtual const char* suite_(void) const override { return #suite_fixture_; } \
-		virtual const char* case_(void) const override { return #case_name_; } \
-		virtual const char* file_(void) const override { return __FILE__; } \
-		virtual int line_(void) const override { return __LINE__; } \
-	} static HX_TEST_NAME_(hxs_test_f_, suite_fixture_, case_name_); \
-	void HX_TEST_NAME_(hxtest_f_, suite_fixture_, case_name_)::hxtest_case_subclass_::hxrun_test_f_(void)
+		static void hxrun_(void) { \
+			HX_TEST_NAME_(hxtest_f_, suite_fixture_, case_name_) subclass_; \
+			subclass_.SetUp(); \
+			subclass_.hxrun_test_f_(); \
+			subclass_.TearDown(); \
+		} \
+	private: \
+		void hxrun_test_f_(void); \
+	}; \
+	static HX_NS_PREFIX_ hxdetail_::hxtest_case_ HX_TEST_NAME_(hxs_test_f_, suite_fixture_, case_name_)( \
+		HX_TEST_NAME_(hxtest_f_, suite_fixture_, case_name_)::hxrun_, #suite_fixture_, #case_name_, __FILE__, __LINE__); \
+	void HX_TEST_NAME_(hxtest_f_, suite_fixture_, case_name_)::hxrun_test_f_(void)
 
 /// `int RUN_ALL_TESTS(...)` - Executes all registered test cases.
 /// - `...` : Optional const char* matching a specific test suite to run. (Non-standard.)

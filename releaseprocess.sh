@@ -6,12 +6,6 @@
 trap 'trap "" INT; pkill -9 -P $$ 2>/dev/null; wait 2>/dev/null; exit 1' INT
 set -euo pipefail
 
-if [ -n "$(declare -Fx)" ]; then
-	echo "error: Exported shell functions interfere with reproducibility." >&2
-	declare -Fx >&2
-	exit 1
-fi
-
 export LANG=C.UTF-8
 export LC_ALL=C.UTF-8
 
@@ -20,6 +14,12 @@ export LC_ALL=C.UTF-8
 HX_TAG_=$(grep 'define LIBHATCHET_TAG' include/hx/libhatchet.h | cut -d'"' -f2)
 HX_BRANCH_=$(git branch --show-current)
 HX_TARGET_="main"
+
+if [ -n "$(declare -Fx)" ]; then
+	echo "error: Exported shell functions interfere with reproducibility." >&2
+	declare -Fx >&2
+	exit 1
+fi
 
 if [[ "$HX_TAG_" != v* ]]; then
 	echo "error: Invalid tag. TAG=\"$HX_TAG_\" does not start with a v."

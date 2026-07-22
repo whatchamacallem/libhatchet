@@ -20,12 +20,19 @@ emcc -I"$HX_DIR_/include" -O2 -pthread -fdiagnostics-absolute-paths -c "$HX_DIR_
 
 # Dump the memory manager because a web browser doesn't need that. -pthread
 # requires SharedArrayBuffer which needs COOP/COEP headers from the server.
-emcc -O2 -fno-exceptions -fno-rtti -fdiagnostics-absolute-paths          \
-	-Werror -Wfatal-errors -DHX_USE_FILE_IO=0 -DHX_USE_MEMORY_MANAGER=0  \
-	-DHX_USE_THREADS=1 -DHX_USE_CONSOLE=1 -Wno-c2y-extensions -pthread   \
-	-sEXIT_RUNTIME=1 -sPTHREAD_POOL_SIZE=4 -sPROXY_TO_PTHREAD -std=c++23 \
-	-flto=auto -I"$HX_DIR_/include" *.o "$HX_DIR_"/src/*.cpp             \
-	"$HX_DIR_"/test/*.cpp -o index.html
+HX_PIDS_=""
+for HX_FILE_ in "$HX_DIR_"/src/*.cpp "$HX_DIR_"/test/*.cpp; do
+	emcc -O2 -fno-exceptions -fno-rtti -fdiagnostics-absolute-paths          \
+		-Werror -Wfatal-errors -DHX_USE_FILE_IO=0 -DHX_USE_MEMORY_MANAGER=0  \
+		-DHX_USE_THREADS=1 -DHX_USE_CONSOLE=1 -Wno-c2y-extensions -pthread   \
+		-std=c++23 -flto=auto -I"$HX_DIR_/include" -c "$HX_FILE_"            \
+		-o "$(basename "$HX_FILE_" .cpp).o" & HX_PIDS_="$HX_PIDS_ $!"
+done
+for HX_PID_ in $HX_PIDS_; do wait "$HX_PID_" || exit 1; done
+
+emcc -O2 -fno-exceptions -fno-rtti -DHX_USE_THREADS=1 -pthread -sEXIT_RUNTIME=1 \
+	-sPTHREAD_POOL_SIZE=4 -sPROXY_TO_PTHREAD -std=c++23 -flto=auto *.o          \
+	-o index.html
 
 if [ "${1:-}" = "--verbose" ]; then
 

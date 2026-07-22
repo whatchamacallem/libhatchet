@@ -77,7 +77,7 @@ if find . -type f "${HX_TEXT_FILES_[@]}" -exec grep -nP '[ \t]+$' {} + >&2; then
 fi
 
 # Check for non-ASCII characters other than the allowed set. No Unicode BOM allowed.
-HX_NON_ASCII_ALLOW_='©Θ…²₁₂≤≥❌📁🪓'
+HX_NON_ASCII_ALLOW_='©Θ…²₁₂≤≥❌🗀🪓'
 if find . -type f \( "${HX_TEXT_FILES_[@]}" \) -exec grep -nP "[^[:ascii:]$HX_NON_ASCII_ALLOW_]" {} + >&2; then
 	echo "error: Non-ASCII characters other than '$HX_NON_ASCII_ALLOW_' found."
 	exit 1

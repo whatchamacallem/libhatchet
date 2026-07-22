@@ -17,8 +17,8 @@ fi
 HX_SYMBOLS_=$(nm --radix=d --print-size build/hxtest)
 
 echo
-echo "=========================================================================="
-echo "= Largest elf symbols..."
+echo "-------------------------------------------------------------------------"
+echo " * Largest elf symbols..."
 
 # Duplicate names for the same function are ignored. The C++ ABI requires them.
 HX_LINES_=200
@@ -27,8 +27,8 @@ echo "$HX_SYMBOLS_" | awk 'NF == 4 && !seen[$1]++ {print $2, $3, $4}' | sort -r 
 	| c++filt
 
 echo
-echo "=========================================================================="
-echo "= Non-test libhatchet symbols.."
+echo "-------------------------------------------------------------------------"
+echo " * Non-test libhatchet symbols.."
 
 echo "$HX_SYMBOLS_" | awk 'NF == 4 && $4 ~ /hx/ && $4 !~ /test/ && !seen[$1]++ {print $2, $3, $4}' | sort -r 2>/dev/null \
 	| python3 -c 'import re,sys;[print(re.sub(r"\b0+(?=\d)",lambda m:" "*len(m.group()),l),end="") for l in sys.stdin]'  \

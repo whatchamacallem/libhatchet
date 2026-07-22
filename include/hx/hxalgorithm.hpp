@@ -170,7 +170,7 @@ template<typename iterator_t_, typename less_t_>
 inline hxattr_flatten hxattr_nodiscard hxconstexpr
 hxminmax_result<iterator_t_>
 hxminmax(iterator_t_ begin_, iterator_t_ end_, const less_t_& less_) {
-	hxminmax_result<iterator_t_> result_{begin_, begin_};
+hxminmax_result<iterator_t_> result_{begin_, begin_};
 	if(begin_ == end_) { return result_; }
 	for(++begin_; begin_ != end_; ++begin_) {
 		if(less_(*begin_, *result_.min)) {

@@ -11,6 +11,11 @@
 HX_NS_BEGIN_
 namespace hxdetail_ {
 
+// Use -DHX_TEST_MAX_CASES=N to raise the limit.
+#if !defined HX_TEST_MAX_CASES
+hxinline_constexpr hxsize_t HX_TEST_MAX_CASES = 1024;
+#endif
+
 // Internal. 4 ULPs float comparison.
 hxattr_nodiscard bool hxtest_float_eq_(float a_, float b_);
 
@@ -21,20 +26,17 @@ hxattr_nodiscard bool hxtest_double_eq_(double a_, double b_);
 hxattr_nodiscard bool hxtest_str_eq_(const char* a_, const char* b_);
 hxattr_nodiscard bool hxtest_str_ne_(const char* a_, const char* b_);
 
-// hxtest_case_interface_ - Internal. Used to interrogate and dispatch tests.
-class hxtest_case_interface_ {
+// hxtest_case_ - Internal. Global constructor.
+class hxtest_case_ {
 public:
-	virtual void run_test_() = 0;
-	virtual const char* suite_() const = 0;
-	virtual const char* case_() const = 0;
-	virtual const char* file_() const = 0;
-	virtual int line_() const = 0;
+	hxtest_case_(void (*run_function_)(void), const char* suite_name_,
+		const char* case_name_, const char* file_name_, int line_number_);
+	void (*m_run_)(void);
+	const char* m_suite_;
+	const char* m_case_;
+	const char* m_file_;
+	int m_line_;
 };
-
-// Use -DHX_TEST_MAX_CASES=N to raise the limit.
-#if !defined HX_TEST_MAX_CASES
-	hxinline_constexpr hxsize_t HX_TEST_MAX_CASES = 1024;
-#endif
 
 // hxtest_ - Internal. The test tracking and dispatching singleton.
 class hxtest_ {
@@ -51,7 +53,7 @@ public:
 	static hxtest_& dispatcher_(void);
 
 	// Called by global constructors.
-	void add_test_(hxtest_case_interface_* fn_) hxattr_nonnull(2);
+	void add_test_(hxtest_case_* fn_) hxattr_nonnull(2);
 
 	// Assert callback used by macros.
 	void condition_check_(bool condition_, const char* file_, int line_,
@@ -64,9 +66,9 @@ private:
 	hxtest_(const hxtest_&) = delete;
 	void operator=(const hxtest_&) = delete;
 
-	hxtest_case_interface_* m_test_cases_[HX_TEST_MAX_CASES];
+	hxtest_case_* m_test_cases_[HX_TEST_MAX_CASES];
 	int m_num_test_cases_;
-	hxtest_case_interface_* m_current_test_;
+	hxtest_case_* m_current_test_;
 	test_state_ m_test_state_;
 	int m_pass_count_;
 	int m_fail_count_;

@@ -74,11 +74,7 @@ build_hxtest() {
 			-o build/$(basename "$HX_FILE_" .cpp).o & HX_PIDS_="$HX_PIDS_ $!"
 	done
 
-	for HX_PID_ in $HX_PIDS_; do
-		if ! wait "$HX_PID_"; then
-			exit 1
-		fi
-	done
+	for HX_PID_ in $HX_PIDS_; do wait "$HX_PID_" || exit 1; done
 
 	$HX_CCACHE_ clang++ $HX_FLAGS_ build/*.o -lpthread -lstdc++ -lm -o build/hxtest
 }

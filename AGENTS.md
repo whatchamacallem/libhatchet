@@ -38,6 +38,12 @@ outputting the checklist into context.
 If the prompt is only an error message or warning assume it is a request to have
 the error fixed.
 
+The `README.md` document contains a guide to the entire project. Read the entire
+`## Project Structure` section for the differences between the standard and the
+libhatchet implementation before writing new code. Prefer methods that have
+already been added to a class over using the equivalent in
+`<hx/hxalgortims.hpp>`.
+
 ## Style Guide
 
 Add code like you are adding weight to an airplane. Use K&R style. Use tabs of
