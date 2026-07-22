@@ -62,6 +62,10 @@ run_example() {
 	fi
 }
 
+if [ "$HX_VERBOSE_" = "--verbose" ]; then
+	set -o xtrace
+fi
+
 export CC=clang
 export CXX=clang++
 echo "$CXX meson+ninja with textual includes..."

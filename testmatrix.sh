@@ -50,7 +50,7 @@ run_clang_build() {
 	# compile C17
 	clang -I"$HX_DIR_/include" -DHX_HARDENING_MODE=3-$HX_OPT_ -O$HX_OPT_ $HX_FLAGS_ \
 		$HX_ERRORS_ $HX_SAN_ -fdiagnostics-absolute-paths -pthread -std=c17 "$@"    \
-		-c "$HX_DIR_"/test/*.c
+		-c "$HX_DIR_"/test/*.c & HX_PIDS_="$!"
 
 	# generate C++23 pch. clang does this automatically when a c++ header file
 	# is the target. This is just a test.
@@ -60,7 +60,6 @@ run_clang_build() {
 		-o hxtest.hpp.pch
 
 	# compile C++23
-	HX_PIDS_=""
 	for HX_FILE_ in "$HX_DIR_"/src/*.cpp "$HX_DIR_"/test/*.cpp; do
 		clang++ -I"$HX_DIR_/include" -DHX_HARDENING_MODE=3-$HX_OPT_ -O$HX_OPT_ $HX_FLAGS_ \
 			$HX_ERRORS_ $HX_SAN_ -DHX_USE_THREADS=1 -pthread -std=c++23 -fno-exceptions   \
@@ -96,12 +95,11 @@ for HX_I_ in 0 1 2 3; do
 echo "gcc c99/c++11 -O$HX_I_ $* ..."
 
 gcc -I"$HX_DIR_/include" -DHX_HARDENING_MODE=3-$HX_I_ -O$HX_I_ $HX_FLAGS_ $HX_ERRORS_ \
-	$HX_SAN_UNDEF_ -pthread -std=c99 -m32 "$@" -c "$HX_DIR_"/test/*.c
+	$HX_SAN_UNDEF_ -pthread -std=c99 -m32 "$@" -c "$HX_DIR_"/test/*.c & HX_PIDS_="$!"
 
-HX_PIDS_=""
 for HX_FILE_ in "$HX_DIR_"/src/*.cpp "$HX_DIR_"/test/*.cpp; do
 	gcc -I"$HX_DIR_/include" -DHX_HARDENING_MODE=3-$HX_I_ -O$HX_I_ $HX_FLAGS_ $HX_ERRORS_ \
-		$HX_SAN_UNDEF_ -pthread -std=c++11 -fno-exceptions -fno-rtti -m32 "$@"           \
+		$HX_SAN_UNDEF_ -pthread -std=c++11 -fno-exceptions -fno-rtti -m32 "$@"            \
 		-c "$HX_FILE_" -o "$(basename "$HX_FILE_" .cpp).o" & HX_PIDS_="$HX_PIDS_ $!"
 done
 for HX_PID_ in $HX_PIDS_; do wait "$HX_PID_" || exit 1; done

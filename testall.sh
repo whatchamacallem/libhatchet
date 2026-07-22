@@ -108,7 +108,7 @@ git fsck
 ./testexample.sh $HX_VERBOSE_
 ./testmatrix.sh
 ./teststrip.sh $HX_VERBOSE_
-./testwasm.sh
+./testwasm.sh $HX_VERBOSE_
 
 ./debugbuild.sh $HX_VERBOSE_ --grind --run
 doxygen

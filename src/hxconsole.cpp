@@ -103,9 +103,17 @@ template<> hxattr_cold const char* hxconsole_parse_arg_<const char*>(const char*
 	return str;
 }
 
-hxattr_cold void hxconsole_usage_(const char* id, const char* const* labels) {
+hxattr_cold bool hxconsole_command_::execute_(const char* str) const {
+	if(m_execute_(m_target_, str)) {
+		return true;
+	}
+	usage_();
+	return false;
+}
+
+hxattr_cold void hxconsole_command_::usage_(const char* id) const {
 	hxlog_handler(hxlog_level_console, "%s", (id != hxnull) ? id : "usage:");
-	for(const char* const* label = labels; *label != hxnull; ++label) {
+	for(const char* const* label = m_labels_; *label != hxnull; ++label) {
 		hxlog_handler(hxlog_level_console, " %s", *label);
 	}
 	hxlog_handler(hxlog_level_console, "\n");
@@ -142,7 +150,7 @@ hxattr_cold hxconsole_command_table& hxconsole_commands_(void) {
 // hxconsole_register_ is internal only.
 hxattr_cold void hxdetail_::hxconsole_register_(hxconsole_hash_table_node_* node) {
 	hxconsole_command_table& commands = hxconsole_commands_();
-	hxassertmsg(node->hash_key().str_ && node->command_(), "invalid_parameter");
+	hxassertmsg(node->hash_key().str_, "invalid_parameter");
 	if(commands.replace(node)) {
 		hxlog_handler(hxlog_level_warning, "command_reregistered %s\n", node->hash_key().str_);
 	}

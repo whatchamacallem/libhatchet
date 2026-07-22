@@ -99,9 +99,6 @@ template<> constexpr const char* hxconsole_arg_label_<unsigned long long>() { re
 template<> constexpr const char* hxconsole_arg_label_<const char*>() { return "char*"; }
 // GCOVR_EXCL_STOP
 
-// Prints id (or "usage:") followed by a null terminated array of labels.
-void hxconsole_usage_(const char* id_, const char* const* labels_);
-
 // C++20 concept for parseable types.
 
 template<typename t_>
@@ -116,110 +113,109 @@ inline hxattr_cold bool hxconsole_is_end_of_line_(const char* str_) {
 	return *str_ == '\0' || *str_ == '#'; // Skip comments
 }
 
-// hxconsole_command_ base class.
+// The void(void) signature is exempt from function pointer cast warnings.
+using hxconsole_fn_t_ = void (*)(void);
 
+// A command's target function or a variable's address.
+union hxconsole_target_ {
+	hxconsole_fn_t_ fn_;
+	volatile void* var_;
+};
+
+// Terminal case: all args parsed, check end of line and call.
+template<typename fn_t_, typename... parsed_t_>
+hxattr_cold bool hxconsole_call_(fn_t_ fn_, const char* pos_, char*, parsed_t_... parsed_) {
+	if(hxconsole_is_end_of_line_(pos_)) {
+		return fn_(parsed_...);
+	}
+	return false;
+}
+
+// Recursive case: parse one arg, recurse with remaining types.
+template<typename first_t_, typename... rest_t_, typename fn_t_, typename... parsed_t_>
+hxattr_cold bool hxconsole_call_(fn_t_ fn_, const char* pos_, char* next_, parsed_t_... parsed_) {
+	first_t_ val_ = hxconsole_parse_arg_<first_t_>(pos_, &next_);
+	// Empty strings are valid string args.
+	if constexpr(hxis_same<first_t_, const char*>::value) {
+		return hxconsole_call_<rest_t_...>(fn_, next_, next_, parsed_..., val_);
+	} else {
+		return (pos_ < next_) && hxconsole_call_<rest_t_...>(fn_, next_, next_, parsed_..., val_);
+	}
+}
+
+// Parses str and calls the target function. Returns false on parse errors.
+template<hxconsole_parseable_... args_t_>
+hxattr_cold bool hxconsole_execute_(hxconsole_target_ target_, const char* str_) {
+	bool (*const fn_)(args_t_...) = reinterpret_cast<bool (*)(args_t_...)>(target_.fn_);
+	if constexpr(sizeof...(args_t_) == 0) {
+		return hxconsole_is_end_of_line_(str_) && fn_();
+	} else {
+		char* const next_ = const_cast<char*>(str_);
+		return hxconsole_call_<args_t_...>(fn_, str_, next_);
+	}
+}
+
+// Queries the variable when str is empty and assigns to it otherwise.
+template<hxconsole_parseable_ var_t_>
+hxattr_cold bool hxconsole_variable_execute_(hxconsole_target_ target_, const char* str_) {
+	volatile var_t_* const var_ = static_cast<volatile var_t_*>(target_.var_);
+	if(hxconsole_is_end_of_line_(str_)) {
+		// 0 parameters is a query.
+		hxlog_handler(hxlog_level_console, "%.15g\n", static_cast<double>(*var_));
+		return true;
+	}
+	char* next_ = const_cast<char*>(str_);
+	const var_t_ val_ = hxconsole_parse_arg_<var_t_>(str_, &next_);
+	if(str_ < next_ && hxconsole_is_end_of_line_(next_)) {
+		*var_ = val_;
+		return true;
+	}
+	hxlog_handler(hxlog_level_console, "parse_error: %s\n", str_);
+	return false;
+}
+
+// A type-erased console command or variable.
 class hxconsole_command_ {
 public:
-	virtual bool execute_(const char* str_) = 0; // Return false for parse errors.
-	virtual void usage_(const char* id_=hxnull) = 0; // Expects command name.
+	hxconsole_command_(bool (*fn_)(hxconsole_target_, const char*),
+			const char* const* labels_, hxconsole_target_ target_)
+		: m_execute_(fn_), m_labels_(labels_), m_target_(target_) { }
+
+	// Parses and executes a command line. Returns false on failure.
+	bool execute_(const char* str_) const;
+
+	// Prints id (or "usage:") followed by the argument labels.
+	void usage_(const char* id_=hxnull) const;
+
+private:
+	bool (*m_execute_)(hxconsole_target_ target_, const char* str_);
+	const char* const* m_labels_;
+	hxconsole_target_ m_target_;
 };
 
-// Single variadic command template. Replaces hxconsole_command0_ through
-// hxconsole_command4_.
-
+// Returns the null terminated usage label table for a signature.
 template<hxconsole_parseable_... args_t_>
-class hxconsole_command_impl_ : public hxconsole_command_ {
-public:
-	hxconsole_command_impl_(bool(*fn_)(args_t_...)) : m_fn_(fn_) { }
-
-	hxattr_cold bool execute_(const char* str_) override {
-		if constexpr (sizeof...(args_t_) == 0) {
-			if(hxconsole_is_end_of_line_(str_)) {
-				return m_fn_();
-			}
-			usage_();
-			return false;
-		} else {
-			char* const next_ = const_cast<char*>(str_);
-			const bool ok_ = call_<args_t_...>(m_fn_, str_, next_);
-			if(!ok_) { usage_(); }
-			return ok_;
-		}
-	}
-
-	hxattr_cold void usage_(const char* id_=hxnull) override {
-		static constexpr const char* labels_[] = { hxconsole_arg_label_<args_t_>()..., hxnull };
-		hxconsole_usage_(id_, labels_);
-	}
-
-private:
-	// Terminal: all args parsed, check end of line and call.
-	template<typename fn_t_, typename... parsed_t_>
-	static hxattr_cold bool call_(fn_t_ fn_, const char* pos_, char*, parsed_t_... parsed_) {
-		if(hxconsole_is_end_of_line_(pos_)) {
-			return fn_(parsed_...);
-		}
-		return false;
-	}
-
-	// Recursive: parse one arg, recurse with remaining types.
-	template<typename first_t_, typename... rest_t_, typename fn_t_, typename... parsed_t_>
-	static hxattr_cold bool call_(fn_t_ fn_, const char* pos_, char* next_, parsed_t_... parsed_) {
-		first_t_ val_ = hxconsole_parse_arg_<first_t_>(pos_, &next_);
-		// Empty strings are valid string args.
-		if constexpr(hxis_same<first_t_, const char*>::value) {
-			return call_<rest_t_...>(fn_, next_, next_, parsed_..., val_);
-		} else {
-			return (pos_ < next_) && call_<rest_t_...>(fn_, next_, next_, parsed_..., val_);
-		}
-	}
-
-	bool(*m_fn_)(args_t_...);
-};
-
-// Variable template.
-
-template<typename var_t_>
-class hxconsole_variable_ : public hxconsole_command_ {
-public:
-	hxconsole_variable_(volatile var_t_* var_) : m_var_(var_) { }
-
-	hxattr_cold bool execute_(const char* str_) override {
-		if(hxconsole_is_end_of_line_(str_)) {
-			// 0 parameters is a query.
-			hxlog_handler(hxlog_level_console, "%.15g\n", static_cast<double>(*m_var_));
-			return true;
-		}
-		char* next_ = const_cast<char*>(str_);
-		var_t_ val_ = hxconsole_parse_arg_<var_t_>(str_, &next_);
-		if(str_ < next_ && hxconsole_is_end_of_line_(next_)) {
-			*m_var_ = val_;
-			return true;
-		}
-		hxlog_handler(hxlog_level_console, "parse_error: %s\n", str_);
-		usage_(hxnull);
-		return false;
-	}
-
-	hxattr_cold void usage_(const char* id_=hxnull) override {
-		static constexpr const char* labels_[] = { "<optional-value>", hxnull };
-		hxconsole_usage_(id_, labels_);
-	}
-private:
-	volatile var_t_* m_var_;
-};
+hxattr_cold const char* const* hxconsole_labels_(void) {
+	static constexpr const char* labels_[] = { hxconsole_arg_label_<args_t_>()..., hxnull };
+	return labels_;
+}
 
 // Single factory function. The compiler deduces args_t_... from the function
 // pointer.
-
-template<typename... args_t_>
-hxattr_cold hxconsole_command_impl_<args_t_...> hxconsole_command_factory_(bool(*fn_)(args_t_...)) {
-	return hxconsole_command_impl_<args_t_...>(fn_);
+template<hxconsole_parseable_... args_t_>
+hxattr_cold hxconsole_command_ hxconsole_command_factory_(bool(*fn_)(args_t_...)) {
+	const hxconsole_target_ target_ = { .fn_ = reinterpret_cast<hxconsole_fn_t_>(fn_) };
+	return hxconsole_command_(&hxconsole_execute_<args_t_...>, hxconsole_labels_<args_t_...>(),
+		target_);
 }
 
-template<typename var_t_>
-hxattr_cold hxconsole_variable_<var_t_> hxconsole_variable_factory_(volatile var_t_* var_) {
-	return hxconsole_variable_<var_t_>(var_);
+inline constexpr const char* hxg_console_variable_factory_labels_[] = { "<optional-value>", hxnull };
+
+template<hxconsole_parseable_ var_t_>
+hxattr_cold hxconsole_command_ hxconsole_variable_factory_(volatile var_t_* var_) {
+	const hxconsole_target_ target_ = { .var_ = var_ };
+	return hxconsole_command_(&hxconsole_variable_execute_<var_t_>, hxg_console_variable_factory_labels_,
+		target_);
 }
 
 // ERROR: Pointers cannot be console variables.
@@ -258,8 +254,9 @@ class hxconsole_hash_table_node_ {
 public:
 	using key_t = hxconsole_hash_table_key_;
 
-	hxattr_cold hxconsole_hash_table_node_(hxconsole_hash_table_key_ key_)
-			: m_hash_next_(hxnull), m_key_(key_), m_hash_(hxkey_hash(key_)), m_command_(hxnull) {
+	hxattr_cold hxconsole_hash_table_node_(hxconsole_hash_table_key_ key_,
+			const hxconsole_command_& command_)
+			: m_hash_next_(hxnull), m_key_(key_), m_hash_(hxkey_hash(key_)), m_command_(command_) {
 #if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
 		const char* k_ = key_.str_;
 		while(hxisgraph(*k_)) {
@@ -276,14 +273,13 @@ public:
 	const hxconsole_hash_table_key_& hash_key(void) const { return m_key_; }
 	hxhash_t hash_value(void) const { return m_hash_; }
 	static hxhash_t hash_value(hxconsole_hash_table_key_ key_) { return hxkey_hash(key_); }
-	hxconsole_command_* command_(void) const { return m_command_; }
-	void set_command_(hxconsole_command_* x_) { m_command_ = x_; }
+	const hxconsole_command_* command_(void) const { return &m_command_; }
 
 private:
 	hxconsole_hash_table_node_* m_hash_next_;
 	hxconsole_hash_table_key_ m_key_;
 	hxhash_t m_hash_;
-	hxconsole_command_* m_command_;
+	hxconsole_command_ m_command_;
 };
 
 void hxconsole_register_(hxconsole_hash_table_node_* node);
@@ -292,23 +288,13 @@ void hxconsole_register_(hxconsole_hash_table_node_* node);
 // There is no reason to deregister or destruct anything.
 class hxconsole_constructor_ {
 public:
-	template<typename command_t_>
-	hxattr_cold hxconsole_constructor_(command_t_ fn_, const char* id_)
-			: m_node_(hxconsole_hash_table_key_(id_)) {
-		static_assert(hxsizeof<command_t_>() <= storage_size_, "command_storage_overflow");
-		::new(m_storage_ + 0) command_t_(hxmove(fn_));
-		m_node_.set_command_(reinterpret_cast<command_t_*>(m_storage_ + 0));
+	hxattr_cold hxconsole_constructor_(const hxconsole_command_& command_, const char* id_)
+			: m_node_(hxconsole_hash_table_key_(id_), command_) {
 		hxconsole_register_(&m_node_);
 	}
 
 private:
-	// Provide static storage instead of using allocator before main. Two
-	// pointers: vtable ptr + one fn or data ptr (sizeof(void*) each).
-	// Sufficient for hxconsole_command_impl_ and hxconsole_variable_ on ILP32,
-	// LLP64, and LP64. Enforced by static_assert in the constructor.
-	static constexpr hxsize_t storage_size_ = hxsizeof<void*>() * 2;
 	hxconsole_hash_table_node_ m_node_;
-	char m_storage_[storage_size_];
 };
 
 } // hxdetail_

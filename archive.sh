@@ -10,7 +10,7 @@ HX_PROJECT_="$(basename "$PWD")"
 HX_DATE_="$(date +%Y-%m-%d)"
 HX_ARCHIVE_="$HX_PROJECT_-$HX_DATE_.git.txz"
 
-# Print help if the first arg starts with a - or there is more than one.
+# Print help if there is more than one arg or the first arg starts with a -.
 if [ "$#" -gt 1 ] || { [ "$#" -eq 1 ] && [ "${1#-}" != "$1" ]; }; then
 	echo "$HX_SCRIPT_NAME_ [destination-directory]"
 	echo "Will create $HX_ARCHIVE_ in the destination-directory if"

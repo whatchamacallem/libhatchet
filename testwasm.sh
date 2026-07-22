@@ -13,14 +13,18 @@ export POSIXLY_CORRECT=1
 
 HX_DIR_=$PWD
 
+if [ "${1:-}" = "--verbose" ]; then
+	set -o xtrace
+fi
+
 # Build artifacts are not retained.
 rm -rf "$(readlink -f build)" build; ln -s "$(mktemp -d)" build && cd build
 
-emcc -I"$HX_DIR_/include" -O2 -pthread -fdiagnostics-absolute-paths -c "$HX_DIR_"/test/*.c
+emcc -I"$HX_DIR_/include" -O2 -pthread -fdiagnostics-absolute-paths -c \
+	"$HX_DIR_"/test/*.c & HX_PIDS_="$!"
 
 # Dump the memory manager because a web browser doesn't need that. -pthread
 # requires SharedArrayBuffer which needs COOP/COEP headers from the server.
-HX_PIDS_=""
 for HX_FILE_ in "$HX_DIR_"/src/*.cpp "$HX_DIR_"/test/*.cpp; do
 	emcc -O2 -fno-exceptions -fno-rtti -fdiagnostics-absolute-paths          \
 		-Werror -Wfatal-errors -DHX_USE_FILE_IO=0 -DHX_USE_MEMORY_MANAGER=0  \
@@ -40,7 +44,7 @@ if [ "${1:-}" = "--verbose" ]; then
 
 	# Start a web server with COOP/COEP headers required for SharedArrayBuffer
 	# (pthreads).
-	python3 -c "
+	python3 - <<HX_EOF_ &
 import http.server, sys
 class Handler(http.server.SimpleHTTPRequestHandler):
 	def end_headers(self):
@@ -48,7 +52,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 		self.send_header('Cross-Origin-Embedder-Policy', 'require-corp')
 		super().end_headers()
 http.server.HTTPServer(('', 9876), Handler).serve_forever()
-" &
+HX_EOF_
 	HX_SERVER_PID_=$!
 	set +e
 

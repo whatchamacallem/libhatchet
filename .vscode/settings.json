@@ -197,6 +197,7 @@
         "SIGTRAP",
         "skipasserts",
         "smoketest",
+        "splitlines",
         "stdatomic",
         "stdint",
         "stdlib",

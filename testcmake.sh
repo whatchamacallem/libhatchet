@@ -44,6 +44,9 @@ fi
 
 echo "Check GDB pretty printer output..."
 grep -E '^\$[0-9]+ = ' gdb_printer_output.txt > actual_pretty_print.txt
+if [ "${1:-}" = "--verbose" ]; then
+	cat actual_pretty_print.txt
+fi
 
 cat > expected_pretty_print.txt <<'EOF'
 $1 = [3] hxtest_object = {{moved_from = false, id = -1}, {moved_from = false, id = -2}, {moved_from = false, id = -3}}

@@ -36,19 +36,20 @@ if [ -z "$(echo | musl-gcc -std=c++23 -dM -E -x c++ - 2>/dev/null | grep __cplus
 	echo "C++23 not supported..."
 fi
 
-musl-gcc $HX_BUILD_ $HX_ERRORS_ $HX_FLAGS_ -I"$HX_DIR_/include" -std=c17 -c "$HX_DIR_"/test/*.c
+musl-gcc $HX_BUILD_ $HX_ERRORS_ $HX_FLAGS_ -I"$HX_DIR_/include" -std=c17 -c \
+	"$HX_DIR_"/test/*.c & HX_PIDS_="$!"
 
 # Test every supported version of the standard without libc++.
 for HX_VERSION_ in 11 14 17 20 $HX_CXX23_; do
 printf '%s ' "$HX_VERSION_"
 
-HX_PIDS_=""
 for HX_FILE_ in "$HX_DIR_"/src/*.cpp "$HX_DIR_"/test/*.cpp; do
 	musl-gcc $HX_BUILD_ $HX_ERRORS_ $HX_FLAGS_ -I"$HX_DIR_/include" -std=c++$HX_VERSION_ \
 		-nostdinc++ -fno-exceptions -fno-rtti -flto=auto -c "$HX_FILE_"                  \
 		-o "$(basename "$HX_FILE_" .cpp).o" & HX_PIDS_="$HX_PIDS_ $!"
 done
 for HX_PID_ in $HX_PIDS_; do wait "$HX_PID_" || exit 1; done
+HX_PIDS_=""
 
 # -Wno-maybe-uninitialized is passed to the link time optimizer because it has
 # false positives. -Wl,--gc-sections and -flto=12 should reduce size.
