@@ -53,9 +53,8 @@ HX_PIDS_=""
 
 # -Wno-maybe-uninitialized is passed to the link time optimizer because it has
 # false positives. -Wl,--gc-sections and -flto=12 should reduce size.
-musl-gcc $HX_BUILD_ $HX_ERRORS_ -Wno-maybe-uninitialized $HX_FLAGS_ -std=c++$HX_VERSION_  \
-	-nostdinc++ -fno-exceptions -fno-rtti -Wl,--gc-sections -nodefaultlibs -flto=auto *.o \
-	-lc -lpthread -lm -o hxtest
+musl-gcc $HX_FLAGS_ -Wno-maybe-uninitialized -Wl,--gc-sections -nodefaultlibs -flto=auto \
+	*.o -lc -lpthread -lm -o hxtest
 
 done
 printf '\n'

@@ -34,9 +34,8 @@ for HX_FILE_ in "$HX_DIR_"/src/*.cpp "$HX_DIR_"/test/*.cpp; do
 done
 for HX_PID_ in $HX_PIDS_; do wait "$HX_PID_" || exit 1; done
 
-emcc -O2 -fno-exceptions -fno-rtti -DHX_USE_THREADS=1 -pthread -sEXIT_RUNTIME=1 \
-	-sPTHREAD_POOL_SIZE=4 -sPROXY_TO_PTHREAD -std=c++23 -flto=auto *.o          \
-	-o index.html
+emcc -O2 -pthread -sEXIT_RUNTIME=1 -sPTHREAD_POOL_SIZE=4 -sPROXY_TO_PTHREAD \
+	-flto=auto *.o -o index.html
 
 if [ "${1:-}" = "--verbose" ]; then
 

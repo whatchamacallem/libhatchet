@@ -115,7 +115,8 @@ unused except when initializing system allocators.
 - **Console**: An embedded command processor that binds C++ functions
   automatically using templates. Use it for interactive target debugging without
   recompilation, for config files, or for configuration from the command line.
-  The syntax is just `verb [arg ...]`.
+  The syntax is just `verb [arg ...]`. Note: This is the only line based file
+  reader provided.
 
 - **Profiling System**: Samples processor cycles to build a hierarchical
   timeline capture compatible with Chrome's `chrome://tracing` viewer. Navigate

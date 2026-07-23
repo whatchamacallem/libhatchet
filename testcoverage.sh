@@ -54,7 +54,7 @@ for HX_FILE_ in "$HX_DIR_"/src/*.cpp "$HX_DIR_"/test/*.cpp; do
 done
 for HX_PID_ in $HX_PIDS_; do wait "$HX_PID_" || exit 1; done
 
-g++ $HX_COVERAGE_ -Wfatal-errors -fno-exceptions -pthread -lpthread -nostdinc++ *.o -o hxtest
+g++ --coverage -lpthread *.o -o hxtest
 
 if [ -n "$HX_VERBOSE_" ]; then
 	echo runtests | ./hxtest help execstdin

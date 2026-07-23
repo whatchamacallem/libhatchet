@@ -203,21 +203,6 @@ bool hxfile::flush(void) { // NOLINT(readability-make-member-function-const)
 	return result == 0;
 }
 
-bool hxfile::getline(char* buffer, int buffer_size) {
-	hxassertmsg(((m_open_mode_ & hxfile::open_mode_in) != 0u) && (m_file_pimpl_ != 0), "invalid_file");
-
-	char* result = ::fgets(buffer, buffer_size, reinterpret_cast<FILE*>(m_file_pimpl_)); // NOLINT(clang-analyzer-core.NonNullParamChecker)
-
-	hxassertmsg(!::ferror(reinterpret_cast<FILE*>(m_file_pimpl_)), "fgets %s", ::strerror(errno));
-
-	if(result == hxnull) {
-		m_fail_ = true;
-		m_eof_ = (::feof(reinterpret_cast<FILE*>(m_file_pimpl_)) != 0); // 0: not past end.
-		return false; // EOF or error.
-	}
-	return true;
-}
-
 // See vsnprintf to reimplement this without FILE* support.
 bool hxfile::print(const char* format, ...) {
 	hxassertmsg((m_open_mode_ & hxfile::open_mode_out) != 0u, "invalid_file");
@@ -239,23 +224,6 @@ bool hxfile::print(const char* format, ...) {
 		return false;
 	}
 	return true;
-}
-
-// See vscanf to reimplement this without FILE* support.
-int hxfile::scan(const char* format, ...) {
-	hxassertmsg(((m_open_mode_ & hxfile::open_mode_in) != 0u) && (m_file_pimpl_ != 0), "invalid_file");
-	va_list args;
-	va_start(args, format);
-	const int items_scanned = ::vfscanf(reinterpret_cast<FILE*>(m_file_pimpl_), format, args); // NOLINT(clang-analyzer-core.NonNullParamChecker)
-	va_end(args);
-
-	hxassert_hard(items_scanned != EOF || ((m_open_mode_ & hxfile::open_mode_asserts) == 0u), "vfscanf %s", ::strerror(errno));
-
-	if(items_scanned == EOF) {
-		m_fail_ = true;
-		m_eof_ = (::feof(reinterpret_cast<FILE*>(m_file_pimpl_)) != 0);
-	}
-	return items_scanned;
 }
 
 HX_NS_END_

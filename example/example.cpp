@@ -39,14 +39,13 @@ const double s_example_two_pi_over_3  = 2.09439510239319552;
 const double s_example_four_pi_over_3 = 4.18879020478639098;
 const double s_example_amplitude      = 127.5;
 
+// Mutexes are not available in a signal handler.
 void example_notify_sigint(int) {
 	hxexit(EXIT_FAILURE);
 }
 
-bool s_example_exit = false;
-
-
 // Sets s_example_exit, causing the main loop to break after the current render.
+bool s_example_exit = false;
 bool example_exit(void) {
 	s_example_exit = true;
 	return true;
@@ -59,7 +58,6 @@ double s_example_center_x = 0.0;
 double s_example_center_y = 0.0;
 double s_example_zoom = 3.0;
 
-// Pan and zoom commands scale movement by the current zoom level.
 bool example_left(double amount)  { s_example_center_x -= amount * s_example_zoom;  return true; }
 bool example_right(double amount) { s_example_center_x += amount * s_example_zoom;  return true; }
 bool example_up(double amount)	  { s_example_center_y -= amount * s_example_zoom;  return true; }

@@ -69,9 +69,7 @@ run_clang_build() {
 	for HX_PID_ in $HX_PIDS_; do wait "$HX_PID_" || exit 1; done
 
 	# link
-	clang++ -DHX_HARDENING_MODE=3-$HX_OPT_ -O$HX_OPT_ $HX_FLAGS_ $HX_ERRORS_ $HX_SAN_ \
-		-DHX_USE_THREADS=1 -pthread -std=c++23 -fno-exceptions "$@"                   \
-		*.o -lpthread -lstdc++ -o hxtest
+	clang++ $HX_SAN_ *.o -lpthread -lstdc++ -o hxtest
 
 	run_hxtest
 }
@@ -104,8 +102,7 @@ for HX_FILE_ in "$HX_DIR_"/src/*.cpp "$HX_DIR_"/test/*.cpp; do
 done
 for HX_PID_ in $HX_PIDS_; do wait "$HX_PID_" || exit 1; done
 
-gcc -DHX_HARDENING_MODE=3-$HX_I_ -O$HX_I_ $HX_FLAGS_ $HX_ERRORS_ $HX_SAN_UNDEF_ -pthread \
-	-std=c++11 -fno-exceptions -fno-rtti "$@" *.o -lpthread -lstdc++ -m32 -o hxtest
+gcc $HX_SAN_UNDEF_ *.o -lpthread -lstdc++ -m32 -o hxtest
 
 run_hxtest
 done

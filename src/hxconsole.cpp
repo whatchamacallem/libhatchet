@@ -18,7 +18,7 @@ HX_NS_BEGIN_
 namespace hxdetail_ {
 
 // These C library wrappers reduce code bloat and enforce additional
-// constraints. The next_ pointer is reset when parse errors, out of range
+// constraints. The next pointer is reset when parse errors, out of range
 // values or negative numbers are encountered.
 
 hxattr_cold float hxconsole_strtof_(const char* str, char** next) {
@@ -273,7 +273,6 @@ hxattr_cold bool hxconsole_exec_file(hxfile& file) {
 }
 
 hxattr_cold bool hxconsole_exec_filename(const char* filename) {
-	// Please don't assert.
 	hxfile file(hxfile::open_mode_in, "%s", filename);
 	hxwarn_msg(file, "cannot open: %s", filename);
 	if(file) {

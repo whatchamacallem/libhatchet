@@ -174,43 +174,12 @@ public:
 	/// `hxdev_null`. Does not reset the failure flag to false on success.
 	bool flush(void) hxattr_hot;
 
-#if (HX_USE_FILE_IO) != 2
-	/// Reads a `\n` or `EOF` terminated character sequence. Allowed to fail on
-	/// `EOF` without needing `hxfile::open_mode_asserts` to be unset.
-	/// Encountering `EOF` also sets the failure flag. Automatically determines
-	/// the size of the provided char array. NOTE: Not available in the POSIX
-	/// version.
-	/// - `buffer` : Reference to a char array where the line will be stored.
-	template<size_t buffer_size_>
-	bool getline(char(&buffer_)[buffer_size_]) {
-		return this->getline(buffer_, buffer_size_);
-	}
-
-	/// Reads a `\n` or `EOF` terminated character sequence. Allowed to fail on
-	/// `EOF` without needing `hxfile::open_mode_asserts` to be unset.
-	/// Encountering `EOF` also sets the failure flag. NOTE: Not available in
-	/// the POSIX version.
-	/// - `buffer` : Non-null pointer to a char array where the line will be
-	///   stored.
-	/// - `buffer_size` : Size of the buffer array.
-	bool getline(char* buffer_, int buffer_size_) hxattr_nonnull(2) hxattr_hot ;
-#endif // (HX_USE_FILE_IO) != 2
-
 	/// Writes a formatted UTF-8 string to the file. Uses `printf` conventions.
 	/// Formatting and writing will be skipped when using `hxdev_null`. Does not
 	/// modify the failure flag because it is not clear from `vfprintf`.
 	/// - `format` : Non-null `printf`-style format string.
 	/// - `...` : Additional arguments that satisfy the format string.
 	bool print(const char* format_, ...) hxattr_printf(2, 3) hxattr_hot ;
-
-	/// Reads a formatted UTF-8 string from the file. Uses `scanf` conventions.
-	/// Returns the same value as `scanf`. Omit `hxfile::open_mode_asserts` to
-	/// read until `EOF`. Parse errors will set `fail` to true. Will set the
-	/// failure flag and check `EOF` on a return value of `EOF` from `vfscanf`.
-	/// Returns a negative value on `EOF`.
-	/// - `format` : Non-null `scanf`-style format string.
-	/// - `...` : Additional arguments that satisfy the format string.
-	int scan(const char* format_, ...) hxattr_scanf(2, 3) hxattr_hot ;
 
 	/// Reads a single unformatted native-endian object from the file.
 	/// - `t` : Reference to the object where the data will be stored.

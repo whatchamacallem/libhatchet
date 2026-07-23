@@ -268,34 +268,5 @@ bool hxfile::print(const char* format, ...) {
 	return true;
 }
 
-// See vsscanf for the rationale. scan() consumes up to HX_MAX_LINE-1 bytes from
-// the fd to provide a buffer for vsscanf. Unconsumed bytes are not returned to
-// the fd; interleaved read()/scan() calls must account for this.
-int hxfile::scan(const char* format, ...) {
-	hxassertmsg(((m_open_mode_ & hxfile::open_mode_in) != 0u) && (m_file_pimpl_ >= 0), "invalid_file");
-
-	char line_buf[HX_MAX_LINE];
-	const ssize_t bytes_read = ::read(static_cast<int>(m_file_pimpl_), line_buf, HX_MAX_LINE - 1u);
-	if(bytes_read > 0) {
-		line_buf[static_cast<size_t>(bytes_read)] = '\0';
-	} else {
-		line_buf[0] = '\0';
-	}
-
-	va_list args;
-	va_start(args, format);
-	const int items_scanned = ::vsscanf(line_buf, format, args);
-	va_end(args);
-
-	hxassert_hard(items_scanned != EOF || ((m_open_mode_ & hxfile::open_mode_asserts) == 0u),
-		"vsscanf %s", ::strerror(errno));
-
-	if(items_scanned == EOF) {
-		m_fail_ = true;
-		m_eof_ = (bytes_read == 0);
-	}
-	return items_scanned;
-}
-
 HX_NS_END_
 #endif // (HX_USE_FILE_IO) == 2
