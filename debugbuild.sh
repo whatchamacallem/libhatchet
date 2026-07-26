@@ -26,22 +26,22 @@ set -eu
 
 HX_OPT_CLEAR_=0
 HX_OPT_GRIND_=0
-HX_OPT_VERBOSE_=0
 HX_OPT_RUN_=0
+HX_OPT_VERBOSE_=0
 for HX_ARG_ in "$@"; do
 	case "$HX_ARG_" in
+		"")        ;;
 		--clear)   HX_OPT_CLEAR_=1 ;;
 		--grind)   HX_OPT_GRIND_=1 ;;
-		--verbose) HX_OPT_VERBOSE_=1 ;;
 		--run)     HX_OPT_RUN_=1 ;;
+		--verbose) HX_OPT_VERBOSE_=1 ;;
 		*)
-			echo "Usage: $0 [--clear] [--grind] [--verbose] [--run]"
+			echo "usage: $0 [--clear] [--grind] [--run] [--verbose]"
 			echo "  --clear   Clear the terminal before building."
 			echo "  --grind   Build all configuration combinations."
-			echo "  --verbose Full hxtest output."
 			echo "  --run     Run hxtest after building."
-			exit 1
-			;;
+			echo "  --verbose Full output."
+			exit 1 ;;
 	esac
 done
 

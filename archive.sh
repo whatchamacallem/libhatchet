@@ -12,10 +12,10 @@ HX_ARCHIVE_="$HX_PROJECT_-$HX_DATE_.git.txz"
 
 # Print help if there is more than one arg or the first arg starts with a -.
 if [ "$#" -gt 1 ] || { [ "$#" -eq 1 ] && [ "${1#-}" != "$1" ]; }; then
-	echo "$HX_SCRIPT_NAME_ [destination-directory]"
+	echo "usage: $0 [destination-directory]"
 	echo "Will create $HX_ARCHIVE_ in the destination-directory if"
 	echo "provided, otherwise ~/Backups/ if it exists and in ~/ otherwise. Restores all"
-	echo "files if $0 is the only file in the directory."
+	echo "files if $HX_SCRIPT_NAME_ is the only file in the directory."
 	exit 1
 fi
 
@@ -41,14 +41,14 @@ fi
 
 # Create archive.
 if [ "$#" -eq 1 ]; then
-	HX_DESTINATION_="$1"
+	HX_DEST_DIR_="$1"
 elif [ -d "$HOME/Backups" ]; then
-	HX_DESTINATION_="$HOME/Backups"
+	HX_DEST_DIR_="$HOME/Backups"
 else
-	HX_DESTINATION_="$HOME"
+	HX_DEST_DIR_="$HOME"
 fi
-if [ ! -d "$HX_DESTINATION_" ]; then
-	echo "Destination directory not found: $HX_DESTINATION_" >&2
+if [ ! -d "$HX_DEST_DIR_" ]; then
+	echo "Destination directory not found: $HX_DEST_DIR_" >&2
 	exit 1
 fi
 
@@ -61,7 +61,7 @@ git reflog expire --expire=24.hours.ago --expire-unreachable=24.hours.ago --all
 git gc --prune=now --aggressive
 
 # Save everything including local config.
-tar -cJf "$HX_DESTINATION_/$HX_ARCHIVE_" -C ".." "$HX_PROJECT_/$HX_SCRIPT_NAME_" "$HX_PROJECT_/.git"
+tar -cJf "$HX_DEST_DIR_/$HX_ARCHIVE_" -C ".." "$HX_PROJECT_/$HX_SCRIPT_NAME_" "$HX_PROJECT_/.git"
 
 printf "Wrote: "
-ls -h1s "$HX_DESTINATION_/$HX_ARCHIVE_"
+ls -h1s "$HX_DEST_DIR_/$HX_ARCHIVE_"

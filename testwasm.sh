@@ -43,7 +43,7 @@ if [ "${1:-}" = "--verbose" ]; then
 
 	# Start a web server with COOP/COEP headers required for SharedArrayBuffer
 	# (pthreads).
-	python3 - <<HX_EOF_ &
+	python3 - <<'HX_EOF_' &
 import http.server, sys
 class Handler(http.server.SimpleHTTPRequestHandler):
 	def end_headers(self):

@@ -14,25 +14,29 @@ HX_GCOV_=gcov-$(gcc -dumpversion)
 HX_COVERAGE_="--coverage -O0 -g -fprofile-update=atomic -fno-inline -fkeep-static-functions"
 HX_COVERAGE_CXX_="$HX_COVERAGE_ -fno-elide-constructors -fkeep-inline-functions"
 
-# Args are: [--verbose] [target-directory]
+HXUSAGE_="usage: $0 [--verbose] [destination-directory]"
+
 HX_VERBOSE_=
-HX_TARGET_=
+HX_DEST_DIR_=
 for HX_ARG_ in "$@"; do
 	if [ "$HX_ARG_" = "--verbose" ]; then
 		HX_VERBOSE_=1
-	else
+	elif [ -n "$HX_ARG_" ]; then
 		case "$HX_ARG_" in
-			/*) HX_TARGET_="$HX_ARG_" ;;
-			*) HX_TARGET_="$HX_DIR_/$HX_ARG_" ;;
+			-*)
+				echo "$HXUSAGE_" >&2
+				exit 1 ;;
+			/*) HX_DEST_DIR_="$HX_ARG_" ;;
+			*) HX_DEST_DIR_="$HX_DIR_/$HX_ARG_" ;;
 		esac
-		case "$HX_TARGET_" in
+		case "$HX_DEST_DIR_" in
 			*/) ;;
-			*) HX_TARGET_="$HX_TARGET_/" ;;
+			*) HX_DEST_DIR_="$HX_DEST_DIR_/" ;;
 		esac
 	fi
 done
 
-[ -n "$HX_TARGET_" ] || HX_TARGET_="$HX_DIR_/build/"
+[ -n "$HX_DEST_DIR_" ] || HX_DEST_DIR_="$HX_DIR_/build/"
 
 if [ -n "$HX_VERBOSE_" ]; then
 	set -o xtrace
@@ -54,7 +58,7 @@ for HX_FILE_ in "$HX_DIR_"/src/*.cpp "$HX_DIR_"/test/*.cpp; do
 done
 for HX_PID_ in $HX_PIDS_; do wait "$HX_PID_" || exit 1; done
 
-g++ --coverage -lpthread *.o -o hxtest
+g++ --coverage *.o -lpthread -o hxtest
 
 if [ -n "$HX_VERBOSE_" ]; then
 	echo runtests | ./hxtest help execstdin
@@ -66,14 +70,14 @@ else
 	fi
 fi
 
-mkdir -p "$HX_TARGET_"
+mkdir -p "$HX_DEST_DIR_"
 
 # Line coverage.
 HX_STATUS_=0
 gcovr --gcov-executable $HX_GCOV_ --gcov-object-directory . --exclude-throw-branches  \
 	--exclude-unreachable-branches --exclude-noncode-lines --exclude-lines-by-pattern \
 	.*hxassert.* --exclude-branches-by-pattern .*hxassert.* --root $HX_DIR_           \
-	--html-details "${HX_TARGET_}0coverage.html" --html-self-contained --json         \
+	--html-details "${HX_DEST_DIR_}0coverage.html" --html-self-contained --json         \
 	coverage.json --txt-metric branch --print-summary --fail-under-line 100 . || HX_STATUS_=$?
 
 { set +o xtrace; } 2> /dev/null
@@ -99,7 +103,7 @@ gcovr --gcov-executable "$HX_GCOV_" --gcov-object-directory branches_only       
 # Line coverage. A script is required because the gcovr text output includes
 # remarks about suppressed lines.
 if [ "$HX_STATUS_" -ne 0 ]; then
-python3 - coverage.json <<EOF
+python3 - coverage.json <<'EOF'
 import json, sys
 files = json.load(open(sys.argv[1]))["files"]
 for f in sorted(files, key=lambda x: x["file"]):
@@ -120,7 +124,7 @@ fi
 
 # Branch coverage. Post-processing is required to merge multiple instantiations.
 # This is load bearing.
-python3 - coverage_test_branches.json <<HX_EOF_ || HX_STATUS_=$?
+python3 - coverage_test_branches.json <<'HX_EOF_' || HX_STATUS_=$?
 import json, sys
 files = json.load(open(sys.argv[1]))["files"]
 missing = False
@@ -152,7 +156,7 @@ fi
 # Launch Chrome if it is installed.
 if [ -n "$HX_VERBOSE_" ] && which google-chrome; then
 	set -o xtrace
-	google-chrome "${HX_TARGET_}coverage_details.html" >/dev/null 2>&1;
+	google-chrome "${HX_DEST_DIR_}coverage_details.html" >/dev/null 2>&1;
 fi
 
 # Make sure the script returns 0.

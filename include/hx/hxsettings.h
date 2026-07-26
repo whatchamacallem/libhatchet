@@ -111,10 +111,6 @@
 /// MSVC treats all static library symbols as weak.
 #define hxattr_weak
 
-/// `hxattr_scanf` - Indicates to gcc that a function uses `scanf`-style
-/// formatting so it can type-check the format string.
-#define hxattr_scanf(...)
-
 /// `hxinline` - Force a function to be inlined into its callers. Also includes
 /// the `inline` keyword.
 #define hxinline inline
@@ -160,7 +156,6 @@
 #define hxattr_noreturn
 #endif
 #define hxattr_printf(...)
-#define hxattr_scanf(...)
 // #define hxattr_weak __declspec(selectany) is not used as MSVC treats all
 // library objects as weak.
 #define hxattr_weak
@@ -242,7 +237,6 @@
 #define hxattr_noinline __attribute__((noinline))
 #define hxattr_noreturn __attribute__((noreturn))
 #define hxattr_printf(pos_, start_) __attribute__((format(printf, pos_, start_)))
-#define hxattr_scanf(pos_, start_) __attribute__((format(scanf, pos_, start_)))
 #define hxattr_weak __attribute__((weak))
 
 #ifndef hxinline

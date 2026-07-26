@@ -8,6 +8,8 @@ set -eu
 
 export POSIXLY_CORRECT=1
 
+HX_DIR_=$PWD
+
 # Proves test suite can run without non-placement ::new() and ::delete. This is
 # because there may be no general purpose allocator at all.
 HX_BUILD_="-DHX_HARDENING_MODE=HX_HARDENING_MODE_NONE -DHX_PROVIDE_NEW_DELETE=0 \
@@ -19,9 +21,7 @@ HX_ERRORS_="-Wfatal-errors -Wall -Wextra -pedantic-errors -Werror -Wcast-qual \
 
 # 32-bit MUSL is not tested as it is unsupported on Ubuntu.
 HX_FLAGS_="-Os -march=native -static -g0 -ffunction-sections -fdata-sections -ffast-math \
-	-fno-asynchronous-unwind-tables"
-
-HX_DIR_=$PWD
+	-fno-asynchronous-unwind-tables -fno-stack-protector -ffile-prefix-map=$HX_DIR_/="
 
 # Build artifacts are not retained.
 rm -rf "$(readlink -f build)" build; ln -s "$(mktemp -d)" build && cd build
@@ -76,15 +76,9 @@ else
 fi
 
 cd ..
+./listsymbols.sh "${1:-}"
 
-if [ "${1:-}" = "--verbose" ]; then
-	./listsymbols.sh
-fi
-
-HX_SYMBOLS_=$(nm --radix=d --print-size build/hxtest)
-echo "$HX_SYMBOLS_" | awk 'NF == 4 && $4 ~ /hx/ && $4 !~ /test/ && !seen[$1]++ {total += $2} \
-	END {printf "= Total non-test libhatchet bytes: %d\n", total}'
-
+echo
 size build/hxtest-strip
 
 echo "🪓🪓🪓"
