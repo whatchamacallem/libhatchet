@@ -155,7 +155,7 @@ hxattr_weak hxattr_noexcept void hxassert_handler(void) {
 	if(hxg_assert_handler != hxnull && hxg_assert_handler()) {
 		return;
 	}
-	hxlog_handler(hxlog_level_assert, "assert_fail\n");
+	hxlog_handler(hxlog_level_assert, "ASSERT_FAIL\n");
 	hxexit(EXIT_FAILURE);
 }
 #endif

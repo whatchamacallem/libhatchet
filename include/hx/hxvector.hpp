@@ -335,7 +335,7 @@ public:
 	/// - `pos` : Non-null pointer to an element currently stored in the array.
 	void erase(T_* pos_) noexcept hxattr_nonnull(2);
 
-	/// Erases the element indicated. Use `(hxsize_t)0` to write the integer
+	/// Erases the element indicated. Use `hxsize_t{0}` to write the integer
 	/// literal 0.
 	/// - `index` : Index of the element to erase.
 	void erase(hxsize_t index_) noexcept;
@@ -376,7 +376,7 @@ public:
 	void erase_unordered(const T_* pos_) noexcept hxattr_nonnull(2);
 
 	/// Variant of `erase` that moves the end element down to replace the erased
-	/// element. Use `(hxsize_t)0` to write the integer literal 0. (Non-standard.)
+	/// element. Use `hxsize_t{0}` to write the integer literal 0. (Non-standard.)
 	/// - `index` : The index of the element to erase.
 	void erase_unordered(hxsize_t index_) noexcept;
 
@@ -458,7 +458,7 @@ public:
 	template<typename ref_t_>
 	void insert(const T_* pos_, ref_t_&& x_) noexcept hxattr_nonnull(2);
 
-	/// Inserts the element at the offset indicated. Use `(hxsize_t)0` to write
+	/// Inserts the element at the offset indicated. Use `hxsize_t{0}` to write
 	/// the integer literal 0. `insert(begin(), x)` and `insert(end(), x)` will
 	/// work as long as the array is allocated.
 	/// - `index` : Index of the location where the new element will be inserted.

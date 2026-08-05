@@ -15,7 +15,7 @@ hxinline auto hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capacity_>::co
 		hxsize_t n_) -> const_iterator& {
 	hxassertmsg(m_map_ != hxnull, "invalid_iterator");
 	m_index_ += n_;
-	hxassertmsg(static_cast<size_t>(m_index_) <= static_cast<size_t>(m_map_->m_size_), "invalid_iterator");
+	hxassertmsg(static_cast<size_t>(m_index_) <= static_cast<size_t>(m_map_->m_size_), "invalid_iterator"); // NOLINT(clang-analyzer-core.NullDereference)
 	return *this;
 }
 

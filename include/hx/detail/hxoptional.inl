@@ -268,8 +268,10 @@ hxinline hxattr_flatten const T_& hxoptional<T_>::value(void) const {
 template<typename T_>
 template<typename U_>
 hxinline hxattr_flatten T_ hxoptional<T_>::value_or(U_&& default_value_) const {
-	return m_engaged_ ? *reinterpret_cast<const T_*>(&m_storage_)
-		: static_cast<T_>(hxforward<U_>(default_value_));
+	if(m_engaged_) {
+		return *reinterpret_cast<const T_*>(&m_storage_);
+	}
+	return static_cast<T_>(hxforward<U_>(default_value_));
 }
 
 #if defined(__GNUC__) && !defined(__clang__)

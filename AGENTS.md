@@ -64,9 +64,9 @@ for release asserts. Declare and define functions (except destructors) with no
 args as `void x(void)` instead of `void x()`.
 
 Read `.clang-tidy` when writing new code as it is in use and C-style casts are
-not allowed. The rules are only checked by `testcmake.sh` and are not checked by
-`vscode`. Declare local variables `const` when they are not modified. Prefer
-`1000u` to `(size_t)1000`.
+not allowed. Prefer `1000u` to `(size_t)1000`. The rules are only checked by
+`testcmake.sh` and are not checked by `vscode`. Declare local variables `const`
+when they are not modified. Do not use `mutable` except for locking.
 
 Do not add unrequested private helper methods to a class. However, prefer
 delegating constructors over repeating field initializers. Do not write code

@@ -60,7 +60,7 @@ bool hxctest_memory(void) {
 }
 
 #define HX_CTEST_PRINT(x) fwrite((x), (sizeof(x)) - 1, 1, stderr)
-#define HX_CTEST_EXEC(fn) (fn() || (HX_CTEST_PRINT("ASSERT_FAIL test_fail " #fn "\n"), false))
+#define HX_CTEST_EXEC(fn) (fn() || (HX_CTEST_PRINT("ASSERT_FAIL " #fn "\n"), false))
 
 bool hxctest_all(void) {
 	return HX_CTEST_EXEC(hxctest_libhatchet_h)

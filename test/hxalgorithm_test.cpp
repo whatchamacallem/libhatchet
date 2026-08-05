@@ -11,23 +11,140 @@
 
 HX_NS_USE
 
-TEST(hxtest_test, iter_api_types) {
-	hxtest_ref_tracker_t values[2] = {
-		hxtest_ref_tracker_t(11),
-		hxtest_ref_tracker_t(22)
+using hxbinary_search_test_f = hxtest_object_fixture;
+using hxcount_if_test_f = hxtest_object_fixture;
+using hxexchange_test_f = hxtest_object_fixture;
+using hxfind_if_test_f = hxtest_object_fixture;
+using hxmerge_test_f = hxtest_object_fixture;
+using hxminmax_test_f = hxtest_object_fixture;
+using hxquantifier_test_f = hxtest_object_fixture;
+using hxset_algorithms_test_f = hxtest_object_fixture;
+using hxtest_test_f = hxtest_object_fixture;
+using hxunique_test_f = hxtest_object_fixture;
+
+TEST_F(hxbinary_search_test_f, iterator_support) {
+	hxtest_object values[7] = {
+		hxtest_object(-5), hxtest_object(-1), hxtest_object(0), hxtest_object(3),
+		hxtest_object(5), hxtest_object(8), hxtest_object(12)
 	};
-	EXPECT_TRUE(hxtest_check_forward_iter_api(
-		hxtest_forward_iter_api_t(values), hxtest_forward_iter_api_t(values + 2)));
-	EXPECT_TRUE(hxtest_check_forward_iter_api(
-		hxtest_bidirectional_iter_api_t(values), hxtest_bidirectional_iter_api_t(values + 2)));
-	EXPECT_TRUE(hxtest_check_bidirectional_iter_api(
-		hxtest_bidirectional_iter_api_t(values), hxtest_bidirectional_iter_api_t(values + 2)));
-	EXPECT_TRUE(hxtest_check_forward_iter_api(
-		hxtest_rand_iter_api_t(values), hxtest_rand_iter_api_t(values + 2)));
-	EXPECT_TRUE(hxtest_check_bidirectional_iter_api(
-		hxtest_rand_iter_api_t(values), hxtest_rand_iter_api_t(values + 2)));
-	EXPECT_TRUE(hxtest_check_rand_iter_api(
-		hxtest_rand_iter_api_t(values), hxtest_rand_iter_api_t(values + 2)));
+	const hxtest_rand_iter_api_t begin(values);
+	const hxtest_rand_iter_api_t end(values + 7);
+	const hxtest_object key_three(3);
+	hxtest_rand_iter_api_t result = hxbinary_search(begin, end, key_three, hxtest_value_less);
+	EXPECT_NE(result, end);
+	EXPECT_EQ((*result).value, 3);
+	const hxtest_object key_high(12);
+	result = hxbinary_search(begin, end, key_high, hxtest_value_less);
+	EXPECT_NE(result, end);
+	EXPECT_EQ((*result).value, 12);
+	const hxtest_object missing(7);
+	result = hxbinary_search(begin, end, missing, hxtest_value_less);
+	EXPECT_EQ(result, end);
+	result = hxbinary_search(begin, begin, key_three, hxtest_value_less);
+	EXPECT_EQ(result, begin);
+	EXPECT_TRUE(check_stats(10, 0, 0, 0, 0, 0, 0, 0));
+}
+
+TEST(hxbinary_search_test, two_element_boundary) {
+	const int values[2] = { 3, 7 };
+	const int* found = hxbinary_search(values + 0, values + 2, 3, hxkey_less_t<int>{});
+	EXPECT_NE(found, values + 2);
+	EXPECT_EQ(*found, 3);
+	found = hxbinary_search(values + 0, values + 2, 7, hxkey_less_t<int>{});
+	EXPECT_NE(found, values + 2);
+	EXPECT_EQ(*found, 7);
+	found = hxbinary_search(values + 0, values + 2, 5, hxkey_less_t<int>{});
+	EXPECT_EQ(found, values + 2);
+}
+
+TEST_F(hxcount_if_test_f, simple_case) {
+	hxtest_object values[6] = {
+		hxtest_object(1), hxtest_object(2), hxtest_object(3),
+		hxtest_object(4), hxtest_object(5), hxtest_object(6)
+	};
+	const hxtest_forward_iter_api_t begin(values);
+	const hxtest_forward_iter_api_t end(values + 6);
+	const hxsize_t count = hxcount_if(begin, end, [](const hxtest_object& x) { return x.value % 2 == 0; });
+	EXPECT_EQ(count, hxsize_t{3});
+	EXPECT_EQ(hxcount_if(begin, end, [](const hxtest_object& x) { return x.value > 0; }), hxsize_t{6});
+	EXPECT_EQ(hxcount_if(begin, end, [](const hxtest_object& x) { return x.value > 10; }), hxsize_t{0});
+	EXPECT_EQ(hxcount_if(begin, begin, [](const hxtest_object& x) { return x.value == 1; }), hxsize_t{0});
+	EXPECT_TRUE(check_stats(6, 0, 0, 0, 0, 0, 0, 0));
+}
+
+TEST(hxcount_if_test, boundary_matches) {
+	const int last_matches[4] = { 1, 3, 5, 6 };
+	EXPECT_EQ(hxcount_if(last_matches, last_matches + 4, [](const int& x) { return x % 2 == 0; }), hxsize_t{1});
+	const int first_matches[4] = { 6, 1, 3, 5 };
+	EXPECT_EQ(hxcount_if(first_matches, first_matches + 4, [](const int& x) { return x % 2 == 0; }), hxsize_t{1});
+}
+
+TEST_F(hxexchange_test_f, move_only_type) {
+	hxtest_object a(34);
+	const hxtest_object old = hxexchange(a, hxtest_object(99));
+	EXPECT_EQ(old.value, 34);
+	EXPECT_EQ(a.value, 99);
+	// -fno-elide-constructors in the coverage test inflates this.
+	EXPECT_TRUE(check_stats(4, 2, 0, 2, 0, 1, 0, 0));
+}
+
+TEST(hxfind_if_test, simple_case) {
+	const int ints[5] = { 2, 5, 6, 88, 99 };
+	const int* ints_end = ints + 5;
+	const int* result = hxfind_if(ints, ints_end, [](const int& x) { return x >= 6; });
+	EXPECT_NE(result, ints_end);
+	EXPECT_EQ(*result, 6);
+	result = hxfind_if(ints, ints_end, [](const int& x) { return x == 2; });
+	EXPECT_EQ(result, ints);
+	result = hxfind_if(ints, ints_end, [](const int& x) { return x == 99; });
+	EXPECT_NE(result, ints_end);
+	EXPECT_EQ(*result, 99);
+	result = hxfind_if(ints, ints_end, [](const int& x) { return x == 0; });
+	EXPECT_EQ(result, ints_end);
+	result = hxfind_if(ints, ints, [](const int& x) { return x == 2; });
+	EXPECT_EQ(result, ints);
+}
+
+TEST_F(hxfind_if_test_f, iterator_support) {
+	hxtest_object values[4] = { hxtest_object(10), hxtest_object(20), hxtest_object(30), hxtest_object(40) };
+	const hxtest_forward_iter_api_t begin(values);
+	const hxtest_forward_iter_api_t end(values + 4);
+	const hxtest_forward_iter_api_t result =
+		hxfind_if(begin, end, [](const hxtest_object& x) { return x.value > 15; });
+	EXPECT_NE(result, end);
+	EXPECT_EQ((*result).value, 20);
+	const hxtest_forward_iter_api_t no_match =
+		hxfind_if(begin, end, [](const hxtest_object& x) { return x.value > 100; });
+	EXPECT_EQ(no_match, end);
+	const hxtest_forward_iter_api_t empty_result =
+		hxfind_if(begin, begin, [](const hxtest_object& x) { return x.value == 10; });
+	EXPECT_EQ(empty_result, begin);
+	EXPECT_TRUE(check_stats(4, 0, 0, 0, 0, 0, 0, 0));
+}
+
+TEST(hxfind_if_test, flat_map_iterator) {
+	using map_t = hxflat_map<int, int, hxkey_less_t<int>, false, 4>;
+	map_t m;
+	m.insert(1, 10);
+	m.insert(2, 20);
+	m.insert(3, 30);
+	map_t::const_iterator result = hxfind_if(m.begin(), m.end(),
+		[](const map_t::const_iterator& it) { return it.value() >= 20; });
+	EXPECT_NE(result, m.end());
+	EXPECT_EQ(result.key(), 2);
+	result = hxfind_if(m.begin(), m.end(),
+		[](const map_t::const_iterator& it) { return it.key() == 1; });
+	EXPECT_EQ(result, m.begin());
+	result = hxfind_if(m.begin(), m.end(),
+		[](const map_t::const_iterator& it) { return it.value() == 30; });
+	EXPECT_NE(result, m.end());
+	EXPECT_EQ(result.key(), 3);
+	result = hxfind_if(m.begin(), m.end(),
+		[](const map_t::const_iterator& it) { return it.value() == 99; });
+	EXPECT_EQ(result, m.end());
+	result = hxfind_if(m.begin(), m.begin(),
+		[](const map_t::const_iterator& it) { return it.value() == 10; });
+	EXPECT_EQ(result, m.begin());
 }
 
 TEST(hxmerge_test, pointer_range_tails) {
@@ -78,12 +195,12 @@ TEST(hxmerge_test, preserves_stable_ordering) {
 	}
 }
 
-TEST(hxmerge_test, iterator_support) {
-	hxtest_ref_tracker_t left[3] = { hxtest_ref_tracker_t(1), hxtest_ref_tracker_t(3), hxtest_ref_tracker_t(5) };
-	hxtest_ref_tracker_t right[3] = { hxtest_ref_tracker_t(2), hxtest_ref_tracker_t(4), hxtest_ref_tracker_t(6) };
-	hxtest_ref_tracker_t dest[6] = {
-		hxtest_ref_tracker_t(0), hxtest_ref_tracker_t(0), hxtest_ref_tracker_t(0),
-		hxtest_ref_tracker_t(0), hxtest_ref_tracker_t(0), hxtest_ref_tracker_t(0)
+TEST_F(hxmerge_test_f, iterator_support) {
+	hxtest_object left[3] = { hxtest_object(1), hxtest_object(3), hxtest_object(5) };
+	hxtest_object right[3] = { hxtest_object(2), hxtest_object(4), hxtest_object(6) };
+	hxtest_object dest[6] = {
+		hxtest_object(0), hxtest_object(0), hxtest_object(0),
+		hxtest_object(0), hxtest_object(0), hxtest_object(0)
 	};
 	const hxtest_rand_iter_api_t merge_end =
 		hxmerge(hxtest_rand_iter_api_t(left), hxtest_rand_iter_api_t(left + 3),
@@ -94,11 +211,11 @@ TEST(hxmerge_test, iterator_support) {
 	for(hxsize_t i = 0; i < 6; ++i) {
 		EXPECT_EQ(dest[i].value, expected_sorted[i]);
 	}
-	hxtest_ref_tracker_t left_desc[3] = { hxtest_ref_tracker_t(5), hxtest_ref_tracker_t(3), hxtest_ref_tracker_t(1) };
-	hxtest_ref_tracker_t right_desc[3] = { hxtest_ref_tracker_t(6), hxtest_ref_tracker_t(4), hxtest_ref_tracker_t(2) };
-	hxtest_ref_tracker_t dest_desc[6] = {
-		hxtest_ref_tracker_t(0), hxtest_ref_tracker_t(0), hxtest_ref_tracker_t(0),
-		hxtest_ref_tracker_t(0), hxtest_ref_tracker_t(0), hxtest_ref_tracker_t(0)
+	hxtest_object left_desc[3] = { hxtest_object(5), hxtest_object(3), hxtest_object(1) };
+	hxtest_object right_desc[3] = { hxtest_object(6), hxtest_object(4), hxtest_object(2) };
+	hxtest_object dest_desc[6] = {
+		hxtest_object(0), hxtest_object(0), hxtest_object(0),
+		hxtest_object(0), hxtest_object(0), hxtest_object(0)
 	};
 	const hxtest_rand_iter_api_t merge_desc_end =
 		hxmerge(hxtest_rand_iter_api_t(left_desc), hxtest_rand_iter_api_t(left_desc + 3),
@@ -109,40 +226,85 @@ TEST(hxmerge_test, iterator_support) {
 	for(hxsize_t i = 0; i < 6; ++i) {
 		EXPECT_EQ(dest_desc[i].value, expected_desc[i]);
 	}
+	EXPECT_TRUE(check_stats(24, 0, 0, 0, 0, 12, 0, 0));
 }
 
-TEST(hxbinary_search_test, iterator_support) {
-	hxtest_ref_tracker_t values[7] = {
-		hxtest_ref_tracker_t(-5), hxtest_ref_tracker_t(-1), hxtest_ref_tracker_t(0), hxtest_ref_tracker_t(3),
-		hxtest_ref_tracker_t(5), hxtest_ref_tracker_t(8), hxtest_ref_tracker_t(12)
+TEST(hxminmax_test, small_ranges) {
+	const int one[1] = { 34 };
+	hxminmax_result<const int*> result = hxminmax(one, one + 1);
+	EXPECT_EQ(result.min, one);
+	EXPECT_EQ(result.max, one);
+	const int ascending[2] = { 7, 11 };
+	result = hxminmax(ascending, ascending + 2);
+	EXPECT_EQ(result.min, ascending);
+	EXPECT_EQ(result.max, ascending + 1);
+	const int descending[2] = { 11, 7 };
+	result = hxminmax(descending, descending + 2);
+	EXPECT_EQ(result.min, descending + 1);
+	EXPECT_EQ(result.max, descending);
+	const int ties[6] = { 3, 1, 2, 1, 5, 5 };
+	result = hxminmax(ties, ties + 6);
+	EXPECT_EQ(result.min, ties + 1);
+	EXPECT_EQ(result.max, ties + 4);
+}
+
+TEST(hxminmax_test, simple_case) {
+	const int ints[5] = { 5, 3, 1, 4, 2 };
+	const int* ints_end = ints + 5;
+	hxminmax_result<const int*> result = hxminmax(ints, ints_end);
+	EXPECT_NE(result.min, ints_end);
+	EXPECT_EQ(*result.min, 1);
+	EXPECT_NE(result.max, ints_end);
+	EXPECT_EQ(*result.max, 5);
+	result = hxminmax(ints, ints_end, hxkey_less_t<int>{});
+	EXPECT_EQ(*result.min, 1);
+	EXPECT_EQ(*result.max, 5);
+	result = hxminmax(ints, ints + 1);
+	EXPECT_EQ(result.min, ints);
+	EXPECT_EQ(result.max, ints);
+	result = hxminmax(ints, ints);
+	EXPECT_EQ(result.min, ints);
+	EXPECT_EQ(result.max, ints);
+}
+
+TEST_F(hxminmax_test_f, iterator_support) {
+	hxtest_object values[4] = { hxtest_object(30), hxtest_object(10), hxtest_object(40), hxtest_object(20) };
+	const hxtest_forward_iter_api_t begin(values);
+	const hxtest_forward_iter_api_t end(values + 4);
+	const hxminmax_result<hxtest_forward_iter_api_t> result =
+		hxminmax(begin, end, hxtest_value_less);
+	EXPECT_NE(result.min, end);
+	EXPECT_EQ((*result.min).value, 10);
+	EXPECT_NE(result.max, end);
+	EXPECT_EQ((*result.max).value, 40);
+	const hxminmax_result<hxtest_forward_iter_api_t> empty_result =
+		hxminmax(begin, begin, hxtest_value_less);
+	EXPECT_EQ(empty_result.min, begin);
+	EXPECT_EQ(empty_result.max, begin);
+	EXPECT_TRUE(check_stats(4, 0, 0, 0, 0, 0, 0, 0));
+}
+
+TEST_F(hxquantifier_test_f, all_of_any_of_and_for_each) {
+	hxtest_object values[3] = { hxtest_object(10), hxtest_object(20), hxtest_object(30) };
+	const hxtest_forward_iter_api_t begin(values);
+	const hxtest_forward_iter_api_t end(values + 3);
+	EXPECT_TRUE(hxall_of(begin, end, [](const hxtest_object& x) { return x.value >= 10; }));
+	EXPECT_FALSE(hxall_of(begin, end, [](const hxtest_object& x) { return x.value >= 30; }));
+	EXPECT_TRUE(hxall_of(begin, begin, [](const hxtest_object& x) { return x.value >= 100; }));
+	EXPECT_TRUE(hxany_of(begin, end, [](const hxtest_object& x) { return x.value == 30; }));
+	EXPECT_FALSE(hxany_of(begin, end, [](const hxtest_object& x) { return x.value == 99; }));
+	EXPECT_FALSE(hxany_of(begin, begin, [](const hxtest_object& x) { return x.value == 10; }));
+	struct hxfor_each_test_accumulator_t {
+		int total;
+		void operator()(const hxtest_object& x) { total += x.value; }
 	};
-	const hxtest_rand_iter_api_t begin(values);
-	const hxtest_rand_iter_api_t end(values + 7);
-	const hxtest_ref_tracker_t key_three(3);
-	hxtest_rand_iter_api_t result = hxbinary_search(begin, end, key_three, hxtest_value_less);
-	EXPECT_NE(result, end);
-	EXPECT_EQ((*result).value, 3);
-	const hxtest_ref_tracker_t key_high(12);
-	result = hxbinary_search(begin, end, key_high, hxtest_value_less);
-	EXPECT_NE(result, end);
-	EXPECT_EQ((*result).value, 12);
-	const hxtest_ref_tracker_t missing(7);
-	result = hxbinary_search(begin, end, missing, hxtest_value_less);
-	EXPECT_EQ(result, end);
-	result = hxbinary_search(begin, begin, key_three, hxtest_value_less);
-	EXPECT_EQ(result, begin);
-}
-
-TEST(hxbinary_search_test, two_element_boundary) {
-	const int values[2] = { 3, 7 };
-	const int* found = hxbinary_search(values + 0, values + 2, 3, hxkey_less_t<int>{});
-	EXPECT_NE(found, values + 2);
-	EXPECT_EQ(*found, 3);
-	found = hxbinary_search(values + 0, values + 2, 7, hxkey_less_t<int>{});
-	EXPECT_NE(found, values + 2);
-	EXPECT_EQ(*found, 7);
-	found = hxbinary_search(values + 0, values + 2, 5, hxkey_less_t<int>{});
-	EXPECT_EQ(found, values + 2);
+	const hxfor_each_test_accumulator_t result =
+		hxfor_each(begin, end, hxfor_each_test_accumulator_t{0});
+	EXPECT_EQ(result.total, 60);
+	const hxfor_each_test_accumulator_t empty_result =
+		hxfor_each(begin, begin, hxfor_each_test_accumulator_t{7});
+	EXPECT_EQ(empty_result.total, 7);
+	EXPECT_TRUE(check_stats(3, 0, 0, 0, 0, 0, 0, 0));
 }
 
 #if HX_CPLUSPLUS >= 201402L
@@ -214,183 +376,189 @@ TEST(hxset_algorithms_test, int_pointer_ranges) {
 	expect_range(dest_difference, difference_end, expected_difference);
 }
 
-TEST(hxset_algorithms_test, hxarray_output_iterator_support) {
+TEST_F(hxset_algorithms_test_f, hxarray_output_iterator_merge) {
 	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
-	auto expect_hxarray = [](const hxvector<hxtest_ref_tracker_t>& actual, const int* expected, hxsize_t count) {
+	auto expect_hxarray = [](const hxvector<hxtest_object>& actual, const int* expected, hxsize_t count) {
 		ASSERT_EQ(actual.size(), count);
 		for(hxsize_t i = 0; i < count; ++i) {
 			EXPECT_EQ(actual[i].value, expected[i]);
 		}
 	};
-	hxtest_ref_tracker_t left[] = { hxtest_ref_tracker_t(1), hxtest_ref_tracker_t(2), hxtest_ref_tracker_t(4) };
-	hxtest_ref_tracker_t right[] = { hxtest_ref_tracker_t(2), hxtest_ref_tracker_t(4), hxtest_ref_tracker_t(5) };
-	hxvector<hxtest_ref_tracker_t> merge_output;
+	hxtest_object left[] = { hxtest_object(1), hxtest_object(2), hxtest_object(4) };
+	hxtest_object right[] = { hxtest_object(2), hxtest_object(4), hxtest_object(5) };
+	hxvector<hxtest_object> merge_output;
 	merge_output.reserve(hxsize(left) + hxsize(right) + 1);
-	merge_output.push_back(hxtest_ref_tracker_t(0));
+	merge_output.push_back(hxtest_object(0));
 	{
-		const hxvector<hxtest_ref_tracker_t>& merge_ret = hxmerge(
+		const hxvector<hxtest_object>& merge_ret = hxmerge(
 			hxtest_rand_iter_api_t(left), hxtest_rand_iter_api_t(left + hxsize(left)),
 			hxtest_rand_iter_api_t(right), hxtest_rand_iter_api_t(right + hxsize(right)), merge_output);
 		EXPECT_EQ(&merge_ret, &merge_output);
 	}
 	const int expected_merge[] = { 0, 1, 2, 2, 4, 4, 5 };
 	expect_hxarray(merge_output, expected_merge, hxsize(expected_merge));
-	hxvector<hxtest_ref_tracker_t> union_output;
+	EXPECT_TRUE(check_stats(14, 1, 0, 7, 0, 0, 0, 4));
+}
+
+TEST_F(hxset_algorithms_test_f, hxarray_output_iterator_union) {
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
+	auto expect_hxarray = [](const hxvector<hxtest_object>& actual, const int* expected, hxsize_t count) {
+		ASSERT_EQ(actual.size(), count);
+		for(hxsize_t i = 0; i < count; ++i) {
+			EXPECT_EQ(actual[i].value, expected[i]);
+		}
+	};
+	hxtest_object left[] = { hxtest_object(1), hxtest_object(2), hxtest_object(4) };
+	hxtest_object right[] = { hxtest_object(2), hxtest_object(4), hxtest_object(5) };
+	hxvector<hxtest_object> union_output;
 	union_output.reserve(hxsize(left) + hxsize(right) + 1);
-	union_output.push_back(hxtest_ref_tracker_t(0));
+	union_output.push_back(hxtest_object(0));
 	{
-		const hxvector<hxtest_ref_tracker_t>& union_ret = hxset_union(
+		const hxvector<hxtest_object>& union_ret = hxset_union(
 			hxtest_rand_iter_api_t(left), hxtest_rand_iter_api_t(left + hxsize(left)),
 			hxtest_rand_iter_api_t(right), hxtest_rand_iter_api_t(right + hxsize(right)), union_output);
 		EXPECT_EQ(&union_ret, &union_output);
 	}
 	const int expected_union[] = { 0, 1, 2, 4, 5 };
 	expect_hxarray(union_output, expected_union, hxsize(expected_union));
-	hxvector<hxtest_ref_tracker_t> intersection_output;
+	EXPECT_TRUE(check_stats(12, 1, 0, 5, 0, 0, 0, 6));
+}
+
+TEST_F(hxset_algorithms_test_f, hxarray_output_iterator_intersection) {
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
+	auto expect_hxarray = [](const hxvector<hxtest_object>& actual, const int* expected, hxsize_t count) {
+		ASSERT_EQ(actual.size(), count);
+		for(hxsize_t i = 0; i < count; ++i) {
+			EXPECT_EQ(actual[i].value, expected[i]);
+		}
+	};
+	hxtest_object left[] = { hxtest_object(1), hxtest_object(2), hxtest_object(4) };
+	hxtest_object right[] = { hxtest_object(2), hxtest_object(4), hxtest_object(5) };
+	hxvector<hxtest_object> intersection_output;
 	intersection_output.reserve(hxsize(left) + 1);
-	intersection_output.push_back(hxtest_ref_tracker_t(0));
+	intersection_output.push_back(hxtest_object(0));
 	{
-		const hxvector<hxtest_ref_tracker_t>& intersection_ret = hxset_intersection(
+		const hxvector<hxtest_object>& intersection_ret = hxset_intersection(
 			hxtest_rand_iter_api_t(left), hxtest_rand_iter_api_t(left + hxsize(left)),
 			hxtest_rand_iter_api_t(right), hxtest_rand_iter_api_t(right + hxsize(right)), intersection_output);
 		EXPECT_EQ(&intersection_ret, &intersection_output);
 	}
 	const int expected_intersection[] = { 0, 2, 4 };
 	expect_hxarray(intersection_output, expected_intersection, hxsize(expected_intersection));
-	hxvector<hxtest_ref_tracker_t> difference_output;
+	EXPECT_TRUE(check_stats(10, 1, 0, 3, 0, 0, 0, 6));
+}
+
+TEST_F(hxset_algorithms_test_f, hxarray_output_iterator_difference) {
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
+	auto expect_hxarray = [](const hxvector<hxtest_object>& actual, const int* expected, hxsize_t count) {
+		ASSERT_EQ(actual.size(), count);
+		for(hxsize_t i = 0; i < count; ++i) {
+			EXPECT_EQ(actual[i].value, expected[i]);
+		}
+	};
+	hxtest_object left[] = { hxtest_object(1), hxtest_object(2), hxtest_object(4) };
+	hxtest_object right[] = { hxtest_object(2), hxtest_object(4), hxtest_object(5) };
+	hxvector<hxtest_object> difference_output;
 	difference_output.reserve(hxsize(left) + 1);
-	difference_output.push_back(hxtest_ref_tracker_t(0));
+	difference_output.push_back(hxtest_object(0));
 	{
-		const hxvector<hxtest_ref_tracker_t>& difference_ret = hxset_difference(
+		const hxvector<hxtest_object>& difference_ret = hxset_difference(
 			hxtest_rand_iter_api_t(left), hxtest_rand_iter_api_t(left + hxsize(left)),
 			hxtest_rand_iter_api_t(right), hxtest_rand_iter_api_t(right + hxsize(right)), difference_output);
 		EXPECT_EQ(&difference_ret, &difference_output);
 	}
 	const int expected_difference[] = { 0, 1 };
 	expect_hxarray(difference_output, expected_difference, hxsize(expected_difference));
+	EXPECT_TRUE(check_stats(9, 1, 0, 2, 0, 0, 0, 6));
 }
 
-TEST(hxset_algorithms_test, hxarray_output_iterator_right_exhausted_first) {
+TEST_F(hxset_algorithms_test_f, hxarray_output_iterator_right_exhausted_first_union) {
 	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
-	auto expect_hxarray = [](const hxvector<hxtest_ref_tracker_t>& actual, const int* expected, hxsize_t count) {
+	auto expect_hxarray = [](const hxvector<hxtest_object>& actual, const int* expected, hxsize_t count) {
 		ASSERT_EQ(actual.size(), count);
 		for(hxsize_t i = 0; i < count; ++i) {
 			EXPECT_EQ(actual[i].value, expected[i]);
 		}
 	};
-	hxtest_ref_tracker_t left[] = { hxtest_ref_tracker_t(1), hxtest_ref_tracker_t(2), hxtest_ref_tracker_t(4) };
-	hxtest_ref_tracker_t right[] = { hxtest_ref_tracker_t(3) };
-	hxvector<hxtest_ref_tracker_t> union_output;
+	hxtest_object left[] = { hxtest_object(1), hxtest_object(2), hxtest_object(4) };
+	hxtest_object right[] = { hxtest_object(3) };
+	hxvector<hxtest_object> union_output;
 	union_output.reserve(hxsize(left) + hxsize(right));
 	{
-		const hxvector<hxtest_ref_tracker_t>& union_ret = hxset_union(
+		const hxvector<hxtest_object>& union_ret = hxset_union(
 			hxtest_rand_iter_api_t(left), hxtest_rand_iter_api_t(left + hxsize(left)),
 			hxtest_rand_iter_api_t(right), hxtest_rand_iter_api_t(right + hxsize(right)), union_output);
 		EXPECT_EQ(&union_ret, &union_output);
 	}
 	const int expected_union[] = { 1, 2, 3, 4 };
 	expect_hxarray(union_output, expected_union, hxsize(expected_union));
-	hxvector<hxtest_ref_tracker_t> intersection_output;
+	EXPECT_TRUE(check_stats(8, 0, 0, 4, 0, 0, 0, 6));
+}
+
+TEST_F(hxset_algorithms_test_f, hxarray_output_iterator_right_exhausted_first_intersection) {
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
+	hxtest_object left[] = { hxtest_object(1), hxtest_object(2), hxtest_object(4) };
+	hxtest_object right[] = { hxtest_object(3) };
+	hxvector<hxtest_object> intersection_output;
 	intersection_output.reserve(hxsize(left));
 	{
-		const hxvector<hxtest_ref_tracker_t>& intersection_ret = hxset_intersection(
+		const hxvector<hxtest_object>& intersection_ret = hxset_intersection(
 			hxtest_rand_iter_api_t(left), hxtest_rand_iter_api_t(left + hxsize(left)),
 			hxtest_rand_iter_api_t(right), hxtest_rand_iter_api_t(right + hxsize(right)), intersection_output);
 		EXPECT_EQ(&intersection_ret, &intersection_output);
 	}
 	EXPECT_EQ(intersection_output.size(), hxsize_t{0});
-	hxvector<hxtest_ref_tracker_t> difference_output;
+	EXPECT_TRUE(check_stats(4, 0, 0, 0, 0, 0, 0, 6));
+}
+
+TEST_F(hxset_algorithms_test_f, hxarray_output_iterator_right_exhausted_first_difference) {
+	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
+	auto expect_hxarray = [](const hxvector<hxtest_object>& actual, const int* expected, hxsize_t count) {
+		ASSERT_EQ(actual.size(), count);
+		for(hxsize_t i = 0; i < count; ++i) {
+			EXPECT_EQ(actual[i].value, expected[i]);
+		}
+	};
+	hxtest_object left[] = { hxtest_object(1), hxtest_object(2), hxtest_object(4) };
+	hxtest_object right[] = { hxtest_object(3) };
+	hxvector<hxtest_object> difference_output;
 	difference_output.reserve(hxsize(left));
 	{
-		const hxvector<hxtest_ref_tracker_t>& difference_ret = hxset_difference(
+		const hxvector<hxtest_object>& difference_ret = hxset_difference(
 			hxtest_rand_iter_api_t(left), hxtest_rand_iter_api_t(left + hxsize(left)),
 			hxtest_rand_iter_api_t(right), hxtest_rand_iter_api_t(right + hxsize(right)), difference_output);
 		EXPECT_EQ(&difference_ret, &difference_output);
 	}
 	const int expected_difference[] = { 1, 2, 4 };
 	expect_hxarray(difference_output, expected_difference, hxsize(expected_difference));
+	EXPECT_TRUE(check_stats(7, 0, 0, 3, 0, 0, 0, 6));
 }
 #endif // HX_CPLUSPLUS >= 201402L
 
-TEST(hxminmax_test, small_ranges) {
-	const int one[1] = { 34 };
-	hxminmax_result<const int*> result = hxminmax(one, one + 1);
-	EXPECT_EQ(result.min, one);
-	EXPECT_EQ(result.max, one);
-	const int ascending[2] = { 7, 11 };
-	result = hxminmax(ascending, ascending + 2);
-	EXPECT_EQ(result.min, ascending);
-	EXPECT_EQ(result.max, ascending + 1);
-	const int descending[2] = { 11, 7 };
-	result = hxminmax(descending, descending + 2);
-	EXPECT_EQ(result.min, descending + 1);
-	EXPECT_EQ(result.max, descending);
-	const int ties[6] = { 3, 1, 2, 1, 5, 5 };
-	result = hxminmax(ties, ties + 6);
-	EXPECT_EQ(result.min, ties + 1);
-	EXPECT_EQ(result.max, ties + 4);
-}
-
-TEST(hxminmax_test, simple_case) {
-	const int ints[5] = { 5, 3, 1, 4, 2 };
-	const int* ints_end = ints + 5;
-	hxminmax_result<const int*> result = hxminmax(ints, ints_end);
-	EXPECT_NE(result.min, ints_end);
-	EXPECT_EQ(*result.min, 1);
-	EXPECT_NE(result.max, ints_end);
-	EXPECT_EQ(*result.max, 5);
-	result = hxminmax(ints, ints_end, hxkey_less_t<int>{});
-	EXPECT_EQ(*result.min, 1);
-	EXPECT_EQ(*result.max, 5);
-	result = hxminmax(ints, ints + 1);
-	EXPECT_EQ(result.min, ints);
-	EXPECT_EQ(result.max, ints);
-	result = hxminmax(ints, ints);
-	EXPECT_EQ(result.min, ints);
-	EXPECT_EQ(result.max, ints);
-}
-
-TEST(hxminmax_test, iterator_support) {
-	hxtest_ref_tracker_t values[4] = { hxtest_ref_tracker_t(30), hxtest_ref_tracker_t(10), hxtest_ref_tracker_t(40), hxtest_ref_tracker_t(20) };
-	const hxtest_forward_iter_api_t begin(values);
-	const hxtest_forward_iter_api_t end(values + 4);
-	const hxminmax_result<hxtest_forward_iter_api_t> result =
-		hxminmax(begin, end, hxtest_value_less);
-	EXPECT_NE(result.min, end);
-	EXPECT_EQ((*result.min).value, 10);
-	EXPECT_NE(result.max, end);
-	EXPECT_EQ((*result.max).value, 40);
-	const hxminmax_result<hxtest_forward_iter_api_t> empty_result =
-		hxminmax(begin, begin, hxtest_value_less);
-	EXPECT_EQ(empty_result.min, begin);
-	EXPECT_EQ(empty_result.max, begin);
-}
-
-TEST(hxcount_if_test, simple_case) {
-	hxtest_ref_tracker_t values[6] = {
-		hxtest_ref_tracker_t(1), hxtest_ref_tracker_t(2), hxtest_ref_tracker_t(3),
-		hxtest_ref_tracker_t(4), hxtest_ref_tracker_t(5), hxtest_ref_tracker_t(6)
+TEST_F(hxtest_test_f, iter_api_types) {
+	hxtest_object values[2] = {
+		hxtest_object(11),
+		hxtest_object(22)
 	};
-	const hxtest_forward_iter_api_t begin(values);
-	const hxtest_forward_iter_api_t end(values + 6);
-	const hxsize_t count = hxcount_if(begin, end, [](const hxtest_ref_tracker_t& x) { return x.value % 2 == 0; });
-	EXPECT_EQ(count, hxsize_t{3});
-	EXPECT_EQ(hxcount_if(begin, end, [](const hxtest_ref_tracker_t& x) { return x.value > 0; }), hxsize_t{6});
-	EXPECT_EQ(hxcount_if(begin, end, [](const hxtest_ref_tracker_t& x) { return x.value > 10; }), hxsize_t{0});
-	EXPECT_EQ(hxcount_if(begin, begin, [](const hxtest_ref_tracker_t& x) { return x.value == 1; }), hxsize_t{0});
+	EXPECT_TRUE(hxtest_check_forward_iter_api(
+		hxtest_forward_iter_api_t(values), hxtest_forward_iter_api_t(values + 2)));
+	EXPECT_TRUE(hxtest_check_forward_iter_api(
+		hxtest_bidirectional_iter_api_t(values), hxtest_bidirectional_iter_api_t(values + 2)));
+	EXPECT_TRUE(hxtest_check_bidirectional_iter_api(
+		hxtest_bidirectional_iter_api_t(values), hxtest_bidirectional_iter_api_t(values + 2)));
+	EXPECT_TRUE(hxtest_check_forward_iter_api(
+		hxtest_rand_iter_api_t(values), hxtest_rand_iter_api_t(values + 2)));
+	EXPECT_TRUE(hxtest_check_bidirectional_iter_api(
+		hxtest_rand_iter_api_t(values), hxtest_rand_iter_api_t(values + 2)));
+	EXPECT_TRUE(hxtest_check_rand_iter_api(
+		hxtest_rand_iter_api_t(values), hxtest_rand_iter_api_t(values + 2)));
+	EXPECT_TRUE(check_stats(2, 0, 0, 0, 0, 0, 2, 0));
 }
 
-TEST(hxcount_if_test, boundary_matches) {
-	const int last_matches[4] = { 1, 3, 5, 6 };
-	EXPECT_EQ(hxcount_if(last_matches, last_matches + 4, [](const int& x) { return x % 2 == 0; }), hxsize_t{1});
-	const int first_matches[4] = { 6, 1, 3, 5 };
-	EXPECT_EQ(hxcount_if(first_matches, first_matches + 4, [](const int& x) { return x % 2 == 0; }), hxsize_t{1});
-}
-
-TEST(hxunique_test, simple_case) {
-	hxtest_ref_tracker_t values[7] = {
-		hxtest_ref_tracker_t(1), hxtest_ref_tracker_t(1), hxtest_ref_tracker_t(2), hxtest_ref_tracker_t(3),
-		hxtest_ref_tracker_t(3), hxtest_ref_tracker_t(3), hxtest_ref_tracker_t(4)
+TEST_F(hxunique_test_f, simple_case) {
+	hxtest_object values[7] = {
+		hxtest_object(1), hxtest_object(1), hxtest_object(2), hxtest_object(3),
+		hxtest_object(3), hxtest_object(3), hxtest_object(4)
 	};
 	const hxtest_forward_iter_api_t begin(values);
 	const hxtest_forward_iter_api_t end(values + 7);
@@ -401,14 +569,15 @@ TEST(hxunique_test, simple_case) {
 	EXPECT_EQ(values[1].value, 2);
 	EXPECT_EQ(values[2].value, 3);
 	EXPECT_EQ(values[3].value, 4);
-	hxtest_ref_tracker_t no_dup_values[3] = {
-		hxtest_ref_tracker_t(1), hxtest_ref_tracker_t(2), hxtest_ref_tracker_t(3)
+	hxtest_object no_dup_values[3] = {
+		hxtest_object(1), hxtest_object(2), hxtest_object(3)
 	};
 	const hxtest_forward_iter_api_t no_dup_begin(no_dup_values);
 	const hxtest_forward_iter_api_t no_dup_end(no_dup_values + 3);
 	const hxtest_forward_iter_api_t no_dup_new_end =
 		hxunique(no_dup_begin, no_dup_end, hxtest_value_equal);
 	EXPECT_EQ(no_dup_new_end, no_dup_end);
+	EXPECT_TRUE(check_stats(10, 0, 0, 0, 0, 3, 0, 0));
 }
 
 TEST(hxunique_test, boundary_counts) {
@@ -440,97 +609,11 @@ TEST(hxunique_test, boundary_counts) {
 	EXPECT_EQ(empty_end, mixed + 0);
 }
 
-TEST(hxunique_test, empty_range_explicit_equal) {
-	hxtest_ref_tracker_t value[1] = { hxtest_ref_tracker_t(1) };
+TEST_F(hxunique_test_f, empty_range_explicit_equal) {
+	hxtest_object value[1] = { hxtest_object(1) };
 	const hxtest_forward_iter_api_t begin(value);
 	const hxtest_forward_iter_api_t empty_end =
 		hxunique(begin, begin, hxtest_value_equal);
 	EXPECT_EQ(empty_end, begin);
-}
-
-TEST(hxfind_if_test, simple_case) {
-	const int ints[5] = { 2, 5, 6, 88, 99 };
-	const int* ints_end = ints + 5;
-	const int* result = hxfind_if(ints, ints_end, [](const int& x) { return x >= 6; });
-	EXPECT_NE(result, ints_end);
-	EXPECT_EQ(*result, 6);
-	result = hxfind_if(ints, ints_end, [](const int& x) { return x == 2; });
-	EXPECT_EQ(result, ints);
-	result = hxfind_if(ints, ints_end, [](const int& x) { return x == 99; });
-	EXPECT_NE(result, ints_end);
-	EXPECT_EQ(*result, 99);
-	result = hxfind_if(ints, ints_end, [](const int& x) { return x == 0; });
-	EXPECT_EQ(result, ints_end);
-	result = hxfind_if(ints, ints, [](const int& x) { return x == 2; });
-	EXPECT_EQ(result, ints);
-}
-
-TEST(hxfind_if_test, iterator_support) {
-	hxtest_ref_tracker_t values[4] = { hxtest_ref_tracker_t(10), hxtest_ref_tracker_t(20), hxtest_ref_tracker_t(30), hxtest_ref_tracker_t(40) };
-	const hxtest_forward_iter_api_t begin(values);
-	const hxtest_forward_iter_api_t end(values + 4);
-	const hxtest_forward_iter_api_t result =
-		hxfind_if(begin, end, [](const hxtest_ref_tracker_t& x) { return x.value > 15; });
-	EXPECT_NE(result, end);
-	EXPECT_EQ((*result).value, 20);
-	const hxtest_forward_iter_api_t no_match =
-		hxfind_if(begin, end, [](const hxtest_ref_tracker_t& x) { return x.value > 100; });
-	EXPECT_EQ(no_match, end);
-	const hxtest_forward_iter_api_t empty_result =
-		hxfind_if(begin, begin, [](const hxtest_ref_tracker_t& x) { return x.value == 10; });
-	EXPECT_EQ(empty_result, begin);
-}
-
-TEST(hxfind_if_test, flat_map_iterator) {
-	using map_t = hxflat_map<int, int, hxkey_less_t<int>, false, 4>;
-	map_t m;
-	m.insert(1, 10);
-	m.insert(2, 20);
-	m.insert(3, 30);
-	map_t::const_iterator result = hxfind_if(m.begin(), m.end(),
-		[](const map_t::const_iterator& it) { return it.value() >= 20; });
-	EXPECT_NE(result, m.end());
-	EXPECT_EQ(result.key(), 2);
-	result = hxfind_if(m.begin(), m.end(),
-		[](const map_t::const_iterator& it) { return it.key() == 1; });
-	EXPECT_EQ(result, m.begin());
-	result = hxfind_if(m.begin(), m.end(),
-		[](const map_t::const_iterator& it) { return it.value() == 30; });
-	EXPECT_NE(result, m.end());
-	EXPECT_EQ(result.key(), 3);
-	result = hxfind_if(m.begin(), m.end(),
-		[](const map_t::const_iterator& it) { return it.value() == 99; });
-	EXPECT_EQ(result, m.end());
-	result = hxfind_if(m.begin(), m.begin(),
-		[](const map_t::const_iterator& it) { return it.value() == 10; });
-	EXPECT_EQ(result, m.begin());
-}
-
-TEST(hxquantifier_test, all_of_any_of_and_for_each) {
-	hxtest_ref_tracker_t values[3] = { hxtest_ref_tracker_t(10), hxtest_ref_tracker_t(20), hxtest_ref_tracker_t(30) };
-	const hxtest_forward_iter_api_t begin(values);
-	const hxtest_forward_iter_api_t end(values + 3);
-	EXPECT_TRUE(hxall_of(begin, end, [](const hxtest_ref_tracker_t& x) { return x.value >= 10; }));
-	EXPECT_FALSE(hxall_of(begin, end, [](const hxtest_ref_tracker_t& x) { return x.value >= 30; }));
-	EXPECT_TRUE(hxall_of(begin, begin, [](const hxtest_ref_tracker_t& x) { return x.value >= 100; }));
-	EXPECT_TRUE(hxany_of(begin, end, [](const hxtest_ref_tracker_t& x) { return x.value == 30; }));
-	EXPECT_FALSE(hxany_of(begin, end, [](const hxtest_ref_tracker_t& x) { return x.value == 99; }));
-	EXPECT_FALSE(hxany_of(begin, begin, [](const hxtest_ref_tracker_t& x) { return x.value == 10; }));
-	struct hxfor_each_test_accumulator_t {
-		int total;
-		void operator()(const hxtest_ref_tracker_t& x) { total += x.value; }
-	};
-	const hxfor_each_test_accumulator_t result =
-		hxfor_each(begin, end, hxfor_each_test_accumulator_t{0});
-	EXPECT_EQ(result.total, 60);
-	const hxfor_each_test_accumulator_t empty_result =
-		hxfor_each(begin, begin, hxfor_each_test_accumulator_t{7});
-	EXPECT_EQ(empty_result.total, 7);
-}
-
-TEST(hxexchange_test, move_only_type) {
-	hxtest_ref_tracker_t a(34);
-	const hxtest_ref_tracker_t old = hxexchange(a, hxtest_ref_tracker_t(99));
-	EXPECT_EQ(old.value, 34);
-	EXPECT_EQ(a.value, 99);
+	EXPECT_TRUE(check_stats(1, 0, 0, 0, 0, 0, 0, 0));
 }

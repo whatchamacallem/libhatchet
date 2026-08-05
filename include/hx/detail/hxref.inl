@@ -94,7 +94,10 @@ hxinline hxattr_flatten T_& hxref<T_>::emplace(U_& value_) {
 template<typename T_>
 template<typename function_t_>
 hxinline hxattr_flatten hxref<T_> hxref<T_>::or_else(function_t_&& callable_) const {
-	return m_value_ != hxnull ? *this : hxforward<function_t_>(callable_)();
+	if(m_value_ != hxnull) {
+		return *this;
+	}
+	return hxforward<function_t_>(callable_)();
 }
 
 template<typename T_>
@@ -111,8 +114,10 @@ hxinline hxattr_flatten T_& hxref<T_>::value(void) const {
 template<typename T_>
 template<typename U_>
 hxinline hxattr_flatten hxremove_cv_t<T_> hxref<T_>::value_or(U_&& default_value_) const {
-	return m_value_ != hxnull ? *m_value_
-		: static_cast<hxremove_cv_t<T_>>(hxforward<U_>(default_value_));
+	if(m_value_ != hxnull) {
+		return *m_value_;
+	}
+	return static_cast<hxremove_cv_t<T_>>(hxforward<U_>(default_value_));
 }
 
 HX_END_INL_

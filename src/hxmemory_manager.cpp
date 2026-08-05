@@ -125,8 +125,10 @@ public:
 		alignment = hxmax(alignment, hxalignment);
 		const size_t alignment_mask = static_cast<size_t>(alignment) - 1u;
 
-		// Round up size to a multiple of alignment as required by aligned_alloc.
-		// Treat size 0 as 1 so aligned_alloc never receives size 0 (implementation-defined).
+		// Round up size to a multiple of alignment as required by
+		// aligned_alloc. Treat size 0 as 1 so aligned_alloc never receives size
+		// 0 (implementation-defined). Integer overflow due to trying to
+		// allocate max memory is UB.
 		const size_t rounded = hxmax<size_t>((size + alignment_mask) & ~alignment_mask, alignment);
 		hxassertmsg(rounded >= size, "allocation_error size overflow %zu", size);
 
@@ -139,6 +141,7 @@ public:
 		const size_t alignment_mask = static_cast<size_t>(alignment) - 1u;
 
 		// Place header immediately before aligned allocation. malloc is aligned.
+		// Integer overflow due to trying to allocate max memory is UB.
 		const size_t total = size + sizeof(hxmemory_allocation_header) + alignment_mask;
 		hxassertmsg(total > size, "allocation_error size overflow %zu", size);
 		const uintptr_t actual = reinterpret_cast<uintptr_t>(hxmalloc_checked_(total));
@@ -206,7 +209,7 @@ public:
 	hxattr_hot void* allocate(size_t size, hxalignment_t alignment) {
 		const uintptr_t alignment_mask = static_cast<uintptr_t>(alignment - 1u);
 		const uintptr_t aligned = (m_current + alignment_mask) & ~alignment_mask;
-		// Assume size_t doesn't wrap here.
+		// Integer overflow due to trying to allocate max memory is UB.
 		if((aligned + size) > m_end_) {
 			return hxnull;
 		}

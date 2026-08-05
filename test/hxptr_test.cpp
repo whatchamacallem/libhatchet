@@ -41,13 +41,13 @@ TEST_F(hxptr_test_f, hxptr_construction_and_destruction) {
 		EXPECT_EQ(null_ptr.get(), static_cast<hxtest_object*>(hxnull));
 		EXPECT_FALSE((bool)null_ptr);
 	}
-	EXPECT_TRUE(this->check_totals(0u));
+	EXPECT_TRUE(check_stats(0, 0, 0, 0, 0, 0, 0, 0));
 	{
 		const hxptr<hxtest_object> owned(hxnew<hxtest_object>(34));
 		EXPECT_TRUE((bool)owned);
-		EXPECT_EQ(owned->id, 34);
+		EXPECT_EQ(owned->value, 34);
 	}
-	EXPECT_TRUE(this->check_totals(1u));
+	EXPECT_TRUE(check_stats(1, 1, 0, 0, 0, 0, 0, 0));
 	{
 		const hxptr<hxtest_object, hxtest_ptr_stateful_deleter> with_deleter(
 			hxnew<hxtest_object>(1), hxtest_ptr_stateful_deleter(99));
@@ -55,7 +55,7 @@ TEST_F(hxptr_test_f, hxptr_construction_and_destruction) {
 	}
 	EXPECT_EQ(hxs_ptr_stateful_delete_count, 1);
 	EXPECT_EQ(hxs_ptr_stateful_delete_tag, 99);
-	EXPECT_TRUE(this->check_totals(2u));
+	EXPECT_TRUE(check_stats(2, 2, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxptr_test_f, hxptr_move_construction) {
@@ -66,8 +66,7 @@ TEST_F(hxptr_test_f, hxptr_move_construction) {
 	EXPECT_FALSE((bool)a);
 	EXPECT_EQ(b.get(), raw);
 	EXPECT_TRUE((bool)b);
-	EXPECT_EQ(this->m_constructed, (hxsize_t)1);
-	EXPECT_EQ(this->m_destructed, (hxsize_t)0);
+	EXPECT_TRUE(check_stats(1, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxptr_test_f, hxptr_operator_assign_move) {
@@ -75,28 +74,27 @@ TEST_F(hxptr_test_f, hxptr_operator_assign_move) {
 	hxptr<hxtest_object> b(hxnew<hxtest_object>(20));
 	const hxtest_object* const raw_a = a.get();
 	b = hxmove(a);
-	EXPECT_EQ(this->m_constructed, (hxsize_t)2);
-	EXPECT_EQ(this->m_destructed, (hxsize_t)1);
+	EXPECT_TRUE(check_stats(2, 1, 0, 0, 0, 0, 0, 0));
 	EXPECT_EQ(b.get(), raw_a);
 	EXPECT_EQ(a.get(), static_cast<hxtest_object*>(hxnull));
 	hxptr<hxtest_object> c;
 	b = hxmove(c);
-	EXPECT_EQ(this->m_constructed, (hxsize_t)2);
-	EXPECT_EQ(this->m_destructed, (hxsize_t)2);
+	EXPECT_TRUE(check_stats(2, 2, 0, 0, 0, 0, 0, 0));
 	EXPECT_EQ(b.get(), static_cast<hxtest_object*>(hxnull));
 	hxptr<hxtest_object> d(hxnew<hxtest_object>(30));
 	const hxtest_object* const raw_d = d.get();
 	b = hxmove(d);
-	EXPECT_EQ(this->m_constructed, (hxsize_t)3);
-	EXPECT_EQ(this->m_destructed, (hxsize_t)2);
+	EXPECT_TRUE(check_stats(3, 2, 0, 0, 0, 0, 0, 0));
 	EXPECT_EQ(b.get(), raw_d);
 	EXPECT_EQ(d.get(), static_cast<hxtest_object*>(hxnull));
+	EXPECT_TRUE(check_stats(3, 2, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxptr_test_f, hxptr_operator_deref_and_arrow) {
 	const hxptr<hxtest_object> p(hxnew<hxtest_object>(7));
-	EXPECT_EQ((*p).id, 7);
-	EXPECT_EQ(p->id, 7);
+	EXPECT_EQ((*p).value, 7);
+	EXPECT_EQ(p->value, 7);
+	EXPECT_TRUE(check_stats(1, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxptr_test_f, hxptr_operator_bool) {
@@ -104,6 +102,7 @@ TEST_F(hxptr_test_f, hxptr_operator_bool) {
 	EXPECT_FALSE((bool)empty);
 	const hxptr<hxtest_object> owned(hxnew<hxtest_object>(1));
 	EXPECT_TRUE((bool)owned);
+	EXPECT_TRUE(check_stats(1, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxptr_test_f, hxptr_operator_equal_hxptr) {
@@ -118,6 +117,7 @@ TEST_F(hxptr_test_f, hxptr_operator_equal_hxptr) {
 	const hxptr<hxtest_object> e(hxnew<hxtest_object>(5));
 	EXPECT_FALSE(d == e);
 	EXPECT_TRUE(d != e);
+	EXPECT_TRUE(check_stats(3, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxptr_test_f, hxptr_operator_equal_nullptr) {
@@ -127,25 +127,27 @@ TEST_F(hxptr_test_f, hxptr_operator_equal_nullptr) {
 	const hxptr<hxtest_object> owned(hxnew<hxtest_object>(0));
 	EXPECT_FALSE(owned == hxnullptr);
 	EXPECT_TRUE(owned != hxnullptr);
+	EXPECT_TRUE(check_stats(1, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxptr_test_f, hxptr_and_then) {
 	const hxptr<hxtest_object> engaged(hxnew<hxtest_object>(3));
 	const hxptr<hxtest_object> mapped = engaged.and_then([](hxtest_object& v) {
-		return hxptr<hxtest_object>(hxnew<hxtest_object>(v.id + 1));
+		return hxptr<hxtest_object>(hxnew<hxtest_object>(v.value + 1));
 	});
 	EXPECT_TRUE((bool)mapped);
-	EXPECT_EQ(mapped->id, 4);
+	EXPECT_EQ(mapped->value, 4);
 	EXPECT_FALSE((bool)engaged.and_then([](hxtest_object&) { return hxptr<hxtest_object>(); }));
 	const hxptr<hxtest_object> empty;
 	bool called = false;
 	const hxptr<hxtest_object> from_null = empty.and_then([&called](hxtest_object& v) {
 		// GCOVR_EXCL_START
-		called = true; return hxptr<hxtest_object>(hxnew<hxtest_object>(v.id));
+		called = true; return hxptr<hxtest_object>(hxnew<hxtest_object>(v.value));
 		// GCOVR_EXCL_STOP
 	});
 	EXPECT_FALSE((bool)from_null);
 	EXPECT_FALSE(called);
+	EXPECT_TRUE(check_stats(2, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxptr_test_f, hxptr_get) {
@@ -154,6 +156,7 @@ TEST_F(hxptr_test_f, hxptr_get) {
 	hxtest_object* const raw = hxnew<hxtest_object>(9);
 	const hxptr<hxtest_object> owned(raw);
 	EXPECT_EQ(owned.get(), raw);
+	EXPECT_TRUE(check_stats(1, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxptr_test_f, hxptr_get_deleter) {
@@ -163,6 +166,7 @@ TEST_F(hxptr_test_f, hxptr_get_deleter) {
 	p.deleter().m_tag = 6;
 	const hxptr<hxtest_object, hxtest_ptr_stateful_deleter>& const_ref = p;
 	EXPECT_EQ(const_ref.deleter().m_tag, 6);
+	EXPECT_TRUE(check_stats(1, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxptr_test_f, hxptr_or_else) {
@@ -185,7 +189,8 @@ TEST_F(hxptr_test_f, hxptr_or_else) {
 	});
 	EXPECT_TRUE(called_empty);
 	EXPECT_TRUE((bool)from_empty);
-	EXPECT_EQ(from_empty->id, 42);
+	EXPECT_EQ(from_empty->value, 42);
+	EXPECT_TRUE(check_stats(2, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxptr_test_f, hxptr_release) {
@@ -193,25 +198,25 @@ TEST_F(hxptr_test_f, hxptr_release) {
 	hxptr<hxtest_object> p(raw);
 	hxtest_object* const released = p.release();
 	EXPECT_EQ(released, raw);
-	EXPECT_EQ(released->id, 77);
+	EXPECT_EQ(released->value, 77);
 	EXPECT_EQ(p.get(), static_cast<hxtest_object*>(hxnull));
-	EXPECT_EQ(this->m_destructed, (hxsize_t)0);
+	EXPECT_TRUE(check_stats(1, 0, 0, 0, 0, 0, 0, 0));
 	hxdelete(released);
+	EXPECT_TRUE(check_stats(1, 1, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxptr_test_f, hxptr_reset) {
 	hxptr<hxtest_object> p(hxnew<hxtest_object>(1));
 	hxtest_object* const second = hxnew<hxtest_object>(2);
 	p.reset(second);
-	EXPECT_EQ(this->m_constructed, (hxsize_t)2);
-	EXPECT_EQ(this->m_destructed, (hxsize_t)1);
+	EXPECT_TRUE(check_stats(2, 1, 0, 0, 0, 0, 0, 0));
 	EXPECT_EQ(p.get(), second);
-	EXPECT_EQ(p->id, 2);
+	EXPECT_EQ(p->value, 2);
 	p.reset();
-	EXPECT_TRUE(this->check_totals(2u));
+	EXPECT_TRUE(check_stats(2, 2, 0, 0, 0, 0, 0, 0));
 	EXPECT_EQ(p.get(), static_cast<hxtest_object*>(hxnull));
 	p.reset();
-	EXPECT_TRUE(this->check_totals(2u));
+	EXPECT_TRUE(check_stats(2, 2, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxptr_test_f, hxptr_swap) {
@@ -220,11 +225,11 @@ TEST_F(hxptr_test_f, hxptr_swap) {
 	const hxtest_object* const raw_a = a.get();
 	const hxtest_object* const raw_b = b.get();
 	a.swap(b);
-	EXPECT_EQ(this->m_destructed, (hxsize_t)0);
+	EXPECT_TRUE(check_stats(2, 0, 0, 0, 0, 0, 0, 0));
 	EXPECT_EQ(a.get(), raw_b);
 	EXPECT_EQ(b.get(), raw_a);
-	EXPECT_EQ(a->id, 2);
-	EXPECT_EQ(b->id, 1);
+	EXPECT_EQ(a->value, 2);
+	EXPECT_EQ(b->value, 1);
 
 	hxptr<hxtest_object> c(hxnew<hxtest_object>(7));
 	hxptr<hxtest_object> d;
@@ -232,17 +237,20 @@ TEST_F(hxptr_test_f, hxptr_swap) {
 	c.swap(d);
 	EXPECT_EQ(c.get(), static_cast<hxtest_object*>(hxnull));
 	EXPECT_EQ(d.get(), raw_c);
+	EXPECT_TRUE(check_stats(3, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxptr_test_f, hxptr_value_or) {
 	const hxptr<hxtest_object> engaged(hxnew<hxtest_object>(3));
-	EXPECT_EQ(engaged.value_or(hxtest_object(99)).id, 3);
+	EXPECT_EQ(engaged.value_or(hxtest_object(99)).value, 3);
 	const hxptr<hxtest_object> empty;
-	EXPECT_EQ(empty.value_or(hxtest_object(7)).id, 7);
+	EXPECT_EQ(empty.value_or(hxtest_object(7)).value, 7);
+	EXPECT_TRUE(check_stats(5, 4, 1, 1, 0, 0, 0, 0));
 }
 
 TEST_F(hxptr_test_f, hxmake_ptr) {
 	const hxptr<hxtest_object> p = hxmake_ptr<hxtest_object>(34);
 	EXPECT_TRUE((bool)p);
-	EXPECT_EQ(p->id, 34);
+	EXPECT_EQ(p->value, 34);
+	EXPECT_TRUE(check_stats(1, 0, 0, 0, 0, 0, 0, 0));
 }

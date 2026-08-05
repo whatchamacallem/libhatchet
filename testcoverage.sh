@@ -77,7 +77,7 @@ HX_STATUS_=0
 gcovr --gcov-executable $HX_GCOV_ --gcov-object-directory . --exclude-throw-branches  \
 	--exclude-unreachable-branches --exclude-noncode-lines --exclude-lines-by-pattern \
 	.*hxassert.* --exclude-branches-by-pattern .*hxassert.* --root $HX_DIR_           \
-	--html-details "${HX_DEST_DIR_}0coverage.html" --html-self-contained --json         \
+	--html-details "${HX_DEST_DIR_}0coverage.html" --html-self-contained --json       \
 	coverage.json --txt-metric branch --print-summary --fail-under-line 100 . || HX_STATUS_=$?
 
 { set +o xtrace; } 2> /dev/null

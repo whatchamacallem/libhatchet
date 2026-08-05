@@ -40,7 +40,7 @@ TEST_F(hxarray_test_f, hxarray_default_constructs_all_elements) {
 			EXPECT_FALSE(a[i].moved_from);
 		}
 	}
-	EXPECT_TRUE(check_totals(3));
+	EXPECT_TRUE(check_stats(3, 3, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxarray_test_f, hxarray_fill_constructor) {
@@ -49,11 +49,11 @@ TEST_F(hxarray_test_f, hxarray_fill_constructor) {
 		hxarray<hxtest_object, 4> a(fill);
 		EXPECT_EQ(a.size(), 4);
 		for(hxsize_t i = 0; i < a.size(); ++i) {
-			EXPECT_EQ(a[i].id, 99);
+			EXPECT_EQ(a[i].value, 99);
 			EXPECT_FALSE(a[i].moved_from);
 		}
 	}
-	EXPECT_TRUE(check_totals(5));
+	EXPECT_TRUE(check_stats(5, 5, 4, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxarray_test_f, hxarray_copy_constructor) {
@@ -63,15 +63,15 @@ TEST_F(hxarray_test_f, hxarray_copy_constructor) {
 		src[1] = hxtest_object(20);
 		src[2] = hxtest_object(30);
 		hxarray<hxtest_object, 3> dst(src);
-		EXPECT_EQ(dst[0].id, 10);
-		EXPECT_EQ(dst[1].id, 20);
-		EXPECT_EQ(dst[2].id, 30);
+		EXPECT_EQ(dst[0].value, 10);
+		EXPECT_EQ(dst[1].value, 20);
+		EXPECT_EQ(dst[2].value, 30);
 		for(hxsize_t i = 0; i < dst.size(); ++i) {
 			EXPECT_FALSE(dst[i].moved_from);
 			EXPECT_FALSE(src[i].moved_from);
 		}
 	}
-	EXPECT_TRUE(check_totals(9));
+	EXPECT_TRUE(check_stats(9, 9, 3, 0, 0, 3, 0, 0));
 }
 
 TEST_F(hxarray_test_f, hxarray_copy_assignment) {
@@ -82,14 +82,14 @@ TEST_F(hxarray_test_f, hxarray_copy_assignment) {
 		src[2] = hxtest_object(33);
 		hxarray<hxtest_object, 3> dst;
 		dst = src;
-		EXPECT_EQ(dst[0].id, 11);
-		EXPECT_EQ(dst[1].id, 22);
-		EXPECT_EQ(dst[2].id, 33);
+		EXPECT_EQ(dst[0].value, 11);
+		EXPECT_EQ(dst[1].value, 22);
+		EXPECT_EQ(dst[2].value, 33);
 		for(hxsize_t i = 0; i < dst.size(); ++i) {
 			EXPECT_FALSE(dst[i].moved_from);
 		}
 	}
-	EXPECT_TRUE(check_totals(9));
+	EXPECT_TRUE(check_stats(9, 9, 0, 0, 3, 3, 0, 0));
 }
 
 TEST(hxarray_test, hxarray_c_array_constructor) {
@@ -275,13 +275,14 @@ TEST_F(hxarray_test_f, hxarray_assign_range_from_rvalue) {
 	hxarray<hxtest_object, 3> elements;
 	elements.assign_range(hxtest_pointer_range(
 		source_elements, source_elements + 3));
-	EXPECT_EQ(elements[0].id, 5);
-	EXPECT_EQ(elements[1].id, 9);
-	EXPECT_EQ(elements[2].id, 13);
+	EXPECT_EQ(elements[0].value, 5);
+	EXPECT_EQ(elements[1].value, 9);
+	EXPECT_EQ(elements[2].value, 13);
 	for(hxsize_t i = 0; i < 3; ++i) {
 		EXPECT_FALSE(elements[i].moved_from);
 		EXPECT_TRUE(source_elements[i].moved_from);
 	}
+	EXPECT_TRUE(check_stats(6, 0, 0, 0, 0, 3, 0, 0));
 }
 
 TEST_F(hxarray_test_f, hxarray_assign_range_from_const) {
@@ -291,10 +292,11 @@ TEST_F(hxarray_test_f, hxarray_assign_range_from_const) {
 	hxtest_pointer_range<const hxtest_object> range(src.begin(), src.end());
 	elements.assign_range(range);
 	for(hxsize_t i = 0; i < 4; ++i) {
-		EXPECT_EQ(elements[i].id, src[i].id);
+		EXPECT_EQ(elements[i].value, src[i].value);
 		EXPECT_FALSE(elements[i].moved_from);
 		EXPECT_FALSE(src[i].moved_from);
 	}
+	EXPECT_TRUE(check_stats(8, 0, 0, 0, 4, 0, 0, 0));
 }
 #endif
 
@@ -387,9 +389,12 @@ TEST_F(hxarray_test_f, hxarray_reserve_dynamic) {
 		}
 		a.reserve(3);
 		EXPECT_EQ(a.size(), 3);
+		a[0].value = 71;
+		a[1].value = 72;
+		a[2].value = 73;
 		hxtest_gdb_break_hxarray_dynamic();
 	}
-	EXPECT_TRUE(check_totals(3));
+	EXPECT_TRUE(check_stats(3, 3, 0, 0, 0, 0, 0, 0));
 }
 
 TEST(hxarray_test, hxarray_reserve_static_noop) {
@@ -407,13 +412,14 @@ TEST_F(hxarray_test_f, hxarray_dynamic_copy_constructor) {
 		src[1] = hxtest_object(8);
 		hxarray<hxtest_object, hxallocator_dynamic_capacity> dst(src);
 		EXPECT_EQ(dst.size(), 2);
-		EXPECT_EQ(dst[0].id, 7);
-		EXPECT_EQ(dst[1].id, 8);
+		EXPECT_EQ(dst[0].value, 7);
+		EXPECT_EQ(dst[1].value, 8);
 		for(hxsize_t i = 0; i < 2; ++i) {
 			EXPECT_FALSE(dst[i].moved_from);
 			EXPECT_FALSE(src[i].moved_from);
 		}
 	}
+	EXPECT_TRUE(check_stats(6, 6, 2, 0, 0, 2, 0, 0));
 }
 
 TEST_F(hxarray_test_f, hxarray_dynamic_c_array_constructor) {
@@ -422,14 +428,15 @@ TEST_F(hxarray_test_f, hxarray_dynamic_c_array_constructor) {
 		static const int32_t values[3] = { 2, 4, 6 };
 		hxarray<hxtest_object, hxallocator_dynamic_capacity> a(values);
 		EXPECT_EQ(a.size(), 3);
-		EXPECT_EQ(a[0].id, 2);
-		EXPECT_EQ(a[1].id, 4);
-		EXPECT_EQ(a[2].id, 6);
+		EXPECT_EQ(a[0].value, 2);
+		EXPECT_EQ(a[1].value, 4);
+		EXPECT_EQ(a[2].value, 6);
 	}
+	EXPECT_TRUE(check_stats(3, 3, 0, 0, 0, 0, 0, 0));
 }
 
 #if HX_CPLUSPLUS >= 202002L
-TEST_F(hxarray_test_f, hxarray_dynamic_initializer_list_constructor) {
+TEST(hxarray_test, hxarray_dynamic_initializer_list_constructor) {
 	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	{
 		hxarray<int, hxallocator_dynamic_capacity> a { 10, 20, 30 };
@@ -448,16 +455,17 @@ TEST_F(hxarray_test_f, hxarray_dynamic_assign_from_iterators) {
 		hxarray<hxtest_object, hxallocator_dynamic_capacity> a;
 		a.assign(src + 0, src + 3);
 		EXPECT_EQ(a.size(), 3);
-		EXPECT_EQ(a[0].id, 3);
-		EXPECT_EQ(a[1].id, 6);
-		EXPECT_EQ(a[2].id, 9);
+		EXPECT_EQ(a[0].value, 3);
+		EXPECT_EQ(a[1].value, 6);
+		EXPECT_EQ(a[2].value, 9);
 		hxtest_object src2[3] = { hxtest_object(30), hxtest_object(60), hxtest_object(90) };
 		a.assign(src2 + 0, src2 + 3);
 		EXPECT_EQ(a.size(), 3);
-		EXPECT_EQ(a[0].id, 30);
-		EXPECT_EQ(a[1].id, 60);
-		EXPECT_EQ(a[2].id, 90);
+		EXPECT_EQ(a[0].value, 30);
+		EXPECT_EQ(a[1].value, 60);
+		EXPECT_EQ(a[2].value, 90);
 	}
+	EXPECT_TRUE(check_stats(9, 9, 3, 0, 3, 0, 0, 0));
 }
 
 #if HX_CPLUSPLUS >= 202002L
@@ -472,8 +480,8 @@ TEST_F(hxarray_test_f, hxarray_dynamic_assign_range_rvalue) {
 		a.assign_range(hxtest_pointer_range(
 			source_elements, source_elements + 2));
 		EXPECT_EQ(a.size(), 2);
-		EXPECT_EQ(a[0].id, 1);
-		EXPECT_EQ(a[1].id, 2);
+		EXPECT_EQ(a[0].value, 1);
+		EXPECT_EQ(a[1].value, 2);
 		for(hxsize_t i = 0; i < 2; ++i) {
 			EXPECT_FALSE(a[i].moved_from);
 			EXPECT_TRUE(source_elements[i].moved_from);
@@ -485,13 +493,14 @@ TEST_F(hxarray_test_f, hxarray_dynamic_assign_range_rvalue) {
 		a.assign_range(hxtest_pointer_range(
 			more_elements, more_elements + 2));
 		EXPECT_EQ(a.size(), 2);
-		EXPECT_EQ(a[0].id, 10);
-		EXPECT_EQ(a[1].id, 20);
+		EXPECT_EQ(a[0].value, 10);
+		EXPECT_EQ(a[1].value, 20);
 		for(hxsize_t i = 0; i < 2; ++i) {
 			EXPECT_FALSE(a[i].moved_from);
 			EXPECT_TRUE(more_elements[i].moved_from);
 		}
 	}
+	EXPECT_TRUE(check_stats(6, 6, 0, 2, 0, 2, 0, 0));
 }
 #endif
 
@@ -551,16 +560,16 @@ TEST_F(hxarray_test_f, hxarray_dynamic_move_constructor) {
 		src[2] = hxtest_object(33);
 		hxarray<hxtest_object, hxallocator_dynamic_capacity> dst(hxmove(src));
 		EXPECT_EQ(dst.size(), 3);
-		EXPECT_EQ(dst[0].id, 11);
-		EXPECT_EQ(dst[1].id, 22);
-		EXPECT_EQ(dst[2].id, 33);
+		EXPECT_EQ(dst[0].value, 11);
+		EXPECT_EQ(dst[1].value, 22);
+		EXPECT_EQ(dst[2].value, 33);
 		for(hxsize_t i = 0; i < 3; ++i) {
 			EXPECT_FALSE(dst[i].moved_from);
 		}
 		EXPECT_EQ(src.size(), 0);
 		EXPECT_EQ(src.capacity(), 0);
 	}
-	EXPECT_EQ(m_constructed, m_destructed);
+	EXPECT_TRUE(check_stats(6, 6, 0, 0, 0, 3, 0, 0));
 }
 
 #if HX_CPLUSPLUS >= 202002L
@@ -578,12 +587,12 @@ TEST_F(hxarray_test_f, hxswap_exchanges_dynamic_contents) {
 		b[2] = hxtest_object(5);
 		hxswap(a, b);
 		EXPECT_EQ(a.size(), 3);
-		EXPECT_EQ(a[0].id, 3);
-		EXPECT_EQ(a[2].id, 5);
+		EXPECT_EQ(a[0].value, 3);
+		EXPECT_EQ(a[2].value, 5);
 		EXPECT_EQ(b.size(), 2);
-		EXPECT_EQ(b[0].id, 1);
-		EXPECT_EQ(b[1].id, 2);
+		EXPECT_EQ(b[0].value, 1);
+		EXPECT_EQ(b[1].value, 2);
 	}
-	EXPECT_EQ(m_constructed, m_destructed);
+	EXPECT_TRUE(check_stats(10, 10, 0, 0, 0, 5, 0, 0));
 }
 #endif // HX_CPLUSPLUS >= 202002L

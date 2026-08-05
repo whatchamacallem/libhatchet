@@ -49,20 +49,20 @@ if [ "${1:-}" = "--verbose" ]; then
 fi
 
 cat > expected_pretty_print.txt <<'EOF'
-$1 = [3] hxtest_object = {{moved_from = false, id = -1}, {moved_from = false, id = -2}, {moved_from = false, id = -3}}
+$1 = [3] hxtest_object = {{value = 71, moved_from = 0}, {value = 72, moved_from = 0}, {value = 73, moved_from = 0}}
 $2 = [4] int = {7, 14, 21, 28}
 $3 = 1010000000000000000000000000000000000000000000000000000000000000001 = {m_data_[0] = 1, m_data_[1] = 5}
 $4 = 1010000000000000000000000000000000000000000000000000000000000000001 = {m_data_[0] = 1, m_data_[1] = 5}
 $5 = [3] hxtest_const_list_node_t = {1, 2, 3}
 $6 = [4/4] int = {3, 4, 5, 6}
 $7 = [8/8] int = {4, 5, 6, 7, 8, 9, 10, 11}
-$8 = [3/4] int->hxtest_object = {[1] = {moved_from = false, id = 10}, [2] = {moved_from = false, id = 20}, [3] = {moved_from = false, id = 30}}
-$9 = [3/8] int->hxtest_object = {[1] = {moved_from = false, id = 10}, [2] = {moved_from = false, id = 20}, [3] = {moved_from = false, id = 30}}
-$10 = [3/4] hxtest_object = {{moved_from = false, id = 10}, {moved_from = false, id = 20}, {moved_from = false, id = 30}}
-$11 = [3/8] hxtest_object = {{moved_from = false, id = 10}, {moved_from = false, id = 20}, {moved_from = false, id = 30}}
+$8 = [3/4] int->hxtest_object = {[1] = {value = 10, moved_from = 0}, [2] = {value = 20, moved_from = 0}, [3] = {value = 30, moved_from = 0}}
+$9 = [3/8] int->hxtest_object = {[1] = {value = 10, moved_from = 0}, [2] = {value = 20, moved_from = 0}, [3] = {value = 30, moved_from = 0}}
+$10 = [3/4] hxtest_object = {{value = 10, moved_from = 0}, {value = 20, moved_from = 0}, {value = 30, moved_from = 0}}
+$11 = [3/8] hxtest_object = {{value = 10, moved_from = 0}, {value = 20, moved_from = 0}, {value = 30, moved_from = 0}}
 $12 = [39/32 buckets] hxtest_integer = {57, 61, 39, 67, 55, 75, 60, 48, 45, 72, 64, 56, 59, 66, 42, 63, 62, 44, 53, 73, 58, 71, 52, 40, 46, 68, 65, 41, 51, 76, 70, 77, 49, 69, 43, 54, 47, 74, 50}
 $13 = [3] hxtest_list_node_t = {1, 2, 3}
-$14 = [5/5] hxtest_object = {{moved_from = false, id = 91}, {moved_from = false, id = -2}, {moved_from = false, id = -1}, {moved_from = false, id = -1}, {moved_from = false, id = 99}}
+$14 = [5/5] hxtest_object = {{value = 91, moved_from = 0}, {value = 0, moved_from = 0}, {value = 97, moved_from = 0}, {value = 97, moved_from = 0}, {value = 99, moved_from = 0}}
 $15 = [7/8] int = {10, 9, 6, 8, 7, 4, 5}
 EOF
 

@@ -39,7 +39,7 @@ template<typename T_, uint32_t table_size_bits_>
 inline hxattr_flatten hxhandle_map<T_, table_size_bits_>::~hxhandle_map(void) {
 	T_* hxrestrict it_ = m_values_.data();
 	for(const T_* const end_ = it_ + m_size_; it_ != end_; ++it_) {
-		it_->~T_();
+		it_->T_::~T_();
 	}
 }
 
@@ -53,7 +53,7 @@ inline hxattr_flatten void hxhandle_map<T_, table_size_bits_>::clear(void) noexc
 	T_* hxrestrict values_ = m_values_.data();
 	for(const slot_t_* const end_ = slots_ + size_; backref_ != end_; ++backref_, ++values_) {
 		slots_[backref_->m_backref_].m_handle_ += increment_;
-		values_->~T_();
+		values_->T_::~T_();
 	}
 	m_size_ = 0u;
 }
@@ -81,7 +81,7 @@ inline hxattr_flatten bool hxhandle_map<T_, table_size_bits_>::erase(hxhandle_t 
 	}
 	slot_->m_handle_ = handle_ + (mask_ + 1u);
 	m_size_ = last_;
-	values_[last_].~T_();
+	values_[last_].T_::~T_();
 	return true;
 }
 
@@ -108,7 +108,7 @@ inline hxattr_flatten hxsize_t hxhandle_map<T_, table_size_bits_>::erase_if(
 				values_[value_] = hxmove(values_[last_]);
 			}
 			slots_[index_].m_handle_ += (mask_ + 1u);
-			values_[last_].~T_();
+			values_[last_].T_::~T_();
 			++erased_;
 		}
 	}

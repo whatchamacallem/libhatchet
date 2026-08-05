@@ -98,9 +98,9 @@ TEST_F(hxdeque_test_f, destructor_calls_clear) {
 		hxdeque<hxtest_object, 4> d;
 		d.emplace_back(7);
 		d.emplace_back(8);
-		EXPECT_EQ(m_constructed, 2);
+		EXPECT_TRUE(check_stats(2, 0, 0, 0, 0, 0, 0, 0));
 	}
-	EXPECT_EQ(m_destructed, 2);
+	EXPECT_TRUE(check_stats(2, 2, 0, 0, 0, 0, 0, 0));
 }
 
 TEST(hxdeque_test, capacity) {
@@ -116,15 +116,15 @@ TEST(hxdeque_test, capacity) {
 TEST_F(hxdeque_test_f, clear) {
 	hxdeque<hxtest_object, 4> d;
 	d.clear();
-	EXPECT_EQ(m_destructed, 0);
+	EXPECT_TRUE(check_stats(0, 0, 0, 0, 0, 0, 0, 0));
 	d.emplace_back(1);
 	d.emplace_back(2);
 	d.emplace_back(3);
-	EXPECT_EQ(m_constructed, 3);
+	EXPECT_TRUE(check_stats(3, 0, 0, 0, 0, 0, 0, 0));
 	d.clear();
-	EXPECT_EQ(m_destructed, 3);
 	EXPECT_EQ(d.size(), 0);
 	EXPECT_TRUE(d.empty());
+	EXPECT_TRUE(check_stats(3, 3, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxdeque_test_f, clear_after_ring_wraparound) {
@@ -135,20 +135,17 @@ TEST_F(hxdeque_test_f, clear_after_ring_wraparound) {
 	d.emplace_back(100);
 	d.emplace_back(101);
 	EXPECT_EQ(d.size(), 4);
-	const hxsize_t before_clear = m_destructed;
 	d.clear();
-	EXPECT_EQ(m_destructed, before_clear + 4);
 	EXPECT_TRUE(d.empty());
+	EXPECT_TRUE(check_stats(6, 6, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxdeque_test_f, emplace_back) {
 	hxdeque<hxtest_object, 4> d;
 	d.emplace_back(34);
-	EXPECT_EQ(d.back().id, 34);
+	EXPECT_EQ(d.back().value, 34);
 	EXPECT_FALSE(d.back().moved_from);
 	EXPECT_EQ(d.size(), 1);
-	EXPECT_EQ(m_constructed, 1);
-	EXPECT_EQ(m_destructed, 0);
 	struct hxtest_pair_t {
 		hxtest_pair_t(int a, int b) : x(a), y(b) { }
 		int x, y;
@@ -157,6 +154,7 @@ TEST_F(hxdeque_test_f, emplace_back) {
 	pd.emplace_back(3, 7);
 	EXPECT_EQ(pd.back().x, 3);
 	EXPECT_EQ(pd.back().y, 7);
+	EXPECT_TRUE(check_stats(1, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxdeque_test_f, emplace_front) {
@@ -164,9 +162,9 @@ TEST_F(hxdeque_test_f, emplace_front) {
 	d.emplace_back(10);
 	d.emplace_front(99);
 	EXPECT_EQ(d.size(), 2);
-	EXPECT_EQ(d.front().id, 99);
-	EXPECT_EQ(d.back().id, 10);
-	EXPECT_EQ(m_constructed, 2);
+	EXPECT_EQ(d.front().value, 99);
+	EXPECT_EQ(d.back().value, 10);
+	EXPECT_TRUE(check_stats(2, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST(hxdeque_test, empty) {
@@ -207,20 +205,18 @@ TEST(hxdeque_test, full) {
 TEST_F(hxdeque_test_f, pop_back) {
 	hxdeque<hxtest_object, 4> d;
 	d.emplace_back(77);
-	const hxsize_t d_before = m_destructed;
 	d.pop_back();
-	EXPECT_EQ(m_destructed, d_before + 1);
 	EXPECT_TRUE(d.empty());
+	EXPECT_TRUE(check_stats(1, 1, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxdeque_test_f, pop_front) {
 	hxdeque<hxtest_object, 4> d;
 	d.emplace_back(55);
-	EXPECT_EQ(m_constructed, 1);
-	const hxsize_t d_before = m_destructed;
+	EXPECT_TRUE(check_stats(1, 0, 0, 0, 0, 0, 0, 0));
 	d.pop_front();
-	EXPECT_EQ(m_destructed, d_before + 1);
 	EXPECT_TRUE(d.empty());
+	EXPECT_TRUE(check_stats(1, 1, 0, 0, 0, 0, 0, 0));
 }
 
 TEST(hxdeque_test, push_back_fifo_and_wraparound) {

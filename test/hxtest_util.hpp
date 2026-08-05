@@ -9,45 +9,53 @@
 
 HX_NS_USE
 
-class hxtest_ref_tracker_t {
+class hxtest_object_fixture :
+	public testing::Test
+{
 public:
-	explicit hxtest_ref_tracker_t(int x) : value(x) { }
-	hxtest_ref_tracker_t(hxtest_ref_tracker_t&& other) noexcept : value(other.value) {
-		hxassert(this != &other);
-	}
-	~hxtest_ref_tracker_t() {
-		value = 0xbad;
-	}
-	hxtest_ref_tracker_t& operator=(hxtest_ref_tracker_t&& other) noexcept {
-		hxassert(this != &other);
-		value = other.value;
-		other.value = 0xbad;
-		return *this;
-	}
-	bool operator<(const hxtest_ref_tracker_t& other) const {
-		hxassert(this != &other);
-		return value < other.value;
-	}
-	bool operator==(const hxtest_ref_tracker_t& other) const {
-		return value == other.value;
-	}
-	int value;
-private:
-	hxtest_ref_tracker_t() = delete;
-	hxtest_ref_tracker_t(const hxtest_ref_tracker_t&) = delete;
-	hxtest_ref_tracker_t& operator=(const hxtest_ref_tracker_t&) = delete;
-	bool operator!=(const hxtest_ref_tracker_t&) const = delete;
-	bool operator>(const hxtest_ref_tracker_t&) const = delete;
-	bool operator>=(const hxtest_ref_tracker_t&) const = delete;
-	bool operator<=(const hxtest_ref_tracker_t&) const = delete;
-	bool operator!(void) const = delete;
-	operator bool(void) const = delete;
+	hxtest_object_fixture(void);
+	~hxtest_object_fixture();
+
+	bool check_stats(int constructed, int destructed, int copy_construct, int move_construct,
+		int copy_assign, int move_assign, int equal_to, int less_than);
+
+	static hxtest_object_fixture& get(void);
+
+	int m_constructed;
+	int m_destructed;
+	int m_copy_construct;
+	int m_move_construct;
+	int m_copy_assign;
+	int m_move_assign;
+	int m_equal_to;
+	int m_less_than;
+	bool m_check_stats_called;
 };
+
+class hxtest_object {
+public:
+	hxtest_object(void);
+	hxtest_object(const hxtest_object& x);
+	explicit hxtest_object(int32_t value);
+	hxtest_object(hxtest_object&& x) noexcept;
+	~hxtest_object(void);
+	void operator=(const hxtest_object& x);
+	hxtest_object& operator=(hxtest_object&& x) noexcept;
+	bool operator==(int32_t x) const { return this->value == x; }
+	bool operator==(const hxtest_object& x) const;
+	bool operator<(const hxtest_object& x) const;
+	int32_t value;
+	int32_t moved_from;
+};
+
+bool hxtest_value_less(const hxtest_object& lhs, const hxtest_object& rhs);
+bool hxtest_value_greater(const hxtest_object& lhs, const hxtest_object& rhs);
+bool hxtest_value_equal(const hxtest_object& lhs, const hxtest_object& rhs);
 
 template<typename derived_t>
 class hxtest_iter_api_base_t {
 public:
-	hxtest_ref_tracker_t& operator*(void) const { return *m_pointer; }
+	hxtest_object& operator*(void) const { return *m_pointer; }
 	derived_t& operator++(void) { ++m_pointer; return static_cast<derived_t&>(*this); }
 	derived_t operator++(int) { derived_t it(static_cast<derived_t&>(*this)); ++m_pointer; return it; }
 	bool operator==(const derived_t& other) const { return m_pointer == other.m_pointer; }
@@ -64,156 +72,62 @@ public:
 	bool operator>(const derived_t&) const = delete;
 	bool operator<=(const derived_t&) const = delete;
 	bool operator>=(const derived_t&) const = delete;
-	hxtest_ref_tracker_t& operator[](ptrdiff_t) const = delete;
+	hxtest_object& operator[](ptrdiff_t) const = delete;
 	bool operator!(void) = delete;
 	operator bool(void) = delete;
-	bool operator&&(const hxtest_ref_tracker_t&) = delete;
-	bool operator||(const hxtest_ref_tracker_t&) = delete;
+	bool operator&&(const hxtest_object&) = delete;
+	bool operator||(const hxtest_object&) = delete;
 private:
-	explicit hxtest_iter_api_base_t(hxtest_ref_tracker_t* pointer) : m_pointer(pointer) {
+	explicit hxtest_iter_api_base_t(hxtest_object* pointer) : m_pointer(pointer) {
 		hxassert(m_pointer != hxnull);
 	}
 
 	friend derived_t;
 
 protected:
-	hxtest_ref_tracker_t* m_pointer;
+	hxtest_object* m_pointer;
 };
 
 class hxtest_forward_iter_api_t : public hxtest_iter_api_base_t<hxtest_forward_iter_api_t> {
 public:
-	explicit hxtest_forward_iter_api_t(hxtest_ref_tracker_t* pointer)
+	explicit hxtest_forward_iter_api_t(hxtest_object* pointer)
 		: hxtest_iter_api_base_t<hxtest_forward_iter_api_t>(pointer) { }
 };
 
 class hxtest_bidirectional_iter_api_t : public hxtest_iter_api_base_t<hxtest_bidirectional_iter_api_t> {
 public:
-	explicit hxtest_bidirectional_iter_api_t(hxtest_ref_tracker_t* pointer)
+	explicit hxtest_bidirectional_iter_api_t(hxtest_object* pointer)
 		: hxtest_iter_api_base_t<hxtest_bidirectional_iter_api_t>(pointer) { }
-	hxtest_bidirectional_iter_api_t& operator--(void) { --m_pointer; return *this; }
-	hxtest_bidirectional_iter_api_t operator--(int) {
-		hxtest_bidirectional_iter_api_t it(*this); --m_pointer; return it;
-	}
+	hxtest_bidirectional_iter_api_t& operator--(void);
+	hxtest_bidirectional_iter_api_t operator--(int);
 };
 
 class hxtest_rand_iter_api_t : public hxtest_iter_api_base_t<hxtest_rand_iter_api_t> {
 public:
-	explicit hxtest_rand_iter_api_t(hxtest_ref_tracker_t* pointer)
+	explicit hxtest_rand_iter_api_t(hxtest_object* pointer)
 		: hxtest_iter_api_base_t<hxtest_rand_iter_api_t>(pointer) { }
-	hxtest_rand_iter_api_t& operator--(void) { --m_pointer; return *this; }
-	hxtest_rand_iter_api_t operator--(int) {
-		hxtest_rand_iter_api_t it(*this); --m_pointer; return it;
-	}
-	hxtest_rand_iter_api_t operator+(ptrdiff_t offset) const { return hxtest_rand_iter_api_t(m_pointer + offset); }
-	hxtest_rand_iter_api_t operator-(ptrdiff_t offset) const { return hxtest_rand_iter_api_t(m_pointer - offset); }
+	hxtest_rand_iter_api_t& operator--(void);
+	hxtest_rand_iter_api_t operator--(int);
+	hxtest_rand_iter_api_t operator+(ptrdiff_t offset) const;
+	hxtest_rand_iter_api_t operator-(ptrdiff_t offset) const;
 	ptrdiff_t operator-(const hxtest_rand_iter_api_t& other) const { return m_pointer - other.m_pointer; }
 	bool operator<(const hxtest_rand_iter_api_t& other) const { return m_pointer < other.m_pointer; }
-	hxtest_ref_tracker_t& operator[](ptrdiff_t offset) const { return m_pointer[offset]; }
-};
-
-class hxtest_object_fixture :
-	public testing::Test
-{
-public:
-	hxtest_object_fixture(void);
-	~hxtest_object_fixture();
-	bool check_totals(hxsize_t total) const {
-		return m_constructed == total && m_destructed == total;
-	}
-	static hxtest_object_fixture& get(void);
-	hxsize_t m_constructed;
-	hxsize_t m_destructed;
-	int32_t m_next_id;
-};
-
-class hxtest_object {
-public:
-	hxtest_object(void) {
-		++hxtest_object_fixture::get().m_constructed;
-		id = hxtest_object_fixture::get().m_next_id--;
-		moved_from = false;
-	}
-	hxtest_object(const hxtest_object& x) {
-		++hxtest_object_fixture::get().m_constructed;
-		id = x.id;
-		moved_from = false;
-	}
-	explicit hxtest_object(int32_t x) {
-		EXPECT_GE(x, 0);
-		++hxtest_object_fixture::get().m_constructed;
-		id = x;
-		moved_from = false;
-	}
-	hxtest_object(hxtest_object&& x) noexcept {
-		++hxtest_object_fixture::get().m_constructed;
-		id = x.id;
-		moved_from = false;
-		x.id = 0xefef;
-		x.moved_from = true;
-	}
-	~hxtest_object(void) {
-		++hxtest_object_fixture::get().m_destructed;
-		id = 0xefef;
-		moved_from = true;
-	}
-	void operator=(const hxtest_object& x) {
-		hxassert(this != &x);
-		id = x.id;
-		moved_from = false;
-	}
-	hxtest_object& operator=(hxtest_object&& x) noexcept {
-		hxassert(this != &x);
-		id = x.id;
-		moved_from = false;
-		x.id = 0xefef;
-		x.moved_from = true;
-		return *this;
-	}
-	bool operator==(int32_t x) const { return id == x; }
-	bool operator==(const hxtest_object& x) const { return id == x.id; }
-	bool operator<(const hxtest_object& x) const { return id < x.id; }
-	bool moved_from;
-	int32_t id;
-};
-
-class hxtest_skip_asserts {
-public:
-	explicit hxtest_skip_asserts(int count) {
-		hxs_remaining = count;
-		hxset_assert_handler(handler);
-	}
-	~hxtest_skip_asserts(void) {
-		hxset_assert_handler(hxnull);
-		hxs_remaining = 0;
-	}
-	static int remaining(void) { return hxs_remaining; }
-	static bool handler(void) {
-		if(hxs_remaining > 0) {
-			--hxs_remaining;
-			return true;
-		}
-		// GCOVR_EXCL_START
-		return false;
-		// GCOVR_EXCL_STOP
-	}
-private:
-	hxtest_skip_asserts(const hxtest_skip_asserts&) = delete;
-	hxtest_skip_asserts& operator=(const hxtest_skip_asserts&) = delete;
-	static int hxs_remaining;
+	hxtest_object& operator[](ptrdiff_t offset) const { return m_pointer[offset]; }
 };
 
 template<typename T>
 class hxtest_pointer_range {
 public:
 	hxtest_pointer_range(T* b, T* e)
-		: begin_ptr(b), end_ptr(e) { }
-	T* begin(void) { return begin_ptr; }
-	T* end(void) { return end_ptr; }
-	const T& operator[](hxsize_t index) const { return begin_ptr[index]; }
-	T& operator[](hxsize_t index) { return begin_ptr[index]; }
+		: m_begin(b), m_end(e) { }
+	T* begin(void) { return m_begin; }
+	T* end(void) { return m_end; }
+	const T& operator[](hxsize_t index) const { return m_begin[index]; }
+	T& operator[](hxsize_t index) { return m_begin[index]; }
+
 private:
-	T* begin_ptr;
-	T* end_ptr;
+	T* m_begin;
+	T* m_end;
 };
 
 // `first` and `last` must bound at least two elements.
@@ -260,12 +174,14 @@ bool hxtest_check_rand_iter_api(iterator_t first, iterator_t last) {
 	return ok;
 }
 
-inline bool hxtest_value_less(const hxtest_ref_tracker_t& lhs, const hxtest_ref_tracker_t& rhs) {
-	return lhs.value < rhs.value;
-}
-inline bool hxtest_value_greater(const hxtest_ref_tracker_t& lhs, const hxtest_ref_tracker_t& rhs) {
-	return lhs.value > rhs.value;
-}
-inline bool hxtest_value_equal(const hxtest_ref_tracker_t& lhs, const hxtest_ref_tracker_t& rhs) {
-	return lhs.value == rhs.value;
-}
+class hxtest_skip_asserts {
+public:
+	explicit hxtest_skip_asserts(int count);
+	~hxtest_skip_asserts(void);
+	static int remaining(void) { return hxs_remaining; }
+	static bool handler(void);
+private:
+	hxtest_skip_asserts(const hxtest_skip_asserts&) = delete;
+	hxtest_skip_asserts& operator=(const hxtest_skip_asserts&) = delete;
+	static int hxs_remaining;
+};

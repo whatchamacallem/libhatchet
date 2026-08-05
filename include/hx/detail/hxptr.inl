@@ -131,8 +131,10 @@ hxinline hxconstexpr void hxptr<T_, deleter_t_>::swap(hxptr& other_) noexcept {
 template<typename T_, typename deleter_t_>
 template<typename U_>
 hxinline hxconstexpr hxremove_cv_t<T_> hxptr<T_, deleter_t_>::value_or(U_&& default_value_) const {
-	return m_ptr_ != hxnull ? *m_ptr_
-		: static_cast<hxremove_cv_t<T_>>(hxforward<U_>(default_value_));
+	if(m_ptr_ != hxnull) {
+		return *m_ptr_;
+	}
+	return static_cast<hxremove_cv_t<T_>>(hxforward<U_>(default_value_));
 }
 
 HX_END_INL_

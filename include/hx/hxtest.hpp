@@ -98,10 +98,10 @@ namespace testing {
 class Test {
 public:
 	/// User overridable for tests using `TEST_F`.
-	void SetUp(void) { }
+	hxinline void SetUp(void) { }
 
 	/// User overridable for tests using `TEST_F`.
-	void TearDown(void) { }
+	hxinline void TearDown(void) { }
 };
 
 } // namespace testing
