@@ -1,5 +1,7 @@
 # libhatchet
 
+[![version](https://badge.fury.io/gh/whatchamacallem%2Flibhatchet.svg)](https://badge.fury.io/gh/whatchamacallem%2Flibhatchet)
+
 Use the most recent [tagged release](https://github.com/whatchamacallem/libhatchet).
 The `include` and `src` directories report 100% line and branch coverage, with a
 few exemptions made.
@@ -145,6 +147,8 @@ unused except when initializing system allocators.
 
 The documentation is at <https://whatchamacallem.github.io/libhatchet>.
 
+See `QUICKSTART.md` for a short guide to compiling, linking, and running.
+
 Run `doxygen` with no arguments to generate `docs/index.html`. The markdown
 source for the documentation is in the header files at `include/hx/` and reads
 well as-is. The stylesheet was tested with Doxygen 1.15.0.
@@ -217,17 +221,14 @@ are also available.
 - Log through `hxlog`, `hxlog_warning`, `hxlog_release` and `hxlog_console`.
   They all route through `hxlog_handler`, which can be replaced.
 - `hxsettings.h` handles compiler detection and polyfills and documents the
-  default for every compile-line option. Set `HX_USE_NAMESPACE=<identifier>` to
-  wrap the whole library in a namespace of your choosing.
+  default for every compile-line option.
 - `hxmemory_manager.h` allocates by allocator ID. `hxsystem_allocator_heap` is
-  the normal heap, `hxsystem_allocator_permanent` is never freed, and
+  the normal heap, `hxsystem_allocator_permanent` is only freed at shutdown, and
   `hxsystem_allocator_stack_0 + n` selects a temporary stack that resets when
   the enclosing RAII `hxsystem_allocator_scope` closes. `hxmalloc_ext` takes an
   explicit ID, while plain `hxmalloc` uses the current scope.
 - `hxutility.h` provides the metaprogramming basics: `hxmove`, `hxforward` and
   the type traits.
-- `hxinitializer_list.hpp` either provides `std::initializer_list` or wraps the
-  system version, depending on `HX_USE_LIBCXX`.
 
 ### Containers
 
@@ -237,14 +238,13 @@ Differences from the standard versions are listed.
   containers. Prefer static capacities where allocation is a concern.
 - `hxarray` is the fixed-size `std::array` analog. `hxvector` covers both
   `std::vector` and `std::inplace_vector`. Both have the algorithms as methods:
-  `find`, `find_if`, `all_of`, `any_of`, `for_each`, `binary_search`, `sort`
-  and `insertion_sort`. Both provide `get(index)` returning `hxnull` when out
-  of range, `size_bytes`, `memcpy`/`memset` fills and construction and
-  assignment from C-style arrays. `hxvector` adds `full`, Python-style
-  `operator+=` append and concatenate, `generate_n`, Θ(1) `erase_unordered`
-  and `erase_if_unordered`, and `make_heap`/`push_heap`/`pop_heap`/
-  `erase_if_heap`, which replace `std::priority_queue`. An `hxvector` also
-  works directly as an output iterator, replacing
+  `find`, `find_if`, `all_of`, `any_of`, `for_each`, `binary_search`, `sort` and
+  `insertion_sort`. Both provide `size_bytes`, `memcpy`/`memset` fills and
+  construction and assignment from C-style arrays. `hxvector` adds `full`,
+  Python-style `operator+=` append and concatenate, `generate_n`, Θ(1)
+  `erase_unordered` and `erase_if_unordered`, and `make_heap` / `push_heap` /
+  `pop_heap` / `erase_if_heap`, which replace `std::priority_queue`. An
+  `hxvector` also works directly as an output iterator, replacing
   `std::back_insert_iterator`.
 - `hxdeque` is a fixed-capacity ring buffer with a power-of-two capacity.
   Every operation, including `operator[]`, is Θ(1), and `full` is provided.
@@ -262,13 +262,12 @@ Differences from the standard versions are listed.
   map/multimap and set/multiset. Expect O(log2(n)) lookups and O(n) insertions
   and removals. `find` returns a pointer to the mapped value or `hxnull`
   instead of an iterator, and elements are addressable by position with
-  `operator[]` and `get`.
+  `operator[]`.
 - `hxhash_table` is a fixed-size hash table with singly linked buckets embedded
   in the nodes. Additional node types are in `hxhash_table_nodes.hpp`.
-  `find(key, previous)` walks duplicate keys without `equal_range`, `replace`
-  swaps a node in with a single lookup, `extract` returns an owning `hxptr`,
-  and `release_all` and `release_key` unlink nodes without deleting them.
-  `load_factor` and `load_max` report bucket usage.
+  `replace` swaps a node in with a single lookup, `extract` returns an owning
+  `hxptr`, and `release_all` and `release_key` unlink nodes without deleting
+  them. `load_factor` and `load_max` report bucket usage.
 - `hxhandle_table` maps handles to pointers and `hxhandle_map` maps handles to
   values. Both use 64-bit generational handles, so use them when stale
   references need to be detected. Both provide `erase_if` and `extract`.
@@ -277,10 +276,10 @@ Differences from the standard versions are listed.
   `allocate` and `try_allocate` construct a `T` and return an `hxptr` whose
   deleter returns the slot to the pool. `is_allocator` tests whether a pointer
   came from the pool.
-- `hxoptional` implements `std::optional<T>`, `hxref` implements
-  `std::optional<T&>`, which the standard does not provide before C++26, and
-  `hxptr` is a unique owning pointer with a monadic `and_then` and a deleter
-  that may decline deletion, e.g. `hxdo_not_delete`.
+- `hxoptional` implements `std::optional<T>`, `hxref` implements an optional
+  pointer (`std::optional<T&>`), which the standard does not provide before
+  C++26, and `hxptr` is a unique owning pointer with a monadic `and_then` and a
+  deleter that may decline deletion, e.g. `hxdo_not_delete`.
 - Every keyed container and sort compares keys through the free functions
   `hxkey_equal`, `hxkey_less` and `hxkey_hash` in `hxkey.hpp`. Overload them for
   custom key types. The defaults require only `==` and `<`.
@@ -323,9 +322,6 @@ Differences from the standard versions are listed.
 
 ### Runtime Facilities
 
-- `hxfile` is RAII file I/O. `HX_USE_FILE_IO` selects the backend: `1` is the
-  libc backend in `src/hxfile_c.cpp` and `2` is the POSIX backend in
-  `src/hxfile_posix.cpp`.
 - `hxconsole` is a debug and remote command console that also parses config
   files such as `example.cfg`. Register bindings at file scope with
   `hxconsole_command()` and `hxconsole_variable()`, or use the `_named` variants
@@ -334,6 +330,9 @@ Differences from the standard versions are listed.
   captures. Mark a scope with `hxprofile_scope("label")` and control capture
   with `hxprofiler_start()`, `hxprofiler_stop()` and `hxprofiler_log()`. It
   compiles away entirely unless `HX_USE_PROFILER=1`.
+- `hxfile` is RAII file I/O. `HX_USE_FILE_IO` selects the backend: `1` is the
+  libc backend in `src/hxfile_c.cpp` and `2` is the POSIX backend in
+  `src/hxfile_posix.cpp`.
 - `hxtask` and `hxtask_queue` form a worker-pool priority queue.
   `hxtask_dag_node` layers DAG dependencies on top.
 - `hxthread` wraps pthreads or C11 `<threads.h>` with `hxmutex`,
@@ -344,8 +343,8 @@ Differences from the standard versions are listed.
 
 ## Not Provided
 
-This project was started for the author's own personal use, and it tries to be
-complete enough for ordinary C++ programmers. It predates a lot of similar
+This project was started for the author's own personal use, and it only tries to
+be complete enough for ordinary C++ programmers. It predates a lot of
 functionality in the standard. If you find something missing, odds are your
 favorite AI already knows how to add it, or it was omitted because the C library
 was deemed sufficient.
@@ -362,10 +361,15 @@ with your compiler.
 
 ## Other Projects
 
-- **[musl libc](https://musl.libc.org/)** - The recommended C library for using
+- **[musl libc](https://musl.libc.org)** - The recommended C library for using
   libhatchet in a freestanding environment.
 - **[{fmt}](https://fmt.dev)** - A micro-optimized version of `std::format`,
   with nice extras like console colors and a fast `printf`.
+
+## Cite As
+
+> A Johnston, libhatchet: A bespoke C17/C++23 alternative to the C++ standard
+library, 2026, [whatchamacallem.github.io/libhatchet](https://whatchamacallem.github.io/libhatchet)
 
 ## License
 

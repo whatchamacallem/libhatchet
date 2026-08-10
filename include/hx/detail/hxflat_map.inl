@@ -82,6 +82,18 @@ hxinline hxattr_flatten hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capa
 }
 
 template<typename key_t_, typename mapped_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
+hxinline hxattr_flatten hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capacity_>::hxflat_map(
+		std::initializer_list<pair_t_> x_) noexcept : m_size_(0) {
+	hxif_constexpr(capacity_ == hxallocator_dynamic_capacity) {
+		this->reserve(static_cast<hxsize_t>(x_.size()));
+	}
+	const pair_t_* hxrestrict src_ = x_.begin();
+	for(const pair_t_*const end_ = x_.end(); src_ != end_; ++src_) {
+		this->insert(src_->key_, src_->mapped_);
+	}
+}
+
+template<typename key_t_, typename mapped_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
 hxinline hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capacity_>::hxflat_map(hxflat_map&& x_) noexcept {
 	static_assert(capacity_ == hxallocator_dynamic_capacity,
 		"hxallocator_dynamic_capacity required for temporaries");
@@ -262,17 +274,6 @@ hxinline hxattr_flatten const mapped_t_* hxflat_map<key_t_, mapped_t_, compare_t
 template<typename key_t_, typename mapped_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
 hxinline hxattr_flatten mapped_t_* hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capacity_>::find(const key_t_& key_) {
 	return const_cast<mapped_t_*>(const_cast<const hxflat_map*>(this)->find(key_));
-}
-
-template<typename key_t_, typename mapped_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
-hxinline hxattr_flatten auto hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capacity_>::get(hxsize_t index_) const
-		-> const_iterator {
-	return const_iterator(this, index_ < m_size_ ? index_ : m_size_);
-}
-
-template<typename key_t_, typename mapped_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
-hxinline hxattr_flatten auto hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capacity_>::get(hxsize_t index_) -> iterator {
-	return iterator(this, index_ < m_size_ ? index_ : m_size_);
 }
 
 // Fixes gcc + optimizer + sanitizer -Wmaybe-uninitialized bug.

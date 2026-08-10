@@ -38,7 +38,7 @@ TEST(hxbitset_test, default_ctor_zero_initializes) {
 TEST(hxbitset_test, default_ctor_resets_dirty_storage) {
 	typedef hxbitset<sizeof(size_t) * 8u + 1u> bitset_t;
 	alignas(bitset_t) unsigned char storage[sizeof(bitset_t)];
-	volatile unsigned char* dirty = storage;
+	unsigned char* dirty = storage;
 	for(size_t i = 0u; i < sizeof(bitset_t); ++i) {
 		dirty[i] = 0xffu;
 	}
@@ -50,11 +50,8 @@ TEST(hxbitset_test, default_ctor_resets_dirty_storage) {
 }
 
 TEST(hxbitset_test, copy_ctor_duplicates_bits) {
-	hxbitset<sizeof(size_t) * 8u + 3u> src;
-	src.set(0u);
-	src.set(sizeof(size_t) * 8u);
-	src.set(sizeof(size_t) * 8u + 2u);
-	const hxbitset<sizeof(size_t) * 8u + 3u> dst(src);
+	const hxbitset<sizeof(size_t) * 8u + 3u> src{size_t{1u}, size_t{5u}};
+	const hxbitset<sizeof(size_t) * 8u + 3u> dst(src); // NOLINT(performance-unnecessary-copy-initialization)
 	hxtest_gdb_break_hxbitset();
 	EXPECT_TRUE(dst[0u]);
 	EXPECT_TRUE(dst[sizeof(size_t) * 8u]);
@@ -76,20 +73,58 @@ TEST(hxbitset_test, assignment_copies_bits) {
 }
 
 TEST(hxbitset_test, size_t_ctor_initializes_from_value) {
-	const volatile size_t one = 1u;
-	const hxbitset<sizeof(size_t) * 8u> b(static_cast<size_t>(one));
+	const size_t one = 1u;
+	const hxbitset<sizeof(size_t) * 8u> b(one);
 	EXPECT_TRUE(b[0u]);
 	EXPECT_FALSE(b[1u]);
-	const volatile size_t all_bits = ~static_cast<size_t>(0u);
-	const hxbitset<sizeof(size_t) * 8u> b2(static_cast<size_t>(all_bits));
+	const size_t all_bits = ~static_cast<size_t>(0u);
+	const hxbitset<sizeof(size_t) * 8u> b2(all_bits);
 	EXPECT_TRUE(b2.all());
-	const volatile size_t zero = 0u;
-	const hxbitset<sizeof(size_t) * 8u> b3(static_cast<size_t>(zero));
+	const size_t zero = 0u;
+	const hxbitset<sizeof(size_t) * 8u> b3(zero);
 	EXPECT_TRUE(b3.none());
-	const size_t high_bit = static_cast<size_t>(one) << (sizeof(size_t) * 8u - 1u);
+	const size_t high_bit = one << (sizeof(size_t) * 8u - 1u);
 	const hxbitset<sizeof(size_t) * 8u> b4(high_bit);
 	EXPECT_TRUE(b4[sizeof(size_t) * 8u - 1u]);
 	EXPECT_FALSE(b4[sizeof(size_t) * 8u - 2u]);
+}
+
+TEST(hxbitset_test, initializer_list_ctor_multi_word_low_word_first) {
+	const size_t word0 = 1u, word1 = 5u;
+	const hxbitset<sizeof(size_t) * 8u + 3u> b{word0, word1};
+	EXPECT_TRUE(b[0u]);
+	EXPECT_FALSE(b[1u]);
+	EXPECT_FALSE(b[sizeof(size_t) * 8u - 1u]);
+	EXPECT_TRUE(b[sizeof(size_t) * 8u]);
+	EXPECT_FALSE(b[sizeof(size_t) * 8u + 1u]);
+	EXPECT_TRUE(b[sizeof(size_t) * 8u + 2u]);
+}
+
+TEST(hxbitset_test, initializer_list_ctor_packs_smaller_elements_per_word) {
+	const unsigned short half0 = 5u, half1 = 1u;
+#if SIZE_MAX == 0xfffffffful // sizeof(size_t) == 4
+	const hxbitset<sizeof(size_t) * 8u> b{
+		static_cast<unsigned short>(half0), static_cast<unsigned short>(half1)};
+#else // sizeof(size_t) == 8
+	const hxbitset<sizeof(size_t) * 8u> b{
+		static_cast<unsigned short>(half0), static_cast<unsigned short>(half1),
+		static_cast<unsigned short>(0u), static_cast<unsigned short>(0u)};
+#endif
+	EXPECT_TRUE(b[0u]);
+	EXPECT_FALSE(b[1u]);
+	EXPECT_TRUE(b[2u]);
+	EXPECT_FALSE(b[sizeof(unsigned short) * 8u - 1u]);
+	EXPECT_TRUE(b[sizeof(unsigned short) * 8u]);
+	EXPECT_FALSE(b[sizeof(unsigned short) * 8u + 1u]);
+}
+
+TEST(hxbitset_test, initializer_list_ctor_packs_element_size_equal_to_word) {
+	const size_t word0 = 5u;
+	const hxbitset<sizeof(size_t) * 8u> b{word0};
+	EXPECT_TRUE(b[0u]);
+	EXPECT_FALSE(b[1u]);
+	EXPECT_TRUE(b[2u]);
+	EXPECT_FALSE(b[3u]);
 }
 
 TEST(hxbitset_test, set_all_then_reset_all) {
@@ -220,10 +255,8 @@ TEST(hxbitset_test, any_returns_true_when_at_least_one_bit_is_set) {
 
 TEST(hxbitset_test, and_assign_clears_bits) {
 	hxbitset<sizeof(size_t) * 8u + 3u> a;
-	hxbitset<sizeof(size_t) * 8u + 3u> b;
 	a.set();
-	b.set(1u);
-	b.set(sizeof(size_t) * 8u);
+	const hxbitset<sizeof(size_t) * 8u + 3u> b{size_t{2u}, size_t{1u}};
 	a &= b;
 	EXPECT_FALSE(a[0u]);
 	EXPECT_TRUE(a[1u]);
@@ -232,10 +265,8 @@ TEST(hxbitset_test, and_assign_clears_bits) {
 }
 
 TEST(hxbitset_test, or_assign_sets_bits) {
-	hxbitset<sizeof(size_t) * 8u + 3u> a;
-	hxbitset<sizeof(size_t) * 8u + 3u> b;
-	a.set(0u);
-	b.set(sizeof(size_t) * 8u);
+	hxbitset<sizeof(size_t) * 8u + 3u> a{size_t{1u}, size_t{0u}};
+	const hxbitset<sizeof(size_t) * 8u + 3u> b{size_t{0u}, size_t{1u}};
 	a |= b;
 	EXPECT_TRUE(a[0u]);
 	EXPECT_TRUE(a[sizeof(size_t) * 8u]);
@@ -243,12 +274,8 @@ TEST(hxbitset_test, or_assign_sets_bits) {
 }
 
 TEST(hxbitset_test, xor_assign_toggles_bits) {
-	hxbitset<sizeof(size_t) * 8u + 3u> a;
-	hxbitset<sizeof(size_t) * 8u + 3u> b;
-	a.set(0u);
-	a.set(1u);
-	b.set(1u);
-	b.set(2u);
+	hxbitset<sizeof(size_t) * 8u + 3u> a{size_t{3u}, size_t{0u}};
+	const hxbitset<sizeof(size_t) * 8u + 3u> b{size_t{6u}, size_t{0u}};
 	a ^= b;
 	EXPECT_TRUE(a[0u]);
 	EXPECT_FALSE(a[1u]);
@@ -378,19 +405,17 @@ TEST(hxbitset_test, right_shift_off_by_one_at_word_boundary) {
 }
 
 TEST(hxbitset_test, equal_operator_detects_difference) {
-	hxbitset<sizeof(size_t) * 8u + 3u> a;
+	const hxbitset<sizeof(size_t) * 8u + 3u> a{size_t{1u}, size_t{0u}};
 	const hxbitset<sizeof(size_t) * 8u + 3u> b;
-	a.set(0u);
 	EXPECT_NE(a, b);
 }
 
 #if HX_CPLUSPLUS < 202002L
 TEST(hxbitset_test, not_equal_operator_defined_before_cpp20) {
-	hxbitset<sizeof(size_t) * 8u> a;
-	hxbitset<sizeof(size_t) * 8u> b;
-	a.set(0u);
+	const hxbitset<sizeof(size_t) * 8u> a{size_t{1u}};
+	const hxbitset<sizeof(size_t) * 8u> b;
 	EXPECT_NE(a, b);
-	hxbitset<sizeof(size_t) * 8u> c(a);
+	const hxbitset<sizeof(size_t) * 8u> c(a);
 	EXPECT_EQ(a, c);
 }
 #endif

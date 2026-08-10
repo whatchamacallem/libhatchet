@@ -28,26 +28,39 @@ static_assert(sizeof(size_t) != 8 || (
 
 using hxflat_set_test_f = hxtest_object_fixture;
 
+TEST(hxflat_set_test, static_initializer_list_ctor_sorts_and_rejects_duplicates) {
+	const hxflat_set<int, hxkey_less_t<int>, false, 4> s{3, 1, 2, 1};
+	EXPECT_EQ(s.size(), 3);
+	EXPECT_EQ(*s[0], 1);
+	EXPECT_EQ(*s[1], 2);
+	EXPECT_EQ(*s[2], 3);
+}
+
+TEST(hxflat_set_test, dynamic_initializer_list_ctor_allows_duplicates) {
+	const hxsystem_allocator_scope temp_scope(hxsystem_allocator_stack_0);
+	const hxflat_set<int> s{3, 1, 2, 1};
+	EXPECT_EQ(s.size(), 4);
+	EXPECT_EQ(*s[0], 1);
+	EXPECT_EQ(*s[1], 1);
+	EXPECT_EQ(*s[2], 2);
+	EXPECT_EQ(*s[3], 3);
+}
+
 TEST_F(hxflat_set_test_f, gdb_static) {
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, false, 4> s;
-	s.insert(hxtest_object(10));
-	s.insert(hxtest_object(20));
-	s.insert(hxtest_object(30));
+	const hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, false, 4> s{
+		hxtest_object(10), hxtest_object(20), hxtest_object(30)};
 	hxtest_gdb_break_hxflat_set_static();
 	EXPECT_EQ(s.size(), 3);
-	EXPECT_TRUE(check_stats(6,3,0,3,0,0,0,2));
+	EXPECT_TRUE(check_stats(6,3,3,0,0,0,0,2));
 }
 
 TEST_F(hxflat_set_test_f, gdb_dynamic) {
 	const hxsystem_allocator_scope temp_scope(hxsystem_allocator_stack_0);
-	hxflat_set<hxtest_object> s;
-	s.reserve(8);
-	s.insert(hxtest_object(10));
-	s.insert(hxtest_object(20));
-	s.insert(hxtest_object(30));
+	const hxflat_set<hxtest_object> s{
+		hxtest_object(10), hxtest_object(20), hxtest_object(30)};
 	hxtest_gdb_break_hxflat_set_dynamic();
 	EXPECT_EQ(s.size(), 3);
-	EXPECT_TRUE(check_stats(6,3,0,3,0,0,0,2));
+	EXPECT_TRUE(check_stats(6,3,3,0,0,0,0,2));
 }
 
 TEST_F(hxflat_set_test_f, construct) {
@@ -121,39 +134,33 @@ TEST_F(hxflat_set_test_f, insert_multi) {
 }
 
 TEST_F(hxflat_set_test_f, insert_maintains_sorted_order) {
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, false, 3> s;
 	const hxtest_object v30(30), v10(10), v20(20);
-	s.insert(v30);
-	s.insert(v10);
-	s.insert(v20);
+	const hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, false, 3> s{
+		v30, v10, v20};
 	EXPECT_EQ(s.size(), 3);
 	const hxtest_object* it = s.begin();
 	EXPECT_EQ(it->value, 10); ++it;
 	EXPECT_EQ(it->value, 20); ++it;
 	EXPECT_EQ(it->value, 30);
-	EXPECT_TRUE(check_stats(6,0,1,2,2,0,0,5));
+	EXPECT_TRUE(check_stats(9,3,4,2,2,0,0,5));
 }
 
 TEST_F(hxflat_set_test_f, insert_shifts_elements) {
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, false, 3> s;
 	const hxtest_object v10(10), v20(20), v15(15);
-	s.insert(v10);
-	s.insert(v20);
-	s.insert(v15);
+	const hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, false, 3> s{
+		v10, v20, v15};
 	const hxtest_object* it = s.begin();
 	EXPECT_EQ(it->value, 10); ++it;
 	EXPECT_EQ(it->value, 15); ++it;
 	EXPECT_EQ(it->value, 20);
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, false, 3> s2;
 	const hxtest_object w10(10), w20(20), w5(5);
-	s2.insert(w10);
-	s2.insert(w20);
-	s2.insert(w5);
+	const hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, false, 3> s2{
+		w10, w20, w5};
 	const hxtest_object* it2 = s2.begin();
 	EXPECT_EQ(it2->value, 5); ++it2;
 	EXPECT_EQ(it2->value, 10); ++it2;
 	EXPECT_EQ(it2->value, 20);
-	EXPECT_TRUE(check_stats(12,0,4,2,2,1,0,8));
+	EXPECT_TRUE(check_stats(18,6,10,2,2,1,0,8));
 }
 
 TEST_F(hxflat_set_test_f, insert_dynamic) {
@@ -168,17 +175,15 @@ TEST_F(hxflat_set_test_f, insert_dynamic) {
 }
 
 TEST_F(hxflat_set_test_f, clear) {
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, false, 2> s;
 	const hxtest_object v1(1), v2(2);
-	s.insert(v1);
-	s.insert(v2);
+	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, false, 2> s{v1, v2};
 	EXPECT_EQ(s.size(), 2);
 	s.clear();
 	EXPECT_EQ(s.size(), 0);
 	EXPECT_TRUE(s.empty());
 	s.clear();
 	EXPECT_EQ(s.size(), 0);
-	EXPECT_TRUE(check_stats(4,2,2,0,0,0,0,1));
+	EXPECT_TRUE(check_stats(6,4,4,0,0,0,0,1));
 }
 
 TEST_F(hxflat_set_test_f, find) {
@@ -230,11 +235,9 @@ TEST_F(hxflat_set_test_f, lower_bound_basic) {
 }
 
 TEST_F(hxflat_set_test_f, lower_bound_edge_cases) {
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, false, 3> s;
 	const hxtest_object v10(10), v20(20), v30(30);
-	s.insert(v10);
-	s.insert(v20);
-	s.insert(v30);
+	const hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, false, 3> s{
+		v10, v20, v30};
 	const hxtest_object* it = s.lower_bound(hxtest_object(5));
 	EXPECT_EQ(it, s.begin());
 	EXPECT_EQ(it->value, 10);
@@ -244,7 +247,7 @@ TEST_F(hxflat_set_test_f, lower_bound_edge_cases) {
 	EXPECT_EQ(it->value, 30);
 	it = s.lower_bound(hxtest_object(30));
 	EXPECT_EQ(it->value, 30);
-	EXPECT_TRUE(check_stats(10,4,3,0,0,0,0,10));
+	EXPECT_TRUE(check_stats(13,7,6,0,0,0,0,10));
 }
 
 TEST_F(hxflat_set_test_f, upper_bound_unique) {
@@ -372,31 +375,27 @@ TEST_F(hxflat_set_test_f, erase_iterator_last_of_two) {
 }
 
 TEST_F(hxflat_set_test_f, erase_iterator_middle_of_three) {
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, false, 3> s;
 	const hxtest_object v10(10), v20(20), v30(30);
-	s.insert(v10);
-	s.insert(v20);
-	s.insert(v30);
+	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, false, 3> s{
+		v10, v20, v30};
 	const hxtest_object* next = s.erase(s.begin() + 1);
 	EXPECT_EQ(next->value, 30);
 	EXPECT_EQ(s.size(), 2);
 	EXPECT_EQ(s.begin()->value, 10);
 	EXPECT_EQ((s.begin() + 1)->value, 30);
-	EXPECT_TRUE(check_stats(6,1,3,0,0,1,0,2));
+	EXPECT_TRUE(check_stats(9,4,6,0,0,1,0,2));
 }
 
 TEST_F(hxflat_set_test_f, erase_iterator_first_of_three) {
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, false, 3> s;
 	const hxtest_object v10(10), v20(20), v30(30);
-	s.insert(v10);
-	s.insert(v20);
-	s.insert(v30);
+	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, false, 3> s{
+		v10, v20, v30};
 	const hxtest_object* next = s.erase(s.begin());
 	EXPECT_EQ(next->value, 20);
 	EXPECT_EQ(s.size(), 2);
 	EXPECT_EQ(s.begin()->value, 20);
 	EXPECT_EQ((s.begin() + 1)->value, 30);
-	EXPECT_TRUE(check_stats(6,1,3,0,0,2,0,2));
+	EXPECT_TRUE(check_stats(9,4,6,0,0,2,0,2));
 }
 
 TEST_F(hxflat_set_test_f, begin_end) {
@@ -444,28 +443,22 @@ TEST_F(hxflat_set_test_f, dynamic_multiset_insert_erase) {
 
 TEST_F(hxflat_set_test_f, destructor_destroys_elements) {
 	{
-		hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, false, 2> s;
-		{
-			const hxtest_object v1(10), v2(20);
-			s.insert(v1);
-			s.insert(v2);
-		}
+		const hxtest_object v1(10), v2(20);
+		const hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, false, 2> s{v1, v2};
 	}
-	EXPECT_TRUE(check_stats(4, 4, 2, 0, 0, 0, 0, 1));
+	EXPECT_TRUE(check_stats(6, 6, 4, 0, 0, 0, 0, 1));
 }
 
 TEST_F(hxflat_set_test_f, subscript) {
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, false, 3> s;
 	const hxtest_object v10(10), v20(20), v30(30);
-	s.insert(v10);
-	s.insert(v20);
-	s.insert(v30);
+	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, false, 3> s{ // NOLINT(misc-const-correctness)
+		v10, v20, v30};
 	const hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, false, 3>& cs = s;
 	EXPECT_EQ(cs[0]->value, 10);
 	EXPECT_EQ(cs[1]->value, 20);
 	EXPECT_EQ(cs[2]->value, 30);
 	EXPECT_EQ(s[s.size() - 1]->value, 30);
-	EXPECT_TRUE(check_stats(6,0,3,0,0,0,0,2));
+	EXPECT_TRUE(check_stats(9,3,6,0,0,0,0,2));
 }
 
 TEST_F(hxflat_set_test_f, copy_assign_basic) {
@@ -513,14 +506,10 @@ TEST_F(hxflat_set_test_f, copy_assign_different_capacity) {
 TEST_F(hxflat_set_test_f, move_assign_transfers_elements) {
 	const hxsystem_allocator_scope temp_scope(hxsystem_allocator_stack_0);
 	{
-		hxflat_set<hxtest_object> a;
-		a.reserve(3);
+		const hxtest_object v10(10), v20(20), v30(30);
+		hxflat_set<hxtest_object> a{v10, v20, v30};
 		hxflat_set<hxtest_object> b;
 		b.reserve(1);
-		const hxtest_object v10(10), v20(20), v30(30);
-		a.insert(v10);
-		a.insert(v20);
-		a.insert(v30);
 		b = hxmove(a);
 		EXPECT_EQ(b.size(), 3);
 		EXPECT_TRUE(b.find(hxtest_object(10)) != hxnull);
@@ -529,18 +518,14 @@ TEST_F(hxflat_set_test_f, move_assign_transfers_elements) {
 		EXPECT_EQ(a.size(), 0);
 		EXPECT_EQ(a.capacity(), 1);
 	}
-	EXPECT_TRUE(check_stats(9, 9, 3, 0, 0, 0, 0, 11));
+	EXPECT_TRUE(check_stats(12, 12, 6, 0, 0, 0, 0, 11));
 }
 
 TEST_F(hxflat_set_test_f, move_constructor_transfers_elements) {
 	const hxsystem_allocator_scope temp_scope(hxsystem_allocator_stack_0);
 	{
-		hxflat_set<hxtest_object> src;
-		src.reserve(3);
 		const hxtest_object v10(10), v20(20), v30(30);
-		src.insert(v10);
-		src.insert(v20);
-		src.insert(v30);
+		hxflat_set<hxtest_object> src{v10, v20, v30};
 		const hxflat_set<hxtest_object> dst(hxmove(src));
 		EXPECT_EQ(dst.size(), 3);
 		EXPECT_EQ(dst.find(hxtest_object(10))->value, 10);
@@ -549,22 +534,20 @@ TEST_F(hxflat_set_test_f, move_constructor_transfers_elements) {
 		EXPECT_EQ(src.size(), 0);
 		EXPECT_EQ(src.capacity(), 0);
 	}
-	EXPECT_TRUE(check_stats(9, 9, 3, 0, 0, 0, 0, 11));
+	EXPECT_TRUE(check_stats(12, 12, 6, 0, 0, 0, 0, 11));
 }
 
 TEST_F(hxflat_set_test_f, copy_constructor_basic) {
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, false, 3> src;
 	const hxtest_object v10(10), v20(20), v30(30);
-	src.insert(v10);
-	src.insert(v20);
-	src.insert(v30);
-	const hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, false, 3> dst(src);
+	const hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, false, 3> src{
+		v10, v20, v30};
+	const hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, false, 3> dst(src); // NOLINT(performance-unnecessary-copy-initialization)
 	EXPECT_EQ(dst.size(), 3);
 	EXPECT_EQ(dst.find(hxtest_object(10))->value, 10);
 	EXPECT_EQ(dst.find(hxtest_object(20))->value, 20);
 	EXPECT_EQ(dst.find(hxtest_object(30))->value, 30);
 	EXPECT_EQ(src.size(), 3);
-	EXPECT_TRUE(check_stats(12,3,6,0,0,0,0,11));
+	EXPECT_TRUE(check_stats(15,6,9,0,0,0,0,11));
 }
 
 TEST_F(hxflat_set_test_f, copy_constructor_empty) {
@@ -588,23 +571,18 @@ TEST_F(hxflat_set_test_f, copy_constructor_is_independent) {
 
 TEST_F(hxflat_set_test_f, copy_constructor_lifecycle) {
 	{
-		hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, false, 3> src;
 		const hxtest_object v10(10), v20(20);
-		src.insert(v10);
-		src.insert(v20);
+		const hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, false, 3> src{v10, v20};
 		{
 			const hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, false, 3> dst(src); // NOLINT(performance-unnecessary-copy-initialization)
 			EXPECT_EQ(dst.size(), 2);
 		}
 	}
-	EXPECT_TRUE(check_stats(6, 6, 4, 0, 0, 0, 0, 1));
+	EXPECT_TRUE(check_stats(8, 8, 6, 0, 0, 0, 0, 1));
 }
 
 TEST(hxflat_set_test, implements_rand_iter_api) {
-	hxflat_set<int, hxkey_less_t<int>, false, 4> s;
-	s.insert(1);
-	s.insert(2);
-	s.insert(3);
+	hxflat_set<int, hxkey_less_t<int>, false, 4> s{1, 2, 3}; // NOLINT(misc-const-correctness)
 	typedef hxflat_set<int, hxkey_less_t<int>, false, 4> set_t;
 	const set_t& cs = s;
 	EXPECT_TRUE(hxtest_check_rand_iter_api<set_t::iterator>(s.begin(), s.end()));

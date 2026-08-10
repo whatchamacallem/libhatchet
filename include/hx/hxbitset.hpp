@@ -14,6 +14,8 @@
 #error Header does not provide macros alone.
 #endif
 
+#include "hxinitializer_list.hpp"
+
 HX_NS_BEGIN_
 
 /// `hxbitset` - A fixed-size bitset stored as an array of `size_t` words with no
@@ -33,6 +35,15 @@ public:
 	/// Constructs a `hxbitset` as a copy of `x`.
 	/// - `x` : The `hxbitset` to copy from.
 	hxconstexpr hxbitset(const hxbitset& x_);
+
+	/// Constructs a `hxbitset` from a list of integers, packed low element
+	/// first within each `size_t` word and low word first across words. E.g.
+	/// bytes pack 8-to-a-word on a 64-bit `size_t`. `sizeof(size_t)` must be a
+	/// multiple of `sizeof(int_t)` and the list length must equal `bytes() /
+	/// sizeof(int_t)`.
+	/// - `x` : A `std::initializer_list<int_t>` of packed elements.
+	template<typename int_t_>
+	hxconstexpr hxbitset(std::initializer_list<int_t_> x_);
 
 	/// Assigns the bits of `x` to this `hxbitset`.
 	/// - `x` : The `hxbitset` to copy from.

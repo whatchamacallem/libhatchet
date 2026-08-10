@@ -22,6 +22,19 @@ hxinline hxattr_flatten hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::hxf
 }
 
 template<typename key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
+hxinline hxattr_flatten hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::hxflat_set(
+		std::initializer_list<key_t_> x_) noexcept : m_end_(this->data()) {
+	hxif_constexpr(capacity_ == hxallocator_dynamic_capacity) {
+		this->reserve_storage(static_cast<hxsize_t>(x_.size()));
+		m_end_ = this->data();
+	}
+	const key_t_* hxrestrict src_ = x_.begin();
+	for(const key_t_*const end_ = x_.end(); src_ != end_; ++src_) {
+		this->insert(*src_);
+	}
+}
+
+template<typename key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
 hxinline hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::hxflat_set(hxflat_set&& x_) noexcept {
 	static_assert(capacity_ == hxallocator_dynamic_capacity,
 		"hxallocator_dynamic_capacity required for temporaries");

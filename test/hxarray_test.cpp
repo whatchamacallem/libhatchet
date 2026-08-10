@@ -58,11 +58,9 @@ TEST_F(hxarray_test_f, hxarray_fill_constructor) {
 
 TEST_F(hxarray_test_f, hxarray_copy_constructor) {
 	{
-		hxarray<hxtest_object, 3> src;
-		src[0] = hxtest_object(10);
-		src[1] = hxtest_object(20);
-		src[2] = hxtest_object(30);
-		hxarray<hxtest_object, 3> dst(src);
+		const hxarray<hxtest_object, 3> src{
+			hxtest_object(10), hxtest_object(20), hxtest_object(30)};
+		const hxarray<hxtest_object, 3> dst(src); // NOLINT(performance-unnecessary-copy-initialization)
 		EXPECT_EQ(dst[0].value, 10);
 		EXPECT_EQ(dst[1].value, 20);
 		EXPECT_EQ(dst[2].value, 30);
@@ -71,15 +69,13 @@ TEST_F(hxarray_test_f, hxarray_copy_constructor) {
 			EXPECT_FALSE(src[i].moved_from);
 		}
 	}
-	EXPECT_TRUE(check_stats(9, 9, 3, 0, 0, 3, 0, 0));
+	EXPECT_TRUE(check_stats(9, 9, 6, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxarray_test_f, hxarray_copy_assignment) {
 	{
-		hxarray<hxtest_object, 3> src;
-		src[0] = hxtest_object(11);
-		src[1] = hxtest_object(22);
-		src[2] = hxtest_object(33);
+		const hxarray<hxtest_object, 3> src{
+			hxtest_object(11), hxtest_object(22), hxtest_object(33)};
 		hxarray<hxtest_object, 3> dst;
 		dst = src;
 		EXPECT_EQ(dst[0].value, 11);
@@ -89,7 +85,7 @@ TEST_F(hxarray_test_f, hxarray_copy_assignment) {
 			EXPECT_FALSE(dst[i].moved_from);
 		}
 	}
-	EXPECT_TRUE(check_stats(9, 9, 0, 0, 3, 3, 0, 0));
+	EXPECT_TRUE(check_stats(9, 9, 3, 0, 3, 3, 0, 0));
 }
 
 TEST(hxarray_test, hxarray_c_array_constructor) {
@@ -139,28 +135,6 @@ TEST(hxarray_test, hxarray_iteration) {
 	EXPECT_EQ(ca.cend(), ca.end());
 	EXPECT_EQ(ca[0], 1);
 	EXPECT_EQ(ca[4], 5);
-}
-
-TEST(hxarray_test, hxarray_get) {
-	static const int values[3] = { 10, 20, 30 };
-	hxarray<int, 3> a(values);
-	const hxarray<int, 3>& ca = a;
-	EXPECT_EQ(a.get(0), a.begin());
-	EXPECT_EQ(a.get(1), a.begin() + 1);
-	EXPECT_EQ(a.get(3), hxnullptr);
-	EXPECT_EQ(ca.get(0), ca.begin());
-	EXPECT_EQ(ca.get(2), ca.begin() + 2);
-	EXPECT_EQ(ca.get(3), hxnullptr);
-}
-
-TEST(hxarray_test, hxarray_get_boundary) {
-	static const int values[4] = { 1, 2, 3, 4 };
-	hxarray<int, 4> a(values);
-	const hxarray<int, 4>& ca = a;
-	EXPECT_EQ(a.get(3), a.begin() + 3);
-	EXPECT_EQ(ca.get(3), ca.begin() + 3);
-	EXPECT_EQ(a.get(4), hxnullptr);
-	EXPECT_EQ(ca.get(4), hxnullptr);
 }
 
 TEST(hxarray_test, hxarray_find) {
@@ -403,14 +377,18 @@ TEST(hxarray_test, hxarray_reserve_static_noop) {
 	EXPECT_EQ(a.size(), 4);
 }
 
+TEST(hxarray_test, hxarray_dynamic_empty_and_full) {
+	const hxarray<int, hxallocator_dynamic_capacity> a;
+	EXPECT_FALSE(a.empty());
+	EXPECT_TRUE(a.full());
+}
+
 TEST_F(hxarray_test_f, hxarray_dynamic_copy_constructor) {
 	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	{
-		hxarray<hxtest_object, hxallocator_dynamic_capacity> src;
-		src.reserve(2);
-		src[0] = hxtest_object(7);
-		src[1] = hxtest_object(8);
-		hxarray<hxtest_object, hxallocator_dynamic_capacity> dst(src);
+		const hxarray<hxtest_object, hxallocator_dynamic_capacity> src{
+			hxtest_object(7), hxtest_object(8)};
+		const hxarray<hxtest_object, hxallocator_dynamic_capacity> dst(src); // NOLINT(performance-unnecessary-copy-initialization)
 		EXPECT_EQ(dst.size(), 2);
 		EXPECT_EQ(dst[0].value, 7);
 		EXPECT_EQ(dst[1].value, 8);
@@ -419,7 +397,7 @@ TEST_F(hxarray_test_f, hxarray_dynamic_copy_constructor) {
 			EXPECT_FALSE(src[i].moved_from);
 		}
 	}
-	EXPECT_TRUE(check_stats(6, 6, 2, 0, 0, 2, 0, 0));
+	EXPECT_TRUE(check_stats(6, 6, 4, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxarray_test_f, hxarray_dynamic_c_array_constructor) {
@@ -507,12 +485,8 @@ TEST_F(hxarray_test_f, hxarray_dynamic_assign_range_rvalue) {
 TEST(hxarray_test, hxarray_equal_mismatched_capacity) {
 	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	{
-		hxarray<int, hxallocator_dynamic_capacity> a;
-		hxarray<int, hxallocator_dynamic_capacity> b;
-		a.reserve(2);
-		b.reserve(3);
-		a[0] = 1; a[1] = 2;
-		b[0] = 1; b[1] = 2; b[2] = 3;
+		const hxarray<int, hxallocator_dynamic_capacity> a{1, 2};
+		const hxarray<int, hxallocator_dynamic_capacity> b{1, 2, 3};
 		EXPECT_FALSE(a.equal(b));
 	}
 }
@@ -520,12 +494,8 @@ TEST(hxarray_test, hxarray_equal_mismatched_capacity) {
 TEST(hxarray_test, hxarray_less_different_sizes) {
 	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	{
-		hxarray<int, hxallocator_dynamic_capacity> shorter;
-		hxarray<int, hxallocator_dynamic_capacity> longer;
-		shorter.reserve(2);
-		longer.reserve(3);
-		shorter[0] = 1; shorter[1] = 2;
-		longer[0] = 1; longer[1] = 2; longer[2] = 3;
+		const hxarray<int, hxallocator_dynamic_capacity> shorter{1, 2};
+		const hxarray<int, hxallocator_dynamic_capacity> longer{1, 2, 3};
 		EXPECT_TRUE(shorter.less(longer));
 		EXPECT_FALSE(longer.less(shorter));
 		EXPECT_FALSE(shorter.less(shorter));
@@ -553,11 +523,8 @@ TEST(hxarray_test, hxarray_less_detects_last_element_difference) {
 TEST_F(hxarray_test_f, hxarray_dynamic_move_constructor) {
 	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	{
-		hxarray<hxtest_object, hxallocator_dynamic_capacity> src;
-		src.reserve(3);
-		src[0] = hxtest_object(11);
-		src[1] = hxtest_object(22);
-		src[2] = hxtest_object(33);
+		hxarray<hxtest_object, hxallocator_dynamic_capacity> src{
+			hxtest_object(11), hxtest_object(22), hxtest_object(33)};
 		hxarray<hxtest_object, hxallocator_dynamic_capacity> dst(hxmove(src));
 		EXPECT_EQ(dst.size(), 3);
 		EXPECT_EQ(dst[0].value, 11);
@@ -569,22 +536,32 @@ TEST_F(hxarray_test_f, hxarray_dynamic_move_constructor) {
 		EXPECT_EQ(src.size(), 0);
 		EXPECT_EQ(src.capacity(), 0);
 	}
-	EXPECT_TRUE(check_stats(6, 6, 0, 0, 0, 3, 0, 0));
+	EXPECT_TRUE(check_stats(6, 6, 3, 0, 0, 0, 0, 0));
 }
 
 #if HX_CPLUSPLUS >= 202002L
+TEST(hxarray_test, hxarray_empty_and_full) {
+	static const int one[1] = { 1 };
+	const hxarray<int, 1> a1(one);
+	EXPECT_FALSE(a1.empty());
+	EXPECT_TRUE(a1.full());
+	static const int two[2] = { 1, 2 };
+	const hxarray<int, 2> a2(two);
+	EXPECT_TRUE(a2.empty());
+	EXPECT_TRUE(a2.full());
+	static const int three[3] = { 1, 2, 3 };
+	const hxarray<int, 3> a3(three);
+	EXPECT_TRUE(a3.empty());
+	EXPECT_TRUE(a3.full());
+}
+
 TEST_F(hxarray_test_f, hxswap_exchanges_dynamic_contents) {
 	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	{
-		hxarray<hxtest_object, hxallocator_dynamic_capacity> a;
-		a.reserve(2);
-		a[0] = hxtest_object(1);
-		a[1] = hxtest_object(2);
-		hxarray<hxtest_object, hxallocator_dynamic_capacity> b;
-		b.reserve(3);
-		b[0] = hxtest_object(3);
-		b[1] = hxtest_object(4);
-		b[2] = hxtest_object(5);
+		hxarray<hxtest_object, hxallocator_dynamic_capacity> a{
+			hxtest_object(1), hxtest_object(2)};
+		hxarray<hxtest_object, hxallocator_dynamic_capacity> b{
+			hxtest_object(3), hxtest_object(4), hxtest_object(5)};
 		hxswap(a, b);
 		EXPECT_EQ(a.size(), 3);
 		EXPECT_EQ(a[0].value, 3);
@@ -593,6 +570,6 @@ TEST_F(hxarray_test_f, hxswap_exchanges_dynamic_contents) {
 		EXPECT_EQ(b[0].value, 1);
 		EXPECT_EQ(b[1].value, 2);
 	}
-	EXPECT_TRUE(check_stats(10, 10, 0, 0, 0, 5, 0, 0));
+	EXPECT_TRUE(check_stats(10, 10, 5, 0, 0, 0, 0, 0));
 }
 #endif // HX_CPLUSPLUS >= 202002L

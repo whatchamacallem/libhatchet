@@ -297,16 +297,6 @@ hxinline hxattr_flatten void hxarray<T_, capacity_>::for_each(callable_t_&& call
 }
 
 template<hxarray_concept_ T_, hxsize_t capacity_>
-hxinline hxattr_flatten const T_* hxarray<T_, capacity_>::get(hxsize_t index_) const {
-	return index_ < this->capacity() ? this->data() + index_ : hxnull;
-}
-
-template<hxarray_concept_ T_, hxsize_t capacity_>
-hxinline hxattr_flatten T_* hxarray<T_, capacity_>::get(hxsize_t index_) {
-	return index_ < this->capacity() ? this->data() + index_ : hxnull;
-}
-
-template<hxarray_concept_ T_, hxsize_t capacity_>
 hxinline hxattr_flatten void hxarray<T_, capacity_>::insertion_sort(void) noexcept {
 	hxinsertion_sort<T_*>(this->data(), this->data() + this->capacity(), hxkey_less_t<T_>{});
 }

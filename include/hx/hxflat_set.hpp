@@ -14,6 +14,7 @@
 #endif
 
 #include "hxallocator.hpp"
+#include "hxinitializer_list.hpp"
 #include "hxkey.hpp"
 #include "hxsort.hpp"
 
@@ -72,6 +73,11 @@ public:
 	/// `hxallocator_dynamic_capacity`.
 	/// - `x` : A temporary `hxflat_set<key_t, compare_t, multi_t, hxallocator_dynamic_capacity>`.
 	hxflat_set(hxflat_set&& x_) noexcept;
+
+	/// Constructs a set by inserting every key from `x` in order using
+	/// `insert`. Requires `x.size()` <= `capacity` when `capacity` is fixed.
+	/// - `x` : A `std::initializer_list<key_t>`.
+	hxflat_set(std::initializer_list<key_t_> x_) noexcept;
 
 	/// Destructs the set and destroys all keys.
 	~hxflat_set(void) noexcept;

@@ -89,10 +89,8 @@ TEST(hxvector_test, full_boundary) {
 TEST_F(hxvector_test_f, iteration) {
 	{
 		static const int32_t nums[3] = { 21, 22, 23 };
-		hxvector<hxtest_object, 10> objs;
-		objs.push_back(hxtest_object(nums[0]));
-		objs.push_back(hxtest_object(nums[1]));
-		objs.push_back(hxtest_object(nums[2]));
+		hxvector<hxtest_object, 10> objs{
+			hxtest_object(nums[0]), hxtest_object(nums[1]), hxtest_object(nums[2])};
 		const hxvector<hxtest_object, 10>& cobjs = objs;
 		int32_t counter = 0;
 		for(hxvector<hxtest_object, 10>::iterator it = objs.begin(); it != objs.end(); ++it) {
@@ -114,14 +112,11 @@ TEST_F(hxvector_test_f, iteration) {
 		EXPECT_EQ(cobjs.front(), nums[0]);
 		EXPECT_EQ(cobjs.back(), nums[2]);
 	}
-	EXPECT_TRUE(check_stats(6, 6, 0, 3, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(6, 6, 3, 0, 0, 0, 0, 0));
 }
 
 TEST(hxvector_test, iteration_visits_first_and_last) {
-	hxvector<int, 3> v;
-	v.push_back(10);
-	v.push_back(20);
-	v.push_back(30);
+	const hxvector<int, 3> v{10, 20, 30};
 	const int expected[] = { 10, 20, 30 };
 	hxsize_t count = 0;
 	for(const int* it = v.begin(); it != v.end(); ++it) {
@@ -129,36 +124,6 @@ TEST(hxvector_test, iteration_visits_first_and_last) {
 		++count;
 	}
 	EXPECT_EQ(count, 3);
-}
-
-TEST_F(hxvector_test_f, get) {
-	{
-		hxvector<hxtest_object, 4> objs; objs.reserve(4);
-		objs.emplace_back(10);
-		objs.emplace_back(20);
-		const hxvector<hxtest_object, 4>& cobjs = objs;
-		EXPECT_EQ(objs.get(0), objs.begin());
-		EXPECT_EQ(objs.get(1), objs.begin() + 1);
-		EXPECT_EQ(objs.get(2), hxnullptr);
-		EXPECT_EQ(cobjs.get(0), cobjs.begin());
-		EXPECT_EQ(cobjs.get(1), cobjs.begin() + 1);
-		EXPECT_EQ(cobjs.get(2), hxnullptr);
-		objs.pop_back();
-		EXPECT_EQ(objs.get(1), hxnullptr);
-	}
-	EXPECT_TRUE(check_stats(2, 2, 0, 0, 0, 0, 0, 0));
-}
-
-TEST(hxvector_test, get_boundary_last_valid_and_past_end) {
-	hxvector<int, 3> v;
-	v.push_back(1);
-	v.push_back(2);
-	v.push_back(3);
-	const hxvector<int, 3>& cv = v;
-	EXPECT_EQ(v.get(2), v.begin() + 2);
-	EXPECT_EQ(v.get(3), hxnullptr);
-	EXPECT_EQ(cv.get(2), cv.begin() + 2);
-	EXPECT_EQ(cv.get(3), hxnullptr);
 }
 
 TEST_F(hxvector_test_f, modification) {
@@ -448,10 +413,7 @@ TEST(hxvector_test, for_each_invokes_callables) {
 }
 
 TEST(hxvector_test, for_each_visits_last_element) {
-	hxvector<int, 3> v;
-	v.push_back(1);
-	v.push_back(2);
-	v.push_back(3);
+	hxvector<int, 3> v{1, 2, 3};
 	v.for_each([](int& x) { x *= 10; });
 	EXPECT_EQ(v[0], 10);
 	EXPECT_EQ(v[1], 20);
@@ -459,10 +421,7 @@ TEST(hxvector_test, for_each_visits_last_element) {
 }
 
 TEST(hxvector_test, for_each_visits_first_element) {
-	hxvector<int, 3> v;
-	v.push_back(5);
-	v.push_back(6);
-	v.push_back(7);
+	hxvector<int, 3> v{5, 6, 7};
 	int count = 0;
 	v.for_each([&](int& x) { x = count++; });
 	EXPECT_EQ(v[0], 0);
@@ -545,20 +504,14 @@ TEST(hxvector_test, all_of_any_of) {
 }
 
 TEST(hxvector_test, all_of_stops_at_first_false) {
-	hxvector<int, 3> v;
-	v.push_back(1);
-	v.push_back(0);
-	v.push_back(1);
+	const hxvector<int, 3> v{1, 0, 1};
 	int calls = 0;
 	EXPECT_FALSE(v.all_of([&](const int& x) -> bool { ++calls; return x != 0; }));
 	EXPECT_EQ(calls, 2);
 }
 
 TEST(hxvector_test, const_all_of_any_of_stop_at_boundary) {
-	hxvector<int, 3> v;
-	v.push_back(1);
-	v.push_back(0);
-	v.push_back(1);
+	const hxvector<int, 3> v{1, 0, 1};
 	const hxvector<int, 3>& cv = v;
 	int all_calls = 0;
 	EXPECT_FALSE(cv.all_of([&](const int& x) -> bool { ++all_calls; return x != 0; }));
@@ -570,24 +523,19 @@ TEST(hxvector_test, const_all_of_any_of_stop_at_boundary) {
 }
 
 TEST(hxvector_test, all_of_single_true_element) {
-	hxvector<int, 1> v;
-	v.push_back(5);
+	const hxvector<int, 1> v{5};
 	EXPECT_TRUE(v.all_of([](const int& x) { return x > 0; }));
 }
 
 TEST(hxvector_test, any_of_stops_at_first_true) {
-	hxvector<int, 3> v;
-	v.push_back(0);
-	v.push_back(1);
-	v.push_back(0);
+	const hxvector<int, 3> v{0, 1, 0};
 	int calls = 0;
 	EXPECT_TRUE(v.any_of([&](const int& x) -> bool { ++calls; return x != 0; }));
 	EXPECT_EQ(calls, 2);
 }
 
 TEST(hxvector_test, any_of_single_false_element) {
-	hxvector<int, 1> v;
-	v.push_back(0);
+	const hxvector<int, 1> v{0};
 	EXPECT_FALSE(v.any_of([](const int& x) { return x > 0; }));
 }
 
@@ -612,8 +560,7 @@ TEST(hxvector_test, binary_search_first_and_last_element) {
 }
 
 TEST(hxvector_test, binary_search_single_element) {
-	hxvector<int, 1> v;
-	v.push_back(7);
+	const hxvector<int, 1> v{7};
 	EXPECT_EQ(v.binary_search(7), v.begin());
 	EXPECT_EQ(v.binary_search(6), v.end());
 	EXPECT_EQ(v.binary_search(8), v.end());
@@ -658,27 +605,17 @@ TEST(hxvector_test, find_returns_first_match) {
 }
 
 TEST(hxvector_test, find_at_index_zero) {
-	hxvector<int, 3> v;
-	v.push_back(34);
-	v.push_back(43);
-	v.push_back(44);
+	hxvector<int, 3> v{34, 43, 44};
 	EXPECT_EQ(v.find(34), v.begin());
 }
 
 TEST(hxvector_test, find_at_last_index) {
-	hxvector<int, 3> v;
-	v.push_back(1);
-	v.push_back(2);
-	v.push_back(99);
+	hxvector<int, 3> v{1, 2, 99};
 	EXPECT_EQ(v.find(99), v.begin() + 2);
 }
 
 TEST(hxvector_test, find_if_returns_first_match_at_boundary) {
-	hxvector<int, 4> v;
-	v.push_back(10);
-	v.push_back(10);
-	v.push_back(20);
-	v.push_back(30);
+	hxvector<int, 4> v{10, 10, 20, 30};
 	const int* p = v.find_if([](const int& x) { return x == 10; });
 	EXPECT_EQ(p, v.begin());
 }
@@ -710,10 +647,7 @@ TEST(hxvector_test, erase_if_unordered) {
 }
 
 TEST(hxvector_test, erase_if_unordered_removes_first_element) {
-	hxvector<int, 4> v;
-	v.push_back(7);
-	v.push_back(2);
-	v.push_back(3);
+	hxvector<int, 4> v{7, 2, 3};
 	const hxsize_t removed = v.erase_if_unordered([](int& x) { return x == 7; });
 	EXPECT_EQ(removed, 1);
 	EXPECT_EQ(v.size(), 2);
@@ -721,10 +655,7 @@ TEST(hxvector_test, erase_if_unordered_removes_first_element) {
 }
 
 TEST(hxvector_test, erase_if_unordered_removes_last_element) {
-	hxvector<int, 4> v;
-	v.push_back(1);
-	v.push_back(2);
-	v.push_back(99);
+	hxvector<int, 4> v{1, 2, 99};
 	const hxsize_t removed = v.erase_if_unordered([](int& x) { return x == 99; });
 	EXPECT_EQ(removed, 1);
 	EXPECT_EQ(v.size(), 2);
@@ -732,11 +663,7 @@ TEST(hxvector_test, erase_if_unordered_removes_last_element) {
 }
 
 TEST(hxvector_test, erase_if_unordered_swap_replaces_erased_slot) {
-	hxvector<int, 4> v;
-	v.push_back(1);
-	v.push_back(2);
-	v.push_back(3);
-	v.push_back(4);
+	hxvector<int, 4> v{1, 2, 3, 4};
 	v.erase_if_unordered([](int& x) { return x == 2; });
 	EXPECT_EQ(v.size(), 3);
 	EXPECT_EQ(v.find(2), v.end());
@@ -746,12 +673,7 @@ TEST(hxvector_test, erase_if_unordered_swap_replaces_erased_slot) {
 }
 
 TEST(hxvector_test, erase_if_unordered_scans_all_elements) {
-	hxvector<int, 5> v;
-	v.push_back(10);
-	v.push_back(20);
-	v.push_back(30);
-	v.push_back(40);
-	v.push_back(50);
+	hxvector<int, 5> v{10, 20, 30, 40, 50};
 	int calls = 0;
 	v.erase_if_unordered([&](int&) -> bool { ++calls; return false; });
 	EXPECT_EQ(calls, 5);
@@ -796,16 +718,12 @@ TEST_F(hxvector_test_f, resizing) {
 TEST_F(hxvector_test_f, resize_shrink_boundary) {
 	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	{
-		hxvector<hxtest_object> objs;
-		objs.reserve(4);
-		objs.emplace_back(1);
-		objs.emplace_back(2);
-		objs.emplace_back(3);
+		hxvector<hxtest_object> objs{hxtest_object(1), hxtest_object(2), hxtest_object(3)};
 		objs.resize(2, hxtest_object());
 		EXPECT_EQ(objs.size(), 2);
 		EXPECT_EQ(objs[1].value, 2);
 	}
-	EXPECT_TRUE(check_stats(4, 4, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(7, 7, 3, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxvector_test_f, resize_grow_boundary) {
@@ -824,16 +742,14 @@ TEST_F(hxvector_test_f, resize_grow_boundary) {
 TEST_F(hxvector_test_f, assignment) {
 	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	{
-		hxvector<hxtest_object> objs;
-		objs.reserve(1);
 		hxtest_object to;
 		to.value = 67;
-		objs.push_back(to);
+		const hxvector<hxtest_object> objs{to};
 		hxvector<hxtest_object> objs2;
 		objs2 = objs;
 		hxvector<hxtest_object, 1> objs3;
 		objs3 = objs;
-		hxvector<hxtest_object> objs4(objs);
+		const hxvector<hxtest_object> objs4(objs); // NOLINT(performance-unnecessary-copy-initialization)
 		hxvector<hxtest_object, 1> objs5(objs);
 		EXPECT_EQ(objs2.size(), 1);
 		EXPECT_EQ(objs3.size(), 1);
@@ -844,7 +760,7 @@ TEST_F(hxvector_test_f, assignment) {
 		EXPECT_EQ(objs4[0].value, 67);
 		EXPECT_EQ(objs5[0].value, 67);
 	}
-	EXPECT_TRUE(check_stats(6, 6, 5, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(7, 7, 6, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxvector_test_f, assign_copies_all_elements_including_last) {
@@ -1135,10 +1051,7 @@ TEST_F(hxvector_test_f, emplace_back_move_tracker_forwarding) {
 }
 
 TEST(hxvector_test, cbegin_cend) {
-	hxvector<int, 4> values;
-	values.push_back(1);
-	values.push_back(3);
-	values.push_back(5);
+	const hxvector<int, 4> values{1, 3, 5};
 	const hxvector<int, 4>& const_values = values;
 	const int expected[] = { 1, 3, 5 };
 	const hxsize_t expected_count = hxsize(expected);
@@ -1155,9 +1068,7 @@ TEST(hxvector_test, cbegin_cend) {
 }
 
 TEST(hxvector_test, cend_points_past_last_element) {
-	hxvector<int, 2> v;
-	v.push_back(10);
-	v.push_back(20);
+	const hxvector<int, 2> v{10, 20};
 	EXPECT_EQ(v.cend(), v.begin() + 2);
 	EXPECT_EQ(*(v.cend() - 1), 20);
 }
@@ -1306,11 +1217,8 @@ TEST(hxvector_test, less_shorter_prefix_is_less) {
 }
 
 TEST(hxvector_test, equal_different_sizes_not_equal) {
-	hxvector<int, 3> a;
-	a.push_back(1);
-	a.push_back(2);
-	hxvector<int, 3> b;
-	b.push_back(1);
+	const hxvector<int, 3> a{1, 2};
+	const hxvector<int, 3> b{1};
 	EXPECT_FALSE(a.equal(b));
 }
 
@@ -1462,10 +1370,7 @@ TEST(hxvector_test, move_assign_into_empty) {
 }
 
 TEST(hxvector_test, subscript_first_and_last_index) {
-	hxvector<int, 4> v;
-	v.push_back(11);
-	v.push_back(22);
-	v.push_back(33);
+	const hxvector<int, 4> v{11, 22, 33};
 	EXPECT_EQ(v[0], 11);
 	EXPECT_EQ(v[2], 33);
 	const hxvector<int, 4>& cv = v;

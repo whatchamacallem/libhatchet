@@ -15,6 +15,7 @@
 #endif
 
 #include "hxallocator.hpp"
+#include "hxinitializer_list.hpp"
 #include "hxkey.hpp"
 #include "hxsort.hpp"
 
@@ -211,6 +212,15 @@ public:
 		/// \endcond
 	};
 
+	/// \cond HIDDEN
+	class pair_t_ {
+	public:
+		key_t_ key_;
+		mapped_t_ mapped_;
+	};
+	/// \endcond
+
+
 	/// Constructs an empty map. Requires `reserve` before inserting when
 	/// `capacity` is `hxallocator_dynamic_capacity`.
 	explicit hxflat_map(void);
@@ -224,6 +234,12 @@ public:
 	/// `hxallocator_dynamic_capacity`.
 	/// - `x` : A temporary `hxflat_map<key_t, mapped_t, compare_t, multi_t, hxallocator_dynamic_capacity>`.
 	hxflat_map(hxflat_map&& x_) noexcept;
+
+	/// Constructs a map by inserting every key-value pair from `x` in order
+	/// using `insert`. Requires `x.size()` <= `capacity` when `capacity` is
+	/// fixed.
+	/// - `x` : A `std::initializer_list<pair_t_>`.
+	hxflat_map(std::initializer_list<pair_t_> x_) noexcept;
 
 	/// Destructs the map and destroys all key-value pairs.
 	~hxflat_map(void) noexcept;
@@ -316,15 +332,6 @@ public:
 
 	/// Returns `true` if the map has reached its capacity.
 	hxattr_nodiscard bool full(void) const { return m_size_ == m_keys_.capacity(); }
-
-	/// Returns a const iterator to the element at `index`, or an end iterator
-	/// if `index` is out of range.
-	/// - `index` : The 0-based position of the element.
-	hxattr_nodiscard const_iterator get(hxsize_t index_) const;
-
-	/// Non-const version of `get`.
-	/// - `index` : The 0-based position of the element.
-	hxattr_nodiscard iterator get(hxsize_t index_);
 
 	/// Inserts a key-value pair. When `multi_t` is `false` and a matching key
 	/// already exists, returns an iterator to the existing element without

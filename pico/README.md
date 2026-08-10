@@ -16,3 +16,6 @@ automatically, so the script can flash again without the button.
 
 If the program crashes you may have to unplug, hold the BOOTSEL button and then
 plug the Pico 2 in again.
+
+© 2017-2026 Adrian Johnston. This project is licensed under the terms of the MIT
+license found in the `LICENSE.md` file.

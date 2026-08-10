@@ -439,14 +439,6 @@ public:
 	template<typename callable_t_>
 	void generate_n(hxsize_t size_, callable_t_&& callable_) noexcept;
 
-	/// Returns a `const T*` to the element at `index` or `hxnull` otherwise.
-	/// - `index` : The 0-based offset of the element.
-	hxattr_nodiscard const T_* get(hxsize_t index_) const;
-
-	/// Returns a `T*` to the element at `index` or `hxnull` otherwise.
-	/// - `index` : The 0-based offset of the element.
-	hxattr_nodiscard T_* get(hxsize_t index_);
-
 	/// Inserts the element at the offset indicated. Should not compile with
 	/// `hxnull`. `insert(begin(), x)` and `insert(end(), x)` will work as long as
 	/// the array is allocated. Not intended for objects that are expensive to

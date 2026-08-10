@@ -10,12 +10,14 @@
 #ifndef HX_DOXYGEN_PARSER
 HX_BEGIN_INL_
 
+// GCOVR_EXCL_START
 template<size_t bit_count_>
 hxinline hxconstexpr hxbitset<bit_count_>::hxbitset(size_t val_) {
 	static_assert(bit_count_ == s_bits_per_word_,
 		"hxbitset(size_t) requires bit_count_ == sizeof(size_t) * 8");
 	m_data_[0] = val_;
 }
+// GCOVR_EXCL_STOP
 
 template<size_t bit_count_>
 hxinline hxconstexpr hxbitset<bit_count_>::hxbitset(const hxbitset& x_) {
@@ -25,6 +27,38 @@ hxinline hxconstexpr hxbitset<bit_count_>::hxbitset(const hxbitset& x_) {
 		*dst_ = *src_;
 	}
 }
+
+// GCOVR_EXCL_START
+template<size_t bit_count_>
+template<typename int_t_>
+hxinline hxconstexpr hxbitset<bit_count_>::hxbitset(std::initializer_list<int_t_> x_) {
+	static_assert(sizeof(size_t) % sizeof(int_t_) == 0u,
+		"sizeof(size_t) must be a multiple of sizeof(int_t_)");
+	hxassertmsg(x_.size() == s_words_ * (sizeof(size_t) / sizeof(int_t_)),
+		"initializer_list size %zu %zu", x_.size(), s_words_ * (sizeof(size_t) / sizeof(int_t_)));
+	const int_t_* hxrestrict src_ = x_.begin();
+	hxif_constexpr(sizeof(int_t_) == sizeof(size_t)) {
+		for(size_t* hxrestrict dst_ = m_data_, *const end_ = m_data_ + s_words_;
+				dst_ != end_; ++dst_, ++src_) {
+			*dst_ = static_cast<size_t>(*src_);
+		}
+	}
+	else {
+		const size_t element_bits_ = sizeof(int_t_) * 8u;
+		const size_t element_mask_ = (static_cast<size_t>(1u) << element_bits_) - 1u;
+		const size_t per_word_ = sizeof(size_t) / sizeof(int_t_);
+		for(size_t* hxrestrict dst_ = m_data_, *const end_ = m_data_ + s_words_;
+				dst_ != end_; ++dst_) {
+			size_t word_ = 0u;
+			for(size_t i_ = 0u; i_ < per_word_; ++i_, ++src_) {
+				word_ |= (static_cast<size_t>(*src_) & element_mask_) << (i_ * element_bits_);
+			}
+			*dst_ = word_;
+		}
+	}
+	hxassertmsg((m_data_[s_words_-1u] & ~s_trailing_mask_) == 0u, "trailing_bits_set");
+}
+// GCOVR_EXCL_STOP
 
 template<size_t bit_count_>
 hxinline hxconstexpr void hxbitset<bit_count_>::operator=(const hxbitset& x_) {

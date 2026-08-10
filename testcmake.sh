@@ -57,9 +57,9 @@ $5 = [3] hxtest_const_list_node_t = {1, 2, 3}
 $6 = [4/4] int = {3, 4, 5, 6}
 $7 = [8/8] int = {4, 5, 6, 7, 8, 9, 10, 11}
 $8 = [3/4] int->hxtest_object = {[1] = {value = 10, moved_from = 0}, [2] = {value = 20, moved_from = 0}, [3] = {value = 30, moved_from = 0}}
-$9 = [3/8] int->hxtest_object = {[1] = {value = 10, moved_from = 0}, [2] = {value = 20, moved_from = 0}, [3] = {value = 30, moved_from = 0}}
+$9 = [3/3] int->hxtest_object = {[1] = {value = 10, moved_from = 0}, [2] = {value = 20, moved_from = 0}, [3] = {value = 30, moved_from = 0}}
 $10 = [3/4] hxtest_object = {{value = 10, moved_from = 0}, {value = 20, moved_from = 0}, {value = 30, moved_from = 0}}
-$11 = [3/8] hxtest_object = {{value = 10, moved_from = 0}, {value = 20, moved_from = 0}, {value = 30, moved_from = 0}}
+$11 = [3/3] hxtest_object = {{value = 10, moved_from = 0}, {value = 20, moved_from = 0}, {value = 30, moved_from = 0}}
 $12 = [39/32 buckets] hxtest_integer = {57, 61, 39, 67, 55, 75, 60, 48, 45, 72, 64, 56, 59, 66, 42, 63, 62, 44, 53, 73, 58, 71, 52, 40, 46, 68, 65, 41, 51, 76, 70, 77, 49, 69, 43, 54, 47, 74, 50}
 $13 = [3] hxtest_list_node_t = {1, 2, 3}
 $14 = [5/5] hxtest_object = {{value = 91, moved_from = 0}, {value = 0, moved_from = 0}, {value = 97, moved_from = 0}, {value = 97, moved_from = 0}, {value = 99, moved_from = 0}}

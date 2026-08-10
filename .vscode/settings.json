@@ -253,6 +253,7 @@
         "Werror",
         "Wextra",
         "Wfatal",
+        "whatchamacallem",
         "winget",
         "Winline",
         "Winvalid",

@@ -442,18 +442,6 @@ hxinline hxattr_flatten void hxvector<T_, capacity_>::generate_n(hxsize_t size_,
 }
 
 template<hxvector_concept_ T_, hxsize_t capacity_>
-hxinline hxattr_flatten const T_* hxvector<T_, capacity_>::get(hxsize_t index_) const {
-	// Casting a signed index is well defined. Comparing pointers would be undefined.
-	return index_ < this->size() ? this->data() + index_ : hxnull;
-}
-
-template<hxvector_concept_ T_, hxsize_t capacity_>
-hxinline hxattr_flatten T_* hxvector<T_, capacity_>::get(hxsize_t index_) {
-	// Casting a signed index is well defined. Comparing pointers would be undefined.
-	return index_ < this->size() ? this->data() + index_ : hxnull;
-}
-
-template<hxvector_concept_ T_, hxsize_t capacity_>
 template<typename ref_t_>
 hxinline hxattr_flatten void hxvector<T_, capacity_>::insert(const T_* pos_, ref_t_&& x_) noexcept {
 	hxassert_hard(pos_ >= this->data() && pos_ <= m_end_, "invalid_insert");

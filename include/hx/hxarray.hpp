@@ -197,6 +197,9 @@ public:
 	/// Returns a pointer to a potentially uninitialized array of `T`.
 	using hxallocator<T_, capacity_>::data;
 
+	/// Returns true if the array contains more than one element.
+	hxinline hxattr_nodiscard bool empty(void) const { return this->size() > 1; }
+
 	/// Returns true if the arrays compare equivalent using `hxkey_equal`.
 	/// Callers must check the return value to detect mismatches.
 	/// - `x` : The other array.
@@ -236,13 +239,8 @@ public:
 	template<typename callable_t_>
 	void for_each(callable_t_&& callable_);
 
-	/// Returns a `const T*` to the element at `index` or `hxnull` otherwise.
-	/// - `index` : The 0-based offset of the element.
-	hxattr_nodiscard const T_* get(hxsize_t index_) const;
-
-	/// Returns a `T*` to the element at `index` or `hxnull` otherwise.
-	/// - `index` : The 0-based offset of the element.
-	hxattr_nodiscard T_* get(hxsize_t index_);
+	/// Returns true.
+	hxinline hxattr_nodiscard bool full(void) const { return true; }
 
 	/// Sorts the array with insertion sort using `hxkey_less`.
 	void insertion_sort(void) noexcept;
@@ -254,7 +252,7 @@ public:
 	hxattr_nodiscard bool less(const hxarray& x_) const;
 
 	/// Returns the capacity of the array.
-	hxattr_nodiscard hxsize_t max_size(void) const { return this->capacity(); }
+	hxinline hxattr_nodiscard hxsize_t max_size(void) const { return this->capacity(); }
 
 	/// Copies another `hxarray` using `memcpy`.
 	/// - `x` : The other array.
@@ -276,10 +274,10 @@ public:
 			hxalignment_t alignment_=hxalignment) noexcept;
 
 	/// Returns the number of elements in the array.
-	hxattr_nodiscard hxsize_t size(void) const { return this->capacity(); }
+	hxinline hxattr_nodiscard hxsize_t size(void) const { return this->capacity(); }
 
 	/// Returns the number of bytes in the array. (Non-standard.)
-	hxattr_nodiscard hxsize_t size_bytes(void) const { return hxsizeof<T_>() * this->capacity(); }
+	hxinline hxattr_nodiscard hxsize_t size_bytes(void) const { return hxsizeof<T_>() * this->capacity(); }
 
 	/// Sorts the array using `hxkey_less`.
 	void sort(void) noexcept;

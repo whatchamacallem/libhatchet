@@ -147,7 +147,7 @@ TEST_F(hxsort_test_f, sort_grinder_generic) {
 		--histogram[static_cast<hxsize_t>(sorted[size - 1].value)];
 		for(hxsize_t j=size - 1; j-- != 0;) {
 			--histogram[static_cast<hxsize_t>(sorted[j].value)];
-			EXPECT_FALSE(hxkey_less(*sorted.get(j + 1), *sorted.get(j)));
+			EXPECT_FALSE(hxkey_less(sorted[j + 1], sorted[j]));
 		}
 		for(hxsize_t j=20000; j-- > 10000;) {
 			EXPECT_EQ(histogram[j], 0);

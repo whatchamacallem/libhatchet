@@ -32,27 +32,27 @@ public:
 
 	/// Initializes memory to `0xab` when `HX_HARDENING_MODE ==
 	/// HX_HARDENING_MODE_DEBUG`.
-	hxallocator(void) {
+	hxinline hxallocator(void) {
 #if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
 		::memset(m_data_, 0xab, sizeof m_data_);
 #endif
 	}
 
 	/// Returns the number of elements of `T` allocated.
-	hxattr_nodiscard hxsize_t capacity(void) const { return fixed_capacity_; }
+	hxinline hxattr_nodiscard hxsize_t capacity(void) const { return fixed_capacity_; }
 
 	/// Returns a pointer to a const and potentially uninitialized array of `T`.
-	const T_* data(void) const { return reinterpret_cast<const T_*>(m_data_); }
+	hxinline hxattr_nodiscard const T_* data(void) const { return reinterpret_cast<const T_*>(m_data_); }
 
 	/// Returns a pointer to a potentially uninitialized array of `T`.
-	T_* data(void) { return reinterpret_cast<T_*>(m_data_); }
+	hxinline hxattr_nodiscard T_* data(void) { return reinterpret_cast<T_*>(m_data_); }
 
 	/// Ensures capacity. Will not reallocate. Provided for interface
 	/// compatibility with the dynamic allocator.
 	/// - `size` : The number of elements of type `T` to ensure are available.
 	/// - `allocator` : Ignored.
 	/// - `alignment` : Ignored.
-	void reserve_storage(hxsize_t size_,
+	hxinline void reserve_storage(hxsize_t size_,
 			hxsystem_allocator_t allocator_=hxsystem_allocator_current,
 			hxalignment_t alignment_=hxalignment) {
 		(void)allocator_; (void)alignment_;
@@ -75,13 +75,13 @@ public:
 	using value_t = T_;
 
 	/// Does not allocate until `reserve_storage` is called.
-	hxallocator(void) {
+	hxinline hxallocator(void) {
 		m_data_ = hxnull;
 		m_capacity_ = 0;
 	}
 
 	/// Calls `hxfree` with any allocated memory.
-	~hxallocator(void) {
+	hxinline ~hxallocator(void) {
 		if(m_data_) {
 			m_capacity_ = 0;
 			hxfree(m_data_);
@@ -90,19 +90,19 @@ public:
 	}
 
 	/// Returns the number of elements of `T` allocated.
-	hxattr_nodiscard hxsize_t capacity(void) const { return m_capacity_; }
+	hxinline hxattr_nodiscard hxsize_t capacity(void) const { return m_capacity_; }
 
 	/// Returns a pointer to a const and potentially uninitialized array of `T`.
-	const T_* data(void) const { return m_data_; }
+	hxinline const T_* data(void) const { return m_data_; }
 
 	/// Returns a pointer to a potentially uninitialized array of `T`.
-	T_* data(void) { return m_data_; }
+	hxinline T_* data(void) { return m_data_; }
 
 	/// Capacity is set by first call to `reserve_storage` and may not be modified.
 	/// - `size` : The number of elements of type `T` to allocate space for.
 	/// - `allocator` : The memory manager ID to use for allocation (default: `hxsystem_allocator_current`)
 	/// - `alignment` : The alignment to use for the allocation. (default: `hxalignment`)
-	void reserve_storage(hxsize_t size_,
+	hxinline void reserve_storage(hxsize_t size_,
 			hxsystem_allocator_t allocator_=hxsystem_allocator_current,
 			hxalignment_t alignment_=hxalignment) {
 		if(size_ == m_capacity_) {
