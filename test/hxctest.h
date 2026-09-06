@@ -14,5 +14,5 @@ bool hxctest_swap(void);
 bool hxctest_memory(void);
 
 #if HX_CPLUSPLUS
-}
+} // extern "C" {
 #endif

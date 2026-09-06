@@ -55,7 +55,32 @@ struct hxtest_handle_disabled_deleter {
 
 } // namespace
 
+hxattr_noinline static void hxtest_gdb_break_hxhandle_table(void) { }
+
 using hxhandle_table_f = hxtest_object_fixture;
+
+#if HX_CPLUSPLUS >= 202302L
+TEST_F(hxhandle_table_f, value_or_emplaces_fallback) {
+	hxhandle_table<hxtest_object, hxdefault_delete, 2> t;
+	const hxhandle_t handle = t.insert(hxnew<hxtest_object>(10));
+	EXPECT_EQ(t.value_or(handle, 14, 17).value(), 10);
+	EXPECT_EQ(t.value_or(handle + static_cast<hxhandle_t>(4), 14, 17).value(), 31);
+	EXPECT_TRUE(check_stats(3, 2, 0, 2, 1, 0, 0, 0, 0, 0));
+}
+
+TEST_F(hxhandle_table_f, or_else_returns_value_or_calls_callable) {
+	hxhandle_table<hxtest_object, hxdefault_delete, 2> t;
+	hxtest_object* const fallback = hxnew<hxtest_object>(31);
+	const hxhandle_t handle = t.insert(hxnew<hxtest_object>(32));
+	hxtest_object* const hit = t.or_else(handle, [fallback]{ return fallback; });
+	EXPECT_EQ(hit->value(), 32);
+	hxtest_object* const miss = t.or_else(
+		hxnull_handle, [fallback]{ return fallback; });
+	EXPECT_EQ(miss, fallback);
+	hxdelete(fallback);
+	EXPECT_TRUE(check_stats(2, 1, 0, 2, 0, 0, 0, 0, 0, 0));
+}
+#endif // HX_CPLUSPLUS >= 202302L
 
 TEST_F(hxhandle_table_f, hxhandle_table_construction) {
 	const hxhandle_table<hxtest_object, hxdo_not_delete, 2> fixed;
@@ -70,11 +95,10 @@ TEST_F(hxhandle_table_f, hxhandle_table_construction) {
 	EXPECT_EQ(dynamic.size(), hxsize_t{0});
 	EXPECT_TRUE(dynamic.empty());
 	EXPECT_TRUE(dynamic.full());
-	EXPECT_TRUE(check_stats(0, 0, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_no_stats());
 }
 
 TEST_F(hxhandle_table_f, hxhandle_table_full) {
-	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
 	hxhandle_table<hxtest_object, hxdefault_delete, 2> t;
 	EXPECT_FALSE(t.full());
 	t.insert(hxnew<hxtest_object>(0));
@@ -83,134 +107,128 @@ TEST_F(hxhandle_table_f, hxhandle_table_full) {
 	EXPECT_FALSE(t.full());
 	const hxhandle_t h2 = t.insert(hxnew<hxtest_object>(2));
 	EXPECT_TRUE(t.full());
-	EXPECT_TRUE(t.erase(h2));
+	EXPECT_TRUE(t.reset(h2));
 	EXPECT_FALSE(t.full());
-	EXPECT_TRUE(check_stats(3, 1, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(3, 1, 0, 3, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhandle_table_f, hxhandle_table_insert_raw_pointer) {
-	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
-	hxhandle_table<hxtest_object, hxdefault_delete, 2> t;
-	const hxhandle_t h0 = t.insert(hxnew<hxtest_object>(0));
+	hxhandle_table<hxtest_object, hxdefault_delete, 2> a;
+	const hxhandle_t h0 = a.insert(hxnew<hxtest_object>(0));
 	EXPECT_NE(h0, static_cast<hxhandle_t>(0));
-	EXPECT_EQ(t.size(), hxsize_t{1});
-	EXPECT_FALSE(t.empty());
-	const hxhandle_t h1 = t.insert(hxnew<hxtest_object>(1));
-	const hxhandle_t h2 = t.insert(hxnew<hxtest_object>(2));
-	EXPECT_EQ(t.size(), hxsize_t{3});
+	EXPECT_EQ(a.size(), hxsize_t{1});
+	EXPECT_FALSE(a.empty());
+	const hxhandle_t h1 = a.insert(hxnew<hxtest_object>(1));
+	const hxhandle_t h2 = a.insert(hxnew<hxtest_object>(2));
+	EXPECT_EQ(a.size(), hxsize_t{3});
 	EXPECT_NE(h0, h1); EXPECT_NE(h0, h2); EXPECT_NE(h1, h2);
-	EXPECT_EQ(t.get(h0)->value, (int32_t)0);
-	EXPECT_EQ(t.get(h1)->value, (int32_t)1);
-	EXPECT_EQ(t.get(h2)->value, (int32_t)2);
-	EXPECT_TRUE(check_stats(3, 0, 0, 0, 0, 0, 0, 0));
+	EXPECT_EQ(a.value(h0)->value(), (int32_t)0);
+	EXPECT_EQ(a.value(h1)->value(), (int32_t)1);
+	EXPECT_EQ(a.value(h2)->value(), (int32_t)2);
+	EXPECT_TRUE(a.reset(h1));
+	const hxhandle_table<hxtest_object, hxdefault_delete> b;
+	hxtest_gdb_break_hxhandle_table();
+	EXPECT_TRUE(check_stats(3, 1, 0, 3, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhandle_table_f, hxhandle_table_insert_null_pointer_returns_null_handle) {
-	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
 	hxhandle_table<hxtest_object, hxdefault_delete, 2> t;
 	const hxhandle_t h = t.insert(static_cast<hxtest_object*>(hxnull));
 	EXPECT_EQ(h, hxnull_handle);
 	EXPECT_EQ(t.size(), hxsize_t{0});
-	EXPECT_TRUE(check_stats(0, 0, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_no_stats());
 }
 
 TEST_F(hxhandle_table_f, hxhandle_table_insert_hxptr_takes_ownership) {
-	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
 	hxhandle_table<hxtest_object, hxtest_handle_counting_deleter, 2> t;
 	hxptr<hxtest_object, hxtest_handle_counting_deleter> p(hxnew<hxtest_object>(88));
 	hxtest_object* const raw = p.get();
 	const hxhandle_t h = t.insert(hxmove(p));
 	EXPECT_EQ(p.get(), static_cast<hxtest_object*>(hxnull));
-	EXPECT_EQ(t.get(h), raw);
+	EXPECT_EQ(t.value(h), raw);
 	EXPECT_EQ(t.size(), hxsize_t{1});
-	EXPECT_TRUE(check_stats(1, 0, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(1, 0, 0, 1, 0, 0, 0, 0, 0, 0));
 }
 
-TEST_F(hxhandle_table_f, hxhandle_table_get) {
-	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
+TEST_F(hxhandle_table_f, hxhandle_table_value) {
 	hxhandle_table<hxtest_object, hxdefault_delete, 2> t;
-	EXPECT_EQ(t.get(static_cast<hxhandle_t>(0)), static_cast<hxtest_object*>(hxnull));
+	EXPECT_EQ(t.value(static_cast<hxhandle_t>(0)), static_cast<hxtest_object*>(hxnull));
 	const hxhandle_t h = t.insert(hxnew<hxtest_object>(7));
-	hxtest_object* const v = t.get(h);
+	hxtest_object* const v = t.value(h);
 	ASSERT_NE(v, static_cast<hxtest_object*>(hxnull));
-	EXPECT_EQ(v->value, (int32_t)7);
+	EXPECT_EQ(v->value(), (int32_t)7);
 	const hxhandle_table<hxtest_object, hxdefault_delete, 2>& ct = t;
-	const hxtest_object* const cv = ct.get(h);
+	const hxtest_object* const cv = ct.value(h);
 	ASSERT_NE(cv, static_cast<const hxtest_object*>(hxnull));
-	EXPECT_EQ(cv->value, (int32_t)7);
-	EXPECT_EQ(ct.get(h ^ static_cast<hxhandle_t>(4)), static_cast<const hxtest_object*>(hxnull));
-	EXPECT_TRUE(t.erase(h));
+	EXPECT_EQ(cv->value(), (int32_t)7);
+	EXPECT_EQ(ct.value(h ^ static_cast<hxhandle_t>(4)), static_cast<const hxtest_object*>(hxnull));
+	EXPECT_TRUE(t.reset(h));
 	const hxhandle_t fresh = t.insert(hxnew<hxtest_object>(9));
 	EXPECT_NE(h, fresh);
-	EXPECT_EQ(t.get(h), static_cast<hxtest_object*>(hxnull));
-	EXPECT_TRUE(check_stats(2, 1, 0, 0, 0, 0, 0, 0));
+	EXPECT_EQ(t.value(h), static_cast<hxtest_object*>(hxnull));
+	EXPECT_TRUE(check_stats(2, 1, 0, 2, 0, 0, 0, 0, 0, 0));
 }
 
-TEST_F(hxhandle_table_f, hxhandle_table_erase) {
-	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
+TEST_F(hxhandle_table_f, hxhandle_table_reset) {
 	hxs_handle_table_deleted = 0;
 	hxhandle_table<hxtest_object, hxtest_handle_counting_deleter, 2> t;
-	EXPECT_FALSE(t.erase(static_cast<hxhandle_t>(0)));
+	EXPECT_FALSE(t.reset(static_cast<hxhandle_t>(0)));
 	const hxhandle_t h = t.insert(hxnew<hxtest_object>(9));
-	EXPECT_TRUE(t.erase(h));
+	EXPECT_TRUE(t.reset(h));
 	EXPECT_EQ(hxs_handle_table_deleted, 1);
 	EXPECT_EQ(t.size(), hxsize_t{0});
-	EXPECT_EQ(t.get(h), static_cast<hxtest_object*>(hxnull));
-	EXPECT_FALSE(t.erase(h));
+	EXPECT_EQ(t.value(h), static_cast<hxtest_object*>(hxnull));
+	EXPECT_FALSE(t.reset(h));
 	EXPECT_EQ(hxs_handle_table_deleted, 1);
-	EXPECT_TRUE(check_stats(1, 1, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(1, 1, 0, 1, 0, 0, 0, 0, 0, 0));
 }
 
-TEST_F(hxhandle_table_f, hxhandle_table_erase_with_disabled_deleter_skips_delete) {
-	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
+TEST_F(hxhandle_table_f, hxhandle_table_reset_with_disabled_deleter_skips_delete) {
 	hxs_handle_table_deleted = 0;
 	hxhandle_table<hxtest_object, hxtest_handle_disabled_deleter, 2> t;
 	hxtest_object* const raw = hxnew<hxtest_object>(3);
 	const hxhandle_t h = t.insert(raw);
-	EXPECT_TRUE(t.erase(h));
+	EXPECT_TRUE(t.reset(h));
 	EXPECT_EQ(hxs_handle_table_deleted, 0);
 	hxdelete(raw);
-	EXPECT_TRUE(check_stats(1, 1, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(1, 1, 0, 1, 0, 0, 0, 0, 0, 0));
 }
 
-TEST_F(hxhandle_table_f, hxhandle_table_erase_from_full_table_rebuilds_free_head) {
-	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
+TEST_F(hxhandle_table_f, hxhandle_table_reset_from_full_table_rebuilds_free_head) {
 	hxhandle_table<hxtest_object, hxdefault_delete, 2> t;
 	const hxhandle_t h0 = t.insert(hxnew<hxtest_object>(10));
 	const hxhandle_t h1 = t.insert(hxnew<hxtest_object>(11));
 	const hxhandle_t h2 = t.insert(hxnew<hxtest_object>(12));
 	EXPECT_EQ(t.size(), hxsize_t{3});
-	EXPECT_TRUE(t.erase(h1));
+	EXPECT_TRUE(t.reset(h1));
 	EXPECT_EQ(t.size(), hxsize_t{2});
 	const hxhandle_t reused = t.insert(hxnew<hxtest_object>(21));
-	EXPECT_EQ(t.get(reused)->value, (int32_t)21);
-	EXPECT_NE(t.get(h0), static_cast<hxtest_object*>(hxnull));
-	EXPECT_NE(t.get(h2), static_cast<hxtest_object*>(hxnull));
-	EXPECT_TRUE(check_stats(4, 1, 0, 0, 0, 0, 0, 0));
+	EXPECT_EQ(t.value(reused)->value(), (int32_t)21);
+	EXPECT_NE(t.value(h0), static_cast<hxtest_object*>(hxnull));
+	EXPECT_NE(t.value(h2), static_cast<hxtest_object*>(hxnull));
+	EXPECT_TRUE(check_stats(4, 1, 0, 4, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhandle_table_f, hxhandle_table_reuse_after_full_cycle_across_all_slots) {
-	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
 	hxhandle_table<hxtest_object, hxdefault_delete, 2> t;
 	const hxhandle_t h0 = t.insert(hxnew<hxtest_object>(0));
 	const hxhandle_t h1 = t.insert(hxnew<hxtest_object>(1));
 	const hxhandle_t h2 = t.insert(hxnew<hxtest_object>(2));
-	EXPECT_TRUE(t.erase(h0));
-	EXPECT_TRUE(t.erase(h1));
-	EXPECT_TRUE(t.erase(h2));
+	EXPECT_TRUE(t.reset(h0));
+	EXPECT_TRUE(t.reset(h1));
+	EXPECT_TRUE(t.reset(h2));
 	EXPECT_EQ(t.size(), hxsize_t{0});
 	const hxhandle_t r0 = t.insert(hxnew<hxtest_object>(10));
 	const hxhandle_t r1 = t.insert(hxnew<hxtest_object>(11));
 	const hxhandle_t r2 = t.insert(hxnew<hxtest_object>(12));
 	EXPECT_EQ(t.size(), hxsize_t{3});
-	EXPECT_EQ(t.get(r0)->value, (int32_t)10);
-	EXPECT_EQ(t.get(r1)->value, (int32_t)11);
-	EXPECT_EQ(t.get(r2)->value, (int32_t)12);
-	EXPECT_TRUE(check_stats(6, 3, 0, 0, 0, 0, 0, 0));
+	EXPECT_EQ(t.value(r0)->value(), (int32_t)10);
+	EXPECT_EQ(t.value(r1)->value(), (int32_t)11);
+	EXPECT_EQ(t.value(r2)->value(), (int32_t)12);
+	EXPECT_TRUE(check_stats(6, 3, 0, 6, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhandle_table_f, hxhandle_table_extract) {
-	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
 	hxs_handle_table_deleted = 0;
 	hxhandle_table<hxtest_object, hxtest_handle_counting_deleter, 2> t;
 	const hxptr<hxtest_object, hxtest_handle_counting_deleter> missing =
@@ -222,56 +240,52 @@ TEST_F(hxhandle_table_f, hxhandle_table_extract) {
 	EXPECT_EQ(p.get(), raw);
 	EXPECT_EQ(hxs_handle_table_deleted, 0);
 	EXPECT_EQ(t.size(), hxsize_t{0});
-	EXPECT_EQ(t.get(h), static_cast<hxtest_object*>(hxnull));
-	EXPECT_TRUE(check_stats(1, 0, 0, 0, 0, 0, 0, 0));
+	EXPECT_EQ(t.value(h), static_cast<hxtest_object*>(hxnull));
+	EXPECT_TRUE(check_stats(1, 0, 0, 1, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhandle_table_f, hxhandle_table_extract_from_full_table_rebuilds_free_head) {
-	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
 	hxhandle_table<hxtest_object, hxtest_handle_counting_deleter, 2> t;
 	t.insert(hxnew<hxtest_object>(10));
 	const hxhandle_t h1 = t.insert(hxnew<hxtest_object>(11));
 	t.insert(hxnew<hxtest_object>(12));
 	hxptr<hxtest_object, hxtest_handle_counting_deleter> p = t.extract(h1);
 	ASSERT_NE(p.get(), static_cast<hxtest_object*>(hxnull));
-	EXPECT_EQ(p->value, (int32_t)11);
+	EXPECT_EQ(p->value(), (int32_t)11);
 	EXPECT_EQ(t.size(), hxsize_t{2});
 	const hxhandle_t reused = t.insert(hxnew<hxtest_object>(31));
-	EXPECT_EQ(t.get(reused)->value, (int32_t)31);
-	EXPECT_TRUE(check_stats(4, 0, 0, 0, 0, 0, 0, 0));
+	EXPECT_EQ(t.value(reused)->value(), (int32_t)31);
+	EXPECT_TRUE(check_stats(4, 0, 0, 4, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhandle_table_f, hxhandle_table_erase_if) {
-	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
 	hxs_handle_table_deleted = 0;
 	hxhandle_table<hxtest_object, hxtest_handle_counting_deleter, 2> t;
 	const hxhandle_t h0 = t.insert(hxnew<hxtest_object>(0));
 	const hxhandle_t h1 = t.insert(hxnew<hxtest_object>(1));
 	const hxhandle_t h2 = t.insert(hxnew<hxtest_object>(2));
-	EXPECT_EQ(t.erase_if([](hxtest_object& v) { return (v.value & 1) != 0; }), hxsize_t{1});
+	EXPECT_EQ(t.erase_if([](hxtest_object& v) { return (v.value() & 1) != 0; }), hxsize_t{1});
 	EXPECT_EQ(hxs_handle_table_deleted, 1);
 	EXPECT_EQ(t.size(), hxsize_t{2});
-	EXPECT_NE(t.get(h0), static_cast<hxtest_object*>(hxnull));
-	EXPECT_EQ(t.get(h1), static_cast<hxtest_object*>(hxnull));
-	EXPECT_NE(t.get(h2), static_cast<hxtest_object*>(hxnull));
+	EXPECT_NE(t.value(h0), static_cast<hxtest_object*>(hxnull));
+	EXPECT_EQ(t.value(h1), static_cast<hxtest_object*>(hxnull));
+	EXPECT_NE(t.value(h2), static_cast<hxtest_object*>(hxnull));
 	const hxhandle_t reused = t.insert(hxnew<hxtest_object>(9));
-	EXPECT_EQ(t.get(reused)->value, (int32_t)9);
-	EXPECT_TRUE(check_stats(4, 1, 0, 0, 0, 0, 0, 0));
+	EXPECT_EQ(t.value(reused)->value(), (int32_t)9);
+	EXPECT_TRUE(check_stats(4, 1, 0, 4, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhandle_table_f, hxhandle_table_erase_if_skips_free_tail_slot) {
-	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
 	hxs_handle_table_deleted = 0;
 	hxhandle_table<hxtest_object, hxtest_handle_counting_deleter, 2> t;
 	t.insert(hxnew<hxtest_object>(0));
 	EXPECT_EQ(t.erase_if([](hxtest_object&) { return true; }), hxsize_t{1});
 	EXPECT_EQ(hxs_handle_table_deleted, 1);
 	EXPECT_EQ(t.size(), hxsize_t{0});
-	EXPECT_TRUE(check_stats(1, 1, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(1, 1, 0, 1, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhandle_table_f, hxhandle_table_erase_if_none_match) {
-	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
 	hxs_handle_table_deleted = 0;
 	hxhandle_table<hxtest_object, hxtest_handle_counting_deleter, 2> t;
 	t.insert(hxnew<hxtest_object>(0));
@@ -279,11 +293,10 @@ TEST_F(hxhandle_table_f, hxhandle_table_erase_if_none_match) {
 	EXPECT_EQ(t.erase_if([](hxtest_object&) { return false; }), hxsize_t{0});
 	EXPECT_EQ(hxs_handle_table_deleted, 0);
 	EXPECT_EQ(t.size(), hxsize_t{2});
-	EXPECT_TRUE(check_stats(2, 0, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(2, 0, 0, 2, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhandle_table_f, hxhandle_table_erase_if_with_disabled_deleter_skips_delete) {
-	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
 	hxs_handle_table_deleted = 0;
 	hxhandle_table<hxtest_object, hxtest_handle_disabled_deleter, 2> t;
 	hxtest_object* const raw = hxnew<hxtest_object>(3);
@@ -292,11 +305,10 @@ TEST_F(hxhandle_table_f, hxhandle_table_erase_if_with_disabled_deleter_skips_del
 	EXPECT_EQ(hxs_handle_table_deleted, 0);
 	EXPECT_EQ(t.size(), hxsize_t{0});
 	hxdelete(raw);
-	EXPECT_TRUE(check_stats(1, 1, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(1, 1, 0, 1, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhandle_table_f, hxhandle_table_clear) {
-	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
 	hxs_handle_table_deleted = 0;
 	hxhandle_table<hxtest_object, hxtest_handle_counting_deleter, 2> t;
 	t.clear();
@@ -308,11 +320,10 @@ TEST_F(hxhandle_table_f, hxhandle_table_clear) {
 	EXPECT_EQ(hxs_handle_table_deleted, 2);
 	EXPECT_EQ(t.size(), hxsize_t{0});
 	EXPECT_TRUE(t.empty());
-	EXPECT_TRUE(check_stats(2, 2, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(2, 2, 0, 2, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhandle_table_f, hxhandle_table_clear_with_disabled_deleter_skips_delete) {
-	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
 	hxs_handle_table_deleted = 0;
 	hxhandle_table<hxtest_object, hxtest_handle_disabled_deleter, 2> t;
 	hxtest_object* const raw0 = hxnew<hxtest_object>(1);
@@ -324,11 +335,10 @@ TEST_F(hxhandle_table_f, hxhandle_table_clear_with_disabled_deleter_skips_delete
 	EXPECT_EQ(t.size(), hxsize_t{0});
 	hxdelete(raw0);
 	hxdelete(raw1);
-	EXPECT_TRUE(check_stats(2, 2, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(2, 2, 0, 2, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhandle_table_f, hxhandle_table_destructor_deletes_owned_values) {
-	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
 	hxs_handle_table_deleted = 0;
 	{
 		hxhandle_table<hxtest_object, hxtest_handle_counting_deleter, 2> t;
@@ -347,11 +357,10 @@ TEST_F(hxhandle_table_f, hxhandle_table_destructor_deletes_owned_values) {
 	EXPECT_EQ(hxs_handle_table_deleted, 0);
 	hxdelete(raw0);
 	hxdelete(raw1);
-	EXPECT_TRUE(check_stats(4, 4, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(4, 4, 0, 4, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhandle_table_f, hxhandle_table_release_all) {
-	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
 	hxs_handle_table_deleted = 0;
 	hxhandle_table<hxtest_object, hxtest_handle_disabled_deleter, 2> t;
 	hxtest_object* const raw0 = hxnew<hxtest_object>(1);
@@ -361,26 +370,25 @@ TEST_F(hxhandle_table_f, hxhandle_table_release_all) {
 	t.release_all();
 	EXPECT_EQ(hxs_handle_table_deleted, 0);
 	EXPECT_EQ(t.size(), hxsize_t{0});
-	EXPECT_EQ(t.get(h0), static_cast<hxtest_object*>(hxnull));
+	EXPECT_EQ(t.value(h0), static_cast<hxtest_object*>(hxnull));
 	hxdelete(raw0);
 	hxdelete(raw1);
 	hxhandle_table<hxtest_object, hxdo_not_delete> dynamic;
 	dynamic.release_all();
 	EXPECT_EQ(dynamic.size(), hxsize_t{0});
 	EXPECT_EQ(dynamic.capacity(), hxsize_t{0});
-	EXPECT_TRUE(check_stats(2, 2, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(2, 2, 0, 2, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhandle_table_f, hxhandle_table_set_size_bits_allocates) {
-	const hxsystem_allocator_scope scope(hxsystem_allocator_stack_0);
 	hxhandle_table<hxtest_object, hxtest_handle_counting_deleter> t;
 	t.set_size_bits(3);
 	EXPECT_EQ(t.capacity(), hxsize_t{7});
 	const hxhandle_t h = t.insert(hxnew<hxtest_object>(77));
-	hxtest_object* const v = t.get(h);
+	hxtest_object* const v = t.value(h);
 	ASSERT_NE(v, static_cast<hxtest_object*>(hxnull));
-	EXPECT_EQ(v->value, (int32_t)77);
+	EXPECT_EQ(v->value(), (int32_t)77);
 	EXPECT_EQ(t.size(), hxsize_t{1});
-	EXPECT_TRUE(t.erase(h));
-	EXPECT_TRUE(check_stats(1, 1, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(t.reset(h));
+	EXPECT_TRUE(check_stats(1, 1, 0, 1, 0, 0, 0, 0, 0, 0));
 }

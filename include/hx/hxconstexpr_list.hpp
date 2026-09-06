@@ -16,18 +16,32 @@
 #error Header does not provide macros alone.
 #endif
 
+#include "hxalgorithm.hpp"
 #include "hxptr.hpp"
 #include "hxutility.h"
 
 HX_NS_BEGIN_
 
+#if HX_CPLUSPLUS >= 202002L
+/// \cond HIDDEN
+class hxconstexpr_list_node;
+
+template<typename T_>
+concept hxconstexpr_list_concept_ = requires(T_& x_, T_* ptr_) {
+	sizeof(T_);
+	x_.~T_();
+	{ ptr_ } -> hxconvertible_to<hxconstexpr_list_node*>; // T must derive from hxconstexpr_list_node
+};
+/// \endcond
+#else
+#define hxconstexpr_list_concept_ typename
+#endif
+
 /// `hxconstexpr_list_node` - Intrusive doubly linked list node base. This is
 /// the same as `hxlist` except that it works with `constexpr` at the expense of
 /// using an additional pointer per-node. Derive from `hxconstexpr_list_node` to
-/// make a type linkable into an `hxconstexpr_list`. Nodes default to unlinked
-/// on construction. Copy and move construction and assignment produce or leave
-/// a fresh unlinked node so that subclasses may implement the standard
-/// operators naturally.
+/// make a type linkable into an `hxconstexpr_list`. Copy construction produces
+/// an unlinked node and assignment does nothing.
 class hxconstexpr_list_node {
 public:
 	/// Constructs an unlinked node.
@@ -37,14 +51,14 @@ public:
 	hxconstexpr hxconstexpr_list_node(const hxconstexpr_list_node&) : hxconstexpr_list_node() { }
 
 	/// Assigns nothing. List linkage of either node is not affected.
-	hxconstexpr hxconstexpr_list_node& operator=(const hxconstexpr_list_node& other_) {
-		hxassertmsg(this != &other_, "self_assignment"); (void)other_;
+	hxconstexpr hxconstexpr_list_node& operator=(const hxconstexpr_list_node& x_) {
+		hxassertmsg(this != &x_, "self_assignment"); (void)x_;
 		return *this;
 	}
 
 private:
 	/// \cond HIDDEN
-	template<typename, typename> friend class hxconstexpr_list;
+	template<hxconstexpr_list_concept_, typename> friend class hxconstexpr_list;
 	hxconstexpr_list_node* m_list_prev_;
 	hxconstexpr_list_node* m_list_next_;
 	/// \endcond
@@ -77,7 +91,7 @@ private:
 /// - `T` : The node type. Must derive from `hxconstexpr_list_node`.
 /// - `deleter_t` : A class type invoked as `deleter(T*)` to free the owned
 ///    pointer. See also `hxdo_not_delete` and `hxconsteval_delete`.
-template<typename T_, typename deleter_t_=hxdefault_delete>
+template<hxconstexpr_list_concept_ T_, typename deleter_t_=hxdefault_delete>
 class hxconstexpr_list : private deleter_t_ {
 public:
 	/// `T` - The node type stored in the list. Derives from
@@ -116,18 +130,18 @@ public:
 		/// Returns a const reference to the current node.
 		hxconstexpr const T_& operator*(void) const {
 			hxassertmsg(this->m_current_node_ != hxnull
-				&& this->m_current_node_ != this->m_sentinel_, "invalid_iterator");
+				&& this->m_current_node_ != this->m_sentinel_, "bad_iter");
 			return *static_cast<const T_*>(m_current_node_);
 		}
 		/// Returns a const pointer to the current node.
 		hxconstexpr const T_* operator->(void) const {
 			hxassertmsg(this->m_current_node_ != hxnull
-				&& this->m_current_node_ != this->m_sentinel_, "invalid_iterator");
+				&& this->m_current_node_ != this->m_sentinel_, "bad_iter");
 			return static_cast<const T_*>(m_current_node_);
 		}
 	protected:
 		/// \cond HIDDEN
-		template<typename, typename> friend class hxconstexpr_list;
+		template<hxconstexpr_list_concept_, typename> friend class hxconstexpr_list;
 		hxconstexpr const_iterator(hxconstexpr_list_node* current_, const hxconstexpr_list_node* sentinel_)
 			: m_current_node_(current_)
 #if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
@@ -150,29 +164,32 @@ public:
 		// GCOVR_EXCL_STOP
 		/// Advances to the next node and returns this iterator.
 		hxconstexpr iterator& operator++(void) { const_iterator::operator++(); return *this; }
-		/// Post-increment: advances to the next node and returns the prior position.
+		/// Post-increment: advances to the next node and returns the prior
+		/// position.
 		hxconstexpr iterator operator++(int);
 		/// Retreats to the previous node and returns this iterator.
 		hxconstexpr iterator& operator--(void) { const_iterator::operator--(); return *this; }
-		/// Post-decrement: retreats to the previous node and returns the prior position.
+		/// Post-decrement: retreats to the previous node and returns the prior
+		/// position.
 		hxconstexpr iterator operator--(int);
 		/// Returns a mutable reference to the current node.
 		hxconstexpr T_& operator*(void) const {
 			hxassertmsg(this->m_current_node_ != hxnull
-				&& this->m_current_node_ != this->m_sentinel_, "invalid_iterator");
+				&& this->m_current_node_ != this->m_sentinel_, "bad_iter");
 			return *static_cast<T_*>(this->m_current_node_);
 		}
 		/// Returns a mutable pointer to the current node.
 		hxconstexpr T_* operator->(void) const {
 			hxassertmsg(this->m_current_node_ != hxnull
-				&& this->m_current_node_ != this->m_sentinel_, "invalid_iterator");
+				&& this->m_current_node_ != this->m_sentinel_, "bad_iter");
 			return static_cast<T_*>(this->m_current_node_);
 		}
 	private:
 		/// \cond HIDDEN
-		template<typename, typename> friend class hxconstexpr_list;
+		template<hxconstexpr_list_concept_, typename> friend class hxconstexpr_list;
 		hxconstexpr iterator(hxconstexpr_list_node* current_, const hxconstexpr_list_node* sentinel_)
 			: const_iterator(current_, sentinel_) { }
+		hxconstexpr iterator(const const_iterator& x_) : const_iterator(x_) { }
 		/// \endcond
 	};
 
@@ -184,22 +201,43 @@ public:
 	/// every remaining node.
 	hxconstexpr ~hxconstexpr_list(void) { this->clear(this->deleter()); }
 
-	/// Returns a reference to the last node. The list must not be empty.
-	hxattr_nodiscard hxconstexpr T_& back(void);
+	/// Returns `true` if this list and `x` contain the same nodes in the same
+	/// order, using `T`'s `operator==`.
+	/// - `x` : The list to compare against.
+	hxattr_nodiscard hxconstexpr bool operator==(const hxconstexpr_list& x_) const;
+
+	/// Returns `true` if this list compares less than `x` lexicographically,
+	/// using `T`'s `operator==` and `operator<`.
+	/// - `x` : The list to compare against.
+	hxattr_nodiscard hxconstexpr bool operator<(const hxconstexpr_list& x_) const;
+
+	/// Links each `T` from a temporary range into this list by address, exactly
+	/// as `push_back(T*)` would. The range's nodes are threaded into the list
+	/// in place and are not copied or allocated, so `range` must own storage it
+	/// is relinquishing to the list.
+	/// - `range` : The range of nodes to link into the list.
+	template<hxrange_concept_ range_t_,
+		hxenable_if_t<!hxis_lvalue_reference<range_t_>(), int> = 0>
+	hxconstexpr void add_range(range_t_&& range_) noexcept;
 
 	/// Returns a const reference to the last node. The list must not be empty.
 	hxattr_nodiscard hxconstexpr const T_& back(void) const;
 
+	hxattr_nodiscard hxconstexpr T_& back(void);
+
 	/// Returns an iterator to the first node, or `end()` if the list is empty.
 	hxconstexpr iterator begin(void) { return iterator(m_sentinel_.m_list_next_, &m_sentinel_); }
 
-	/// Returns a const iterator to the first node, or `end()` if the list is empty.
+	/// Returns a const iterator to the first node, or `end()` if the list is
+	/// empty.
 	hxconstexpr const_iterator begin(void) const;
 
-	/// Returns a const iterator to the first node, or `cend()` if the list is empty.
+	/// Returns a const iterator to the first node, or `cend()` if the list is
+	/// empty.
 	hxconstexpr const_iterator cbegin(void) const { return this->begin(); }
 
-	/// Returns a const iterator to the sentinel, representing one past the last node.
+	/// Returns a const iterator to the sentinel, representing one past the
+	/// last node.
 	hxconstexpr const_iterator cend(void) const { return this->end(); }
 
 	/// Removes all nodes, invoking `deleter` on each. If `deleter` evaluates to
@@ -214,30 +252,30 @@ public:
 	/// Returns `true` if the list contains no nodes.
 	hxattr_nodiscard hxconstexpr bool empty(void) const;
 
-	/// Returns an iterator to the sentinel, representing one past the last node.
-	/// This is also the iterator to one before the first node.
+	/// Returns an iterator to the sentinel, representing one past the last
+	/// node. This is also the iterator to one before the first node.
 	hxconstexpr iterator end(void) { return iterator(&m_sentinel_, &m_sentinel_); }
 
 	/// Returns a const iterator to the sentinel, representing one past the last
 	/// node. This is also the iterator to one before the first node.
 	hxconstexpr const_iterator end(void) const;
 
-	/// Unlinks the node at `pos` and if `deleter` is true then calls `deleter`
+	/// Unlinks the node at `it` and if `deleter` is true then calls `deleter`
 	/// on it.
-	/// - `pos` : The node to unlink and erase.
+	/// - `it` : The node to unlink and erase.
 	/// - `deleter` : Callable with signature `bool deleter(T*)`.
 	template<typename deleter_u_>
-	hxconstexpr void erase(const_iterator pos_, deleter_u_&& deleter_) noexcept;
+	hxconstexpr void erase(const_iterator it_, deleter_u_&& deleter_) noexcept;
 
-	/// Unlinks and deletes the node at `pos` if `deleter` is true then calls
-	/// `deleter` on it.
-	/// - `pos` : Iterator to the node to unlink and delete.
-	hxconstexpr void erase(const_iterator pos_) noexcept;
+	/// Unlinks the node at `it` and calls the stored deleter on it if it
+	/// evaluates to true.
+	/// - `it` : Iterator to the node to unlink and erase.
+	hxconstexpr void erase(const_iterator it_) noexcept;
 
-	/// `extract` - Returns an `hxptr` owning the node at `pos` after unlinking it
-	/// from the list.
-	/// - `pos` : Iterator to the node to unlink and return.
-	hxconstexpr hxptr<T_, deleter_t_> extract(const_iterator pos_);
+	/// `extract` - Returns an `hxptr` owning the node at `it` after unlinking
+	/// it from the list.
+	/// - `it` : Iterator to the node to unlink and return.
+	hxconstexpr hxptr<T_, deleter_t_> extract(const_iterator it_);
 
 	/// Finds the first node for which the predicate returns true. Returns
 	/// `end()` if no node matches.
@@ -245,7 +283,6 @@ public:
 	template<typename callable_t_>
 	hxattr_nodiscard hxconstexpr const_iterator find_if(callable_t_&& callable_) const;
 
-	/// Non-const version of `find_if`.
 	template<typename callable_t_>
 	hxattr_nodiscard hxconstexpr iterator find_if(callable_t_&& callable_);
 
@@ -254,47 +291,45 @@ public:
 	template<typename callable_t_>
 	hxconstexpr void for_each(callable_t_&& callable_) const;
 
-	/// Non-const version of `for_each`.
 	template<typename callable_t_>
 	hxconstexpr void for_each(callable_t_&& callable_);
 
 	/// Returns a const reference to the stored deleter.
 	hxattr_nodiscard hxconstexpr const deleter_t_& deleter(void) const;
 
-	/// Returns a reference to the stored deleter.
 	hxattr_nodiscard hxconstexpr deleter_t_& deleter(void);
-
-	/// Returns a reference to the first node. The list must not be empty.
-	hxattr_nodiscard hxconstexpr T_& front(void);
 
 	/// Returns a const reference to the first node. The list must not be empty.
 	hxattr_nodiscard hxconstexpr const T_& front(void) const;
 
-	/// `insert_after` - Inserts the node owned by `ptr` immediately after `pos`.
+	hxattr_nodiscard hxconstexpr T_& front(void);
+
+	/// `insert_after` - Inserts the node owned by `ptr` immediately after `it`.
 	/// Returns an iterator to the inserted node.
-	/// - `pos` : Iterator to the node after which `ptr` is inserted.
+	/// - `it` : Iterator to the node after which `ptr` is inserted.
 	/// - `ptr` : The `hxptr` owning the node to insert.
 	template<typename deleter_u_>
-	hxconstexpr iterator insert_after(const_iterator pos_, hxptr<T_, deleter_u_>&& ptr_);
+	hxconstexpr iterator insert_after(const_iterator it_, hxptr<T_, deleter_u_>&& ptr_);
 
-	/// `insert_after` - Inserts `ptr` immediately after `pos`. Returns an
+	/// `insert_after` - Inserts `ptr` immediately after `it`. Returns an
 	/// iterator to the inserted node.
-	/// - `pos` : Iterator to the node after which `ptr` is inserted.
+	/// - `it` : Iterator to the node after which `ptr` is inserted.
 	/// - `ptr` : The node to insert. Must not be null.
-	hxconstexpr iterator insert_after(const_iterator pos_, T_* ptr_);
+	hxconstexpr iterator insert_after(const_iterator it_, T_* ptr_);
 
-	/// `insert` - Inserts the node owned by `ptr` immediately before `pos`.
+	/// `insert` - Inserts the node owned by `ptr` immediately before `it`.
 	/// Returns an iterator to the inserted node.
-	/// - `pos` : Iterator to the node before which `ptr` is inserted. May be `end()`.
+	/// - `it` : Iterator to the node before which `ptr` is inserted. May be
+	///   `end()`.
 	/// - `ptr` : The `hxptr` owning the node to insert.
 	template<typename deleter_u_>
-	hxconstexpr iterator insert(const_iterator pos_, hxptr<T_, deleter_u_>&& ptr_);
+	hxconstexpr iterator insert(const_iterator it_, hxptr<T_, deleter_u_>&& ptr_);
 
-	/// `insert` - Inserts `ptr` immediately before `pos`. May be `end()`.
+	/// `insert` - Inserts `ptr` immediately before `it`. May be `end()`.
 	/// Returns an iterator to the inserted node.
-	/// - `pos` : Iterator to the node before which `ptr` is inserted.
+	/// - `it` : Iterator to the node before which `ptr` is inserted.
 	/// - `ptr` : The node to insert. Must not be null.
-	hxconstexpr iterator insert(const_iterator pos_, T_* ptr_);
+	hxconstexpr iterator insert(const_iterator it_, T_* ptr_);
 
 	/// `pop_back` - Returns an `hxptr` owning the last node. The list must
 	/// not be empty.
@@ -340,7 +375,8 @@ public:
 	hxconstexpr hxsize_t remove_if(callable_t_&& callable_, deleter_u_&& deleter_) noexcept;
 
 	/// Removes all nodes for which predicate returns true, invoking the
-	/// stored deleter on each removed node. Returns the number of nodes removed.
+	/// stored deleter on each removed node. Returns the number of nodes
+	/// removed.
 	/// - `callable` : A callable taking a `T` reference, returning bool.
 	template<typename callable_t_>
 	hxconstexpr hxsize_t remove_if(callable_t_&& callable_) noexcept;
@@ -351,11 +387,11 @@ public:
 	/// Returns the number of nodes currently in the list.
 	hxattr_nodiscard hxconstexpr hxsize_t size(void) const { return m_size_; }
 
-	/// Transfers all nodes from `other` and inserts them before `pos`, taking
-	/// ownership. `other` is left empty after the call.
-	/// - `pos` : Iterator before which nodes are inserted.
-	/// - `other` : The list to splice from. Left empty after the call.
-	hxconstexpr void splice(const_iterator pos_, hxconstexpr_list& other_);
+	/// Transfers all nodes from `x` and inserts them before `it`, taking
+	/// ownership. `x` is left empty after the call.
+	/// - `it` : Iterator before which nodes are inserted.
+	/// - `x` : The list to splice from. Left empty after the call.
+	hxconstexpr void splice(const_iterator it_, hxconstexpr_list& x_);
 
 private:
 	hxconstexpr_list(const hxconstexpr_list&) = delete;

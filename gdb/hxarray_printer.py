@@ -49,13 +49,14 @@ class hxarray_printer:
 
 		elem_type: gdb.Type = self.val.type.template_argument(0)
 		targ1: gdb.Value = self.val.type.template_argument(1)
+		type_name: str = re.sub(r'(\w+|\(anonymous namespace\))::', '', f'{self.val.type.strip_typedefs()}')
 
 		capacity: int
 		raw_data: int
 		if targ1 == 0:
 			capacity = int(self.val['m_capacity_'])
 			if capacity <= 0:
-				self._summary = '<unallocated>'
+				self._summary = f'[0] {type_name}'
 				return self._summary
 			raw_data = int(data)
 		else:
@@ -67,8 +68,7 @@ class hxarray_printer:
 		self._data = raw_data
 		self._ok = True
 
-		basename: str = re.sub(r'^((\w+|\(anonymous namespace\))::)+', '', f'{elem_type}')
-		self._summary = '[{}] {}'.format(capacity, basename)
+		self._summary = f'[{capacity}] {type_name}'
 		return self._summary
 
 	def to_string(self) -> str:
@@ -83,6 +83,8 @@ class hxarray_printer:
 			self._parse()
 			if not self._ok:
 				return
+			allocator_type: gdb.Type = self.val.type.fields()[0].type
+			yield ('hxallocator', self.val.cast(allocator_type))
 			for i in range(self._size):
 				int_ptr: int = self._data + i * self._elem_type.sizeof
 				elem_ptr: gdb.Value = gdb.Value(int_ptr).cast(self._elem_type.pointer())

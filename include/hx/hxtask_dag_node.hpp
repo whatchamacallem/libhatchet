@@ -40,14 +40,17 @@ public:
 
 	/// Propagates successful completion to successors. Subclass overrides must
 	/// call `hxtask_dag_node::on_completion(q_)`.
+	/// - `q` : Pointer to the task queue managing this node.
 	void on_completion(hxtask_queue* q_) override { this->dag_node_completed_(q_, false); }
 
 	/// Cancels all successors. Subclass overrides must call
 	/// `hxtask_dag_node::on_failure(q_)`.
+	/// - `q` : Pointer to the task queue managing this node.
 	void on_failure(hxtask_queue* q_) override { this->dag_node_completed_(q_, true); }
 
 	/// Cancels all successors. Subclass overrides must call
 	/// `hxtask_dag_node::on_cancel(q_)`.
+	/// - `q` : Pointer to the task queue managing this node.
 	void on_cancel(hxtask_queue* q_) override { this->dag_node_completed_(q_, true); }
 
 private:

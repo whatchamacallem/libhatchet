@@ -52,13 +52,11 @@
 #error #include <hx/libhatchet.h> instead.
 #endif
 
-#if HX_CPLUSPLUS
-#if HX_USE_LIBCXX
+#if HX_CPLUSPLUS && (HX_USE_LIBCXX)
 #include <new>
 #endif
 
-extern "C" {
-#endif
+HX_C_BEGIN_
 
 /// `hxalignment_t` - A positive integer power of 2 for aligning allocations.
 typedef unsigned int hxalignment_t;
@@ -103,20 +101,24 @@ void hxfree(void* ptr_) hxattr_noexcept hxattr_hot;
 /// pointer as previous allocations. Returns a pointer that must be released
 /// with `hxfree`.
 /// - `size` : The size of the memory to allocate.
-/// - `allocator`(C++ only): The memory manager ID to use for allocation. (Default is
-///   `hxsystem_allocator_current`.)
+/// - `allocator`(C++ only): The memory manager ID to use for allocation.
+///   (Default is `hxsystem_allocator_current`.)
 /// - `alignment`(C++ only): The alignment for the allocation. (Default
 ///   is `hxalignment`.)
-void* hxmalloc(size_t size_) hxattr_allocator(hxfree) hxattr_noexcept hxattr_hot;
+hxattr_allocator(hxfree) hxattr_noexcept hxattr_hot
+void* hxmalloc(size_t size_);
 
 /// `hxmalloc_ext` - Allocates memory of the specified size with a specific
 /// memory manager and alignment. Will not return on failure.
 /// Returns a pointer that must be released with `hxfree`.
 /// - `size` : The size of the memory to allocate.
-/// - `allocator` : The memory manager ID to use for allocation. (Default is `hxsystem_allocator_current`.)
-/// - `alignment` : The alignment for the allocation. (Default is `hxalignment`.)
+/// - `allocator` : The memory manager ID to use for allocation. (Default is
+///   `hxsystem_allocator_current`.)
+/// - `alignment` : The alignment for the allocation. (Default is
+///   `hxalignment`.)
+hxattr_noexcept hxattr_allocator(hxfree) hxattr_hot
 void* hxmalloc_ext(size_t size_, hxsystem_allocator_t allocator_,
-	hxalignment_t alignment_/*=hxalignment*/) hxattr_noexcept hxattr_allocator(hxfree) hxattr_hot;
+	hxalignment_t alignment_/*=hxalignment*/);
 
 /// `hxstring_duplicate` - Allocates a copy of a string using the specified
 /// memory manager. Returns a pointer to the duplicated string.
@@ -124,17 +126,18 @@ void* hxmalloc_ext(size_t size_, hxsystem_allocator_t allocator_,
 /// - `string` : Non-null string to duplicate.
 /// - `allocator` : The memory manager ID to use for allocation. Defaults to
 ///   `hxsystem_allocator_current` in C++.
+hxattr_noexcept hxattr_allocator(hxfree) hxattr_nonnull(1) hxattr_hot
 char* hxstring_duplicate(const char* string_,
-	hxsystem_allocator_t allocator_ /*=hxsystem_allocator_current*/)
-		 hxattr_noexcept hxattr_allocator(hxfree) hxattr_nonnull(1) hxattr_hot;
+	hxsystem_allocator_t allocator_ /*=hxsystem_allocator_current*/);
 
+HX_C_END_
 #if HX_CPLUSPLUS
-} // extern "C"
 
 /// `hxmalloc` - Add `hxmalloc_ext` args to `hxmalloc` C interface. Allocates
 /// memory with a specific memory manager and alignment. NOTE: This is not in
 /// the libhatchet namespace.
-hxinline void* hxmalloc( size_t size_, hxsystem_allocator_t allocator_, hxalignment_t alignment_=hxalignment) {
+hxinline void* hxmalloc(size_t size_, hxsystem_allocator_t allocator_,
+		hxalignment_t alignment_=hxalignment) {
 	return hxmalloc_ext(size_, allocator_, alignment_);
 }
 
@@ -202,10 +205,14 @@ public:
 	hxattr_nodiscard size_t get_current_bytes_allocated(void) const;
 
 	/// Gets the number of allocations made when this scope was entered.
-	hxattr_nodiscard size_t get_initial_allocation_count(void) const { return m_initial_allocation_count_; }
+	hxattr_nodiscard size_t get_initial_allocation_count(void) const {
+		return m_initial_allocation_count_;
+	}
 
 	/// Gets the number of bytes allocated when this scope was entered.
-	hxattr_nodiscard size_t get_initial_bytes_allocated(void) const { return m_initial_bytes_allocated_; }
+	hxattr_nodiscard size_t get_initial_bytes_allocated(void) const {
+		return m_initial_bytes_allocated_;
+	}
 
 private:
 	// The hxsystem_allocator_* classes are responsible for setting
@@ -229,9 +236,12 @@ private:
 /// `hxnew<T, allocator, align>(...)` - Allocates and constructs an object of
 /// type `T` using an optional memory allocator and alignment. Returns a pointer
 /// to the newly constructed object. Will not return on failure.
-/// - `allocator` : The memory manager ID to use for allocation. Defaults to `hxsystem_allocator_current`.
-/// - `align` : Alignment to use when allocating new pointers. Defaults to `hxalignment`.
-template <typename T_, hxsystem_allocator_t allocator_=hxsystem_allocator_current, hxalignment_t align_=hxalignment, typename... Args_>
+/// - `allocator` : The memory manager ID to use for allocation. Defaults to
+///   `hxsystem_allocator_current`.
+/// - `align` : Alignment to use when allocating new pointers. Defaults to
+///   `hxalignment`.
+template <typename T_, hxsystem_allocator_t allocator_=hxsystem_allocator_current,
+	hxalignment_t align_=hxalignment, typename... Args_>
 T_* hxnew(Args_&&... args_) noexcept {
 	// Implements hxforward.
 	return ::new(hxmalloc_ext(sizeof(T_), allocator_, align_)) T_(static_cast<Args_&&>(args_)...);
@@ -244,13 +254,14 @@ template <typename T_>
 void hxdelete(T_* t_) noexcept {
 	if(t_) {
 		t_->~T_();
-		hxfree(t_);
+		hxfree(const_cast<void*>(static_cast<const void*>(t_)));
 	}
 }
 
 /// `hxdefault_delete` - A callable that deletes objects of type `T` using
-/// `hxdelete`. Used by containers to implement the destruction of their contents
-/// according to a template parameter. Implements `std::default_delete`.
+/// `hxdelete`. Used by containers to implement the destruction of their
+/// contents according to a template parameter. Implements
+/// `std::default_delete`.
 class hxdefault_delete {
 public:
 	/// Deletes the object using `hxdelete`.
@@ -275,9 +286,9 @@ public:
 };
 
 #if HX_CPLUSPLUS >= 201402L
-/// `hxconsteval_delete` - A `constexpr`-compatible deleter that uses `::delete`.
-/// Required for `consteval` contexts where `hxdefault_delete` cannot be used
-/// because `hxdelete` calls `hxfree` which is not `constexpr`.
+/// `hxconsteval_delete` - A `constexpr`-compatible deleter that uses
+/// `::delete`. Required for `consteval` contexts where `hxdefault_delete`
+/// cannot be used because `hxdelete` calls `hxfree` which is not `constexpr`.
 class hxconsteval_delete {
 public:
 	// GCOVR_EXCL_START. No coverage at compile time.

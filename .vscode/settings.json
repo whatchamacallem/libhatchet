@@ -127,6 +127,7 @@
         "lpython",
         "lstdc",
         "lubsan",
+        "lvalue",
         "LVALUEREFERENCE",
         "lvalues",
         "MAINPAGE",
@@ -137,6 +138,7 @@
         "metaprogramming",
         "mftb",
         "MMIX",
+        "mondaic",
         "Morwenn",
         "msvc",
         "mult",
@@ -223,6 +225,7 @@
         "teststrip",
         "testwasm",
         "thrd",
+        "tobytes",
         "TREEVIEW",
         "tsan",
         "uart",
@@ -266,7 +269,8 @@
         "Wundef",
         "Wunused",
         "Wwrite",
-        "Xclang"
+        "Xclang",
+        "ZUINTEGER"
     ],
     "C_Cpp.codeAnalysis.clangTidy.args": ["--config-file=${workspaceFolder}/.clang-tidy"],
     "files.trimTrailingWhitespace": true,

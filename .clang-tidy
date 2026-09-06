@@ -36,6 +36,8 @@
 # -clang-analyzer-cplusplus.Move: Flags use-after-move. The test suite checks
 # that move has been performed correctly in a lot of places.
 #
+# -clang-analyzer-security.ArrayBound: Too many false positives in v21.1.8.
+#
 # -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling: Annex K
 # of the C11 standard was never widely implemented. This is not a portable
 # expectation.
@@ -51,7 +53,7 @@
 # -portability-avoid-pragma-once: Flags use of the non-standard #pragma once.
 # This requirement was deemed unsightly and easy to fix.
 #
-# misc-const-correctness.AnalyzePointers had too many false positives in
+# misc-const-correctness.AnalyzePointers: Too many false positives in
 # v21.1.8. The valid warnings were fixed.
 #
 # Also audit the NOLINT markers if linting is a concern for your project.
@@ -96,7 +98,6 @@ Checks: >
   readability-implicit-bool-conversion,
   readability-make-member-function-const,
   readability-misleading-indentation,
-  readability-qualified-auto,
   readability-redundant-casting,
   readability-redundant-control-flow,
   readability-redundant-member-init,
@@ -108,6 +109,7 @@ Checks: >
   -bugprone-multi-level-implicit-pointer-conversion,
   -bugprone-sizeof-expression,
   -clang-analyzer-cplusplus.Move,
+  -clang-analyzer-security.ArrayBound,
   -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
   -performance-enum-size,
   -performance-no-int-to-ptr,

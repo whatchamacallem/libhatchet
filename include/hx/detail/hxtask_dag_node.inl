@@ -8,7 +8,7 @@
 #endif
 
 #ifndef HX_DOXYGEN_PARSER
-HX_BEGIN_INL_
+HX_INL_BEGIN_
 
 template<int32_t max_successors_>
 hxinline hxattr_flatten hxtask_dag_node<max_successors_>::hxtask_dag_node(void) :
@@ -18,7 +18,7 @@ template<int32_t max_successors_>
 hxinline hxattr_flatten void hxtask_dag_node<max_successors_>::add_successor(
 		hxtask_dag_node* successor_, int priority_) {
 	hxassert_always(m_successor_count_ < max_successors_, "max_successors");
-	edge_t_& edge_ = m_successors_[m_successor_count_++]; // NOLINT(clang-analyzer-security.ArrayBound)
+	edge_t_& edge_ = m_successors_[m_successor_count_++];
 	edge_.node_ = successor_;
 	edge_.priority_ = priority_;
 	++successor_->m_predecessor_count_;
@@ -66,5 +66,5 @@ hxinline hxattr_flatten void hxtask_dag_node<max_successors_>::dag_node_complete
 	}
 }
 
-HX_END_INL_
+HX_INL_END_
 #endif // HX_DOXYGEN_PARSER

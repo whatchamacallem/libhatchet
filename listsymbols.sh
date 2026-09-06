@@ -13,26 +13,31 @@ if [ ! -f build/hxtest ]; then
 	exit 2; # File not found.
 fi
 
-HXUSAGE_="usage: $0 [--verbose] [destination-file]"
+HX_USAGE_="usage: $0 [--verbose] [--] [destination-file]"
 
-HXVERBOSE_=0
+HX_VERBOSE_=0
 HX_DEST_FILE_=
-for HXARG_ in "$@"; do
-	case "$HXARG_" in
-	"") ;;
-	--verbose)
-		HXVERBOSE_=1 ;;
-	-*)
-		echo "$HXUSAGE_" >&2
-		exit 1 ;;
-	*)
-		if [ -n "$HX_DEST_FILE_" ]; then
-			echo "$HXUSAGE_" >&2
-			exit 1
-		fi
-		HX_DEST_FILE_="$HXARG_"
-		HXVERBOSE_=1 ;;
-	esac
+HX_OPT_END_=0
+for HX_ARG_ in "$@"; do
+	if [ "$HX_OPT_END_" = "0" ]; then
+		case "$HX_ARG_" in
+		"") continue ;;
+		--)
+			HX_OPT_END_=1; continue ;;
+		--verbose)
+			HX_VERBOSE_=1; continue ;;
+		-*)
+			echo "$HX_USAGE_" >&2
+			exit 1 ;;
+		esac
+	fi
+
+	if [ -n "$HX_DEST_FILE_" ]; then
+		echo "$HX_USAGE_" >&2
+		exit 1
+	fi
+	HX_DEST_FILE_="$HX_ARG_"
+	HX_VERBOSE_=1
 done
 
 if [ -n "$HX_DEST_FILE_" ]; then
@@ -97,7 +102,7 @@ for size, kind, name in rows:
 table("Symbol statistics by nm type...", by_kind)
 table("Symbol statistics by category...", by_category)
 
-if $HXVERBOSE_:
+if $HX_VERBOSE_:
 	demangled = subprocess.run(["c++filt"],
 		input="".join(name + "\n" for size, kind, name in rows),
 		stdout=subprocess.PIPE, text=True, check=True).stdout.splitlines()

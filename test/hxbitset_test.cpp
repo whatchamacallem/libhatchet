@@ -50,15 +50,21 @@ TEST(hxbitset_test, default_ctor_resets_dirty_storage) {
 }
 
 TEST(hxbitset_test, copy_ctor_duplicates_bits) {
-	const hxbitset<sizeof(size_t) * 8u + 3u> src{size_t{1u}, size_t{5u}};
-	const hxbitset<sizeof(size_t) * 8u + 3u> dst(src); // NOLINT(performance-unnecessary-copy-initialization)
+	const hxbitset<sizeof(size_t) * 8u + 3u> a{size_t{1u}, size_t{5u}};
+	const hxbitset<sizeof(size_t) * 8u + 3u> b(a); // NOLINT(performance-unnecessary-copy-initialization)
+	const hxbitset<sizeof(size_t) * 32u + 3u> c{
+		size_t{31u}, size_t{0u}, size_t{0u}, size_t{0u}, size_t{1u}};
 	hxtest_gdb_break_hxbitset();
-	EXPECT_TRUE(dst[0u]);
-	EXPECT_TRUE(dst[sizeof(size_t) * 8u]);
-	EXPECT_TRUE(dst[sizeof(size_t) * 8u + 2u]);
-	EXPECT_FALSE(dst[1u]);
-	EXPECT_FALSE(dst[sizeof(size_t) * 8u - 1u]);
-	EXPECT_FALSE(dst[sizeof(size_t) * 8u + 1u]);
+	EXPECT_TRUE(b[0u]);
+	EXPECT_TRUE(b[sizeof(size_t) * 8u]);
+	EXPECT_TRUE(b[sizeof(size_t) * 8u + 2u]);
+	EXPECT_FALSE(b[1u]);
+	EXPECT_FALSE(b[sizeof(size_t) * 8u - 1u]);
+	EXPECT_FALSE(b[sizeof(size_t) * 8u + 1u]);
+	EXPECT_TRUE(c[0u]);
+	EXPECT_TRUE(c[4u]);
+	EXPECT_TRUE(c[sizeof(size_t) * 32u]);
+	EXPECT_FALSE(c[5u]);
 }
 
 TEST(hxbitset_test, assignment_copies_bits) {
@@ -419,36 +425,6 @@ TEST(hxbitset_test, not_equal_operator_defined_before_cpp20) {
 	EXPECT_EQ(a, c);
 }
 #endif
-
-TEST(hxbitset_test, load_copies_bytes_into_storage) {
-	hxbitset<8u> b;
-	const unsigned char src = static_cast<unsigned char>(0xcbu);
-	b.load(&src, sizeof src);
-	for(size_t i = 0u; i < 8u; ++i) {
-		EXPECT_EQ(b[i], ((0xcbu >> i) & 1u) != 0u);
-	}
-	const size_t full = ~static_cast<size_t>(0u);
-	b.load(&full, hxbitset<8u>::bytes());
-	EXPECT_TRUE(b.all());
-}
-
-TEST(hxbitset_test, load_masks_trailing_bits) {
-	hxbitset<3u> b;
-	const unsigned char src = static_cast<unsigned char>(0xffu);
-	b.load(&src, sizeof src);
-	EXPECT_TRUE(b[0u]);
-	EXPECT_TRUE(b[1u]);
-	EXPECT_TRUE(b[2u]);
-	EXPECT_TRUE(b.all());
-}
-
-TEST(hxbitset_test, load_partial_bytes) {
-	hxbitset<sizeof(size_t) * 8u * 2u> b;
-	size_t val = static_cast<size_t>(1u);
-	b.load(&val, sizeof(size_t));
-	EXPECT_TRUE(b[0u]);
-	EXPECT_FALSE(b[1u]);
-}
 
 TEST(hxbitset_test, exact_word_bitset_all_any_none) {
 	hxbitset<sizeof(size_t) * 8u> b;

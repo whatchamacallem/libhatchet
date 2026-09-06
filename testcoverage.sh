@@ -14,26 +14,37 @@ HX_GCOV_=gcov-$(gcc -dumpversion)
 HX_COVERAGE_="--coverage -O0 -g -fprofile-update=atomic -fno-inline -fkeep-static-functions"
 HX_COVERAGE_CXX_="$HX_COVERAGE_ -fno-elide-constructors -fkeep-inline-functions"
 
-HXUSAGE_="usage: $0 [--verbose] [destination-directory]"
+HX_USAGE_="usage: $0 [--verbose] [--] [destination-directory]"
 
 HX_VERBOSE_=
 HX_DEST_DIR_=
+HX_OPT_END_=0
 for HX_ARG_ in "$@"; do
-	if [ "$HX_ARG_" = "--verbose" ]; then
-		HX_VERBOSE_=1
-	elif [ -n "$HX_ARG_" ]; then
+	if [ "$HX_OPT_END_" = "0" ]; then
 		case "$HX_ARG_" in
-			-*)
-				echo "$HXUSAGE_" >&2
-				exit 1 ;;
-			/*) HX_DEST_DIR_="$HX_ARG_" ;;
-			*) HX_DEST_DIR_="$HX_DIR_/$HX_ARG_" ;;
-		esac
-		case "$HX_DEST_DIR_" in
-			*/) ;;
-			*) HX_DEST_DIR_="$HX_DEST_DIR_/" ;;
+		"") continue ;;
+		--) HX_OPT_END_=1; continue ;;
+		--verbose)
+			HX_VERBOSE_=1; continue ;;
+		-*)
+			echo "$HX_USAGE_" >&2
+			exit 1 ;;
 		esac
 	fi
+
+	if [ -n "$HX_DEST_DIR_" ]; then
+		# Two targets requested.
+		echo "$HX_USAGE_" >&2
+		exit 1
+	fi
+	case "$HX_ARG_" in
+		/*) HX_DEST_DIR_="$HX_ARG_" ;;
+		*) HX_DEST_DIR_="$HX_DIR_/$HX_ARG_" ;;
+	esac
+	case "$HX_DEST_DIR_" in
+		*/) ;;
+		*) HX_DEST_DIR_="$HX_DEST_DIR_/" ;;
+	esac
 done
 
 [ -n "$HX_DEST_DIR_" ] || HX_DEST_DIR_="$HX_DIR_/build/"

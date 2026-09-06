@@ -2,18 +2,18 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
+#include "./hxctest.h"
 #include <hx/hxutility.h>
 #include <stdio.h>
-#include "./hxctest.h"
 
 bool hxctest_libhatchet_h(void) {
 	hxlog("Smoke testing from C: hxlog %d, ", 1);
 	hxlog_release("hxlog_release %d, ", 2);
 	hxlog_console("hxlog_console %d, ", 3);
 	hxlog_warning("hxlog_warning %d", 4);
-	hxassertmsg(1, "hxassertmsg %d", 5);
+	hxassertmsg(1, "hxassertmsg val %d", 5);
 	hxassert(1 == 1);
-	hxassert_always(1.0, "hxassert_always %f", 1.0f);
+	hxassert_always(1.0, "hxassert_always val %f", 1.0f);
 	hxwarn_msg(1, "not true");
 	return true;
 }

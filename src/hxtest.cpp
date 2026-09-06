@@ -68,12 +68,12 @@ bool hxtest_double_eq_(double a, double b) {
 }
 
 bool hxtest_str_eq_(const char* a, const char* b) {
-	hxassert_always(a && b, "strcmp Null arg.");
+	hxassert_always(a && b, "strcmp null");
 	return ::strcmp(a, b) == 0;
 }
 
 bool hxtest_str_ne_(const char* a, const char* b) {
-	hxassert_always(a && b, "strcmp Null arg.");
+	hxassert_always(a && b, "strcmp null");
 	return ::strcmp(a, b) != 0;
 }
 
@@ -99,7 +99,8 @@ void hxtest_::add_test_(hxtest_case_* fn) {
 	m_test_cases_[m_num_test_cases_++] = fn;
 }
 
-void hxtest_::condition_check_(bool condition, const char* file, int line, const char* message, bool is_assert) {
+void hxtest_::condition_check_(bool condition, const char* file, int line,
+		const char* message, bool is_assert) {
 	hxassert_always(m_current_test_, "test_not_started");
 	m_test_state_ = (condition && m_test_state_ != test_state_::fail_)
 		? test_state_::pass_ : test_state_::fail_;
@@ -111,7 +112,8 @@ void hxtest_::condition_check_(bool condition, const char* file, int line, const
 		if(is_assert) {
 			// ASSERT_* macros halt the test suite on failure. Always log and exit
 			// regardless of the message limit so control flow never continues.
-			hxlog_handler(hxlog_level_assert, "test_fail %s.%s", m_current_test_->m_suite_, m_current_test_->m_case_);
+			hxlog_handler(hxlog_level_assert, "test_fail %s.%s", m_current_test_->m_suite_,
+				m_current_test_->m_case_);
 			hxlog_handler(hxlog_level_assert, "test_fail_at %s(%d): %s", file, line, message);
 			hxlog_handler(hxlog_level_assert, "test_assert_fail ❌");
 			hxlog_console("[==========] aborted after %d passed, %d failed, %d assertions.\n",
@@ -129,7 +131,8 @@ void hxtest_::condition_check_(bool condition, const char* file, int line, const
 		}
 
 		// Prints full-path error messages that can be clicked on in an IDE.
-		hxlog_handler(hxlog_level_assert, "test_fail %s.%s", m_current_test_->m_suite_, m_current_test_->m_case_);
+		hxlog_handler(hxlog_level_assert, "test_fail %s.%s", m_current_test_->m_suite_,
+			m_current_test_->m_case_);
 		hxlog_handler(hxlog_level_assert, "test_fail_at %s(%d): %s", file, line, message);
 
 		// Debug builds always set breakpoints on unexpected failures.
@@ -146,7 +149,8 @@ int hxtest_::run_all_tests_(const char* test_suite_filter) {
 	if(test_suite_filter != hxnull && test_suite_filter[0] == 0) { // GCOVR_EXCL_LINE
 		test_suite_filter = hxnull;
 	}
-	hxlog_console("[==========] Running tests: %s\n", (test_suite_filter ? test_suite_filter : "All")); // GCOVR_EXCL_LINE
+	hxlog_console("[==========] Running tests: %s\n", // GCOVR_EXCL_LINE
+		(test_suite_filter ? test_suite_filter : "All"));
 
 	m_pass_count_ = m_fail_count_ = 0;
 	m_total_assert_count_ = 0;
@@ -164,7 +168,7 @@ int hxtest_::run_all_tests_(const char* test_suite_filter) {
 
 	// Starting point. Expected to reset to zero after each test.
 	hxassert_always(hxmemory_manager_utilization(true, false).allocations_outstanding == 0u,
-		"test_leaks Temp stacks are expected to be empty when running tests");
+		"test_leak temp stacks not empty");
 
 	for(hxtest_case_** it = m_test_cases_; it != (m_test_cases_ + m_num_test_cases_); ++it) {
 		if((test_suite_filter == hxnull)                                  // GCOVR_EXCL_LINE
@@ -178,14 +182,18 @@ int hxtest_::run_all_tests_(const char* test_suite_filter) {
 			try
 #endif
 			{
-				(*it)->m_run_();
+				// Tests default onto stack 0. A test that opens another scope
+				// is expected to reset it before returning.
+				{
+					const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
+					(*it)->m_run_();
+				}
 
-				// Expect the test to use another scope to reset the stack if needed.
 				hxmemory_manager_stats stats = hxmemory_manager_utilization(true, false);
 				// GCOVR_EXCL_START
 				if(stats.allocations_outstanding != 0u || stats.bytes_outstanding != 0u) {
 					this->condition_check_(false, (*it)->m_file_, (*it)->m_line_,
-						"test_leaks All tests must reset the temp stack.", true);
+						"test_leak All tests must reset the temp stack.", true);
 				}
 				// GCOVR_EXCL_STOP
 			}

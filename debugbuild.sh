@@ -122,7 +122,8 @@ if [ "$HX_OPT_GRIND_" = "1" ]; then
 fi
 
 # Enable as much code as possible for the default build and run.
-HX_BUILD_="-DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG -DHX_USE_CONSOLE=2 -DHX_USE_PROFILER=1"
+HX_BUILD_="-DHX_USE_NAMESPACE=hx -DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG \
+	-DHX_USE_CONSOLE=2 -DHX_USE_FILE_IO=2 -DHX_USE_PROFILER=1"
 build_hxtest ccache
 
 # Show stats or save tokens.
@@ -133,9 +134,9 @@ fi
 if [ "$HX_OPT_RUN_" = "1" ]; then
 	cd build
 	if [ "$HX_OPT_VERBOSE_" = "1" ]; then
-		./hxtest
+		./hxtest "check_stats 1" runtests
 	else
-		if ./hxtest > console_output.txt 2>&1; then
+		if ./hxtest "check_stats 1" runtests > console_output.txt 2>&1; then
 			grep -E '\[  PASSED  \]|\[  FAILED  \]|FAILED TESTS' console_output.txt
 		else
 			cat console_output.txt

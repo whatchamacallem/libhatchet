@@ -99,15 +99,13 @@ template<> constexpr const char* hxconsole_arg_label_<unsigned long long>() { re
 template<> constexpr const char* hxconsole_arg_label_<const char*>() { return "char*"; }
 // GCOVR_EXCL_STOP
 
-// C++20 concept for parseable types.
-
-template<typename t_>
+// Check if a working hxconsole_parse_arg_ overload exists for T_.
+template<typename T_>
 concept hxconsole_parseable_ = requires(const char* s_, char** n_) {
-	requires hxis_same<decltype(hxconsole_parse_arg_<t_>(s_, n_)), t_>::value;
+	requires hxis_same<decltype(hxconsole_parse_arg_<T_>(s_, n_)), T_>();
 };
 
 // Checks for printing characters.
-
 inline hxattr_cold bool hxconsole_is_end_of_line_(const char* str_) {
 	while(hxisspace(*str_)) { ++str_; }
 	return *str_ == '\0' || *str_ == '#'; // Skip comments
@@ -124,8 +122,8 @@ union hxconsole_target_ {
 
 // Terminal case: all args parsed, check end of line and call.
 template<typename fn_t_, typename... parsed_t_>
-hxattr_cold bool hxconsole_call_(fn_t_ fn_, const char* pos_, char*, parsed_t_... parsed_) {
-	if(hxconsole_is_end_of_line_(pos_)) {
+hxattr_cold bool hxconsole_call_(fn_t_ fn_, const char* str_, char*, parsed_t_... parsed_) {
+	if(hxconsole_is_end_of_line_(str_)) {
 		return fn_(parsed_...);
 	}
 	return false;
@@ -133,13 +131,13 @@ hxattr_cold bool hxconsole_call_(fn_t_ fn_, const char* pos_, char*, parsed_t_..
 
 // Recursive case: parse one arg, recurse with remaining types.
 template<typename first_t_, typename... rest_t_, typename fn_t_, typename... parsed_t_>
-hxattr_cold bool hxconsole_call_(fn_t_ fn_, const char* pos_, char* next_, parsed_t_... parsed_) {
-	first_t_ val_ = hxconsole_parse_arg_<first_t_>(pos_, &next_);
+hxattr_cold bool hxconsole_call_(fn_t_ fn_, const char* str_, char* next_, parsed_t_... parsed_) {
+	first_t_ val_ = hxconsole_parse_arg_<first_t_>(str_, &next_);
 	// Empty strings are valid string args.
-	if constexpr(hxis_same<first_t_, const char*>::value) {
+	if constexpr(hxis_same<first_t_, const char*>()) {
 		return hxconsole_call_<rest_t_...>(fn_, next_, next_, parsed_..., val_);
 	} else {
-		return (pos_ < next_) && hxconsole_call_<rest_t_...>(fn_, next_, next_, parsed_..., val_);
+		return (str_ < next_) && hxconsole_call_<rest_t_...>(fn_, next_, next_, parsed_..., val_);
 	}
 }
 
@@ -233,52 +231,57 @@ public:
 	const char* str_;
 };
 
+} // namespace hxdetail_
+
 // Uses FNV-1a string hashing. Stops at whitespace.
-inline hxattr_cold hxhash_t hxkey_hash(hxconsole_hash_table_key_ k_) {
-	hxhash_t x_ = static_cast<hxhash_t>(0x811c9dc5);
-	while(hxisgraph(*k_.str_)) {
-		x_ ^= static_cast<hxhash_t>(*k_.str_++);
-		x_ *= static_cast<hxhash_t>(0x01000193);
+template<>
+class hxkey_hash_t<hxdetail_::hxconsole_hash_table_key_> {
+public:
+	hxattr_cold hxhash_t operator()(hxdetail_::hxconsole_hash_table_key_ k_) const {
+		hxhash_t x_ = static_cast<hxhash_t>(0x811c9dc5);
+		while(hxisgraph(*k_.str_)) {
+			x_ ^= static_cast<hxhash_t>(*k_.str_++);
+			x_ *= static_cast<hxhash_t>(0x01000193);
+		}
+		return x_;
 	}
-	return x_;
-}
+};
 
 // A version of ::strcmp that stops at the first non-graphical characters.
-inline hxattr_cold bool hxkey_equal(hxconsole_hash_table_key_ a_, hxconsole_hash_table_key_ b_) {
-	while(hxisgraph(*a_.str_) && *a_.str_ == *b_.str_) { ++a_.str_; ++b_.str_; }
-	return !hxisgraph(*a_.str_) && !hxisgraph(*b_.str_);
-}
+template<>
+class hxkey_equal_t<hxdetail_::hxconsole_hash_table_key_> {
+public:
+	hxattr_cold bool operator()(hxdetail_::hxconsole_hash_table_key_ a_, hxdetail_::hxconsole_hash_table_key_ b_) const {
+		while(hxisgraph(*a_.str_) && *a_.str_ == *b_.str_) { ++a_.str_; ++b_.str_; }
+		return !hxisgraph(*a_.str_) && !hxisgraph(*b_.str_);
+	}
+};
 
-// this is how to write a hash node without including hash table code.
-class hxconsole_hash_table_node_ {
+namespace hxdetail_ {
+
+class hxconsole_hash_table_node_ : public hxhash_node_base {
 public:
 	using key_t = hxconsole_hash_table_key_;
 
 	hxattr_cold hxconsole_hash_table_node_(hxconsole_hash_table_key_ key_,
 			const hxconsole_command_& command_)
-			: m_hash_next_(hxnull), m_key_(key_), m_hash_(hxkey_hash(key_)), m_command_(command_) {
+			: hxhash_node_base(hxkey_hash(key_)), m_key_(key_), m_command_(command_) {
 #if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
 		const char* k_ = key_.str_;
 		while(hxisgraph(*k_)) {
 			++k_;
 		}
-		hxassertmsg(*k_ == '\0', "bad_console_symbol \"%s\"", key_.str_);
+		hxassertmsg(*k_ == '\0', "bad_glyph in name \"%s\"", key_.str_);
 #endif
 	}
 
-	// Boilerplate required by hxhash_table.
-	hxconsole_hash_table_node_* hash_next(void) const { return m_hash_next_; }
-	void set_hash_next(hxconsole_hash_table_node_* next_) { m_hash_next_ = next_; }
-
 	const hxconsole_hash_table_key_& hash_key(void) const { return m_key_; }
-	hxhash_t hash_value(void) const { return m_hash_; }
+	hxhash_t hash_value(void) const { return this->hash_val; }
 	static hxhash_t hash_value(hxconsole_hash_table_key_ key_) { return hxkey_hash(key_); }
 	const hxconsole_command_* command_(void) const { return &m_command_; }
 
 private:
-	hxconsole_hash_table_node_* m_hash_next_;
 	hxconsole_hash_table_key_ m_key_;
-	hxhash_t m_hash_;
 	hxconsole_command_ m_command_;
 };
 

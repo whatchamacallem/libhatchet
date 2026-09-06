@@ -41,7 +41,8 @@ TEST(hxfile_test, constructor_and_open_success) {
 	EXPECT_EQ(g.mode(), hxfile::open_mode_out);
 	hxfile h;
 	EXPECT_FALSE(h.is_open());
-	EXPECT_TRUE(h.open(hxfile::open_mode_out | hxfile::open_mode_asserts, "hxfile_test_open%d.txt", 1));
+	EXPECT_TRUE(h.open(hxfile::open_mode_out | hxfile::open_mode_asserts,
+		"hxfile_test_open%d.txt", 1));
 	EXPECT_TRUE(h.is_open());
 	EXPECT_FALSE(h.fail());
 }
@@ -64,7 +65,8 @@ TEST(hxfile_test, constructor_and_open_failure) {
 TEST(hxfile_test, assert_open_fails_fires_when_asserts_set) {
 	hxlog_warning("EXPECTING_ASSERT_FAILURE");
 	const hxtest_skip_asserts skip(1);
-	const hxfile f(hxfile::open_mode_in | hxfile::open_mode_asserts, "test-file-does-not-exist-assert");
+	const hxfile f(hxfile::open_mode_in | hxfile::open_mode_asserts,
+		"test-file-does-not-exist-assert");
 #if (HX_HARDENING_MODE) != HX_HARDENING_MODE_NONE
 	EXPECT_EQ(skip.remaining(), 0);
 #endif
@@ -94,7 +96,8 @@ TEST(hxfile_test, operator_bool_and_close) {
 }
 
 TEST(hxfile_test, set_fail_and_clear) {
-	hxfile f(hxfile::open_mode_in | hxfile::open_mode_out | hxfile::open_mode_asserts, "hxfile_test_set_fail.txt");
+	hxfile f(hxfile::open_mode_in | hxfile::open_mode_out | hxfile::open_mode_asserts,
+		"hxfile_test_set_fail.txt");
 	EXPECT_TRUE(f.is_open());
 	EXPECT_FALSE(f.fail());
 	f.set_fail();
@@ -112,14 +115,14 @@ TEST(hxfile_test, move_constructor_and_assignment) {
 	EXPECT_TRUE(ft.is_open());
 	hxfile f(hxmove(ft));
 	EXPECT_TRUE(f.is_open());
-	EXPECT_TRUE(f.write1(int32_t{42}));
+	EXPECT_TRUE(f.write1(int32_t{31}));
 	f.close();
 	hxfile fin(hxfile::open_mode_in, "hxfile_test_move.bin");
 	f = hxmove(fin);
 	EXPECT_TRUE(f.is_open());
 	int32_t value = 0;
 	EXPECT_TRUE(f.read1(value));
-	EXPECT_EQ(value, 42);
+	EXPECT_EQ(value, 31);
 }
 
 TEST(hxfile_test, set_pos_failure_leaves_fail_and_eof) {
@@ -134,7 +137,8 @@ TEST(hxfile_test, get_pos_and_set_pos) {
 	const hxfile_test_arbitrary_t a { 0xefefefefu };
 	const hxfile_test_arbitrary_t b { 0x01020304u };
 	hxfile_test_arbitrary_t c { 0x0u };
-	hxfile f(hxfile::open_mode_in | hxfile::open_mode_out | hxfile::open_mode_asserts, "hxfile_test_offset.bin");
+	hxfile f(hxfile::open_mode_in | hxfile::open_mode_out | hxfile::open_mode_asserts,
+		"hxfile_test_offset.bin");
 	f.write1(a);
 	f.write1(b);
 	f.write1(a);
@@ -253,7 +257,8 @@ TEST(hxfile_test, assert_read_short_honors_default) {
 }
 
 TEST(hxfile_test, read1_and_write1_round_trip) {
-	hxfile f(hxfile::open_mode_in | hxfile::open_mode_out | hxfile::open_mode_asserts, "hxfile_test_read1_write1.bin");
+	hxfile f(hxfile::open_mode_in | hxfile::open_mode_out | hxfile::open_mode_asserts,
+		"hxfile_test_read1_write1.bin");
 	const int32_t value = -12345;
 	EXPECT_TRUE(f.write1(value));
 	EXPECT_TRUE(f.set_pos(0));
@@ -261,6 +266,35 @@ TEST(hxfile_test, read1_and_write1_round_trip) {
 	EXPECT_TRUE(f.read1(round_tripped));
 	EXPECT_EQ(round_tripped, value);
 }
+
+#if HX_CPLUSPLUS >= 202302L
+TEST(hxfile_test, expect_returns_value_on_success) {
+	hxfile f(hxfile::open_mode_in | hxfile::open_mode_out | hxfile::open_mode_asserts,
+		"hxfile_test_expect_success.bin");
+	const int32_t value = -31;
+	EXPECT_TRUE(f.write1(value));
+	EXPECT_TRUE(f.set_pos(0));
+	const hxexpected<int32_t> result = f.expect<int32_t>();
+	EXPECT_TRUE((bool)result);
+	EXPECT_FALSE(f.fail());
+	EXPECT_EQ(*result, value);
+}
+
+TEST(hxfile_test, expect_returns_error_on_short_read) {
+	const char filename[] = "hxfile_test_expect_eof.bin";
+	{
+		const hxfile writer(hxfile::open_mode_out | hxfile::open_mode_asserts, filename);
+		EXPECT_TRUE(writer.is_open());
+	}
+	hxfile reader(hxfile::open_mode_in, filename);
+	const hxexpected<int32_t> result = reader.expect<int32_t>();
+	EXPECT_FALSE((bool)result);
+	EXPECT_TRUE(reader.fail());
+	EXPECT_TRUE(reader.eof());
+	EXPECT_TRUE(result == hxnil);
+}
+
+#endif
 
 TEST(hxfile_test, write_returns_byte_count_and_resets_fail) {
 	hxfile f(hxfile::open_mode_out | hxfile::open_mode_asserts, "hxfile_test_write.bin");
@@ -361,7 +395,8 @@ TEST(hxfile_test, stream_insertion_of_string_literal) {
 	hxfile f(hxfile::open_mode_in | hxfile::open_mode_asserts, "hxfile_test_stream_literal.txt");
 	char buf[32];
 	::memset(buf, 0x00, sizeof buf);
-	EXPECT_EQ(f.read(buf, sizeof buf, sizeof "hxfile_test_stream_literal.txt" - 1u), sizeof "hxfile_test_stream_literal.txt" - 1u);
+	EXPECT_EQ(f.read(buf, sizeof buf, sizeof "hxfile_test_stream_literal.txt" - 1u),
+		sizeof "hxfile_test_stream_literal.txt" - 1u);
 	EXPECT_STREQ(buf, "hxfile_test_stream_literal.txt");
 }
 

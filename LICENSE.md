@@ -26,3 +26,7 @@ COPYRIGHT HOLDERS BE  LIABLE FOR ANY CLAIM, DAMAGES OR  OTHER LIABILITY, WHETHER
 IN  AN ACTION  OF  CONTRACT, TORT  OR  OTHERWISE,  ARISING FROM,  OUT  OF OR  IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ```
+
+**Note**:  For  the  avoidance of  doubt,  use  of this  Software  by artificial
+intelligence  systems, including for training, analysis, and reproduction of the
+Software, is permitted under the terms above, subject to the same conditions.

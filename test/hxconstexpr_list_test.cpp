@@ -4,6 +4,8 @@
 
 #include <hx/hxconstexpr_list.hpp>
 #include <hx/hxtest.hpp>
+#include <hx/hxarray.hpp>
+#include <hx/hxvector.hpp>
 
 #include "./hxtest_util.hpp"
 
@@ -138,13 +140,19 @@ static_assert(hxtest_hxconstexpr_list_consteval_integration(),
 } // namespace
 #endif // HX_CPLUSPLUS >= 202302L
 
+// Show API is identical.
 hxattr_noinline static void hxtest_gdb_break_hxconstexpr_list(void) { }
+hxattr_noinline static void hxtest_gdb_break_hxconstexpr_list_empty(void) { }
 #define hxtest_gdb_break_hxlist hxtest_gdb_break_hxconstexpr_list
+#define hxtest_gdb_break_hxlist_empty hxtest_gdb_break_hxconstexpr_list_empty
 #define hxlist hxconstexpr_list
 #define hxlist_node hxconstexpr_list_node
 #define hxlist_test hxconstexpr_list_test
+#define hxlist_test_f hxconstexpr_list_test_f
 #define hxlist_node_test hxconstexpr_list_node_test
-#define hxtest_list_counted_node_t hxtest_const_list_counted_node_t
-#define hxtest_list_node_t hxtest_const_list_node_t
+#define hxtest_list_counted_node_t hxtest_constexpr_list_counted_node_t
+#define hxtest_list_node_t hxtest_constexpr_list_node_t
+#define hxtest_list_object_node_t hxtest_constexpr_list_object_node_t
+#define hxtest_list_pair_node_t hxtest_constexpr_list_pair_node_t
 
 #include "./hxshared_list_test.inl"

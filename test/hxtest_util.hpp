@@ -3,11 +3,12 @@
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
 #pragma once
-#include <hx/libhatchet.h>
+
+#include <hx/hxkey.hpp>
 #include <hx/hxtest.hpp>
-#include <hx/hxutility.h>
 
 HX_NS_USE
+namespace hxtest_util {
 
 class hxtest_object_fixture :
 	public testing::Test
@@ -16,10 +17,17 @@ public:
 	hxtest_object_fixture(void);
 	~hxtest_object_fixture();
 
-	bool check_stats(int constructed, int destructed, int copy_construct, int move_construct,
-		int copy_assign, int move_assign, int equal_to, int less_than);
+	bool check_stats(int constructed, int destructed,
+		int default_construct, int value_construct,
+		int copy_construct, int move_construct,
+		int copy_assign, int move_assign,
+		int equal_to, int less_than);
+
+	bool check_no_stats(void);
 
 	static hxtest_object_fixture& get(void);
+
+	uint16_t next_ticket(void);
 
 	int m_constructed;
 	int m_destructed;
@@ -27,9 +35,18 @@ public:
 	int m_move_construct;
 	int m_copy_assign;
 	int m_move_assign;
+	int m_default_construct;
 	int m_equal_to;
 	int m_less_than;
+	int m_value_construct;
 	bool m_check_stats_called;
+	uint16_t m_next_ticket;
+};
+
+enum class hxtest_object_state : uint16_t {
+	valid = 0xbeef,
+	moved = 0xf00d,
+	destructed = 0xdead
 };
 
 class hxtest_object {
@@ -37,32 +54,40 @@ public:
 	hxtest_object(void);
 	hxtest_object(const hxtest_object& x);
 	explicit hxtest_object(int32_t value);
+	hxtest_object(int32_t first, int32_t second);
 	hxtest_object(hxtest_object&& x) noexcept;
 	~hxtest_object(void);
+	explicit operator bool(void) const { return this->m_value != 0; }
 	void operator=(const hxtest_object& x);
 	hxtest_object& operator=(hxtest_object&& x) noexcept;
-	bool operator==(int32_t x) const { return this->value == x; }
+	bool operator==(int32_t x) const;
 	bool operator==(const hxtest_object& x) const;
 	bool operator<(const hxtest_object& x) const;
-	int32_t value;
-	int32_t moved_from;
+	hxtest_object_state state(void) const;
+	uint16_t ticket(void) const;
+	int32_t& value(void);
+	const int32_t& value(void) const;
+private:
+	int32_t m_value;
+	uint16_t m_ticket;
+	hxtest_object_state m_state;
 };
 
-bool hxtest_value_less(const hxtest_object& lhs, const hxtest_object& rhs);
-bool hxtest_value_greater(const hxtest_object& lhs, const hxtest_object& rhs);
-bool hxtest_value_equal(const hxtest_object& lhs, const hxtest_object& rhs);
+bool hxtest_value_less(const hxtest_object& a, const hxtest_object& b);
+bool hxtest_value_greater(const hxtest_object& a, const hxtest_object& b);
+bool hxtest_value_equal(const hxtest_object& a, const hxtest_object& b);
 
 template<typename derived_t>
-class hxtest_iter_api_base_t {
+class hxtest_iterator_api_base_t {
 public:
 	hxtest_object& operator*(void) const { return *m_pointer; }
 	derived_t& operator++(void) { ++m_pointer; return static_cast<derived_t&>(*this); }
 	derived_t operator++(int) { derived_t it(static_cast<derived_t&>(*this)); ++m_pointer; return it; }
-	bool operator==(const derived_t& other) const { return m_pointer == other.m_pointer; }
-	bool operator!=(const derived_t& other) const { return m_pointer != other.m_pointer; }
+	bool operator==(const derived_t& x) const { return m_pointer == x.m_pointer; }
+	bool operator!=(const derived_t& x) const { return m_pointer != x.m_pointer; }
 
-	hxtest_iter_api_base_t(int) = delete;
-	hxtest_iter_api_base_t(hxnullptr_t) = delete;
+	hxtest_iterator_api_base_t(int) = delete;
+	hxtest_iterator_api_base_t(hxnil_t) = delete;
 	derived_t& operator--(void) = delete;
 	derived_t operator--(int) = delete;
 	derived_t operator+(ptrdiff_t) const = delete;
@@ -78,7 +103,7 @@ public:
 	bool operator&&(const hxtest_object&) = delete;
 	bool operator||(const hxtest_object&) = delete;
 private:
-	explicit hxtest_iter_api_base_t(hxtest_object* pointer) : m_pointer(pointer) {
+	explicit hxtest_iterator_api_base_t(hxtest_object* pointer) : m_pointer(pointer) {
 		hxassert(m_pointer != hxnull);
 	}
 
@@ -88,51 +113,36 @@ protected:
 	hxtest_object* m_pointer;
 };
 
-class hxtest_forward_iter_api_t : public hxtest_iter_api_base_t<hxtest_forward_iter_api_t> {
+class hxtest_forward_iterator_api_t : public hxtest_iterator_api_base_t<hxtest_forward_iterator_api_t> {
 public:
-	explicit hxtest_forward_iter_api_t(hxtest_object* pointer)
-		: hxtest_iter_api_base_t<hxtest_forward_iter_api_t>(pointer) { }
+	explicit hxtest_forward_iterator_api_t(hxtest_object* pointer)
+		: hxtest_iterator_api_base_t<hxtest_forward_iterator_api_t>(pointer) { }
 };
 
-class hxtest_bidirectional_iter_api_t : public hxtest_iter_api_base_t<hxtest_bidirectional_iter_api_t> {
+class hxtest_bidirectional_iterator_api_t : public hxtest_iterator_api_base_t<hxtest_bidirectional_iterator_api_t> {
 public:
-	explicit hxtest_bidirectional_iter_api_t(hxtest_object* pointer)
-		: hxtest_iter_api_base_t<hxtest_bidirectional_iter_api_t>(pointer) { }
-	hxtest_bidirectional_iter_api_t& operator--(void);
-	hxtest_bidirectional_iter_api_t operator--(int);
+	explicit hxtest_bidirectional_iterator_api_t(hxtest_object* pointer)
+		: hxtest_iterator_api_base_t<hxtest_bidirectional_iterator_api_t>(pointer) { }
+	hxtest_bidirectional_iterator_api_t& operator--(void);
+	hxtest_bidirectional_iterator_api_t operator--(int);
 };
 
-class hxtest_rand_iter_api_t : public hxtest_iter_api_base_t<hxtest_rand_iter_api_t> {
+class hxtest_rand_iterator_api_t : public hxtest_iterator_api_base_t<hxtest_rand_iterator_api_t> {
 public:
-	explicit hxtest_rand_iter_api_t(hxtest_object* pointer)
-		: hxtest_iter_api_base_t<hxtest_rand_iter_api_t>(pointer) { }
-	hxtest_rand_iter_api_t& operator--(void);
-	hxtest_rand_iter_api_t operator--(int);
-	hxtest_rand_iter_api_t operator+(ptrdiff_t offset) const;
-	hxtest_rand_iter_api_t operator-(ptrdiff_t offset) const;
-	ptrdiff_t operator-(const hxtest_rand_iter_api_t& other) const { return m_pointer - other.m_pointer; }
-	bool operator<(const hxtest_rand_iter_api_t& other) const { return m_pointer < other.m_pointer; }
+	explicit hxtest_rand_iterator_api_t(hxtest_object* pointer)
+		: hxtest_iterator_api_base_t<hxtest_rand_iterator_api_t>(pointer) { }
+	hxtest_rand_iterator_api_t& operator--(void);
+	hxtest_rand_iterator_api_t operator--(int);
+	hxtest_rand_iterator_api_t operator+(ptrdiff_t offset) const;
+	hxtest_rand_iterator_api_t operator-(ptrdiff_t offset) const;
+	ptrdiff_t operator-(const hxtest_rand_iterator_api_t& x) const { return m_pointer - x.m_pointer; }
+	bool operator<(const hxtest_rand_iterator_api_t& x) const { return m_pointer < x.m_pointer; }
 	hxtest_object& operator[](ptrdiff_t offset) const { return m_pointer[offset]; }
-};
-
-template<typename T>
-class hxtest_pointer_range {
-public:
-	hxtest_pointer_range(T* b, T* e)
-		: m_begin(b), m_end(e) { }
-	T* begin(void) { return m_begin; }
-	T* end(void) { return m_end; }
-	const T& operator[](hxsize_t index) const { return m_begin[index]; }
-	T& operator[](hxsize_t index) { return m_begin[index]; }
-
-private:
-	T* m_begin;
-	T* m_end;
 };
 
 // `first` and `last` must bound at least two elements.
 template<typename iterator_t>
-bool hxtest_check_forward_iter_api(iterator_t first, iterator_t last) {
+bool hxtest_check_forward_iterator_api(iterator_t first, iterator_t last) {
 	iterator_t second = first;
 	++second;
 	(void)*first;
@@ -144,7 +154,7 @@ bool hxtest_check_forward_iter_api(iterator_t first, iterator_t last) {
 
 // `first` and `last` must bound at least two elements.
 template<typename iterator_t>
-bool hxtest_check_bidirectional_iter_api(iterator_t first, iterator_t last) {
+bool hxtest_check_bidirectional_iterator_api(iterator_t first, iterator_t last) {
 	iterator_t second = first;
 	++second;
 	(void)*first;
@@ -158,7 +168,7 @@ bool hxtest_check_bidirectional_iter_api(iterator_t first, iterator_t last) {
 
 // `first` and `last` must bound at least two elements.
 template<typename iterator_t>
-bool hxtest_check_rand_iter_api(iterator_t first, iterator_t last) {
+bool hxtest_check_rand_iterator_api(iterator_t first, iterator_t last) {
 	iterator_t second = first;
 	++second;
 	(void)*first;
@@ -185,3 +195,18 @@ private:
 	hxtest_skip_asserts& operator=(const hxtest_skip_asserts&) = delete;
 	static int hxs_remaining;
 };
+
+} // namespace hxtest_util
+using namespace hxtest_util;
+
+#if defined HX_USE_NAMESPACE
+namespace HX_USE_NAMESPACE {
+#endif
+template<>
+class hxkey_hash_t<hxtest_util::hxtest_object> {
+public:
+	hxhash_t operator()(const hxtest_util::hxtest_object& x) const;
+};
+#if defined HX_USE_NAMESPACE
+} // namespace HX_USE_NAMESPACE {
+#endif

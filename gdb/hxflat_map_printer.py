@@ -60,6 +60,7 @@ class hxflat_map_printer:
 		key_type: gdb.Type = self.val.type.template_argument(0)
 		mapped_type: gdb.Type = self.val.type.template_argument(1)
 		cap_arg: gdb.Value = self.val.type.template_argument(4)
+		type_name: str = re.sub(r'(\w+|\(anonymous namespace\))::', '', f'{self.val.type.strip_typedefs()}')
 
 		capacity: int
 		raw_keys: int
@@ -67,7 +68,7 @@ class hxflat_map_printer:
 		if cap_arg == 0:
 			capacity = int(keys_alloc['m_capacity_'])
 			if capacity <= 0:
-				self._summary = '<unallocated>'
+				self._summary = f'[0/0] {type_name}'
 				return self._summary
 			raw_keys = int(keys_alloc['m_data_'])
 			raw_vals = int(vals_alloc['m_data_'])
@@ -83,9 +84,7 @@ class hxflat_map_printer:
 		self._raw_vals = raw_vals
 		self._ok = True
 
-		key_name: str = re.sub(r'^((\w+|\(anonymous namespace\))::)+', '', f'{key_type}')
-		val_name: str = re.sub(r'^((\w+|\(anonymous namespace\))::)+', '', f'{mapped_type}')
-		self._summary = '[{}/{}] {}->{}'.format(size, capacity, key_name, val_name)
+		self._summary = f'[{size}/{capacity}] {type_name}'
 		return self._summary
 
 	def to_string(self) -> str:
@@ -100,18 +99,19 @@ class hxflat_map_printer:
 			self._parse()
 			if not self._ok:
 				return
+			yield ('keys', self.val['m_keys_'])
+			yield ('values', self.val['m_values_'])
 			for i in range(self._size):
 				key_ptr: gdb.Value = gdb.Value(self._raw_keys + i * self._key_type.sizeof).cast(
 					self._key_type.pointer())
 				val_ptr: gdb.Value = gdb.Value(self._raw_vals + i * self._mapped_type.sizeof).cast(
 					self._mapped_type.pointer())
-				yield (f'[{i}].key', key_ptr.dereference())
-				yield (f'[{i}].value', val_ptr.dereference())
+				yield (f'[{key_ptr.dereference()}]', val_ptr.dereference())
 		except Exception:
 			return
 
 	def display_hint(self) -> str:
-		return 'map'
+		return 'array'
 
 def build_pretty_printer() -> gdb.printing.RegexpCollectionPrettyPrinter:
 	pp = gdb.printing.RegexpCollectionPrettyPrinter('hxflat_map')

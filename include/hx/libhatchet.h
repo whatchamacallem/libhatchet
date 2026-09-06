@@ -41,10 +41,10 @@
 
 /// `int LIBHATCHET_VER` - One digit major, and two digit minor and patch
 /// versions.
-#define LIBHATCHET_VER 15100
+#define LIBHATCHET_VER 15200
 
 /// `LIBHATCHET_TAG` - Major, minor and patch version tag name.
-#define LIBHATCHET_TAG "v1.51.0"
+#define LIBHATCHET_TAG "v1.52.0"
 
 #if !defined HX_HARDENING_MODE
 /// `HX_HARDENING_MODE` - Library hardening level. See the README.md for levels.
@@ -181,9 +181,7 @@
 #endif
 
 #if !(HX_USE_MACROS_WITH_MODULE)
-#if HX_CPLUSPLUS
-extern "C" {
-#endif
+HX_C_BEGIN_
 
 /// `hxlog_level_t` - Runtime setting for verbosity of log messages.
 /// Independently controls what messages are compiled in. See
@@ -214,7 +212,8 @@ typedef uint32_t hxhash_t;
 /// `hxhandle_t` - An opaque 64-bit handle.
 typedef uint64_t hxhandle_t;
 
-/// `hxinit_internal` - Internal. Use `hxinit` instead. It checks `hxg_init_ver_`.
+/// `hxinit_internal` - Internal. Use `hxinit` instead. It checks
+/// `hxg_init_ver_`.
 void hxinit_internal(int version_) hxattr_cold;
 
 /// \cond HIDDEN
@@ -232,7 +231,8 @@ void hxshutdown(void) hxattr_cold;
 /// and then is removed.
 /// WARNING: Compile errors from consteval code calling this function are
 /// intentional and are how you know a compile time assert has been hit.
-bool hxassert_handler(const char* file_, size_t line_) hxattr_noexcept hxattr_nonnull(1) hxattr_cold;
+hxattr_noexcept hxattr_nonnull(1) hxattr_cold
+bool hxassert_handler(const char* file_, size_t line_);
 #else // HX_HARDENING_MODE != HX_HARDENING_MODE_DEBUG
 // Errors from consteval code calling this function are how you know a compile
 // time assert has been hit. hxattr_cold tells the compiler this call is
@@ -251,29 +251,30 @@ void hxset_assert_handler(bool (*handler_)(void)) hxattr_noexcept;
 /// - `level` : The log level (e.g., `hxlog_level_log`, `hxlog_level_warning`).
 /// - `format` : Non-null `printf`-style format string.
 /// - `...` Additional arguments that must satisfy the format string.
-void hxlog_handler(enum hxlog_level_t level_, const char* format_, ...) hxattr_noexcept hxattr_printf(2, 3);
+void hxlog_handler(enum hxlog_level_t level_, const char* format_, ...)
+	hxattr_noexcept hxattr_printf(2, 3);
 
 /// `hxlog_handler_v` - A `va_list` version of `hxlog_handler`.
 /// - `level` : The log level (e.g., `hxlog_level_log`, `hxlog_level_warning`).
 /// - `format` : Non-null `printf`-style format string.
 /// - `args` : A `va_list` containing the arguments for the format string.
-void hxlog_handler_v(enum hxlog_level_t level_, const char* format_, va_list args_) hxattr_noexcept hxattr_nonnull(2);
+void hxlog_handler_v(enum hxlog_level_t level_, const char* format_, va_list args_)
+	hxattr_noexcept hxattr_nonnull(2);
 
 /// `hxexit(int status)` - Flushes `hxout` and `hxerr` then calls `_Exit`.
 /// - `status` : The exit status passed to `_Exit`.
-hxattr_noreturn void hxexit(int status_) hxattr_noexcept hxattr_cold;
+hxattr_noreturn hxattr_noexcept hxattr_cold
+void hxexit(int status_);
 
-#if HX_CPLUSPLUS
-} // extern "C"
-#endif
+HX_C_END_
 #endif // !HX_USE_MACROS_WITH_MODULE
 
 /// `hxnull` - The null pointer value for a given pointer type represented by
-/// the numeric constant `0`. The C/C++ language standards explicitly define the
+/// the numeric literal `0`. The C/C++ language standards explicitly define the
 /// meaning of `0` in pointer context as a null pointer of the expected type.
 /// However they do not define whether `NULL` is `0` or `((void*)0)`. `hxnull`
-/// fills that gap by having an unambiguous type. See `hxnullptr`/`hxnullptr_t`
-/// if you need a `std::nullptr_t` replacement.
+/// resolves that ambiguity by being unambiguously `0`. See `hxnil`/`hxnil_t` if
+/// you need a `std::nullptr_t` replacement.
 #define hxnull 0
 
 #if HX_CPLUSPLUS
@@ -281,15 +282,21 @@ hxattr_noreturn void hxexit(int status_) hxattr_noexcept hxattr_cold;
 /// `hxhash_bits` - Number of bits in `hxhash_t`.
 hxinline_constexpr hxhash_t hxhash_bits = 32u;
 
+/// `hxnull_hash` - A hash value to represent null or empty objects.
+hxinline_constexpr hxhash_t hxnull_hash = 31u;
+
 /// `hxnull_handle` - A handle that will never refer to a valid object.
 hxinline_constexpr hxhandle_t hxnull_handle = 0u;
 
 /// `hxsizeof` - Returns the size of a type or expression as `hxsize_t`.
-template<typename T_> constexpr hxsize_t hxsizeof(void) { return static_cast<hxsize_t>(sizeof(T_)); }
+template<typename T_> constexpr hxsize_t hxsizeof(void) {
+	return static_cast<hxsize_t>(sizeof(T_));
+}
 template<typename T_> constexpr hxsize_t hxsizeof(T_&) { return static_cast<hxsize_t>(sizeof(T_)); }
 #endif // !HX_USE_MACROS_WITH_MODULE
 #else
 #define hxhash_bits 32u
+#define hxnull_hash 31u
 #define hxnull_handle 0u
 #define hxsizeof(x) (hxsize_t)sizeof(x)
 #endif

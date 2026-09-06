@@ -10,8 +10,8 @@
 /// enable the debug console. See `hxconsole.cpp` for details. This is optimized
 /// for generated code size and not speed.
 ///
-/// Here is how to write lambdas that cease to exist entirely when the console is
-/// disabled:
+/// Here is how to write lambdas that cease to exist entirely when the console
+/// is disabled:
 ///
 /// `hxconsole_command_named(*+[](void) -> bool { return true; }, command_name);`
 
@@ -21,7 +21,8 @@
 #if !(HX_USE_MACROS_WITH_MODULE)
 
 #include <limits.h>
-#include "hxutility.h"
+#include "hxkey.hpp"
+#include "hxhash_table.hpp"
 
 HX_NS_BEGIN_
 
@@ -38,15 +39,15 @@ void hxconsole_deregister(const char* id_) hxattr_nonnull(1);
 /// - `command` : Non-null UTF-8 command string executed by the console.
 bool hxconsole_exec_line(const char* command_) hxattr_nonnull(1);
 
-/// `hxconsole_help` - Logs every console symbol to the console log.
+/// `hxconsole_help` - Logs every console symbol except internal test symbols
+/// to the console log.
 bool hxconsole_help(void);
 
 #if HX_USE_FILE_IO
 class hxfile;
 /// `hxconsole_exec_file` - Executes a configuration file that is opened for
-/// reading. Ignores blank lines and comments that start with `#`. Disables
-/// asserts so that EOF is allowed. WARNING: `file` must not have asserts
-/// enabled as this call reads past the end.
+/// reading. Ignores blank lines and comments that start with `#`. WARNING:
+/// `file` must not have asserts enabled as this call reads past the end.
 /// - `file` : A file containing commands.
 bool hxconsole_exec_file(hxfile& file_);
 

@@ -8,17 +8,18 @@
 #endif
 
 #ifndef HX_DOXYGEN_PARSER
-HX_BEGIN_INL_
+HX_INL_BEGIN_
 
-template<typename T_, typename deleter_t_, uint32_t table_size_bits_>
-inline hxattr_flatten hxhandle_table<T_, deleter_t_, table_size_bits_>::hxhandle_table(deleter_t_ deleter_)
+template<hxhandle_table_concept_ T_, typename deleter_t_, uint32_t table_size_bits_>
+inline hxattr_flatten
+hxhandle_table<T_, deleter_t_, table_size_bits_>::hxhandle_table(deleter_t_ deleter_)
 		: deleter_t_(hxmove(deleter_)), m_size_(0), m_free_head_(hxnull) {
 	hxif_constexpr(table_size_bits_ != hxallocator_dynamic_capacity) {
 		this->build_free_list_();
 	}
 }
 
-template<typename T_, typename deleter_t_, uint32_t table_size_bits_>
+template<hxhandle_table_concept_ T_, typename deleter_t_, uint32_t table_size_bits_>
 inline hxattr_flatten hxhandle_table<T_, deleter_t_, table_size_bits_>::~hxhandle_table(void) {
 	deleter_t_& deleter_ = static_cast<deleter_t_&>(*this);
 	if(m_size_ != 0 && deleter_) {
@@ -34,7 +35,23 @@ inline hxattr_flatten hxhandle_table<T_, deleter_t_, table_size_bits_>::~hxhandl
 	}
 }
 
-template<typename T_, typename deleter_t_, uint32_t table_size_bits_>
+#if HX_CPLUSPLUS >= 202302L
+template<hxhandle_table_concept_ T_, typename deleter_t_, uint32_t table_size_bits_>
+template<typename self_t_, typename callable_t_>
+hxinline hxattr_flatten auto hxhandle_table<T_, deleter_t_, table_size_bits_>::and_then(
+		this self_t_&& self_, hxhandle_t handle_, callable_t_&& callable_)
+		-> hxremove_cvref_t<decltype(
+			hxforward<callable_t_>(callable_)(
+				hxforward_like<self_t_>(hxdeclval<T_&>())))> {
+	auto* const found_ = self_.value(handle_);
+	if(found_ != hxnull) {
+		return hxforward<callable_t_>(callable_)(hxforward_like<self_t_>(*found_));
+	}
+	return hxnil;
+}
+#endif // HX_CPLUSPLUS >= 202302L
+
+template<hxhandle_table_concept_ T_, typename deleter_t_, uint32_t table_size_bits_>
 template<typename deleter_u_>
 inline hxattr_flatten void hxhandle_table<T_, deleter_t_, table_size_bits_>::clear(
 		deleter_u_&& deleter_) noexcept {
@@ -59,27 +76,19 @@ inline hxattr_flatten void hxhandle_table<T_, deleter_t_, table_size_bits_>::cle
 	}
 }
 
-template<typename T_, typename deleter_t_, uint32_t table_size_bits_>
-template<typename deleter_u_>
-hxinline hxattr_flatten bool hxhandle_table<T_, deleter_t_, table_size_bits_>::erase(
-		hxhandle_t handle_, deleter_u_&& deleter_) noexcept {
-	hxassertmsg(m_table_.capacity() != 0, "table_unallocated");
-	const uint32_t mask_ = m_table_.get_mask_();
-	slot_t_* const slot_ = m_table_.data() + (static_cast<uint32_t>(handle_) & mask_);
-	if(slot_->m_key_ != handle_) {
-		return false;
-	}
-	if(deleter_) {
-		deleter_(slot_->m_ptr_);
-	}
-	slot_->m_key_ = handle_ + (mask_ + 1u);
-	slot_->m_next_ = m_free_head_;
-	m_free_head_ = slot_;
-	--m_size_;
-	return true;
+template<hxhandle_table_concept_ T_, typename deleter_t_, uint32_t table_size_bits_>
+hxinline hxattr_flatten const deleter_t_&
+hxhandle_table<T_, deleter_t_, table_size_bits_>::deleter(void) const {
+	return static_cast<const deleter_t_&>(*this);
 }
 
-template<typename T_, typename deleter_t_, uint32_t table_size_bits_>
+template<hxhandle_table_concept_ T_, typename deleter_t_, uint32_t table_size_bits_>
+hxinline hxattr_flatten deleter_t_&
+hxhandle_table<T_, deleter_t_, table_size_bits_>::deleter(void) {
+	return static_cast<deleter_t_&>(*this);
+}
+
+template<hxhandle_table_concept_ T_, typename deleter_t_, uint32_t table_size_bits_>
 template<typename callable_t_>
 hxinline hxattr_flatten hxsize_t hxhandle_table<T_, deleter_t_, table_size_bits_>::erase_if(
 		callable_t_&& callable_) noexcept {
@@ -112,10 +121,10 @@ hxinline hxattr_flatten hxsize_t hxhandle_table<T_, deleter_t_, table_size_bits_
 #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 #endif
 
-template<typename T_, typename deleter_t_, uint32_t table_size_bits_>
+template<hxhandle_table_concept_ T_, typename deleter_t_, uint32_t table_size_bits_>
 hxinline hxattr_flatten hxptr<T_, deleter_t_>
 hxhandle_table<T_, deleter_t_, table_size_bits_>::extract(hxhandle_t handle_) noexcept {
-	hxassertmsg(m_table_.capacity() != 0, "table_unallocated");
+	hxassertmsg(m_table_.capacity() != 0, "no_table");
 	const uint32_t mask_ = m_table_.get_mask_();
 	slot_t_* const slot_ = m_table_.data() + (static_cast<uint32_t>(handle_) & mask_);
 	if(slot_->m_key_ != handle_) {
@@ -133,37 +142,10 @@ hxhandle_table<T_, deleter_t_, table_size_bits_>::extract(hxhandle_t handle_) no
 #pragma GCC diagnostic pop
 #endif
 
-template<typename T_, typename deleter_t_, uint32_t table_size_bits_>
-hxinline hxattr_flatten T_* hxhandle_table<T_, deleter_t_, table_size_bits_>::get(hxhandle_t handle_) noexcept {
-	hxassertmsg(m_table_.capacity() != 0, "table_unallocated");
-	const slot_t_* const slot_ = m_table_.data()
-		+ (static_cast<uint32_t>(handle_) & m_table_.get_mask_());
-	return (slot_->m_key_ == handle_) ? slot_->m_ptr_ : hxnull;
-}
-
-template<typename T_, typename deleter_t_, uint32_t table_size_bits_>
-hxinline hxattr_flatten const T_*
-hxhandle_table<T_, deleter_t_, table_size_bits_>::get(hxhandle_t handle_) const noexcept {
-	hxassertmsg(m_table_.capacity() != 0, "table_unallocated");
-	const slot_t_* const slot_ = m_table_.data()
-		+ (static_cast<uint32_t>(handle_) & m_table_.get_mask_());
-	return (slot_->m_key_ == handle_) ? slot_->m_ptr_ : hxnull;
-}
-
-template<typename T_, typename deleter_t_, uint32_t table_size_bits_>
-hxinline hxattr_flatten const deleter_t_&
-hxhandle_table<T_, deleter_t_, table_size_bits_>::deleter(void) const {
-	return static_cast<const deleter_t_&>(*this);
-}
-
-template<typename T_, typename deleter_t_, uint32_t table_size_bits_>
-hxinline hxattr_flatten deleter_t_& hxhandle_table<T_, deleter_t_, table_size_bits_>::deleter(void) {
-	return static_cast<deleter_t_&>(*this);
-}
-
-template<typename T_, typename deleter_t_, uint32_t table_size_bits_>
-hxinline hxattr_flatten hxhandle_t hxhandle_table<T_, deleter_t_, table_size_bits_>::insert(T_* ptr_) noexcept {
-	hxassertmsg(m_table_.capacity() != 0, "table_unallocated");
+template<hxhandle_table_concept_ T_, typename deleter_t_, uint32_t table_size_bits_>
+hxinline hxattr_flatten hxhandle_t
+hxhandle_table<T_, deleter_t_, table_size_bits_>::insert(T_* ptr_) noexcept {
+	hxassertmsg(m_table_.capacity() != 0, "no_table");
 	hxassert_hard(m_free_head_ != m_table_.data(), "table_full");
 	if(ptr_ == hxnull) {
 		return hxnull_handle;
@@ -175,23 +157,90 @@ hxinline hxattr_flatten hxhandle_t hxhandle_table<T_, deleter_t_, table_size_bit
 	return slot_->m_key_;
 }
 
-template<typename T_, typename deleter_t_, uint32_t table_size_bits_>
+template<hxhandle_table_concept_ T_, typename deleter_t_, uint32_t table_size_bits_>
 template<typename deleter_u_>
 hxinline hxattr_flatten hxhandle_t hxhandle_table<T_, deleter_t_, table_size_bits_>::insert(
 		hxptr<T_, deleter_u_>&& ptr_) noexcept {
 	return this->insert(ptr_.release());
 }
 
-template<typename T_, typename deleter_t_, uint32_t table_size_bits_>
-hxinline hxattr_flatten void hxhandle_table<T_, deleter_t_, table_size_bits_>::set_size_bits(uint32_t bits_) {
+#if HX_CPLUSPLUS >= 202302L
+template<hxhandle_table_concept_ T_, typename deleter_t_, uint32_t table_size_bits_>
+template<typename self_t_, typename callable_t_>
+hxinline hxattr_flatten auto hxhandle_table<T_, deleter_t_, table_size_bits_>::or_else(
+		this self_t_&& self_, hxhandle_t handle_, callable_t_&& callable_)
+		-> decltype(self_.value(handle_)) {
+	auto const found_ = self_.value(handle_);
+	if(found_ != hxnull) {
+		return found_;
+	}
+	return hxforward<callable_t_>(callable_)();
+}
+#endif // HX_CPLUSPLUS >= 202302L
+
+template<hxhandle_table_concept_ T_, typename deleter_t_, uint32_t table_size_bits_>
+template<typename deleter_u_>
+hxinline hxattr_flatten bool hxhandle_table<T_, deleter_t_, table_size_bits_>::reset(
+		hxhandle_t handle_, deleter_u_&& deleter_) noexcept {
+	hxassertmsg(m_table_.capacity() != 0, "no_table");
+	const uint32_t mask_ = m_table_.get_mask_();
+	slot_t_* const slot_ = m_table_.data() + (static_cast<uint32_t>(handle_) & mask_);
+	if(slot_->m_key_ != handle_) {
+		return false;
+	}
+	if(deleter_) {
+		deleter_(slot_->m_ptr_);
+	}
+	slot_->m_key_ = handle_ + (mask_ + 1u);
+	slot_->m_next_ = m_free_head_;
+	m_free_head_ = slot_;
+	--m_size_;
+	return true;
+}
+
+template<hxhandle_table_concept_ T_, typename deleter_t_, uint32_t table_size_bits_>
+hxinline hxattr_flatten void
+hxhandle_table<T_, deleter_t_, table_size_bits_>::set_size_bits(uint32_t bits_) {
 	static_assert(table_size_bits_ == hxallocator_dynamic_capacity,
 		"set_size_bits requires dynamic capacity");
 	m_table_.set_size_bits_(bits_, (1u << bits_) - 1u);
 	this->build_free_list_();
 }
 
-template<typename T_, typename deleter_t_, uint32_t table_size_bits_>
-inline hxattr_flatten void hxhandle_table<T_, deleter_t_, table_size_bits_>::build_free_list_(void) {
+template<hxhandle_table_concept_ T_, typename deleter_t_, uint32_t table_size_bits_>
+hxinline hxattr_flatten const T_*
+hxhandle_table<T_, deleter_t_, table_size_bits_>::value(hxhandle_t handle_) const noexcept {
+	hxassertmsg(m_table_.capacity() != 0, "no_table");
+	const slot_t_* const slot_ = m_table_.data()
+		+ (static_cast<uint32_t>(handle_) & m_table_.get_mask_());
+	return (slot_->m_key_ == handle_) ? slot_->m_ptr_ : hxnull;
+}
+
+template<hxhandle_table_concept_ T_, typename deleter_t_, uint32_t table_size_bits_>
+hxinline hxattr_flatten T_* hxhandle_table<T_, deleter_t_, table_size_bits_>::value(
+		hxhandle_t handle_) noexcept {
+	hxassertmsg(m_table_.capacity() != 0, "no_table");
+	const slot_t_* const slot_ = m_table_.data()
+		+ (static_cast<uint32_t>(handle_) & m_table_.get_mask_());
+	return (slot_->m_key_ == handle_) ? slot_->m_ptr_ : hxnull;
+}
+
+#if HX_CPLUSPLUS >= 202302L
+template<hxhandle_table_concept_ T_, typename deleter_t_, uint32_t table_size_bits_>
+template<typename self_t_, typename... args_t_>
+hxinline hxattr_flatten T_ hxhandle_table<T_, deleter_t_, table_size_bits_>::value_or(
+		this self_t_&& self_, hxhandle_t handle_, args_t_&&... args_) {
+	auto* const found_ = self_.value(handle_);
+	if(found_ != hxnull) {
+		return static_cast<T_>(hxforward_like<self_t_>(*found_));
+	}
+	return T_(hxforward<args_t_>(args_)...);
+}
+#endif // HX_CPLUSPLUS >= 202302L
+
+template<hxhandle_table_concept_ T_, typename deleter_t_, uint32_t table_size_bits_>
+inline hxattr_flatten void
+hxhandle_table<T_, deleter_t_, table_size_bits_>::build_free_list_(void) {
 	const uint32_t capacity_ = static_cast<uint32_t>(m_table_.capacity());
 	slot_t_* const hxrestrict data_ = m_table_.data();
 	data_->m_key_ = capacity_;
@@ -204,5 +253,5 @@ inline hxattr_flatten void hxhandle_table<T_, deleter_t_, table_size_bits_>::bui
 	m_free_head_ = data_ + 1;
 }
 
-HX_END_INL_
+HX_INL_END_
 #endif // HX_DOXYGEN_PARSER

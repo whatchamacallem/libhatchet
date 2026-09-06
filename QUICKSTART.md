@@ -71,5 +71,7 @@ meson compile -C quickstart/hello_world_meson
 ./quickstart/hello_world_meson/hello_world
 ```
 
+Same expected output.
+
 © 2017-2026 Adrian Johnston. This project is licensed under the terms of the MIT
 license found in the `LICENSE.md` file.

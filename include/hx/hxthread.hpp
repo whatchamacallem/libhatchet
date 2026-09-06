@@ -35,7 +35,8 @@ HX_NS_BEGIN_
 /// exits.
 template<typename T_>
 class hxthread_local {
-	static_assert(sizeof(T_) <= sizeof(void*), "hxthread_local: sizeof(T) must be <= sizeof(void*)");
+	static_assert(sizeof(T_) <= sizeof(void*),
+		"hxthread_local: sizeof(T) must be <= sizeof(void*)");
 
 public:
 	/// Construct to 0 or null.
@@ -195,8 +196,8 @@ private:
 #endif
 };
 
-/// `hxunique_lock` - `std::unique_lock` style RAII-style unique lock for `hxmutex`.
-/// Locks the mutex on construction and unlocks on destruction.
+/// `hxunique_lock` - `std::unique_lock` style RAII-style unique lock for
+/// `hxmutex`. Locks the mutex on construction and unlocks on destruction.
 class hxunique_lock {
 public:
 	/// Constructs with an option to defer locking.
@@ -266,9 +267,9 @@ public:
 #endif
 	}
 
-	/// Waits for the condition variable to be notified. Returns true on success,
-	/// false otherwise. Callers must check the return value to confirm the wait
-	/// succeeded.
+	/// Waits for the condition variable to be notified. Returns true on
+	/// success, false otherwise. Callers must check the return value to
+	/// confirm the wait succeeded.
 	/// - `mutex` : The mutex to use for waiting.
 	hxinline hxattr_nodiscard bool wait(hxmutex& mutex_) {
 #if (HX_USE_THREADS) == 11
@@ -282,9 +283,7 @@ public:
 #endif
 	}
 
-	/// Overload: Waits using a `hxunique_lock`. Returns true on success, false
-	/// otherwise. Callers must check the return value to confirm the wait
-	/// succeeded.
+	/// Overload accepting a `hxunique_lock` in place of a `hxmutex`.
 	/// - `lock` : The unique lock to use for waiting.
 	hxinline hxattr_nodiscard bool wait(hxunique_lock& lock_) {
 		return this->wait(lock_.mutex());
@@ -361,10 +360,10 @@ public:
 	/// Default constructor. Thread is not started.
 	hxinline hxthread(void) : m_thread_(), m_joinable_(false) { }
 
-	/// Constructs and starts a thread with the given function and argument. Does
-	/// not free the argument. Any function that takes a single pointer and
-	/// returns `return_t` should work. The return value is ignored but may be
-	/// unsafe to cast to a function with a different return type.
+	/// Constructs and starts a thread with the given function and argument.
+	/// Does not free the argument. Any function that takes a single pointer
+	/// and returns `return_t` should work. The return value is ignored but
+	/// may be unsafe to cast to a function with a different return type.
 	/// - `entry_point` : Function pointer of type: `entry_point(T*)`.
 	/// - `parameter` : `T*` to pass to the function.
 	template<typename parameter_t_>
@@ -375,7 +374,7 @@ public:
 
 	/// Destructor. Asserts that the thread was stopped correctly.
 	hxinline ~hxthread(void) {
-		hxassert_hard(!this->joinable(), "thread_still_running");
+		hxassert_hard(!this->joinable(), "thread_busy");
 	}
 
 	/// Starts a thread with the given function and argument. Does not free the
@@ -386,7 +385,7 @@ public:
 	/// - `parameter` : `T*` to pass to the function.
 	template<typename parameter_t_>
 	hxinline void start(return_t (*entry_point_)(parameter_t_*), parameter_t_* parameter_) {
-		hxassertmsg(!this->joinable(), "thread_still_running");
+		hxassertmsg(!this->joinable(), "thread_busy");
 
 		// Stay on the right side of the C++ standard by avoiding assumptions
 		// about pointer representations. The parameter is being reinterpreted
@@ -413,7 +412,7 @@ public:
 
 	/// Joins the thread. Blocks until the thread finishes.
 	hxinline void join(void) {
-		hxassertmsg(this->joinable(), "thread_not_running");
+		hxassertmsg(this->joinable(), "task_idle");
 #if (HX_USE_THREADS) == 11
 		const int code_ = ::thrd_join(m_thread_, hxnull);
 		hxassert_always(code_ == thrd_success, "thrd_join %d", code_);

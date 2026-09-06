@@ -19,14 +19,13 @@
 HX_NS_BEGIN_
 
 #if HX_CPLUSPLUS >= 202002L
-
-/// `hxfree_list_concept` - Concept smoke testing the `hxfree_list` element.
-/// Only the destructor is explicitly required.
+/// \cond HIDDEN
 template<typename T_>
 concept hxfree_list_concept_ = requires(T_& x_) {
 	sizeof(T_);
-	{ x_.~T_() };
+	x_.~T_();
 };
+/// \endcond
 #else
 #define hxfree_list_concept_ typename
 #endif
@@ -55,7 +54,7 @@ public:
 		/// Destructs `*p` and returns its slot to the owning `hxfree_list`.
 		/// WARNING: Made non-const to indicate deletion is not thread-safe.
 		/// - `p` : A pointer previously returned by `allocate` or `hxnull`.
-		void operator()(T_* p_) noexcept { if(p_ != hxnull) { m_owner_->release(p_); } }
+		void operator()(T_* ptr_) noexcept { if(ptr_ != hxnull) { m_owner_->release(ptr_); } }
 
 		/// Always returns true, indicating the deleter is valid.
 		operator bool(void) const { return true; }
@@ -99,7 +98,7 @@ public:
 
 	/// Returns true if `p` points into this free list's storage.
 	/// - `p` : The pointer to test. May be null.
-	hxattr_nodiscard bool is_allocator(const T_* p_) const noexcept;
+	hxattr_nodiscard bool is_allocator(const T_* ptr_) const noexcept;
 
 	/// Returns true if `ptr` points into this free list's storage.
 	/// - `ptr` : The `hxptr` to test.
@@ -109,19 +108,18 @@ public:
 	/// Returns the capacity of the pool.
 	hxattr_nodiscard hxsize_t max_size(void) const { return this->capacity(); }
 
-	/// Destructs `*p` and returns its slot to the free list.
+	/// - `ptr` : An `T*` referencing an object previously returned by `allocate`.
 	/// - `p` : A non-null pointer previously returned by `allocate`.
-	void release(T_* p_) noexcept hxattr_nonnull(2);
+	void release(T_* ptr_) noexcept hxattr_nonnull(2);
 
-	/// Destructs the object owned by `ptr` and returns its slot to the free list.
-	/// - `ptr` : An `hxptr` previously returned by `allocate`. Must not be null.
+	/// Destructs `*p` and returns its slot to the free list.
+	/// - `ptr` : An `hxptr` referencing an object previously returned by `allocate`.
 	template<typename deleter_t_>
 	void release(hxptr<T_, deleter_t_>&& ptr_) noexcept;
 
-	/// Allocates storage for `size` slots and enqueues them when `capacity` is
-	/// `hxallocator_dynamic_capacity`. The current capacity becomes `size`
-	/// slots. Reallocation is not allowed. When `capacity` is fixed, `size`
-	/// must equal `capacity`.
+	/// Allocates storage for `size` slots and enqueues them. Only usable when
+	/// `capacity` is `hxallocator_dynamic_capacity`. The current capacity
+	/// becomes `size` slots. Reallocation is not allowed.
 	/// - `size` : The number of slots to allocate.
 	/// - `allocator` : The memory manager ID to use for allocation.
 	/// - `alignment` : The alignment to use for the allocation.
@@ -132,8 +130,8 @@ public:
 	/// Returns the number of unallocated `T` available.
 	hxattr_nodiscard hxsize_t size(void) const { return m_size_; }
 
-	/// Constructs a `T` in a free slot and returns an `hxptr` owning it. Returns
-	/// an empty `hxptr` when no slots remain.
+	/// Constructs a `T` in a free slot and returns an `hxptr` owning it.
+	/// Returns an empty `hxptr` when no slots remain.
 	/// - `args` : Arguments forwarded to `T`'s constructor.
 	template<typename... args_t_>
 	hxattr_nodiscard hxptr<T_, deleter_t> try_allocate(args_t_&&... args_) noexcept;

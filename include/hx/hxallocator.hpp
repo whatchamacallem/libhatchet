@@ -56,7 +56,7 @@ public:
 			hxsystem_allocator_t allocator_=hxsystem_allocator_current,
 			hxalignment_t alignment_=hxalignment) {
 		(void)allocator_; (void)alignment_;
-		hxassert_always(size_ == fixed_capacity_, "reallocation_disallowed");
+		hxassert_always(size_ == fixed_capacity_, "bad_reserve already sized");
 	}
 
 private:
@@ -66,8 +66,8 @@ private:
 	alignas(T_) unsigned char m_data_[fixed_capacity_ * hxsizeof<T_>()];
 };
 
-/// `hxallocator<0>` - Capacity is set by first call to `reserve_storage` and may
-/// not be extended. May be moved using `hxswap_memcpy`.
+/// `hxallocator<0>` - Capacity is set by first call to `reserve_storage` and
+/// may not be extended. May be moved using `hxswap_memcpy`.
 template<typename T_>
 class hxallocator<T_, hxallocator_dynamic_capacity> {
 public:
@@ -98,18 +98,22 @@ public:
 	/// Returns a pointer to a potentially uninitialized array of `T`.
 	hxinline T_* data(void) { return m_data_; }
 
-	/// Capacity is set by first call to `reserve_storage` and may not be modified.
+	/// Capacity is set by first call to `reserve_storage` and may not be
+	/// modified.
 	/// - `size` : The number of elements of type `T` to allocate space for.
-	/// - `allocator` : The memory manager ID to use for allocation (default: `hxsystem_allocator_current`)
-	/// - `alignment` : The alignment to use for the allocation. (default: `hxalignment`)
+	/// - `allocator` : The memory manager ID to use for allocation. (default:
+	///   `hxsystem_allocator_current`)
+	/// - `alignment` : The alignment to use for the allocation. (default:
+	///   `hxalignment`)
 	hxinline void reserve_storage(hxsize_t size_,
 			hxsystem_allocator_t allocator_=hxsystem_allocator_current,
 			hxalignment_t alignment_=hxalignment) {
 		if(size_ == m_capacity_) {
 			return;
 		}
-		hxassert_always(m_capacity_ == 0, "reallocation_disallowed");
-		m_data_ = static_cast<T_*>(hxmalloc_ext(sizeof(T_) * static_cast<size_t>(size_), allocator_, alignment_));
+		hxassert_always(m_capacity_ == 0, "bad_reserve already sized");
+		m_data_ = static_cast<T_*>(
+			hxmalloc_ext(sizeof(T_) * static_cast<size_t>(size_), allocator_, alignment_));
 		m_capacity_ = size_;
 	}
 

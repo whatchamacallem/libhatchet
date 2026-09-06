@@ -65,9 +65,9 @@ strip -o hxtest-strip --strip-unneeded hxtest
 { set +o xtrace; } 2> /dev/null
 
 if [ "${1:-}" = "--verbose" ]; then
-	./hxtest-strip
+	./hxtest-strip "check_stats 1" runtests
 else
-	if ./hxtest-strip > console_output.txt 2>&1; then
+	if ./hxtest-strip "check_stats 1" runtests > console_output.txt 2>&1; then
 		grep -E '\[  PASSED  \]|\[  FAILED  \]|FAILED TESTS' console_output.txt
 	else
 		cat console_output.txt

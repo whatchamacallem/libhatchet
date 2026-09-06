@@ -72,8 +72,8 @@ class hxconstexpr_list_printer:
 				self._base_field_names.add(base_field.name)
 		self._ok = True
 
-		basename: str = re.sub(r'^((\w+|\(anonymous namespace\))::)+', '', f'{node_type}')
-		self._summary = f'[{size}] {basename}'
+		type_name: str = re.sub(r'(\w+|\(anonymous namespace\))::', '', f'{self.val.type.strip_typedefs()}')
+		self._summary = f'[{size}] {type_name}'
 		return self._summary
 
 	def to_string(self) -> str:

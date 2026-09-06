@@ -68,8 +68,8 @@ HX_NS_END_
 /// cutoff. WARNING: A pointer to `label_string_literal` is kept. Compiles to a
 /// NOP when not in use.
 /// - `label_string_literal` : A string literal label for the sample.
-/// - `min_cycles` : A minimum number of cycles required for a sample to be recorded.
-///   Must be a compile-time constant.
+/// - `min_cycles` : A minimum number of cycles required for a sample to be
+///   recorded. Must be a compile-time constant.
 #define hxprofile_scope_min(label_string_literal_, min_cycles_) \
 	HX_PROFILE_ONLY_(const HX_NS_PREFIX_ hxdetail_::hxprofiler_scope_internal_<min_cycles_> \
 		HX_APPEND_COUNTER(hxprofile_scope_)(label_string_literal_))
