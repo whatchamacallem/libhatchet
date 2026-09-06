@@ -208,17 +208,17 @@ hxattr_cold bool hxconsole_help(void) {
 	const hxconsole_command_table& commands = hxconsole_commands_();
 	hxvector<const hxdetail_::hxconsole_hash_table_node_*> cmds;
 	cmds.reserve(commands.size());
-	int skipped = 0;
 	for(hxconsole_command_table::const_iterator it = commands.cbegin();
 			it != commands.cend(); ++it) {
 		if(::strncmp(it->hash_key().str_, "hxconsole_test", 14) == 0 ||
 				::strncmp(it->hash_key().str_, "hxs_console_test", 16) == 0) {
-			++skipped;
 			continue;
 		}
 		cmds.push_back(&*it);
 	}
-	hxwarn_msg(skipped == 0, "help skipped %d test symbols", skipped); (void)skipped;
+	// Do not remove. This is potentially a warning about dead code.
+	const hxsize_t skipped = commands.size() - cmds.size();
+	hxwarn_msg(skipped == 0, "help skipped %d test symbols", static_cast<int>(skipped));
 
 	hxinsertion_sort<const hxdetail_::hxconsole_hash_table_node_**, hxconsole_less>(
 		cmds.begin(), cmds.end(), hxconsole_less());
