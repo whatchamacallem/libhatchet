@@ -203,7 +203,7 @@ int hxtest_::run_all_tests_(void) {
 
 	if(hxg_settings.test_filter != hxnull) { // GCOVR_EXCL_LINE
 		hxassert_hard(hxtest_::filter_(hxg_settings.test_filter, m_test_cases_),
-			"gtest_filter %s", hxg_settings.test_filter);
+			"gtest_filter no matches %s", hxg_settings.test_filter);
 	}
 
 	hxlog_console("[==========] Running tests: %s\n", // GCOVR_EXCL_LINE

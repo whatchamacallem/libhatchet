@@ -147,11 +147,14 @@ hxattr_weak hxattr_noexcept bool hxassert_handler(const char* file, size_t line)
 	if(hxg_assert_handler != hxnull) {
 		return hxg_assert_handler();
 	}
-	// GCOVR_EXCL_START
-	hxwarn(false, "breakpoint %s(%zu)", file, line);
-	// Return to hxbreakpoint at the calling line.
-	return !hxg_settings.test_break_on_failure;
-	// GCOVR_EXCL_STOP
+	if(hxg_settings.test_break_on_failure) {
+		hxwarn(false, "breakpoint %s(%zu)", file, line);
+		// Not handled, call hxbreakpoint.
+		return false;
+	}
+
+	// Already logged reason.
+	hxexit(EXIT_FAILURE);
 }
 #else
 hxattr_weak hxattr_noexcept void hxassert_handler(void) {
