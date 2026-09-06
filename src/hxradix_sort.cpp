@@ -13,9 +13,9 @@ using hxhistogram_t = uint32_t;
 
 hxattr_hot void hxradix_sort_void(hxradix_sort_key_void* begin, hxradix_sort_key_void* end,
 		hxsystem_allocator_t allocator) {
-	hxassertmsg(end >= begin, "radix_sort end < begin %zd", end - begin);
+	hxassertf(end >= begin, "radix_sort end < begin %zd", end - begin);
 	// Check for size overflowing hxhistogram_t.
-	hxassertmsg(static_cast<size_t>(end - begin) < ~static_cast<hxhistogram_t>(0),
+	hxassertf(static_cast<size_t>(end - begin) < ~static_cast<hxhistogram_t>(0),
 		"hxhistogram_t overflow %zd", end - begin);
 
 	const hxhistogram_t size = static_cast<hxhistogram_t>(end - begin);
@@ -107,9 +107,9 @@ hxattr_hot void hxradix_sort_void(hxradix_sort_key_void* begin, hxradix_sort_key
 
 hxattr_hot void hxradix_sort_void11(hxradix_sort_key_void* begin, hxradix_sort_key_void* end,
 		hxsystem_allocator_t allocator) {
-	hxassertmsg(end >= begin, "radix_sort end < begin %zd", end - begin);
+	hxassertf(end >= begin, "radix_sort end < begin %zd", end - begin);
 	// Check for size overflowing hxhistogram_t.
-	hxassertmsg(static_cast<size_t>(end - begin) < ~static_cast<hxhistogram_t>(0),
+	hxassertf(static_cast<size_t>(end - begin) < ~static_cast<hxhistogram_t>(0),
 		"hxhistogram_t overflow %zd", end - begin);
 
 	const hxhistogram_t size = static_cast<hxhistogram_t>(end - begin);

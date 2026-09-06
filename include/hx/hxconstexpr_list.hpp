@@ -52,7 +52,7 @@ public:
 
 	/// Assigns nothing. List linkage of either node is not affected.
 	hxconstexpr hxconstexpr_list_node& operator=(const hxconstexpr_list_node& x_) {
-		hxassertmsg(this != &x_, "self_assignment"); (void)x_;
+		hxassertf(this != &x_, "self_assignment"); (void)x_;
 		return *this;
 	}
 
@@ -129,13 +129,13 @@ public:
 #endif
 		/// Returns a const reference to the current node.
 		hxconstexpr const T_& operator*(void) const {
-			hxassertmsg(this->m_current_node_ != hxnull
+			hxassertf(this->m_current_node_ != hxnull
 				&& this->m_current_node_ != this->m_sentinel_, "bad_iter");
 			return *static_cast<const T_*>(m_current_node_);
 		}
 		/// Returns a const pointer to the current node.
 		hxconstexpr const T_* operator->(void) const {
-			hxassertmsg(this->m_current_node_ != hxnull
+			hxassertf(this->m_current_node_ != hxnull
 				&& this->m_current_node_ != this->m_sentinel_, "bad_iter");
 			return static_cast<const T_*>(m_current_node_);
 		}
@@ -174,13 +174,13 @@ public:
 		hxconstexpr iterator operator--(int);
 		/// Returns a mutable reference to the current node.
 		hxconstexpr T_& operator*(void) const {
-			hxassertmsg(this->m_current_node_ != hxnull
+			hxassertf(this->m_current_node_ != hxnull
 				&& this->m_current_node_ != this->m_sentinel_, "bad_iter");
 			return *static_cast<T_*>(this->m_current_node_);
 		}
 		/// Returns a mutable pointer to the current node.
 		hxconstexpr T_* operator->(void) const {
-			hxassertmsg(this->m_current_node_ != hxnull
+			hxassertf(this->m_current_node_ != hxnull
 				&& this->m_current_node_ != this->m_sentinel_, "bad_iter");
 			return static_cast<T_*>(this->m_current_node_);
 		}

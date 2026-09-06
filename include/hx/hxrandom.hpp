@@ -43,7 +43,7 @@ public:
 	T_ range(T_ base_, T_ size_) {
 		// Use double parameters if you need a bigger size. An emulated
 		// floating point multiply is faster and more stable than integer modulo.
-		hxassertmsg(static_cast<float>(size_) < float{0x01000000u},
+		hxassertf(static_cast<float>(size_) < float{0x01000000u},
 			"low_precision %f", static_cast<float>(size_)); // 0x1p24f
 		return base_ + static_cast<T_>(static_cast<float>(size_) * this->f01());
 	}
@@ -53,21 +53,21 @@ public:
 	double range(double base_, double size_) {
 		// Use `uint64_t` parameters if you need a bigger size. An emulated
 		// floating point multiply is faster and more stable than integer modulo.
-		hxassertmsg(size_ < double{0x20000000000000ll}, "low_precision %f", size_); // 0x1p53
+		hxassertf(size_ < double{0x20000000000000ll}, "low_precision %f", size_); // 0x1p53
 		return base_ + size_ * this->d01();
 	}
 
 	/// int64_t version. Negative or zero size is undefined.
 	hxattr_nodiscard hxinline hxconstexpr
 	int64_t range(int64_t base_, int64_t size_) {
-		hxassertmsg(size_ > 0, "bad_range %zd", static_cast<hxsize_t>(size_));
+		hxassertf(size_ > 0, "bad_range %zd", static_cast<hxsize_t>(size_));
 		return base_ + static_cast<int64_t>(this->u64() % static_cast<uint64_t>(size_));
 	}
 
 	/// uint64_t version. Zero size is undefined.
 	hxattr_nodiscard hxinline hxconstexpr
 	uint64_t range(uint64_t base_, uint64_t size_) {
-		hxassertmsg(size_ != 0u, "bad_range");
+		hxassertf(size_ != 0u, "bad_range");
 		return base_ + this->u64() % size_;
 	}
 

@@ -70,7 +70,7 @@ hxattr_cold unsigned long hxconsole_strtoul_(const char* str, char** next, unsig
 	const char* p = str;
 	while(hxisspace(*p)) { ++p; }
 	if(*p == '-') {
-		hxassertmsg(*next == const_cast<char*>(str), "sys_err");
+		hxassertf(*next == const_cast<char*>(str), "sys_err");
 		return 0;
 	}
 
@@ -85,7 +85,7 @@ hxattr_cold unsigned long long hxconsole_strtoull_(const char* str, char** next)
 	const char* p = str;
 	while(hxisspace(*p)) { ++p; }
 	if(*p == '-') {
-		hxassertmsg(*next == const_cast<char*>(str), "sys_err");
+		hxassertf(*next == const_cast<char*>(str), "sys_err");
 		return 0;
 	}
 
@@ -150,7 +150,7 @@ hxattr_cold hxconsole_command_table& hxconsole_commands_(void) {
 // hxconsole_register_ is internal only.
 hxattr_cold void hxdetail_::hxconsole_register_(hxconsole_hash_table_node_* node) {
 	hxconsole_command_table& commands = hxconsole_commands_();
-	hxassertmsg(node->hash_key().str_, "bad_arg");
+	hxassertf(node->hash_key().str_, "bad_arg");
 	if(commands.replace(node)) {
 		hxlog_handler(hxlog_level_warning, "command_reregistered %s\n", node->hash_key().str_);
 	}
@@ -241,7 +241,7 @@ hxattr_cold bool hxconsole_exec_file(hxfile& file) {
 	while(result) {
 		const size_t want = HX_MAX_LINE - 1u - carried;
 		const size_t got = file.read(line_buf + carried, want, want);
-		hxassertmsg(got <= want, "read_overrun got %zu want %zu", got, want);
+		hxassertf(got <= want, "read_overrun got %zu want %zu", got, want);
 
 		// The carried bytes are already known not to contain a newline.
 		char* line_begin = line_buf;

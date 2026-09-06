@@ -34,7 +34,7 @@ hxtest_object_fixture::hxtest_object_fixture(void) :
 		m_value_construct(0),
 		m_check_stats_called(false),
 		m_next_ticket(100u) {
-	hxassertmsg(hxs_object_current == hxnull, "sys_err");
+	hxassertf(hxs_object_current == hxnull, "sys_err");
 	hxs_object_current = this;
 }
 
@@ -174,7 +174,7 @@ hxtest_object::~hxtest_object(void) {
 }
 
 void hxtest_object::operator=(const hxtest_object& x) {
-	hxassertmsg(this != &x, "self_assign");
+	hxassertf(this != &x, "self_assign");
 	hxassert_always(x.m_state == hxtest_object_state::valid, "copy_from_bad");
 	hxassert_always(this->m_state == hxtest_object_state::valid
 		|| this->m_state == hxtest_object_state::moved, "copy_to_dead");
@@ -185,7 +185,7 @@ void hxtest_object::operator=(const hxtest_object& x) {
 }
 
 hxtest_object& hxtest_object::operator=(hxtest_object&& x) noexcept {
-	hxassertmsg(this != &x, "self_assign");
+	hxassertf(this != &x, "self_assign");
 	hxassert_always(x.m_state == hxtest_object_state::valid, "move_from_bad");
 	hxassert_always(this->m_state == hxtest_object_state::valid
 		|| this->m_state == hxtest_object_state::moved, "move_to_dead");

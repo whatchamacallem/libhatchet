@@ -104,7 +104,7 @@ public:
 	bool operator||(const hxtest_object&) = delete;
 private:
 	explicit hxtest_iterator_api_base_t(hxtest_object* pointer) : m_pointer(pointer) {
-		hxassertmsg(m_pointer != hxnull, "sys_err");
+		hxassertf(m_pointer != hxnull, "sys_err");
 	}
 
 	friend derived_t;

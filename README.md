@@ -17,7 +17,7 @@ targets such as DSPs, FPGAs, ASICs and WebAssembly. When a modern toolchain is
 unavailable it falls back to a C++11 compiler and C99 libraries, and it never
 depends on the C++ standard library. If you have a low-level mindset, the
 developer experience is better than with the standard library. Template
-instantiation errors are easier to read, `hxassertmsg` formats your assert
+instantiation errors are easier to read, `hxassertf` formats your assert
 message before setting a breakpoint for you, and there is nothing unnecessary to
 step through in the debugger.
 
@@ -215,7 +215,7 @@ are also available.
   detection, and it pulls in `hxsettings.h` and `hxmemory_manager.h`, which
   cannot be included directly.
 - Choose an `HX_HARDENING_MODE` on the compile line. `hxassert` and
-  `hxassertmsg` are active only at `DEBUG`, `hxassert_hard` at `STANDARD` and
+  `hxassertf` are active only at `DEBUG`, `hxassert_hard` at `STANDARD` and
   above, and `hxassert_always` in every mode. Null pointer checks only happen in
   `DEBUG`.
 - Log through `hxlog`, `hxlog_warning`, `hxlog_release` and `hxlog_console`.

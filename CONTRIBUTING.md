@@ -73,7 +73,7 @@ in `<hx/hxalgortims.hpp>`.
 
 Do not use C++ exceptions, RTTI or assume asserts are enabled. Check when adding
 includes whether they are redundant and write them as `<stdio.h>` not
-`<cstdio>`. Generously use `hxassertmsg` for debug asserts and `hxassert_hard`
+`<cstdio>`. Generously use `hxassertf` for debug asserts and `hxassert_hard`
 for release asserts. Declare and define functions (except destructors) with no
 args as `void x(void)` instead of `void x()`.
 
@@ -95,7 +95,7 @@ less qualified overloads and only document the const version.
 Do not use defensive programming or guard against mistakes. Never implement
 hypothetical safety guarantees. Unintended use cases need to be identified with
 asserts and fixed instead of guarded against. Compile errors are cheaper than
-debugging. Asserts are cheaper than debugging. Use `hxassertmsg` to document
+debugging. Asserts are cheaper than debugging. Use `hxassertf` to document
 preconditions and post conditions instead of null checks.
 
 Prefer wrapping C-style implementation details in C++ classes with normal

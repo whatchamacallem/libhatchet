@@ -337,7 +337,7 @@ hxattr_nodiscard constexpr T_ hxabs(T_ x_) { return (x_ < T_()) ? (T_() - x_) : 
 template<typename T_>
 hxattr_nodiscard constexpr T_ hxclamp(T_ x_, T_ minimum_, T_ maximum_) {
 #if HX_CPLUSPLUS >= 201402L
-	hxassertmsg(!(maximum_ < minimum_), "bad_span inversion");
+	hxassertf(!(maximum_ < minimum_), "bad_span inversion");
 #endif
 	return (x_ < minimum_) ? minimum_ : ((maximum_ < x_) ? maximum_ : x_);
 }

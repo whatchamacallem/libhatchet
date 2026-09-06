@@ -11,7 +11,7 @@ bool hxctest_libhatchet_h(void) {
 	hxlog_release("hxlog_release %d, ", 2);
 	hxlog_console("hxlog_console %d, ", 3);
 	hxlog_warning("hxlog_warning %d", 4);
-	hxassertmsg(1, "hxassertmsg val %d", 5);
+	hxassertf(1, "hxassertf val %d", 5);
 	hxassert(1 == 1);
 	hxassert_always(1.0, "hxassert_always val %f", 1.0f);
 	hxwarn(1, "not true");

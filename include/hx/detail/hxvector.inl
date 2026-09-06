@@ -121,7 +121,7 @@ hxinline hxattr_flatten auto hxvector<T_, capacity_>::and_then(
 
 template<hxvector_concept_ T_, hxsize_t capacity_>
 hxinline hxattr_flatten void hxvector<T_, capacity_>::operator=(const hxvector& x_) noexcept {
-	hxassertmsg(static_cast<const void*>(this) != static_cast<const void*>(&x_), "bad_ref");
+	hxassertf(static_cast<const void*>(this) != static_cast<const void*>(&x_), "bad_ref");
 	this->assign<const T_*>(x_.data(), x_.m_end_);
 }
 
@@ -129,13 +129,13 @@ template<hxvector_concept_ T_, hxsize_t capacity_>
 template<hxsize_t capacity_x_>
 hxinline hxattr_flatten void hxvector<T_, capacity_>::operator=(const hxvector<T_,
 		capacity_x_>& x_) noexcept {
-	hxassertmsg(static_cast<const void*>(this) != static_cast<const void*>(&x_), "bad_ref");
+	hxassertf(static_cast<const void*>(this) != static_cast<const void*>(&x_), "bad_ref");
 	this->assign<const T_*>(x_.data(), x_.end());
 }
 
 template<hxvector_concept_ T_, hxsize_t capacity_>
 hxinline hxattr_flatten void hxvector<T_, capacity_>::operator=(hxvector&& x_) noexcept {
-	hxassertmsg(static_cast<const void*>(this) != static_cast<const void*>(&x_), "bad_ref");
+	hxassertf(static_cast<const void*>(this) != static_cast<const void*>(&x_), "bad_ref");
 	this->swap(x_);
 }
 
@@ -174,7 +174,7 @@ template<hxvector_concept_ T_, hxsize_t capacity_>
 template<hxsize_t capacity_x_>
 hxinline hxattr_flatten void hxvector<T_, capacity_>::operator+=(
 		const hxvector<T_, capacity_x_>& x_) noexcept {
-	hxassertmsg(static_cast<const void*>(this) != static_cast<const void*>(&x_), "bad_ref");
+	hxassertf(static_cast<const void*>(this) != static_cast<const void*>(&x_), "bad_ref");
 	const hxsize_t size_x_ = x_.size();
 	hxassert_hard(this->size() + size_x_ <= this->capacity(), "stack_full %zd %zd %zd",
 		this->size(), size_x_, this->capacity());
@@ -190,7 +190,7 @@ template<hxvector_concept_ T_, hxsize_t capacity_>
 template<hxsize_t capacity_x_>
 hxinline hxattr_flatten void hxvector<T_, capacity_>::operator+=(
 		hxvector<T_, capacity_x_>&& x_) noexcept {
-	hxassertmsg(static_cast<const void*>(this) != static_cast<const void*>(&x_), "bad_ref");
+	hxassertf(static_cast<const void*>(this) != static_cast<const void*>(&x_), "bad_ref");
 	const hxsize_t size_x_ = x_.size();
 	hxassert_hard(this->size() + size_x_ <= this->capacity(), "stack_full %zd %zd %zd",
 		this->size(), size_x_, this->capacity());
@@ -656,7 +656,7 @@ hxinline hxattr_flatten void hxvector<T_, capacity_>::reserve(hxsize_t size_,
 	if(size_ > this->capacity()) {
 		// reserve_storage asserts unallocated or size is equivalent.
 		this->reserve_storage(size_, allocator_, alignment_);
-		hxassertmsg(m_end_ == hxnull, "sys_err");
+		hxassertf(m_end_ == hxnull, "sys_err");
 		m_end_ = this->data();
 	}
 }
