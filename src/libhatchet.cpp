@@ -4,7 +4,7 @@
 
 #include "../include/hx/libhatchet.h"
 #include "../include/hx/hxfile.hpp"
-#include "../include/hx/hxalgorithm.hpp"
+#include "../include/hx/hxrange.hpp"
 
 #include <stdio.h>
 #if defined HX_USE_FLOATING_POINT_TRAPS

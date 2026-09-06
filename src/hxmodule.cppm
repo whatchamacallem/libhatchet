@@ -71,7 +71,7 @@ module;
 export module hx;
 export {
 #include "../include/hx/libhatchet.h"
-#include "../include/hx/hxalgorithm.hpp"
+#include "../include/hx/hxrange.hpp"
 #include "../include/hx/hxallocator.hpp"
 #include "../include/hx/hxarray.hpp"
 #include "../include/hx/hxvector.hpp"

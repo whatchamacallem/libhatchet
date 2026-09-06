@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-#include <hx/hxalgorithm.hpp>
+#include <hx/hxrange.hpp>
 #include <hx/hxflat_map.hpp>
 #include <hx/hxrandom.hpp>
 #include <hx/hxsort.hpp>

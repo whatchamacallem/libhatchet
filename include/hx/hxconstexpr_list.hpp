@@ -16,7 +16,7 @@
 #error Header does not provide macros alone.
 #endif
 
-#include "hxalgorithm.hpp"
+#include "hxrange.hpp"
 #include "hxptr.hpp"
 #include "hxutility.h"
 

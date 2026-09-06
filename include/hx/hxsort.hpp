@@ -17,7 +17,7 @@
 #endif
 
 #include "hxkey.hpp"
-#include "hxalgorithm.hpp"
+#include "hxrange.hpp"
 
 HX_NS_BEGIN_
 

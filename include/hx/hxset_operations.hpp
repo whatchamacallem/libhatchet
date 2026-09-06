@@ -9,10 +9,10 @@
 /// `T::operator==(const T&)` are used. The other relational operators are not
 /// used.
 ///
-/// See `hxalgorithm.hpp` for range algorithms. See `hxsort.hpp` for sorting
+/// See `hxrange.hpp` for range algorithms. See `hxsort.hpp` for sorting
 /// algorithms including `hxinsertion_sort`, `hxheapsort` and `hxsort`.
 
-#include "hxalgorithm.hpp"
+#include "hxrange.hpp"
 
 // HX_USE_MACROS_WITH_MODULE allows including macros alongside the module.
 #if HX_USE_MACROS_WITH_MODULE

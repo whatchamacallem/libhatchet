@@ -81,7 +81,7 @@ unused except when initializing system allocators.
   They generally use the same names as the standard.
 
 - **Algorithms**: The implementation uses the `__restrict` keyword wherever
-  appropriate. See `<hx/hxalgorithm.hpp>` for the core range algorithms. The
+  appropriate. See `<hx/hxrange.hpp>` for the core range algorithms. The
   contents of `<hx/hxsort.hpp>` and `<hx/hxset_operations.hpp>` were moved out
   of that header to improve compile times. Prefer sorting with
   `<hx/hxradix_sort.hpp>` when you want O(n) sorting. This codebase tries not to
@@ -294,7 +294,7 @@ error values and returned together, instead of ad hoc error checking.
 
 Differences from the standard versions are listed.
 
-- `hxalgorithm.hpp` provides searching and set utilities taking callables:
+- `hxrange.hpp` provides searching and set utilities taking callables:
   `hxall_of`, `hxany_of`, `hxbinary_search`, `hxcount_if`, `hxexchange`,
   `hxfind_if`, `hxfor_each`, `hxlower_bound`, `hxmerge`, `hxminmax`,
   `hxset_difference`, `hxset_intersection`, `hxset_union`, `hxunique` and

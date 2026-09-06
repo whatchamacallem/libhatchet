@@ -14,7 +14,7 @@
 #endif
 
 #include "hxallocator.hpp"
-#include "hxalgorithm.hpp"
+#include "hxrange.hpp"
 #include "hxinitializer_list.hpp"
 #include "hxsort.hpp"
 
@@ -39,7 +39,7 @@ concept hxarray_concept_ = requires(T_& x_) {
 /// errors and debug symbols that use plain C++ pointers instead. There are
 /// exhaustive asserts. `hxarray` uses the `hxkey_less_t` and `hxkey_equal_t`
 /// callables. They default to using operators `<` and `==`. See
-/// `hxalgorithm.hpp` for callable versions of the algorithms here.
+/// `hxrange.hpp` for callable versions of the algorithms here.
 ///
 /// Unlike `hxvector`, `hxarray` always has a fixed size equal to its capacity.
 /// Size-changing operations are not provided. Use `hxvector` when dynamic
@@ -96,7 +96,7 @@ public:
 	/// Constructs by copying elements from a range referenced by an lvalue.
 	/// - `range` : A range of exactly `capacity` elements.
 	template<hxrange_concept_ range_t_>
-	requires(!hxis_same<hxremove_cvref_t<range_t_>, hxarray>())
+	requires(!hxis_same<hxremove_cvref_t<range_t_>, hxarray<T_, capacity_> >())
 	explicit hxarray(range_t_& range_) noexcept;
 
 	/// Constructs by moving elements from a temporary range. This overload
@@ -105,7 +105,7 @@ public:
 	/// - `range` : A temporary range of exactly `capacity` elements.
 	template<hxrange_concept_ range_t_>
 	requires(!hxis_lvalue_reference<range_t_>()
-			&& !hxis_same<hxremove_cvref_t<range_t_>, hxarray>())
+			&& !hxis_same<hxremove_cvref_t<range_t_>, hxarray<T_, capacity_> >())
 	explicit hxarray(range_t_&& range_) noexcept;
 #endif
 
