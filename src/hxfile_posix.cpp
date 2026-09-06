@@ -82,7 +82,7 @@ bool hxfile::open(uint8_t mode, const char* filename, ...) {
 }
 
 bool hxfile::openv_(uint8_t mode, const char* filename, va_list args) {
-	hxassert(m_file_pimpl_ < 0);
+	hxassertmsg(m_file_pimpl_ < 0, "sys_err");
 	m_open_mode_ = mode;
 
 	int flags = 0;

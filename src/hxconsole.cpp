@@ -70,7 +70,7 @@ hxattr_cold unsigned long hxconsole_strtoul_(const char* str, char** next, unsig
 	const char* p = str;
 	while(hxisspace(*p)) { ++p; }
 	if(*p == '-') {
-		hxassert(*next == const_cast<char*>(str));
+		hxassertmsg(*next == const_cast<char*>(str), "sys_err");
 		return 0;
 	}
 
@@ -85,7 +85,7 @@ hxattr_cold unsigned long long hxconsole_strtoull_(const char* str, char** next)
 	const char* p = str;
 	while(hxisspace(*p)) { ++p; }
 	if(*p == '-') {
-		hxassert(*next == const_cast<char*>(str));
+		hxassertmsg(*next == const_cast<char*>(str), "sys_err");
 		return 0;
 	}
 
