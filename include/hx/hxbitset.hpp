@@ -18,9 +18,10 @@
 
 HX_NS_BEGIN_
 
-/// `hxbitset` - A fixed-size bitset stored as an array of `size_t` words with no
-/// heap allocation.
-/// - `bit_count` : The number of bits in the `hxbitset`. Must be greater than zero.
+/// `hxbitset` - A fixed-size bitset stored as an array of `size_t` words with
+/// no heap allocation.
+/// - `bit_count` : The number of bits in the `hxbitset`. Must be greater than
+///   zero.
 template<size_t bit_count_>
 class hxbitset {
 public:
@@ -40,7 +41,8 @@ public:
 	/// first within each `size_t` word and low word first across words. E.g.
 	/// bytes pack 8-to-a-word on a 64-bit `size_t`. `sizeof(size_t)` must be a
 	/// multiple of `sizeof(int_t)` and the list length must equal `bytes() /
-	/// sizeof(int_t)`.
+	/// sizeof(int_t)`. Any packed bits beyond `bit_count` in the final word
+	/// must be zero.
 	/// - `x` : A `std::initializer_list<int_t>` of packed elements.
 	template<typename int_t_>
 	hxconstexpr hxbitset(std::initializer_list<int_t_> x_);
@@ -92,11 +94,10 @@ public:
 	/// Returns the size of the underlying storage in bytes.
 	hxattr_nodiscard static hxinline constexpr size_t bytes(void) { return s_words_ * sizeof(size_t); }
 
-	/// Returns a pointer to the underlying word storage.
-	hxattr_nodiscard hxinline hxconstexpr size_t* data(void) { return m_data_; }
-
 	/// Returns a const pointer to the underlying word storage.
 	hxattr_nodiscard hxinline hxconstexpr const size_t* data(void) const { return m_data_; }
+
+	hxattr_nodiscard hxinline hxconstexpr size_t* data(void) { return m_data_; }
 
 	/// Flips all bits.
 	hxconstexpr hxbitset& flip(void);
@@ -104,12 +105,6 @@ public:
 	/// Flips the bit at position `pos`.
 	/// - `pos` : Bit index that must be less than `bit_count`.
 	hxconstexpr hxbitset& flip(size_t pos_);
-
-	/// Copies `len` bytes from `src` into the `hxbitset` storage. Missing bytes
-	/// or trailing bits beyond `bit_count` are masked to zero after the copy.
-	/// - `src` : Pointer to the source data.
-	/// - `len` : Number of bytes to copy. Must not exceed `bytes()`.
-	void load(const void* src_, size_t len_);
 
 	/// Returns `true` if no bits are set.
 	hxattr_nodiscard hxinline hxconstexpr bool none(void) const { return !this->any(); }

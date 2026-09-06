@@ -139,7 +139,6 @@ TEST(hxtest_test, double_eq) {
 }
 
 TEST(hxtest_test, all_tests) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	hxlog_warning("EXPECTING_TEST_WARNINGS");
 	EXPECT_TRUE(hxctest_all());
 }
@@ -153,7 +152,7 @@ TEST(hxtest_error_handling, fail) {
 	hxlog_warning("EXPECTING_TEST_FAILURE");
 	SUCCEED();
 	FAIL();
-	hxassert_always(0, "internal_error FAIL() did not return");
+	hxassert_always(0, "sys_err FAIL() kept going");
 }
 
 TEST(hxtest_error_handling, add_failure) {

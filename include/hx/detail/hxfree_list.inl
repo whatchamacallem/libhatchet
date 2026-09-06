@@ -8,7 +8,7 @@
 #endif
 
 #ifndef HX_DOXYGEN_PARSER
-HX_BEGIN_INL_
+HX_INL_BEGIN_
 
 template<hxfree_list_concept_ T_, hxsize_t capacity_>
 hxinline hxattr_flatten hxfree_list<T_, capacity_>::hxfree_list(void) noexcept {
@@ -31,19 +31,19 @@ hxinline hxattr_flatten hxfree_list<T_, capacity_>::hxfree_list(hxfree_list&& x_
 
 template<hxfree_list_concept_ T_, hxsize_t capacity_>
 hxinline hxattr_flatten hxfree_list<T_, capacity_>::~hxfree_list(void) noexcept {
-	hxassertmsg(m_size_ == this->capacity(), "hxfree_list destroyed with unreleased slots");
+	hxassertmsg(m_size_ == this->capacity(), "hxfree_list destroyed with unreleased slots %zd cap %zd", m_size_, this->capacity());
 }
 
 template<hxfree_list_concept_ T_, hxsize_t capacity_>
 template<typename... args_t_>
 hxinline hxattr_flatten hxptr<T_, typename hxfree_list<T_, capacity_>::deleter_t>
 		hxfree_list<T_, capacity_>::allocate(args_t_&&... args_) noexcept {
-	hxassert_hard(m_free_head_ != hxnull, "hxfree_list is empty");
+	hxassert_hard(m_free_head_ != hxnull, "hxfree_list empty cap %zd", this->capacity());
 	slot_* const s_ = m_free_head_;
 	m_free_head_ = s_->next_;
 	--m_size_;
-	T_* const p_ = ::new(static_cast<void*>(&s_->value_)) T_(hxforward<args_t_>(args_)...);
-	return hxptr<T_, deleter_t>(p_, deleter_t(*this));
+	T_* const ptr_ = ::new(static_cast<void*>(&s_->value_)) T_(hxforward<args_t_>(args_)...);
+	return hxptr<T_, deleter_t>(ptr_, deleter_t(*this));
 }
 
 template<hxfree_list_concept_ T_, hxsize_t capacity_>
@@ -52,24 +52,26 @@ hxinline hxattr_flatten hxsize_t hxfree_list<T_, capacity_>::capacity(void) cons
 }
 
 template<hxfree_list_concept_ T_, hxsize_t capacity_>
-hxinline hxattr_flatten bool hxfree_list<T_, capacity_>::is_allocator(const T_* p_) const noexcept {
+hxinline hxattr_flatten bool hxfree_list<T_, capacity_>::is_allocator(const T_* ptr_) const noexcept {
 	// A single unsigned range check that is also false for null.
-	const uintptr_t offset_ = reinterpret_cast<uintptr_t>(p_)
+	const uintptr_t offset_ = reinterpret_cast<uintptr_t>(ptr_)
 		- reinterpret_cast<uintptr_t>(this->data());
 	return offset_ < static_cast<uintptr_t>(this->capacity()) * sizeof(T_);
 }
 
 template<hxfree_list_concept_ T_, hxsize_t capacity_>
 template<typename deleter_t_>
-hxinline hxattr_flatten bool hxfree_list<T_, capacity_>::is_allocator(const hxptr<T_, deleter_t_>& ptr_) const noexcept {
+hxinline hxattr_flatten bool
+		hxfree_list<T_, capacity_>::is_allocator(const hxptr<T_, deleter_t_>& ptr_) const noexcept {
 	return this->is_allocator(ptr_.get());
 }
 
 template<hxfree_list_concept_ T_, hxsize_t capacity_>
-hxinline hxattr_flatten void hxfree_list<T_, capacity_>::release(T_* p_) noexcept {
-	hxassertmsg(this->is_allocator(p_), "invalid_pointer");
-	p_->T_::~T_();
-	slot_* const s_ = reinterpret_cast<slot_*>(p_);
+hxinline hxattr_flatten void hxfree_list<T_, capacity_>::release(T_* ptr_) noexcept {
+	hxassertmsg(this->is_allocator(ptr_), "bad_ptr %zx",
+		static_cast<size_t>(reinterpret_cast<uintptr_t>(ptr_)));
+	ptr_->T_::~T_();
+	slot_* const s_ = reinterpret_cast<slot_*>(ptr_);
 #if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
 	::memset(static_cast<void*>(s_), 0xcd, sizeof(slot_));
 #endif
@@ -80,14 +82,15 @@ hxinline hxattr_flatten void hxfree_list<T_, capacity_>::release(T_* p_) noexcep
 
 template<hxfree_list_concept_ T_, hxsize_t capacity_>
 template<typename deleter_t_>
-hxinline hxattr_flatten void hxfree_list<T_, capacity_>::release(hxptr<T_, deleter_t_>&& ptr_) noexcept {
+hxinline hxattr_flatten void
+		hxfree_list<T_, capacity_>::release(hxptr<T_, deleter_t_>&& ptr_) noexcept {
 	this->release(ptr_.release());
 }
 
 template<hxfree_list_concept_ T_, hxsize_t capacity_>
 hxinline hxattr_flatten void hxfree_list<T_, capacity_>::reserve(hxsize_t size_,
 		hxsystem_allocator_t allocator_, hxalignment_t alignment_) noexcept {
-	hxassert_hard(this->capacity() == 0, "reserve can not resize");
+	hxassert_hard(this->capacity() == 0, "bad_reserve already sized %zd", this->capacity());
 	this->reserve_storage(size_, allocator_, alignment_);
 	this->enqueue_all_(size_);
 }
@@ -102,8 +105,8 @@ hxinline hxattr_flatten hxptr<T_, typename hxfree_list<T_, capacity_>::deleter_t
 	slot_* const s_ = m_free_head_;
 	m_free_head_ = s_->next_;
 	--m_size_;
-	T_* const p_ = ::new(static_cast<void*>(&s_->value_)) T_(hxforward<args_t_>(args_)...);
-	return hxptr<T_, deleter_t>(p_, deleter_t(*this));
+	T_* const ptr_ = ::new(static_cast<void*>(&s_->value_)) T_(hxforward<args_t_>(args_)...);
+	return hxptr<T_, deleter_t>(ptr_, deleter_t(*this));
 }
 
 template<hxfree_list_concept_ T_, hxsize_t capacity_>
@@ -119,5 +122,5 @@ hxinline hxattr_flatten void hxfree_list<T_, capacity_>::enqueue_all_(hxsize_t c
 	m_size_ = count_;
 }
 
-HX_END_INL_
+HX_INL_END_
 #endif // HX_DOXYGEN_PARSER

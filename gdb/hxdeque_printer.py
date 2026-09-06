@@ -60,12 +60,13 @@ class hxdeque_printer:
 		count: int = (tail - head) % wrap
 
 		targ1: gdb.Value = self.val.type.template_argument(1)
+		type_name: str = re.sub(r'(\w+|\(anonymous namespace\))::', '', f'{self.val.type.strip_typedefs()}')
 		capacity: int
 		data_addr: int
 		if targ1 == 0:
 			capacity = int(self.val['m_capacity_'])
 			if capacity <= 0:
-				self._summary = '<unallocated>'
+				self._summary = f'[0/0] {type_name}'
 				return self._summary
 			data_addr = int(self.val['m_data_'])
 		else:
@@ -82,8 +83,7 @@ class hxdeque_printer:
 		self._elem_type = elem_type
 		self._ok = True
 
-		basename: str = re.sub(r'^((\w+|\(anonymous namespace\))::)+', '', f'{elem_type}')
-		self._summary = f'[{count}/{capacity}] {basename}'
+		self._summary = f'[{count}/{capacity}] {type_name}'
 		return self._summary
 
 	def to_string(self) -> str:
@@ -98,6 +98,8 @@ class hxdeque_printer:
 			self._parse()
 			if not self._ok:
 				return
+			allocator_type: gdb.Type = self.val.type.fields()[0].type
+			yield ('hxallocator', self.val.cast(allocator_type))
 			for i in range(self._count):
 				slot: int = (self._head + i) & self._mask
 				addr: int = self._data_addr + slot * self._elem_type.sizeof

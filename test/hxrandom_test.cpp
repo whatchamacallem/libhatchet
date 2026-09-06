@@ -9,11 +9,7 @@
 HX_NS_USE
 
 #if !defined _MSC_VER && !defined __wasm__
-static_assert(sizeof(size_t) != 4 || (
-		sizeof(hxrandom) == 8u),
-	"hxrandom must hold exactly one uint64_t of state and nothing more");
-static_assert(sizeof(size_t) != 8 || (
-		sizeof(hxrandom) == 8u),
+static_assert(sizeof(hxrandom) == 8u,
 	"hxrandom must hold exactly one uint64_t of state and nothing more");
 #endif
 
@@ -184,7 +180,6 @@ TEST(hxrandom_test, range) {
 }
 
 TEST(hxrandom_test, histogram) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	hxrandom rng(40000);
 	constexpr int buckets = 1 << 10;
 	constexpr int iters = 1000;
@@ -199,7 +194,6 @@ TEST(hxrandom_test, histogram) {
 }
 
 TEST(hxrandom_test, histogram_f) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	hxrandom rng(40000);
 	constexpr int buckets = 1000;
 	constexpr int iters = 1000;
@@ -216,7 +210,7 @@ TEST(hxrandom_test, histogram_f) {
 namespace {
 
 consteval bool hxtest_hxrandom_consteval_range(void) {
-	hxrandom rng(42u);
+	hxrandom rng(31u);
 	for(int i_ = 0; i_ < 16; ++i_) {
 		const uint64_t v_ = rng.u64();
 		if(v_ == 0u) {

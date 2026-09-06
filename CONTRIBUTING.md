@@ -5,13 +5,8 @@
 "Tradition is not the worship of ashes. Tradition is the preservation of fire."
 
 CONTRIBUTING.md is symbolically linked to by AGENTS.md and CLAUDE.md. It reads
-like it was written for a robot because it was.
-
-The `README.md` document contains a guide to the entire project. Read the entire
-`## Project Structure` section for the differences between the standard and the
-libhatchet implementation before writing new code. Prefer methods that have
-already been added to a class over using the equivalent in
-`<hx/hxalgortims.hpp>`.
+like it was written for a robot because it was. Humans are invited to skim this
+document before sending patches.
 
 ## AI Agents
 
@@ -46,10 +41,24 @@ assumption is being made that modifies the interpretation of the prompt then
 that should be output. Otherwise, if you can understand existing context well
 enough to analyze it correctly as is then any analysis should not be output.
 
+When asked to test the build, e.g. by being sent the word "build" on its own,
+run the following scripts in order. Try to preserve the intention of the
+unstaged changes (and possibly earlier breaking commits) while fixing all errors
+found.
+
+```sh
+debugbuild.sh --run
+testcoverage.sh
+teststrip.sh
+testcmake.sh
+```
+
+When asked to "build all" then use `testall.sh` instead.
+
 ## Style Guide
 
-Add code like you are adding weight to an airplane. Use K&R style. Use tabs of
-size 4 instead of spaces in all text files.
+"Add code and prose like you are adding weight to an airplane." Use K&R style.
+Use size 4 tabs instead of spaces in all text files.
 
 This is a bespoke C17/C++23 alternative to the C++ standard library. Never use
 the `std` namespace. The ranges library should not be implemented and do not go
@@ -58,6 +67,9 @@ same name as symbols in the standard library are generally functionally
 equivalent. E.g. use `hxforward` instead of `std::forward`. Standard
 functionality is often available. Prefer `hxsize_t` which is an alias for
 `ptrdiff_t` for sizes and array indexing as it is advantageous to the optimizer.
+
+Prefer methods that have already been added to a class over using the equivalent
+in `<hx/hxalgortims.hpp>`.
 
 Do not use C++ exceptions, RTTI or assume asserts are enabled. Check when adding
 includes whether they are redundant and write them as `<stdio.h>` not
@@ -73,7 +85,12 @@ when they are not modified. Do not use `mutable` except for locking.
 Do not add unrequested private helper methods to a class. However, prefer
 delegating constructors over repeating field initializers. Do not write code
 that requires unnecessary traversal of data structures in the debugger watch
-window.
+window. Don't use `hxforward<...>(self)` unless it actually matters whether
+`self` is an lvalue or rvalue. Use `&*x` not `x.operator->()`. `hxdetail_` is a
+namespace that indicates a symbol is defined in a header with a name ending in
+the word "detail." `hxutility.hpp` is not one of those headers. Do not forward
+declare types solely for use in friends clauses. Place `const` overloads before
+less qualified overloads and only document the const version.
 
 Do not use defensive programming or guard against mistakes. Never implement
 hypothetical safety guarantees. Unintended use cases need to be identified with
@@ -85,6 +102,7 @@ Prefer wrapping C-style implementation details in C++ classes with normal
 operators so that C++ object models are used for interfaces. However, use
 `hxarray`/`hxvector` with a static capacity instead of large C-style arrays. Use
 template wrappers for type safety while avoiding the associated code bloat.
+Mismatched capacity must be allowed by templates wherever possible.
 
 Separate code onto individual lines when it helps step through expressions
 individually in the debugger. Use references instead of pointers when a pointer
@@ -113,24 +131,26 @@ that do not fit on a single line within 100 chars.
 
 ## Naming
 
-All symbols are `snake_case`. Except shell variables, feature test macros and
-certain preprocessor symbols are `SCREAMING_SNAKE_CASE`. Do not use abbreviated
-names except for iterators. Always use `class` instead of `struct` except in C
-code and template metaprogramming. Never use the word "member" and instead use
-"fields" and "methods."
+All symbols are `snake_case`. Except all shell variables, all feature test
+macros and certain preprocessor symbols are `SCREAMING_SNAKE_CASE`. Do not use
+abbreviated names. Always use `class` instead of `struct` except in C code and
+template metaprogramming. Never use the word "member" and instead use "fields"
+and "methods."
 
 Classes, structs and functions begin with `hx` and not `hx_`. Template
 parameters are `snake_case` and end with `_t_`. `using` statements may publish
 template parameters and other types with an `_t` suffix (in violation of POSIX
 chapter 2, section 2.2.2). Function parameters and private fields end with an
 underscore and do not begin with `hx`. Private fields also begin with `m_`.
-Global variables start with `hxg_` and static or anonymous namespace variables
-start with `hxs_`. Prefix calls to the C standard library with `::` to indicate
-they are in the global namespace. Use `src_` and `dst_` for source and
-destination iterators.
+Const symbols start with `hxc_`, global symbols start with `hxg_` and static or
+anonymous namespace symbols start with `hxs_`. Prefix calls to the C standard
+library with `::` to indicate they are in the global namespace. Use `src_` and
+`dst_` for source and destination iterators. Const, global and static prefixes
+are not needed for symbols declared within a testcase.
 
 Use scoped enums for private symbols and unscoped enums for public symbols.
-Prefix all calls to methods in header files with `this->`.
+Prefix all calls to methods in header files with `this->`. Use `hxnil` instead
+of `std::null_ptr`.
 
 ## Optimization
 
@@ -146,6 +166,10 @@ Always use `hxmove` instead of split placement-new/operator= patterns in shift
 loops, since exceptions are disabled. Do not write ternary or other expressions
 that would inhibit RVO or NRVO. Do not write extra code to defend against small
 integer overflows in `size_t`, `ptrdiff_t` or `hxsize_t` calculations.
+
+Approach all performance instrumentation with a rigorous continuous improvement
+philosophy. If a testcase starts using more resources then that must be
+diagnosed and defended instead of waved off as expected test-value drift.
 
 ## Testing
 
@@ -163,8 +187,7 @@ builtins as this code is intended to compile on any C++ compiler. All test
 symbols that show up in the linker map must contain `hx` and `test`.
 
 Do not write test suites until requested as the design may not be finalized. Do
-not write redundant tests. Omit comments in test code unless the code is very
-hard to follow. Ignore spell checker errors. Use American English.
+not write redundant tests. Ignore spell checker errors. Use American English.
 
 All tests go in the `test` directory and are GoogleTest-style tests, written to
 kill off-by-one mutants. Enumerate the mutants an off-by-one introduces:
@@ -175,7 +198,7 @@ choose the exact boundary input where it diverges from the original and write a
 test using the appropriate assertion (`EXPECT_*`, `ASSERT_*`) that fails on the
 mutant and passes on the original. Skip equivalent mutants and do not write
 identical tests for them. However, testing for as many mutants as possible is
-important. Test names are the only test documentation, add no other comments.
+important. Test names are the only testcase documentation, add no other comments.
 
 Prefer `EXPECT_*` macros to `ASSERT_*` macros unless the failure looks like it
 will cause memory corruption or other failures in subsequent tests. Keep all
@@ -192,13 +215,19 @@ and `// GCOVR_EXCL_STOP` to exclude uncallable lines. Exclusions should only be
 required in test coverage. Deleting unused overloads is better than excluding
 them.
 
+Use `x_` for an arbitrary single parameter and `a_` and `b_` for arbitrary
+double parameters. Arbitrary iterator args are named `it_`. The arbitrary
+pointer name is `ptr_`. Do not use 42 in tests. Use a sequence starting with 31
+for arbitrary values. The hashed value of `hxnull`/`hxnil` is also
+`hxhash_t{31u}`.
+
 ## Debugging
 
 Debug non-obvious test failures, asserts, and crashes with GDB. When debugging,
 build with `debugbuild.sh` without `--run`. Then run GDB in batch mode passing
-`-x .gdbinit` explicitly to load pretty printers, with `-ex "run"` and `-ex
-"bt"` to capture the backtrace, and `build/hxtest` as the target with no args
-(do not use `--gtest_filter`). Use the `--cd` arg to specify the `build`
+`-x .gdbinit` explicitly to load pretty printers, with `-ex "run"` and
+`-ex "bt"` to capture the backtrace, and `build/hxtest` as the target with no
+args (do not use `--gtest_filter`). Use the `--cd` arg to specify the `build`
 directory as the working directory to avoid polluting the unstaged changes. Both
 `hxassert()` and `hxbreakpoint()` will raise `SIGTRAP` and can be added
 temporarily to stop execution at a specific point. Automatic core dumps are
@@ -222,8 +251,8 @@ routine invariant then do not document it at all.
 Remove trailing `_` from symbols in doxygen comments and leave them in regular
 comments and follow existing style otherwise. Do not use `;` or `-` in
 documentation unless it is part of a code block or the doxygen formatting shown
-below. Keep all documentation ASCII. Use `/// \cond HIDDEN` blocks around all
-internal symbols.
+below. Uses ASCII unless otherwise requested. Use `/// \cond HIDDEN` blocks
+around all internal symbols.
 
 Wrap all documentation except parameter documentation at 80 columns. Begin
 function documentation by describing the return value on the stack if not
@@ -243,8 +272,8 @@ but instead places them near the top of the file to be immediately visible to
 reviewers. E.g. at most one anonymous namespace at the top of a translation unit
 should normally be needed to hold all local definitions.
 
-Do not add section dividers e.g. `// ------`. All text files must end with a
-single `\n`.
+Add section dividers e.g. `// ------` by request only. All text files must end
+with a single `\n`.
 
 ## Project Structure
 

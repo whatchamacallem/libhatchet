@@ -15,12 +15,17 @@ from typing import Iterator, Optional, Set, Tuple
 #		intptr_t m_list_link_;  // prev XOR next
 #	};
 #
-#	template<typename node_t_, typename deleter_t_=hxdefault_delete>
-#	class hxlist : private deleter_t_ {
+#	class hxlist_base_ {
 #		// ...
 #		hxsize_t     m_size_;
 #		hxlist_node  m_sentinel_;  // m_sentinel_.m_list_link_ == tail XOR front
 #		hxlist_node* m_tail_;      // points to last node, or &m_sentinel_ when empty
+#	};
+#
+#	template<typename node_t_, typename deleter_t_=hxdefault_delete>
+#	class hxlist : private deleter_t_ {
+#		// ...
+#		hxlist_base_ m_base_;
 #	};
 #
 
@@ -54,23 +59,25 @@ class hxlist_printer:
 		if self._summary is not None:
 			return self._summary
 
-		if self.val['m_size_'].is_optimized_out:
+		base: gdb.Value = self.val['m_base_']
+
+		if base['m_size_'].is_optimized_out:
 			self._summary = '<optimized out>'
 			return self._summary
 
-		size: int = int(self.val['m_size_'])
+		size: int = int(base['m_size_'])
 		node_type: gdb.Type = self.val.type.template_argument(0)
 
 		# m_list_link_ is a signed intptr_t. Mask all link arithmetic to the
 		# pointer width so signed values compare equal to unsigned addresses.
-		addr_mask: int = (1 << (8 * self.val['m_tail_'].type.sizeof)) - 1
+		addr_mask: int = (1 << (8 * base['m_tail_'].type.sizeof)) - 1
 
 		self._size = size
 		self._node_type = node_type
 		self._addr_mask = addr_mask
-		self._sentinel_addr = int(self.val['m_sentinel_'].address) & addr_mask
-		self._tail_addr = int(self.val['m_tail_']) & addr_mask
-		self._sentinel_link = int(self.val['m_sentinel_']['m_list_link_']) & addr_mask
+		self._sentinel_addr = int(base['m_sentinel_'].address) & addr_mask
+		self._tail_addr = int(base['m_tail_']) & addr_mask
+		self._sentinel_link = int(base['m_sentinel_']['m_list_link_']) & addr_mask
 
 		self._base_type = _hxlist_find_link_base(node_type)
 		self._base_field_names = set()
@@ -79,8 +86,8 @@ class hxlist_printer:
 				self._base_field_names.add(base_field.name)
 		self._ok = True
 
-		basename: str = re.sub(r'^((\w+|\(anonymous namespace\))::)+', '', f'{node_type}')
-		self._summary = f'[{size}] {basename}'
+		type_name: str = re.sub(r'(\w+|\(anonymous namespace\))::', '', f'{self.val.type.strip_typedefs()}')
+		self._summary = f'[{size}] {type_name}'
 		return self._summary
 
 	def to_string(self) -> str:

@@ -10,7 +10,7 @@
 
 extern "C" {
 
-struct hxsettings hxg_settings;
+struct hxsettings_t hxg_settings;
 
 void hxsettings_construct_(void) {
 	hxg_settings.log_level = hxlog_level_log;

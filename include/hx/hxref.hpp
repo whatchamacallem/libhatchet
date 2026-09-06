@@ -4,179 +4,181 @@
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
 /// \file
-/// An optional reference type. Implements `std::optional<T&>`. See `hxoptional`
-/// for a `std::optional<T>` equivalent.
+/// An optional reference type. Implements `std::optional<T&>`.
 
 #include "libhatchet.h"
+
+static_assert(HX_CPLUSPLUS >= 202302L, "hxref.hpp requires C++23");
 
 // HX_USE_MACROS_WITH_MODULE allows including macros alongside the module.
 #if HX_USE_MACROS_WITH_MODULE
 #error Header does not provide macros alone.
 #endif
 
-#include "hxoptional.hpp"
+#include "hxexpected.hpp"
 
 HX_NS_BEGIN_
 
 /// \cond HIDDEN
 template<typename T_> class hxref;
 
-namespace hxdetail_ {
 // Used to prevent the lvalue binding constructor from hijacking converting
 // construction paths.
 template<typename> struct hxis_hxref_ : hxfalse_t { };
 template<typename U_> struct hxis_hxref_<hxref<U_>> : hxtrue_t { };
-}
 /// \endcond
 
-/// `hxref<T>` - Holds a reference to a value of type `T`, or nothing. Implements
-/// `std::optional<T&>`. The reference is stored as a `T*` without dynamic
-/// allocation. A disengaged reference compares equal to `hxnullopt`. Assignment
-/// rebinds the reference instead of assigning through to the referent, so the
-/// post condition is independent of the engaged state. Const is shallow,
-/// matching the rebinding behavior. Use `hxref<const T>` where write through
-/// should be prevented. This is weird but so is the standard.
+/// `hxref<T>` - Holds a reference to a value of type `T`, or null. Implements
+/// the non-owning pointer `std::optional<T&>`. A null reference compares equal
+/// to `hxnil`. Assignment rebinds the reference instead of assigning through to
+/// the referent, matching pointer semantics. Use `hxref<const T>` where write
+/// through should be prevented.
 /// - `T` : The referenced value type. Must not be an array, reference or
-///    pointer type.
+///   pointer type.
 template<typename T_>
 class hxref {
 public:
 	// Use hxremove_reference_t<T> if needed.
-	static_assert(!hxis_reference<T_>::value, "hxref does not support reference types");
+	static_assert(!hxis_reference<T_>(), "hxref does not support reference types");
 
-	/// `value_type` - Publishes the referenced value type. Doesn't end with `_t`
-	/// because of the standard.
-	using value_type = T_&;
+	/// `value_type` - Publishes the referenced value type. Doesn't end with
+	/// `_t` because of the standard.
+	using value_t = T_&;
 
-	/// Constructs a disengaged `hxref`.
+	/// Constructs a null `hxref`.
 	hxref(void) : m_value_(hxnull) { }
 
-	/// Constructs a disengaged `hxref` from `hxnullopt`.
-	/// - `nullopt` : The disengaged sentinel.
-	hxref(hxnullopt_t) : m_value_(hxnull) { }
+	/// Constructs a null `hxref` from `hxnil`.
+	/// - `hxnil` : The error sentinel.
+	hxref(hxnil_t) : m_value_(hxnull) { }
 
 	/// Binds a reference to `value`. `U&` must bind to `T&` without creating a
 	/// temporary.
 	/// - `value` : The lvalue to reference.
 	template<typename U_, hxenable_if_t<
-		!hxdetail_::hxis_hxref_<hxremove_cvref_t<U_>>::value &&
-		!hxdetail_::hxis_hxoptional_<hxremove_cvref_t<U_>>::value, bool> = true>
+		!hxis_hxref_<hxremove_cvref_t<U_>>::value &&
+		!hxis_hxexpected_<hxremove_cvref_t<U_>>::value &&
+		hxbinds_directly<T_, U_>(), bool> = true>
 	hxref(U_& value_);
 
-	/// Binds a reference by converting the referent of `other`. The referent of
-	/// `other` must bind to `T&` without creating a temporary.
-	/// - `other` : The `hxref` whose referent to bind.
-	template<typename U_, hxenable_if_t<
-		!hxis_same<U_, T_>::value, bool> = true>
-	hxref(const hxref<U_>& other_);
+	/// Binds a reference to the value of `x`. Accepts an non-null or
+	/// erroneous `hxexpected<T, E>`.
+	/// - `x` : The `hxexpected` whose value to bind.
+	template<typename E_>
+	hxref(hxexpected<T_, E_>& x_);
 
-	/// Binds a reference by converting the value of `other`. The referent of
-	/// `other` must bind to `T&` without creating a temporary. Accepts an engaged
-	/// or disengaged `hxoptional<U>`.
-	/// - `other` : The `hxoptional` whose value to bind.
-	template<typename U_>
-	hxref(hxoptional<U_>& other_);
-
-	/// Returns a reference to the referenced value. The reference must be engaged.
+	/// Returns a reference to the referenced value. The reference must be
+	/// non-null.
 	hxattr_nodiscard T_& operator*(void) const;
 
-	/// Returns a pointer to the referenced value. The reference must be engaged.
+	/// Returns a pointer to the referenced value. The reference must be
+	/// non-null.
 	hxattr_nodiscard T_* operator->(void) const;
 
-	/// Returns `true` if the reference is engaged.
-	hxattr_nodiscard operator bool(void) const { return m_value_ != hxnull; }
+	/// Returns `true` if the reference is non-null.
+	hxattr_nodiscard explicit operator bool(void) const { return m_value_ != hxnull; }
 
-	/// Disengages the reference. The referent is not affected.
-	/// - `nullopt` : The disengaged sentinel.
-	hxref& operator=(hxnullopt_t) { m_value_ = hxnull; return *this; }
+	/// Nulls the reference. The referent is not affected.
+	/// - `hxnil` : The error sentinel.
+	hxref& operator=(hxnil_t) { m_value_ = hxnull; return *this; }
 
 	/// Rebinds the reference to `value`.
 	/// - `value` : The lvalue to reference.
 	template<typename U_, hxenable_if_t<
-		!hxdetail_::hxis_hxref_<hxremove_cvref_t<U_>>::value &&
-		!hxdetail_::hxis_hxoptional_<hxremove_cvref_t<U_>>::value, bool> = true>
+		!hxis_hxref_<hxremove_cvref_t<U_>>::value &&
+		!hxis_hxexpected_<hxremove_cvref_t<U_>>::value &&
+		hxbinds_directly<T_, U_>(), bool> = true>
 	hxref& operator=(U_& value_);
 
-	/// Returns `true` if both references are disengaged or both reference equal
+	/// Returns `true` if both references are null or both reference equal
 	/// values.
-	/// - `rhs` : Right-hand side reference.
-	hxattr_nodiscard bool operator==(const hxref& rhs_) const;
+	/// - `x` : Right-hand side reference.
+	hxattr_nodiscard bool operator==(const hxref& x_) const { return this->equal(x_); }
 
-	/// Returns `true` if this reference is disengaged.
-	/// - `nullopt` : The disengaged sentinel.
-	hxattr_nodiscard bool operator==(hxnullopt_t) const { return m_value_ == hxnull; }
+	/// Returns `true` if this reference is null.
+	/// - `hxnil` : The error sentinel.
+	hxattr_nodiscard bool operator==(hxnil_t) const { return m_value_ == hxnull; }
 
-	/// Returns `true` if this reference is engaged and its referent equals `value`.
+	/// Returns `true` if this reference is non-null and its referent equals
+	/// `value`.
 	/// - `value` : The value to compare against.
 	hxattr_nodiscard bool operator==(const T_& value_) const;
 
-#if HX_CPLUSPLUS < 202002L // C++20 defaults != from ==.
-	/// Returns `true` if the references are not equal.
-	/// - `rhs` : Right-hand side reference.
-	hxattr_nodiscard bool operator!=(const hxref& rhs_) const { return !(*this == rhs_); }
-
-	/// Returns `true` if this reference is engaged.
-	/// - `nullopt` : The disengaged sentinel.
-	hxattr_nodiscard bool operator!=(hxnullopt_t nullopt_) const { return !(*this == nullopt_); }
-
-	/// Returns `true` if this reference is disengaged or its referent does not
-	/// equal `value`.
-	/// - `value` : The value to compare against.
-	hxattr_nodiscard bool operator!=(const T_& value_) const { return !(*this == value_); }
-#endif
-
 	/// Returns the result of calling `callable` with the referenced value if
-	/// engaged, otherwise returns a disengaged optional of the same type.
-	/// `callable` must return an `hxoptional`. Implements
-	/// `std::optional::and_then`.
+	/// non-null, otherwise returns `hxnil`. Use `and_then` to return `hxptr`,
+	/// `hxref` or `hxexpected`.
 	/// - `callable` : The function to call with the referenced value.
-	template<typename function_t_>
-	hxattr_nodiscard auto and_then(function_t_&& callable_) const
-		-> hxremove_cvref_t<decltype(hxforward<function_t_>(callable_)(hxdeclval<T_&>()))>;
+	template<typename self_t_, typename callable_t_>
+	hxattr_nodiscard auto and_then(this self_t_&& self_, callable_t_&& callable_)
+		-> hxremove_cvref_t<decltype(hxforward<callable_t_>(callable_)(hxdeclval<T_&>()))>;
 
-	/// Binds the reference to `value`, engaging the reference. `value` must bind
-	/// to `T&` without creating a temporary. Returns the referenced value.
-	/// - `value` : The lvalue to reference.
-	template<typename U_>
-	T_& emplace(U_& value_);
+	/// Returns `true` if both references are null or both reference equal
+	/// values.
+	/// - `x` : The `hxref` to compare against.
+	hxattr_nodiscard bool equal(const hxref& x_) const;
 
-	/// Returns `true` if the reference is engaged.
+	/// Returns `true` if the reference is non-null.
 	hxattr_nodiscard bool has_value(void) const { return m_value_ != hxnull; }
 
-	/// Returns a copy of this reference if engaged, otherwise returns the result
-	/// of calling `callable`. `callable` must return an `hxref<T>`. Implements
-	/// `std::optional::or_else`.
-	/// - `callable` : The function to call when disengaged.
-	template<typename function_t_>
-	hxattr_nodiscard hxref or_else(function_t_&& callable_) const;
+	/// Returns the hash of the referenced value if non-null, otherwise `31u`.
+	hxattr_nodiscard hxhash_t hash(void) const;
 
-	/// Disengages the reference. The referent is not affected.
+	/// Returns a copy of this reference if non-null, otherwise returns the
+	/// result of calling `callable`. `callable` must return an `hxref<T>`.
+	/// Implements `std::optional::or_else`.
+	/// - `callable` : The function to call when null.
+	template<typename self_t_, typename callable_t_>
+	hxattr_nodiscard hxref or_else(this self_t_&& self_, callable_t_&& callable_);
+
+	/// Nulls the reference. The referent is not affected.
 	void reset(void) { m_value_ = hxnull; }
 
-	/// Exchanges the bound pointers with `other`.
-	/// - `other` : The `hxref` to swap with.
-	void swap(hxref& other_) noexcept;
+	/// Exchanges the bound pointers with `x`.
+	/// - `x` : The `hxref` to swap with.
+	void swap(hxref& x_) noexcept;
 
-	/// Returns a reference to the referenced value. The reference must be engaged.
+	/// Returns a reference to the referenced value. The reference must be
+	/// non-null.
 	hxattr_nodiscard T_& value(void) const;
 
-	/// Returns the referenced value if engaged, otherwise returns
-	/// `default_value` forwarded and converted to `T`.
-	/// - `default_value` : The value to return when disengaged.
-	template<typename U_=hxremove_cv_t<T_>>
-	hxattr_nodiscard hxremove_cv_t<T_> value_or(U_&& default_value_) const;
+	/// Returns the referenced value if non-null, otherwise returns a `T`
+	/// constructed from `args`.
+	/// - `args` : The arguments used to construct the value when null.
+	template<typename self_t_, typename... args_t_>
+	hxattr_nodiscard hxremove_cv_t<T_> value_or(
+		this self_t_&& self_, args_t_&&... args_);
 
 private:
 	T_* m_value_;
 };
 
-/// `hxkey_hash(hxref<T>)` - Returns the hash of the referenced value if engaged,
-/// otherwise `1u`.
-/// - `ref` : The reference to hash.
+/// `hxmake_ref<T>` - Returns an `hxref<T>` bound to `value`. `U&` must bind to
+/// `T&` without creating a temporary.
+/// - `value` : The lvalue to reference.
+template<typename T_, typename U_=T_, hxenable_if_t<hxbinds_directly<T_, U_>(), bool> = true>
+hxattr_nodiscard hxref<T_> hxmake_ref(U_& value_) { return hxref<T_>(value_); }
+
+/// `hxkey_equal_t<hxref<T>>` - Compares `x` and `y` for equivalence.
 template<typename T_>
-hxattr_nodiscard hxhash_t hxkey_hash(const hxref<T_>& ref_) {
-	return ref_.has_value() ? hxkey_hash(*ref_) : hxhash_t{1u};
-}
+class hxkey_equal_t<hxref<T_> > {
+public:
+	hxattr_nodiscard hxinline hxattr_flatten
+	bool operator()(
+			const hxref<T_>& x_, const hxref<T_>& y_) const {
+		return x_.equal(y_);
+	}
+};
+
+/// `hxkey_hash_t<hxref<T>>` - Returns the hash of the referenced value if
+/// non-null, otherwise `31u`.
+template<typename T_>
+class hxkey_hash_t<hxref<T_> > {
+public:
+	hxattr_nodiscard hxinline hxattr_flatten
+	hxhash_t operator()(const hxref<T_>& ref_) const {
+		return ref_.hash();
+	}
+};
 
 #include "detail/hxref.inl"
 HX_NS_END_

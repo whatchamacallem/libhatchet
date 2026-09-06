@@ -44,9 +44,9 @@ public:
 #endif
 	};
 
-	/// Creates a new task queue. `task_queue_size` reserves storage for enqueued
-	/// tasks. `thread_pool_size` determines the size of the worker thread pool.
-	/// A `thread_pool_size` of `0` does not use threads.
+	/// Creates a new task queue. `task_queue_size` reserves storage for
+	/// enqueued tasks. `thread_pool_size` determines the size of the worker
+	/// thread pool. A `thread_pool_size` of `0` does not use threads.
 	explicit hxtask_queue(int32_t task_queue_size_, int32_t thread_pool_size_) noexcept;
 
 	/// Waits for all queued and executing tasks to complete before destruction.
@@ -87,14 +87,15 @@ public:
 	/// execution. Thread-safe only when `HX_USE_THREADS` is enabled and the
 	/// thread pool size is greater than zero.
 	/// - `task` : Non-null pointer to the task to be enqueued for execution.
-	/// - `priority` : Optional priority for scheduling. Higher values run sooner.
+	/// - `priority` : Optional priority for scheduling. Higher values run
+	///   sooner.
 	void enqueue(hxtask* task_, int priority_=0) noexcept hxattr_nonnull(2);
 
-	/// Locks the queue and calls `callable` on each task. Removes queued tasks for
-	/// which `callable` evaluates true. Does not call `on_cancel` on each. Returns
-	/// the number of records removed. The `record_t&` passed to `erase_if` may
-	/// be modified and the tasks will be re-prioritized according to their new
-	/// priorities.
+	/// Locks the queue and calls `callable` on each task. Removes queued tasks
+	/// for which `callable` evaluates true. Does not call `on_cancel` on each.
+	/// Returns the number of records removed. The `record_t&` passed to
+	/// `erase_if` may be modified and the tasks will be re-prioritized
+	/// according to their new priorities.
 	/// - `callable` : Predicate accepting a `record_t&`.
 	template<typename callable_t_>
 	hxsize_t erase_if(callable_t_&& callable_) noexcept;
@@ -105,9 +106,10 @@ public:
 	void for_each(callable_t_&& callable_) const noexcept;
 
 	/// Non-const version of `for_each`. This version will perform `make_heap`
-	/// on the queue after calling `callable` on each task record. The `record_t&`
-	/// passed to `for_each` may be modified and the tasks will be
+	/// on the queue after calling `callable` on each task record. The
+	/// `record_t&` passed to `for_each` may be modified and the tasks will be
 	/// re-prioritized according to their new priorities.
+	/// - `callable` : Callable accepting a `record_t&`.
 	template<typename callable_t_>
 	void for_each(callable_t_&& callable_) noexcept;
 

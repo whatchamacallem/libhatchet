@@ -4,7 +4,7 @@
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
 /// \file
-/// Θ(n) radix sort for 32-bit-or-smaller scalar keys.
+/// O(n) radix sort for 32-bit-or-smaller scalar keys.
 
 #include "libhatchet.h"
 
@@ -30,14 +30,14 @@ public:
 	/// Returns the stored `value_t`.
 	hxattr_nodiscard value_t_ get_value(void) const { return m_value_; }
 
-	/// Returns the stored `value_t`.
 	hxattr_nodiscard value_t_ get_value(void) { return m_value_; }
 
 	/// Comparison operator for comparison sorting `hxradix_sort_key` objects
 	/// by key as a fallback for short arrays.
 	bool operator<(hxradix_sort_key x_) const { return m_key_ < x_.m_key_; }
 
-	/// A version of the key that may have been modified to work as a `uint32_t`.
+	/// A version of the key that may have been modified to work as a
+	/// `uint32_t`.
 	hxattr_nodiscard uint32_t get_modified_key(void) const { return m_key_; }
 
 private:
@@ -76,8 +76,8 @@ private:
 	};
 };
 
-/// `hxradix_sort_key_void` - Internal. Used to share the implementation with all
-/// pointer types.
+/// `hxradix_sort_key_void` - Internal. Used to share the implementation with
+/// all pointer types.
 using hxradix_sort_key_void = hxradix_sort_key<uint32_t, void*>;
 
 /// `hxradix_sort_void` - Internal. The shared implementation used with all
@@ -105,11 +105,11 @@ void hxradix_sort_void11(hxradix_sort_key_void* begin_, hxradix_sort_key_void* e
 /// `hxradix_sort` - Sorts an array of `hxradix_sort_key<key_t, value_t>` by
 /// `key_t` using 8-bit digits. `key_t` is the sort key and `value_t` the value
 /// being sorted. Keys of `double`, `int64_t`, and `uint64_t` are not supported.
-/// This is an Θ(n) algorithm that does not cause code bloat and is the fastest
+/// This is an O(n) algorithm that does not cause code bloat and is the fastest
 /// sorting algorithm available for scalar keys. Radix sort is best when you
 /// need real-time guarantees and have a massive workload. IBM used it to sort
 /// punch cards. `hxradix_sort` scales linearly with the byte-length of the key,
-/// whereas `hxinsertion_sort` is Θ(n) on mostly sorted data.
+/// whereas `hxinsertion_sort` is O(n) on mostly sorted data.
 ///
 /// For example:
 ///
@@ -136,9 +136,8 @@ void hxradix_sort(hxradix_sort_key<key_t_, value_t_>* begin_, hxradix_sort_key<k
 /// `hxradix_sort11` - Sorts an array of `hxradix_sort_key<key_t, value_t>` by
 /// `key_t` using 11-bit digits. `key_t` is the sort key and `value_t` the value
 /// being sorted. Keys of `double`, `int64_t`, and `uint64_t` are not supported.
-/// `hxradix_sort`
-/// scales linearly with the byte-length of the key, whereas `hxinsertion_sort`
-/// is Θ(n) on mostly sorted data.
+/// `hxradix_sort11` scales linearly with the byte-length of the key, whereas
+/// `hxinsertion_sort` is O(n) on mostly sorted data.
 /// - `begin` : Non-null pointer to the first element in the range being
 ///   reordered.
 /// - `end` : Non-null pointer one past the last element in the range. Must

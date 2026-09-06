@@ -150,7 +150,7 @@ hxattr_cold hxconsole_command_table& hxconsole_commands_(void) {
 // hxconsole_register_ is internal only.
 hxattr_cold void hxdetail_::hxconsole_register_(hxconsole_hash_table_node_* node) {
 	hxconsole_command_table& commands = hxconsole_commands_();
-	hxassertmsg(node->hash_key().str_, "invalid_parameter");
+	hxassertmsg(node->hash_key().str_, "bad_arg");
 	if(commands.replace(node)) {
 		hxlog_handler(hxlog_level_warning, "command_reregistered %s\n", node->hash_key().str_);
 	}
@@ -173,8 +173,9 @@ hxattr_cold bool hxconsole_exec_line(const char* command) {
 		return true;
 	}
 
-	const hxdetail_::hxconsole_hash_table_node_* node = hxconsole_commands_().find(hxdetail_::hxconsole_hash_table_key_(pos));
-	if(node == hxnull) {
+	const hxconsole_command_table::const_iterator node =
+		hxconsole_commands_().find(hxdetail_::hxconsole_hash_table_key_(pos));
+	if(node == hxconsole_commands_().end()) {
 		hxwarn_msg(0, "unknown_command %s", command);
 		return false;
 	}
@@ -216,7 +217,8 @@ hxattr_cold bool hxconsole_help(void) {
 		cmds.push_back(&*it);
 	}
 
-	hxinsertion_sort<const hxdetail_::hxconsole_hash_table_node_**, hxconsole_less>(cmds.begin(), cmds.end(), hxconsole_less());
+	hxinsertion_sort<const hxdetail_::hxconsole_hash_table_node_**, hxconsole_less>(
+		cmds.begin(), cmds.end(), hxconsole_less());
 
 	for(hxvector<const hxdetail_::hxconsole_hash_table_node_*>::iterator it = cmds.begin();
 			it != cmds.end(); ++it) {
@@ -236,7 +238,7 @@ hxattr_cold bool hxconsole_exec_file(hxfile& file) {
 	while(result) {
 		const size_t want = HX_MAX_LINE - 1u - carried;
 		const size_t got = file.read(line_buf + carried, want, want);
-		hxassertmsg(got <= want, "read_overrun %zu %zu", got, want);
+		hxassertmsg(got <= want, "read_overrun got %zu want %zu", got, want);
 
 		// The carried bytes are already known not to contain a newline.
 		char* line_begin = line_buf;
@@ -257,7 +259,7 @@ hxattr_cold bool hxconsole_exec_file(hxfile& file) {
 		carried = static_cast<size_t>(end - line_begin);
 		if(file.eof() || carried >= (HX_MAX_LINE - 1u)) {
 			if(result && carried != 0u) {
-				*end = '\0'; // NOLINT(clang-analyzer-security.ArrayBound)
+				*end = '\0';
 				result = hxconsole_exec_line(line_begin);
 			}
 			if(file.eof()) {
@@ -295,7 +297,7 @@ hxattr_cold bool hxconsole_exec_filename(const char* filename) {
 namespace {
 
 hxattr_cold bool hxconsole_peek(uint64_t address, uint32_t bytes) {
-	hxhex_dump(reinterpret_cast<const void*>(static_cast<uintptr_t>(address)), bytes, false);
+	hxhex_view(reinterpret_cast<const void*>(static_cast<uintptr_t>(address)), bytes, false);
 	return true;
 }
 
@@ -310,13 +312,13 @@ hxattr_cold bool hxconsole_poke(uint64_t address, uint32_t bytes, uint64_t hex) 
 	return true;
 }
 
-hxattr_cold bool hxconsole_hex_dump(uint64_t address, uint32_t bytes) {
-	hxhex_dump(reinterpret_cast<const void*>(static_cast<uintptr_t>(address)), bytes, true);
+hxattr_cold bool hxconsole_hex_view(uint64_t address, uint32_t bytes) {
+	hxhex_view(reinterpret_cast<const void*>(static_cast<uintptr_t>(address)), bytes, true);
 	return true;
 }
 
-hxattr_cold bool hxconsole_float_dump(uint64_t address, uint32_t bytes) {
-	hxfloat_dump(reinterpret_cast<const float*>(static_cast<uintptr_t>(address)), bytes);
+hxattr_cold bool hxconsole_float_view(uint64_t address, uint32_t size) {
+	hxfloat_view(reinterpret_cast<const float*>(static_cast<uintptr_t>(address)), size);
 	return true;
 }
 
@@ -330,10 +332,10 @@ hxconsole_command_named(hxconsole_peek, peek);
 hxconsole_command_named(hxconsole_poke, poke);
 
 // Write bytes to console with pretty formatting.
-hxconsole_command_named(hxconsole_hex_dump, hexdump);
+hxconsole_command_named(hxconsole_hex_view, hexview);
 
 // Write floats to console.
-hxconsole_command_named(hxconsole_float_dump, floatdump);
+hxconsole_command_named(hxconsole_float_view, floatview);
 
 #if HX_USE_FILE_IO
 // Executes commands and settings in a file. Usage: "exec <filename>".

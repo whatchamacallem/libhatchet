@@ -10,7 +10,6 @@
 
 HX_NS_USE
 
-using hxbinary_search_test_f = hxtest_object_fixture;
 using hxsort_test_f = hxtest_object_fixture;
 
 #if HX_CPLUSPLUS >= 201402L
@@ -46,47 +45,7 @@ TEST(hxsort_test, sort_int_cases) {
 	test_sort_int_cases(hxsort<int*, bool (*)(int, int)>);
 }
 
-TEST(hxbinary_search_test, simple_case) {
-	int ints[5] = { 2, 5, 6, 88, 99 };
-	const int* const ints_end = ints+5;
-	const int* result = hxbinary_search(ints, ints+5, 88, hxkey_less_t<int>{});
-	EXPECT_TRUE(result != ints_end && *result == 88);
-	const int* const_ints = ints;
-	const int* cresult = hxbinary_search(const_ints, const_ints + 5, 2, hxkey_less_t<int>{});
-	EXPECT_TRUE(cresult != ints_end && *cresult == 2);
-	cresult = hxbinary_search(const_ints, const_ints + 5, 99);
-	EXPECT_TRUE(cresult != ints_end && *cresult == 99);
-	result = hxbinary_search(ints, ints+5, 0);
-	EXPECT_EQ(result, ints_end);
-	result = hxbinary_search(ints, ints+5, 100);
-	EXPECT_EQ(result, ints_end);
-	result = hxbinary_search(ints, ints+5, 7);
-	EXPECT_EQ(result, ints_end);
-	result = hxbinary_search(ints, ints, 11, hxkey_less_t<int>{});
-	EXPECT_EQ(result, ints);
-}
-
-TEST_F(hxbinary_search_test_f, binary_search_grinder) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
-	{
-		hxrandom rng(4);
-		hxvector<hxtest_object> sorted; sorted.reserve(100);
-			for(int i=100; i-- != 0; ) {
-				const int x = rng.range(0, 100);
-			sorted.push_back(hxtest_object(x));
-		}
-		hxsort(sorted.begin(), sorted.end());
-			for(hxsize_t i=100; i-- != 0; ) {
-			const hxtest_object t = sorted[i];
-			const hxtest_object* const ptr = hxbinary_search(sorted.begin(), sorted.end(), t);
-			EXPECT_TRUE(!(*ptr < t) && !(t < *ptr));
-		}
-	}
-	EXPECT_TRUE(check_stats(485, 485, 100, 285, 0, 627, 0, 1729));
-}
-
 TEST_F(hxsort_test_f, sort_grinder) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	hxrandom rng(2);
 	const hxsize_t max_size_mask = 0x7f;
 	hxvector<hxtest_object> insertion_sorted; insertion_sorted.reserve(max_size_mask);
@@ -102,23 +61,51 @@ TEST_F(hxsort_test_f, sort_grinder) {
 		}
 		const hxsize_t element_count = insertion_sorted.size();
 		for(hxsize_t j = 0; j < element_count; ++j) {
-			heap_sorted[j] = hxtest_object(insertion_sorted[j].value);
-			generic_sorted[j] = hxtest_object(insertion_sorted[j].value);
+			heap_sorted[j] = hxtest_object(insertion_sorted[j].value());
+			generic_sorted[j] = hxtest_object(insertion_sorted[j].value());
 		}
 		hxinsertion_sort(insertion_sorted.begin(), insertion_sorted.end());
 		hxheapsort(heap_sorted.begin(), heap_sorted.end());
 		hxsort(generic_sorted.begin(), generic_sorted.end());
-		EXPECT_EQ(::memcmp(insertion_sorted.data(), heap_sorted.data(), static_cast<size_t>(insertion_sorted.size_bytes())), 0);
-		EXPECT_EQ(::memcmp(insertion_sorted.data(), generic_sorted.data(), static_cast<size_t>(insertion_sorted.size_bytes())), 0);
+		EXPECT_TRUE(hxequal_range(insertion_sorted, heap_sorted));
+		EXPECT_TRUE(hxequal_range(insertion_sorted, generic_sorted));
 		insertion_sorted.clear();
 		heap_sorted.clear();
 		generic_sorted.clear();
 	}
-	EXPECT_TRUE(check_stats(1814, 1814, 0, 1139, 0, 5068, 0, 5019));
+	EXPECT_TRUE(check_stats(1814, 1814, 0, 675, 0, 1139, 0, 5068, 270, 5019));
+}
+
+TEST_F(hxsort_test_f, sort_grinder_values_match_with_duplicate_keys) {
+	hxrandom rng(2);
+	const hxsize_t max_size_mask = 0x7f;
+	hxvector<hxtest_object> insertion_sorted; insertion_sorted.reserve(max_size_mask);
+	hxvector<hxtest_object> heap_sorted; heap_sorted.reserve(max_size_mask);
+	hxvector<hxtest_object> generic_sorted; generic_sorted.reserve(max_size_mask);
+	for(int i=12; i-- != 0; ) {
+		const hxsize_t size = (max_size_mask >> i) & rng.u32();
+		for(hxsize_t j = size; j-- != 0;) {
+			const int x = rng.range(100, 200);
+			insertion_sorted.push_back(hxtest_object(x));
+			heap_sorted.push_back(hxtest_object(x));
+			generic_sorted.push_back(hxtest_object(x));
+		}
+		hxinsertion_sort(insertion_sorted.begin(), insertion_sorted.end());
+		hxheapsort(heap_sorted.begin(), heap_sorted.end());
+		hxsort(generic_sorted.begin(), generic_sorted.end());
+		const hxsize_t element_count = insertion_sorted.size();
+		for(hxsize_t j = 0; j < element_count; ++j) {
+			EXPECT_EQ(insertion_sorted[j].value(), heap_sorted[j].value());
+			EXPECT_EQ(insertion_sorted[j].value(), generic_sorted[j].value());
+		}
+		insertion_sorted.clear();
+		heap_sorted.clear();
+		generic_sorted.clear();
+	}
+	EXPECT_TRUE(check_stats(1544, 1544, 0, 405, 0, 1139, 0, 4798, 0, 5019));
 }
 
 TEST(hxsort_test, intro_sort_depth_limit_falls_back_to_heapsort) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	const hxsize_t count = 2048;
 	hxvector<int> equal_values(count, 7);
 	hxsort(equal_values.begin(), equal_values.end());
@@ -128,7 +115,6 @@ TEST(hxsort_test, intro_sort_depth_limit_falls_back_to_heapsort) {
 }
 
 TEST_F(hxsort_test_f, sort_grinder_generic) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	hxrandom rng(3);
 	const hxsize_t max_size_mask = 0xfff;
 	hxvector<hxtest_object> sorted; sorted.reserve(max_size_mask);
@@ -144,9 +130,9 @@ TEST_F(hxsort_test_f, sort_grinder_generic) {
 			++histogram[static_cast<hxsize_t>(x)];
 		}
 		hxsort(sorted.begin(), sorted.end());
-		--histogram[static_cast<hxsize_t>(sorted[size - 1].value)];
+		--histogram[static_cast<hxsize_t>(sorted[size - 1].value())];
 		for(hxsize_t j=size - 1; j-- != 0;) {
-			--histogram[static_cast<hxsize_t>(sorted[j].value)];
+			--histogram[static_cast<hxsize_t>(sorted[j].value())];
 			EXPECT_FALSE(hxkey_less(sorted[j + 1], sorted[j]));
 		}
 		for(hxsize_t j=20000; j-- > 10000;) {
@@ -154,7 +140,7 @@ TEST_F(hxsort_test_f, sort_grinder_generic) {
 		}
 		sorted.clear();
 	}
-	EXPECT_TRUE(check_stats(17283, 17283, 0, 14075, 0, 32596, 0, 42055));
+	EXPECT_TRUE(check_stats(17283, 17283, 0, 3208, 0, 14075, 0, 32596, 0, 42055));
 }
 
 TEST(hxsort_test, partition_sort_network_all_ascending_takes_no_swaps) {
@@ -247,7 +233,6 @@ TEST(hxsort_test, partition_sort_function_pointer_comparator_distinct_and_equal)
 }
 
 TEST_F(hxsort_test_f, partition_sort_all_equal_ref_tracker_takes_no_pivot_swaps) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	{
 		hxvector<hxtest_object> values; values.reserve(33);
 		for(int i = 33; i-- != 0; ) {
@@ -255,10 +240,10 @@ TEST_F(hxsort_test_f, partition_sort_all_equal_ref_tracker_takes_no_pivot_swaps)
 		}
 		hxsort(values.begin(), values.end());
 		for(hxsize_t i = 0; i < 33; ++i) {
-			EXPECT_EQ(values[i].value, 7);
+			EXPECT_EQ(values[i].value(), 7);
 		}
 	}
-	EXPECT_TRUE(check_stats(68, 68, 0, 35, 0, 4, 0, 101));
+	EXPECT_TRUE(check_stats(68, 68, 0, 33, 0, 35, 0, 4, 0, 101));
 }
 
 TEST(hxsort_test, intro_sort_cutoff_boundary_thirty_two_uses_insertion_sort) {
@@ -283,33 +268,13 @@ TEST(hxsort_test, intro_sort_cutoff_boundary_thirty_three_uses_partition_sort) {
 	}
 }
 
-TEST(hxsort_test, hxsort_empty_range) {
+TEST(hxsort_test, empty_range) {
 	int ints[3] = { 3, 1, 2 };
 	hxsort(ints, ints, test_compare_int);
 	const int ints_unchanged[3] = { 3, 1, 2 };
 	EXPECT_EQ(::memcmp(ints, ints_unchanged, sizeof ints), 0);
 	hxsort(ints, ints + 1, test_compare_int);
 	EXPECT_EQ(::memcmp(ints, ints_unchanged, sizeof ints), 0);
-}
-
-TEST(hxbinary_search_test, single_element_hit_and_miss) {
-	const int arr[1] = { 34 };
-	const int* result = hxbinary_search(arr, arr + 1, 34);
-	EXPECT_EQ(result, arr);
-	result = hxbinary_search(arr, arr + 1, 40);
-	EXPECT_EQ(result, arr + 1);
-	result = hxbinary_search(arr, arr + 1, 50);
-	EXPECT_EQ(result, arr + 1);
-}
-
-TEST(hxbinary_search_test, two_element_boundaries) {
-	const int arr[2] = { 10, 20 };
-	const int* result = hxbinary_search(arr, arr + 2, 10);
-	EXPECT_EQ(result, arr);
-	result = hxbinary_search(arr, arr + 2, 20);
-	EXPECT_EQ(result, arr + 1);
-	result = hxbinary_search(arr, arr + 2, 15);
-	EXPECT_EQ(result, arr + 2);
 }
 
 TEST(hxsort_test, insertion_sort_two_elements_reversed) {
@@ -327,6 +292,18 @@ TEST(hxsort_test, insertion_sort_three_elements_descending) {
 	EXPECT_EQ(arr[2], 3);
 }
 
+TEST_F(hxsort_test_f, insertion_sort_preserves_stable_ordering_of_equal_keys) {
+	hxvector<hxtest_object, 6> values{ 5, 3, 5, 5, 1, 3 };
+	hxinsertion_sort(values.begin(), values.end());
+	const int32_t expected_value[6] = { 1, 3, 3, 5, 5, 5 };
+	const uint16_t expected_ticket[6] = { 104u, 101u, 105u, 100u, 102u, 103u };
+	for(hxsize_t i = 0; i < 6; ++i) {
+		EXPECT_EQ(values[i].value(), expected_value[i]);
+		EXPECT_EQ(values[i].ticket(), expected_ticket[i]);
+	}
+	EXPECT_TRUE(check_stats(9, 3, 0, 6, 0, 3, 0, 11, 0, 11));
+}
+
 TEST(hxsort_test, heapsort_two_elements) {
 	int arr[2] = { 2, 1 };
 	hxheapsort(arr, arr + 2, test_compare_int);
@@ -342,26 +319,13 @@ TEST(hxsort_test, heapsort_three_elements_right_child_boundary) {
 	EXPECT_EQ(arr[2], 3);
 }
 
-TEST(hxbinary_search_test, last_element_in_five_element_array) {
-	const int arr[5] = { 1, 3, 5, 7, 9 };
-	const int* result = hxbinary_search(arr, arr + 5, 9);
-	EXPECT_EQ(result, arr + 4);
-	result = hxbinary_search(arr, arr + 5, 1);
-	EXPECT_EQ(result, arr);
-}
 template<typename sort_callback_t>
-static void do_sort_iter_case(const sort_callback_t& sort_callback) {
+static void do_sort_iterator_case(const sort_callback_t& sort_callback) {
 	const int initial_values[5] = { 2, 1, 0, 4, -5 };
 	const int expected_two[5] = { 1, 2, 0, 4, -5 };
 	const int expected_sorted[5] = { -5, 0, 1, 2, 4 };
 	const int expected_descending[5] = { 4, 2, 1, 0, -5 };
-	hxtest_object values[5] = {
-		hxtest_object(initial_values[0]),
-		hxtest_object(initial_values[1]),
-		hxtest_object(initial_values[2]),
-		hxtest_object(initial_values[3]),
-		hxtest_object(initial_values[4])
-	};
+	hxvector<hxtest_object, 5> values{ 2, 1, 0, 4, -5 };
 	auto reset = [&]() {
 		for(hxsize_t i = 0; i < 5; ++i) {
 			values[i] = hxtest_object(initial_values[i]);
@@ -369,64 +333,57 @@ static void do_sort_iter_case(const sort_callback_t& sort_callback) {
 	};
 	auto expect_values = [&](const int (&expected)[5]) {
 		for(hxsize_t i = 0; i < 5; ++i) {
-			EXPECT_EQ(values[i].value, expected[i]);
+			EXPECT_EQ(values[i].value(), expected[i]);
 		}
 	};
 	reset();
-	sort_callback(hxtest_rand_iter_api_t(values), hxtest_rand_iter_api_t(values), hxtest_value_less);
+	sort_callback(hxtest_rand_iterator_api_t(values.data()), hxtest_rand_iterator_api_t(values.data()),
+		hxtest_value_less);
 	expect_values(initial_values);
 	reset();
-	sort_callback(hxtest_rand_iter_api_t(values), hxtest_rand_iter_api_t(values + 1), hxtest_value_less);
+	sort_callback(hxtest_rand_iterator_api_t(values.data()), hxtest_rand_iterator_api_t(values.data() + 1),
+		hxtest_value_less);
 	expect_values(initial_values);
 	reset();
-	sort_callback(hxtest_rand_iter_api_t(values), hxtest_rand_iter_api_t(values + 2), hxtest_value_less);
+	sort_callback(hxtest_rand_iterator_api_t(values.data()), hxtest_rand_iterator_api_t(values.data() + 2),
+		hxtest_value_less);
 	expect_values(expected_two);
 	reset();
-	sort_callback(hxtest_rand_iter_api_t(values), hxtest_rand_iter_api_t(values + 5), hxtest_value_less);
+	sort_callback(hxtest_rand_iterator_api_t(values.data()), hxtest_rand_iterator_api_t(values.data() + 5),
+		hxtest_value_less);
 	expect_values(expected_sorted);
 	reset();
-	sort_callback(hxtest_rand_iter_api_t(values), hxtest_rand_iter_api_t(values + 5), hxtest_value_greater);
+	sort_callback(hxtest_rand_iterator_api_t(values.data()), hxtest_rand_iterator_api_t(values.data() + 5),
+		hxtest_value_greater);
 	expect_values(expected_descending);
-	sort_callback(hxtest_rand_iter_api_t(values), hxtest_rand_iter_api_t(values + 5), hxtest_value_less);
+	sort_callback(hxtest_rand_iterator_api_t(values.data()), hxtest_rand_iterator_api_t(values.data() + 5),
+		hxtest_value_less);
 	expect_values(expected_sorted);
 }
 
 TEST_F(hxsort_test_f, iterator_support) {
-	do_sort_iter_case([](hxtest_rand_iter_api_t begin, hxtest_rand_iter_api_t end, const auto& less) {
+	do_sort_iterator_case([](hxtest_rand_iterator_api_t begin, hxtest_rand_iterator_api_t end,
+			const auto& less) {
 		hxinsertion_sort(begin, end, less);
 	});
-	do_sort_iter_case([](hxtest_rand_iter_api_t begin, hxtest_rand_iter_api_t end, const auto& less) {
+	do_sort_iterator_case([](hxtest_rand_iterator_api_t begin, hxtest_rand_iterator_api_t end,
+			const auto& less) {
 		hxheapsort(begin, end, less);
 	});
-	do_sort_iter_case([](hxtest_rand_iter_api_t begin, hxtest_rand_iter_api_t end, const auto& less) {
+	do_sort_iterator_case([](hxtest_rand_iterator_api_t begin, hxtest_rand_iterator_api_t end,
+			const auto& less) {
 		hxsort(begin, end, less);
 	});
-	EXPECT_TRUE(check_stats(141, 141, 0, 51, 0, 195, 0, 0));
+	EXPECT_TRUE(check_stats(141, 141, 0, 90, 0, 51, 0, 195, 0, 84));
 }
 
-static void do_sort_iter_partition_case(const int (&initial_values)[33], const int (&expected_sorted)[33]) {
-	hxtest_object values[33] = {
-		hxtest_object(initial_values[0]), hxtest_object(initial_values[1]),
-		hxtest_object(initial_values[2]), hxtest_object(initial_values[3]),
-		hxtest_object(initial_values[4]), hxtest_object(initial_values[5]),
-		hxtest_object(initial_values[6]), hxtest_object(initial_values[7]),
-		hxtest_object(initial_values[8]), hxtest_object(initial_values[9]),
-		hxtest_object(initial_values[10]), hxtest_object(initial_values[11]),
-		hxtest_object(initial_values[12]), hxtest_object(initial_values[13]),
-		hxtest_object(initial_values[14]), hxtest_object(initial_values[15]),
-		hxtest_object(initial_values[16]), hxtest_object(initial_values[17]),
-		hxtest_object(initial_values[18]), hxtest_object(initial_values[19]),
-		hxtest_object(initial_values[20]), hxtest_object(initial_values[21]),
-		hxtest_object(initial_values[22]), hxtest_object(initial_values[23]),
-		hxtest_object(initial_values[24]), hxtest_object(initial_values[25]),
-		hxtest_object(initial_values[26]), hxtest_object(initial_values[27]),
-		hxtest_object(initial_values[28]), hxtest_object(initial_values[29]),
-		hxtest_object(initial_values[30]), hxtest_object(initial_values[31]),
-		hxtest_object(initial_values[32])
-	};
-	hxsort(hxtest_rand_iter_api_t(values), hxtest_rand_iter_api_t(values + 33), hxtest_value_less);
+static void do_sort_iterator_partition_case(const int (&initial_values)[33],
+		const int (&expected_sorted)[33]) {
+	hxvector<hxtest_object, 33> values(initial_values);
+	hxsort(hxtest_rand_iterator_api_t(values.data()), hxtest_rand_iterator_api_t(values.data() + 33),
+		hxtest_value_less);
 	for(hxsize_t i = 0; i < 33; ++i) {
-		EXPECT_EQ(values[i].value, expected_sorted[i]);
+		EXPECT_EQ(values[i].value(), expected_sorted[i]);
 	}
 }
 
@@ -441,8 +398,8 @@ TEST_F(hxsort_test_f, iterator_support_partition_sort_network_all_ascending_take
 		1008, 1009, 1010, 1012, 1013, 1014, 1015, 1017, 1018, 1019, 1020,
 		1022, 1023, 1024, 1025, 1027, 1028, 1029, 1030, 1031, 1032
 	};
-	do_sort_iter_partition_case(initial_values, expected_sorted);
-	EXPECT_TRUE(check_stats(81, 81, 0, 48, 0, 176, 0, 0));
+	do_sort_iterator_partition_case(initial_values, expected_sorted);
+	EXPECT_TRUE(check_stats(81, 81, 0, 33, 0, 48, 0, 176, 0, 190));
 }
 
 TEST_F(hxsort_test_f, iterator_support_partition_sort_network_p3_p0_p4_p1_p2_p1_p4_p3_swap) {
@@ -456,8 +413,8 @@ TEST_F(hxsort_test_f, iterator_support_partition_sort_network_p3_p0_p4_p1_p2_p1_
 		1008, 1009, 1010, 1012, 1013, 1014, 1015, 1017, 1018, 1019, 1020,
 		1022, 1023, 1024, 1025, 1027, 1028, 1029, 1030, 1031, 1032
 	};
-	do_sort_iter_partition_case(initial_values, expected_sorted);
-	EXPECT_TRUE(check_stats(80, 80, 0, 47, 0, 170, 0, 0));
+	do_sort_iterator_partition_case(initial_values, expected_sorted);
+	EXPECT_TRUE(check_stats(80, 80, 0, 33, 0, 47, 0, 170, 0, 188));
 }
 
 TEST_F(hxsort_test_f, iterator_support_partition_sort_network_p3_p1_and_p3_p2_swap) {
@@ -471,8 +428,8 @@ TEST_F(hxsort_test_f, iterator_support_partition_sort_network_p3_p1_and_p3_p2_sw
 		1008, 1009, 1010, 1012, 1013, 1014, 1015, 1017, 1018, 1019, 1020,
 		1022, 1023, 1024, 1025, 1027, 1028, 1029, 1030, 1031, 1032
 	};
-	do_sort_iter_partition_case(initial_values, expected_sorted);
-	EXPECT_TRUE(check_stats(85, 85, 0, 52, 0, 190, 0, 0));
+	do_sort_iterator_partition_case(initial_values, expected_sorted);
+	EXPECT_TRUE(check_stats(85, 85, 0, 33, 0, 52, 0, 190, 0, 199));
 }
 
 TEST_F(hxsort_test_f, iterator_support_partition_sort_all_equal_takes_no_pivot_swaps) {
@@ -480,31 +437,28 @@ TEST_F(hxsort_test_f, iterator_support_partition_sort_all_equal_takes_no_pivot_s
 		7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
 		7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7
 	};
-	do_sort_iter_partition_case(all_equal, all_equal);
-	EXPECT_TRUE(check_stats(35, 35, 0, 2, 0, 4, 0, 0));
+	do_sort_iterator_partition_case(all_equal, all_equal);
+	EXPECT_TRUE(check_stats(35, 35, 0, 33, 0, 2, 0, 4, 0, 101));
 }
 
 TEST_F(hxsort_test_f, iterator_api_types) {
 	{
-		hxtest_object values[2] = {
-			hxtest_object(0),
-			hxtest_object(1)
-		};
-		EXPECT_TRUE(hxtest_check_forward_iter_api(
-			hxtest_forward_iter_api_t(values), hxtest_forward_iter_api_t(values + 2)));
-		EXPECT_TRUE(hxtest_check_rand_iter_api(
-			hxtest_rand_iter_api_t(values), hxtest_rand_iter_api_t(values + 2)));
+		hxvector<hxtest_object, 2> values{ 0, 1 };
+		EXPECT_TRUE(hxtest_check_forward_iterator_api(
+			hxtest_forward_iterator_api_t(values.data()), hxtest_forward_iterator_api_t(values.data() + 2)));
+		EXPECT_TRUE(hxtest_check_rand_iterator_api(
+			hxtest_rand_iterator_api_t(values.data()), hxtest_rand_iterator_api_t(values.data() + 2)));
 	}
-	EXPECT_TRUE(check_stats(2, 2, 0, 0, 0, 0, 2, 0));
+	EXPECT_TRUE(check_stats(2, 2, 0, 2, 0, 0, 0, 0, 2, 0));
 }
 #endif // HX_CPLUSPLUS >= 201402L
 #if HX_CPLUSPLUS >= 202302L
 namespace {
 
 consteval bool hxtest_hxinsertion_sort_consteval(void) {
-	int arr[5] = { 3, 1, 4, 1, 5 };
+	int arr[5] = { 33, 31, 34, 31, 35 };
 	hxinsertion_sort(arr, arr + 5);
-	return arr[0] == 1 && arr[1] == 1 && arr[2] == 3 && arr[3] == 4 && arr[4] == 5;
+	return arr[0] == 31 && arr[1] == 31 && arr[2] == 33 && arr[3] == 34 && arr[4] == 35;
 }
 static_assert(hxtest_hxinsertion_sort_consteval(),
 	"hxinsertion_sort consteval: must sort array correctly at compile time");

@@ -81,13 +81,12 @@ unused except when initializing system allocators.
   They generally use the same names as the standard.
 
 - **Algorithms**: The implementation uses the `__restrict` keyword wherever
-  appropriate. See `<hx/hxalgorithm.hpp>` for the standard algorithms and
-  `<hx/hxsort.hpp>` for comparison based sorting and lookup. Prefer radix
-  sorting with `<hx/hxradix_sort.hpp>` when you want Θ(n) sorting. Less common
-  functions have been omitted to reduce compile time. Random access iterators
-  are required for a lot of things, but the only relational operator used is
-  `<`. This codebase tries not to give an AI rope to hang itself with. Showing
-  inner-loop assembly to an AI is also advised.
+  appropriate. See `<hx/hxalgorithm.hpp>` for the core range algorithms. The
+  contents of `<hx/hxsort.hpp>` and `<hx/hxset_operations.hpp>` were moved out
+  of that header to improve compile times. Prefer sorting with
+  `<hx/hxradix_sort.hpp>` when you want O(n) sorting. This codebase tries not to
+  give an AI rope to hang itself with. Showing inner-loop assembly to an AI is
+  also advised.
 
 - **Memory Management**: Fast and deterministic. Several allocation semantics
   are supported, which matters most when crashing from memory fragmentation is
@@ -106,13 +105,14 @@ unused except when initializing system allocators.
 - **Pretty Printers**: GDB-compatible pretty printers let debuggers and most
   code editors display container contents in a human-readable format.
 
-- **C99 Compatibility**: Logging, asserts and memory management are available in
+- **C99 Compatible**: Logging, asserts and memory management are available in
   plain C99 through `<hx/libhatchet.h>`.
 
-- **AI Friendly**: Anything with the same name as the standard generally works
+- **AI Compatible**: Anything with the same name as the standard generally works
   the same way as the standard, so an AI can apply its existing knowledge of
   standard C++ directly. It also already knows how to use the test macros when
-  writing tests. Using tabs instead of spaces reduces token use.
+  writing tests. Functionality that would assist the generation of inefficient
+  code is omitted.
 
 - **Console**: An embedded command processor that binds C++ functions
   automatically using templates. Use it for interactive target debugging without
@@ -130,10 +130,10 @@ unused except when initializing system allocators.
 
 - **Smart Pointers**: Because the focus is non-dynamic allocation, shared and
   weak pointers are not provided. Use `hxhandle_table` for weak references
-  instead. `hxptr` implements `std::unique_ptr`. `hxoptional` implements
-  `std::optional`, giving the semantics of an optional temporary allocation with
-  safe access and without the allocation itself. `hxref` is a non-owning pointer
-  wrapper with the same safe access semantics.
+  instead. `hxptr` implements `std::unique_ptr`. `hxexpected` implements
+  `std::expected`, with an error whose boolean value determines whether the
+  contained value is non-null. `hxref` is a non-owning pointer wrapper with the
+  same safe access semantics.
 
 - **64-bit Ready**: Designed for both 32-bit and 64-bit targets. `hxsize_t` is
   signed because that enables important optimizations. It is equivalent to
@@ -234,6 +234,11 @@ are also available.
 
 Differences from the standard versions are listed.
 
+The containers and reference types provide safe access semantics using Monadic
+operations in C++23 with `and_then`, `or_else` and `value_or`. This supports a
+programming style where the expected values are fused with their associated
+error values and returned together, instead of ad hoc error checking.
+
 - `hxallocator` is the static-or-dynamic capacity backing used by the
   containers. Prefer static capacities where allocation is a concern.
 - `hxarray` is the fixed-size `std::array` analog. `hxvector` covers both
@@ -241,16 +246,16 @@ Differences from the standard versions are listed.
   `find`, `find_if`, `all_of`, `any_of`, `for_each`, `binary_search`, `sort` and
   `insertion_sort`. Both provide `size_bytes`, `memcpy`/`memset` fills and
   construction and assignment from C-style arrays. `hxvector` adds `full`,
-  Python-style `operator+=` append and concatenate, `generate_n`, Θ(1)
+  Python-style `operator+=` append and concatenate, `generate_n`, O(1)
   `erase_unordered` and `erase_if_unordered`, and `make_heap` / `push_heap` /
-  `pop_heap` / `erase_if_heap`, which replace `std::priority_queue`. An
+  `pop_heap`, which replace `std::priority_queue`. An
   `hxvector` also works directly as an output iterator, replacing
   `std::back_insert_iterator`.
 - `hxdeque` is a fixed-capacity ring buffer with a power-of-two capacity.
-  Every operation, including `operator[]`, is Θ(1), and `full` is provided.
+  Every operation, including `operator[]`, is O(1), and `full` is provided.
 - `hxbitset` is a fixed-size bit set stored in `size_t` words with no heap use.
-  Unlike `std::bitset` it exposes the underlying words via `data` and `bytes`
-  and loads raw bytes with `load`. Shifts and bitwise operators are provided.
+  Unlike `std::bitset` it exposes the underlying words via `data` and `bytes`.
+  Shifts and bitwise operators are provided.
 - `hxlist` is an intrusive doubly linked XOR list at half the size of a
   conventional one. `hxconstexpr_list` has the same interface but uses normal
   pointers so it works in constexpr code. Nodes are owned through a
@@ -260,30 +265,29 @@ Differences from the standard versions are listed.
   `reverse` are provided.
 - `hxflat_map` and `hxflat_set` are sorted parallel-array replacements for
   map/multimap and set/multiset. Expect O(log2(n)) lookups and O(n) insertions
-  and removals. `find` returns a pointer to the mapped value or `hxnull`
-  instead of an iterator, and elements are addressable by position with
-  `operator[]`.
+  and removals. Elements are addressable by index with `operator[]`.
 - `hxhash_table` is a fixed-size hash table with singly linked buckets embedded
   in the nodes. Additional node types are in `hxhash_table_nodes.hpp`.
   `replace` swaps a node in with a single lookup, `extract` returns an owning
   `hxptr`, and `release_all` and `release_key` unlink nodes without deleting
   them. `load_factor` and `load_max` report bucket usage.
-- `hxhandle_table` maps handles to pointers and `hxhandle_map` maps handles to
+- `hxhandle_table` maps handles to pointers and `hxslot_map` maps handles to
   values. Both use 64-bit generational handles, so use them when stale
   references need to be detected. Both provide `erase_if` and `extract`.
-  `hxhandle_map` is a slot map keeping its values contiguous for iteration.
+  `hxslot_map` is a slot map keeping its values contiguous for iteration.
 - `hxfree_list` is a fixed-capacity free-list allocator built on `hxallocator`.
   `allocate` and `try_allocate` construct a `T` and return an `hxptr` whose
   deleter returns the slot to the pool. `is_allocator` tests whether a pointer
   came from the pool.
-- `hxoptional` implements `std::optional<T>`, `hxref` implements an optional
-  pointer (`std::optional<T&>`), which the standard does not provide before
-  C++26, and `hxptr` is a unique owning pointer with a monadic `and_then` and a
-  deleter that may decline deletion, e.g. `hxdo_not_delete`.
+- `hxexpected` implements `std::expected<T, E>`, with `bool` as the default
+  error type. `hxref` implements an optional pointer (`std::optional<T&>`),
+  which the standard does not provide before C++26, and `hxptr` is a unique
+  owning pointer with a monadic `and_then` and a deleter that may decline
+  deletion, e.g. `hxdo_not_delete`.
 - Every keyed container and sort compares keys through the free functions
   `hxkey_equal`, `hxkey_less` and `hxkey_hash` in `hxkey.hpp`. Overload them for
   custom key types. The defaults require only `==` and `<`.
-- Containers with dynamic capacity move and `hxswap` in Θ(1) without touching
+- Containers with dynamic capacity move and `hxswap` in O(1) without touching
   elements.
 
 ### Algorithms
@@ -291,23 +295,24 @@ Differences from the standard versions are listed.
 Differences from the standard versions are listed.
 
 - `hxalgorithm.hpp` provides searching and set utilities taking callables:
-  `hxall_of`, `hxany_of`, `hxcount_if`, `hxexchange`, `hxfind_if`,
-  `hxfor_each`, `hxmerge`, `hxminmax`, `hxset_difference`,
-  `hxset_intersection`, `hxset_union` and `hxunique`. `hxmerge` and the set
-  operations move-assign out of their inputs and accept an `hxvector`
-  reference directly as the output iterator, appending to it without
-  `std::back_inserter`, e.g. `hxmerge<const int*, hxvector<int>&>(...)`.
-  `hxminmax` returns a result with `min` and `max` iterator fields in a
-  single pass.
-- `hxsort.hpp` provides the comparison sorts and lookup. `hxsort` is an
-  introsort, and `hxinsertion_sort` and `hxheapsort` are also available.
-  `hxbinary_search`, `hxlower_bound` and `hxupper_bound` are provided, and
-  unlike `std::binary_search`, `hxbinary_search` returns an iterator to the
-  first match instead of `bool`.
+  `hxall_of`, `hxany_of`, `hxbinary_search`, `hxcount_if`, `hxexchange`,
+  `hxfind_if`, `hxfor_each`, `hxlower_bound`, `hxmerge`, `hxminmax`,
+  `hxset_difference`, `hxset_intersection`, `hxset_union`, `hxunique` and
+  `hxupper_bound`. `hxmerge` and the set operations move-assign out of their
+  inputs and accept an `hxvector` reference directly as the output iterator,
+  appending to it without `std::back_inserter`, e.g. `hxmerge<const int*,
+  hxvector<int>&>(...)`. `hxminmax` returns a result with `min` and `max`
+  iterator fields in a single pass. Unlike `std::binary_search`,
+  `hxbinary_search` returns an iterator to the first match instead of `bool`.
+- `hxsort.hpp` provides the comparison sorts. `hxsort` is an introsort, and
+  `hxinsertion_sort` and `hxheapsort` are also available.
+- All of `hxexpected`, `hxptr`, `hxref` and `hxvector` should be able to
+  masquerade as a pointer. Although ranges are preferred and support for
+  `add_range` is near universal.
 - Every comparison routes through the `hxkey_less` and `hxkey_equal` free
   functions or an explicit callable, so custom key types overload two free
   functions once instead of passing comparators everywhere.
-- For scalar keys up to 32 bits, `hxradix_sort` sorts in Θ(n) time. Its
+- For scalar keys up to 32 bits, `hxradix_sort` sorts in O(n) time. Its
   implementation is in `src/hxradix_sort.cpp`. It sorts
   `hxradix_sort_key<key_t, value_t>` pairs and handles signed and `float`
   keys with bit manipulation. `hxradix_sort11` uses 11-bit digits for large
@@ -354,8 +359,6 @@ reimplementing here. If you need these things, use the standard library shipped
 with your compiler.
 
 - Atomics. The C version of `<stdatomic.h>` is incompatible with g++.
-- The iterators library. This codebase intentionally deemphasizes iterators.
-- The ranges library. This would be a large and pointless rewrite.
 - The strings library. Strings are allocation intensive. See the `{fmt}`
   project.
 

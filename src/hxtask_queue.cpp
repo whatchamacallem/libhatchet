@@ -34,7 +34,8 @@ hxtask_queue::~hxtask_queue(void) {
 #if HX_USE_THREADS
 	if(m_thread_pool_size_ > 0) {
 		thread_task_loop_(*this, thread_mode_::stopping_);
-		hxassertmsg(m_queue_run_level_ == run_level_::stopped_, "threading_error");
+		hxassertmsg(m_queue_run_level_ == run_level_::stopped_,
+			"bad_thread %zu", static_cast<size_t>(m_queue_run_level_));
 
 		hxthread* const end = m_threads_ + m_thread_pool_size_;
 		for(hxthread* hxrestrict it = m_threads_; it != end; ++it) {
@@ -92,7 +93,8 @@ void hxtask_queue::enqueue(hxtask* task, int priority) noexcept {
 #if HX_USE_THREADS
 	if(m_thread_pool_size_ > 0) {
 		const hxunique_lock lock(m_mutex_);
-		hxassert_hard(m_queue_run_level_ == run_level_::running_, "stopped_queue");
+		hxassert_hard(m_queue_run_level_ == run_level_::running_,
+			"queue_stopped %zu", static_cast<size_t>(m_queue_run_level_));
 		m_tasks_.push_heap(entry);
 		m_cond_var_new_tasks_.notify_one();
 	}
@@ -140,7 +142,7 @@ void hxtask_queue::thread_task_loop_(hxtask_queue& q, thread_mode_ mode) noexcep
 			if(task != hxnull) {
 				// Finished reacquiring the critical section after the previous task.
 				task = hxnull;
-				hxassertmsg(q.m_executing_count_ > 0, "internal_error");
+				hxassertmsg(q.m_executing_count_ > 0, "sys_err %zd", static_cast<hxsize_t>(q.m_executing_count_));
 				if((--q.m_executing_count_ == 0) && q.m_tasks_.empty()) {
 					q.m_cond_var_completion_.notify_all();
 				}
@@ -174,7 +176,7 @@ void hxtask_queue::thread_task_loop_(hxtask_queue& q, thread_mode_ mode) noexcep
 				// shutdown has started.
 				q.m_cond_var_completion_.wait(lock, [&q](void) {
 					hxassertmsg(q.m_queue_run_level_ == run_level_::running_,
-						"threading_error");
+						"bad_thread %zu", static_cast<size_t>(q.m_queue_run_level_));
 					return q.m_tasks_.empty() && q.m_executing_count_ == 0;
 				});
 

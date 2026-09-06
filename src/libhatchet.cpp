@@ -102,8 +102,11 @@ hxattr_weak void __sanitizer_report_error_summary(const char *error_summary) { /
 
 hxattr_weak void hxinit_internal(int version) {
 	// Check if compile time version matches callers.
-	hxassert_hard(LIBHATCHET_VER == version, "hxinit binary mismatch");
-	hxassert_hard((hxg_init_ver_ == 0) || (hxg_init_ver_ == version), "hxinit after shutdown");
+	hxassert_hard(LIBHATCHET_VER == version, "hxinit version mismatch %zd %zd",
+		static_cast<hxsize_t>(LIBHATCHET_VER), static_cast<hxsize_t>(version));
+	hxassert_hard((hxg_init_ver_ == 0) || (hxg_init_ver_ == version),
+		"hxinit already shut down %zd %zd", static_cast<hxsize_t>(hxg_init_ver_),
+		static_cast<hxsize_t>(version));
 	(void)version;
 
 	if(hxg_init_ver_ == 0) {
@@ -182,7 +185,7 @@ hxattr_weak hxattr_noexcept void hxlog_handler_v(hxlog_level_t level, const char
 
 	// Do not try to print the format string because it may be corrupt.
 	// Assume "hxlog_handler_v" will not cause recursion when logged.
-	hxassert_hard(len >= 0 && len < ((HX_MAX_LINE)-1), "hxlog_handler_v");
+	hxassert_hard(len >= 0 && len < ((HX_MAX_LINE)-1), "hxlog_handler_v %zd", static_cast<hxsize_t>(len));
 	len = hxclamp(len, 0, (HX_MAX_LINE)-2);
 
 #if HX_USE_FILE_IO

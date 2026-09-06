@@ -49,13 +49,14 @@ class hxvector_printer:
 			return self._summary
 
 		targ1: gdb.Value = self.val.type.template_argument(1)
+		type_name: str = re.sub(r'(\w+|\(anonymous namespace\))::', '', f'{self.val.type.strip_typedefs()}')
 
 		capacity: int
 		data: int
 		if targ1 == 0:
 			capacity = int(self.val['m_capacity_'])
 			if capacity <= 0:
-				self._summary = '<unallocated>'
+				self._summary = f'[0/0] {type_name}'
 				return self._summary
 			data = int(data_val)
 		else:
@@ -67,7 +68,7 @@ class hxvector_printer:
 		elem_type: gdb.Type = self.val.type.template_argument(0)
 		size: int = (end - data) // elem_type.sizeof
 		if size < 0:
-			self._summary = '<negative size>'
+			self._summary = f'<negative size> {type_name}'
 			return self._summary
 
 		self._elem_type = elem_type
@@ -75,8 +76,7 @@ class hxvector_printer:
 		self._data = data
 		self._ok = True
 
-		basename: str = re.sub(r'^((\w+|\(anonymous namespace\))::)+', '', f'{elem_type}')
-		self._summary = '[{}/{}] {}'.format(size, capacity, basename)
+		self._summary = f'[{size}/{capacity}] {type_name}'
 		return self._summary
 
 	def to_string(self) -> str:
@@ -91,6 +91,8 @@ class hxvector_printer:
 			self._parse()
 			if not self._ok:
 				return
+			allocator_type: gdb.Type = self.val.type.fields()[0].type
+			yield ('hxallocator', self.val.cast(allocator_type))
 			for i in range(self._size):
 				int_ptr: int = self._data + i * self._elem_type.sizeof
 				elem_ptr: gdb.Value = gdb.Value(int_ptr).cast(self._elem_type.pointer())

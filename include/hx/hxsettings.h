@@ -29,11 +29,19 @@
 /// -  C++20: 202002L
 /// -  C++23: 202302L
 #define HX_CPLUSPLUS 202302L // See Doxyfile.
+/// \cond HIDDEN
+#define HX_C_BEGIN_ extern "C" {
+#define HX_C_END_ }
+/// \endcond
 #elif defined __cplusplus
 #define HX_CPLUSPLUS __cplusplus
+#define HX_C_BEGIN_ extern "C" {
+#define HX_C_END_ }
 #else
-// This is C. Using 0 here avoids warnings.
+// This is C. Providing 0 here avoids warnings about using undefined variables.
 #define HX_CPLUSPLUS 0
+#define HX_C_BEGIN_
+#define HX_C_END_
 #endif
 
 #if !defined HX_USE_INLINING_ATTR
@@ -46,8 +54,8 @@
 // See the Doxyfile. Run doxygen with no args.
 #if defined HX_DOXYGEN_PARSER
 
-/// `HX_USE_THREADS` - `11` indicates C11 threads are in use. `1` is for pthreads
-/// and `0` is for no threading.
+/// `HX_USE_THREADS` - `11` indicates C11 threads are in use. `1` is for
+/// pthreads and `0` is for no threading.
 #define HX_USE_THREADS 11
 
 /// `HX_USE_LIBCXX`: Indicates whether libstdc++/libc++ are present. Set
@@ -81,11 +89,12 @@
 /// recursively, regardless of the cost heuristic used for those calls.
 #define hxattr_flatten
 
-/// `hxattr_hot` - Optimize a function more aggressively. Significantly increases
-/// code utilization. Adjust implementation according to needs.
+/// `hxattr_hot` - Optimize a function more aggressively. Significantly
+/// increases code utilization. Adjust implementation according to needs.
 #define hxattr_hot
 
-/// `hxattr_nodiscard` - Indicates the caller should not discard the return value.
+/// `hxattr_nodiscard` - Indicates the caller should not discard the return
+/// value.
 #define hxattr_nodiscard
 
 /// `hxattr_noexcept` - Use gcc/clang `nothrow` attribute. Unlike `noexcept`
@@ -371,20 +380,22 @@
 #endif
 
 #if !defined HX_MAX_LINE
-/// `HX_MAX_LINE` - Set to 2 KiB. Line buffer size for formatted messages printed
-/// with this platform. Only allocated on the stack.
+/// `HX_MAX_LINE` - Set to 2 KiB. Line buffer size for formatted messages
+/// printed with this platform. Only allocated on the stack.
 #define HX_MAX_LINE (2 * HX_KIB)
 #endif
 
 #if !defined HX_USE_GOOGLE_TEST
-/// `HX_USE_GOOGLE_TEST` - Switch to using the real Google Test. Defaults to `0`.
+/// `HX_USE_GOOGLE_TEST` - Switch to using the real Google Test. Defaults to
+/// `0`.
 #define HX_USE_GOOGLE_TEST 0
 #endif
 
 #if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG && defined __GLIBC__ && !defined __FAST_MATH__
 #if !defined HX_USE_FLOATING_POINT_TRAPS
-/// `HX_USE_FLOATING_POINT_TRAPS` - Traps `(FE_DIVBYZERO|FE_INVALID|FE_OVERFLOW)` in
-/// glibc debug builds. There are a number of relevant compiler flags.
+/// `HX_USE_FLOATING_POINT_TRAPS` - Traps
+/// `(FE_DIVBYZERO|FE_INVALID|FE_OVERFLOW)` in glibc debug builds. There are a
+/// number of relevant compiler flags.
 #define HX_USE_FLOATING_POINT_TRAPS 1
 #endif
 #else
@@ -428,11 +439,11 @@ HX_CHECK_USE_(HX_USE_THREADS)
 #define HX_APPEND_COUNTER_(x_, y_) HX_APPEND_COUNTER2_(x_, y_)
 #define HX_APPEND_COUNTER(x_) HX_APPEND_COUNTER_(x_, __COUNTER__)
 
-// HX_BEGIN_INL_/HX_END_INL_ - These allow excluding .inl files from the module
+// HX_INL_BEGIN_/HX_INL_END_ - These allow excluding .inl files from the module
 // export block. See hxmodule.cppm for details.
-#if !defined HX_BEGIN_INL_
-#define HX_BEGIN_INL_
-#define HX_END_INL_
+#if !defined HX_INL_BEGIN_
+#define HX_INL_BEGIN_
+#define HX_INL_END_
 #endif
 
 // HX_USE_NAMESPACE - Wraps the entire library in a namespace when HX_USE_NAMESPACE is
@@ -452,13 +463,11 @@ HX_CHECK_USE_(HX_USE_NAMESPACE)
 /// \endcond
 
 #if !(HX_USE_MACROS_WITH_MODULE)
-#if HX_CPLUSPLUS
-extern "C" {
-#endif
+HX_C_BEGIN_
 
-/// `hxsettings` - Constructed by first call to `hxinit` which happens when on
+/// `hxsettings_t` - Constructed by first call to `hxinit` which happens when on
 /// or before the system memory allocators construct. Not thread safe.
-struct hxsettings {
+struct hxsettings_t {
 	/// `log_level` - Logging level for the application (e.g., verbosity of
 	/// logs).
 	uint8_t log_level;
@@ -469,12 +478,10 @@ struct hxsettings {
 };
 
 /// `hxg_settings` - Global class constructed by `hxinit`.
-extern struct hxsettings hxg_settings;
+extern struct hxsettings_t hxg_settings;
 
-/// `hxsettings_construct` - Internal. Used to reset settings at startup.
+/// `hxsettings_construct_` - Internal. Used to reset settings at startup.
 void hxsettings_construct_(void);
 
-#if HX_CPLUSPLUS
-} // extern "C"
-#endif
+HX_C_END_
 #endif // HX_USE_MACROS_WITH_MODULE

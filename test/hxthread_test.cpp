@@ -23,7 +23,8 @@ public:
 	hxcondition_variable* handshake;
 	int* waiting;
 	hxthread_test_parameters_t(hxmutex* m, hxcondition_variable* cv, bool* r, int* w)
-		: mutex(m), condition_variable(cv), ready(r), woken(w), handshake(hxnull), waiting(hxnull) { }
+		: mutex(m), condition_variable(cv), ready(r), woken(w),
+		handshake(hxnull), waiting(hxnull) { }
 	hxthread_test_parameters_t(hxmutex* m, hxcondition_variable* cv, bool* r, int* w,
 			hxcondition_variable* h, int* g)
 		: mutex(m), condition_variable(cv), ready(r), woken(w), handshake(h), waiting(g) { }
@@ -97,7 +98,7 @@ TEST(hxthread_test_mutex, double_lock_unlock) {
 
 TEST(hxthread_test_mutex, native_handle_notnull) {
 	hxmutex mutex;
-	EXPECT_NE(mutex.native_handle(), hxnullptr);
+	EXPECT_NE(mutex.native_handle(), hxnil);
 }
 
 TEST(hxthread_test_unique_lock, defer_lock) {
@@ -138,7 +139,7 @@ TEST(hxthread_test_condition_variable, notify_no_waiters) {
 
 TEST(hxthread_test_condition_variable, native_handle_not_null) {
 	hxcondition_variable condition_variable;
-	EXPECT_NE(condition_variable.native_handle(), hxnullptr);
+	EXPECT_NE(condition_variable.native_handle(), hxnil);
 }
 
 TEST(hxthread_test_condition_variable, wait_predicate) {
@@ -284,7 +285,6 @@ TEST(hxthread_test_condition_variable, wait_notify_sequence) {
 }
 
 TEST(hxthread_test_thread, multiple_thread_start_join) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	const int reps = 10;
 	int shared = 0;
 	hxmutex mutex;

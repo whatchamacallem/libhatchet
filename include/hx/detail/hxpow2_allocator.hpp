@@ -39,8 +39,7 @@ public:
 	hxinline uint32_t get_hash_shift_(void) const { return m_cached_value_; }
 	hxinline uint32_t get_mask_(void) const { return m_cached_value_; }
 	hxinline hxattr_flatten void set_size_bits_(uint32_t bits_, uint32_t cached_value_) {
-		hxassertmsg(m_cached_value_ == 0, "reallocation_disallowed");
-		hxassertmsg(bits_ > 0 && bits_ < 32, "bad_bits %d", static_cast<int>(bits_));
+		hxassertmsg(bits_ - 1u < 30u, "bad_bits %u", bits_); // bits_ must be > 0.
 		m_cached_value_ = cached_value_;
 		this->reserve_storage(static_cast<hxsize_t>(1) << bits_);
 		hxif_constexpr(zero_init_) {

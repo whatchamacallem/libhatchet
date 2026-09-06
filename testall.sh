@@ -22,12 +22,6 @@ fi
 # tests to avoid matches with intermediates.
 ./clean.sh
 
-# Tabs size 4 not spaces.
-if grep -nE '^  ' */*.c */*.cpp */*.h */*.hpp */*.inl *.sh >&2; then
-	echo "error: Lines starting with a space are not allowed in text files."
-	exit 1
-fi
-
 # The test directory should not use names ending with an underscore. Those names
 # are reserved for internal symbols. Two underscores are allowed.
 if grep -nE --exclude=hxtest_main.cpp                                             \
@@ -56,6 +50,12 @@ if grep -nEHIR --include='*.cpp' --include='*.h' --include='*.hpp' --include='*.
 	exit 1
 fi
 
+# Require tabs size 4 not spaces.
+if grep -nE '^  ' */*.c */*.cpp */*.h */*.hpp */*.inl *.sh >&2; then
+	echo "error: Use tabs size 4 not spaces."
+	exit 1
+fi
+
 # Check for stray CRLF.
 if git ls-files -z | xargs -0 file | grep CRLF; then
 	printf 'error: CRLF line ending found. Fix with: sed -i %ss/\\r//%s <file>\n' "'" "'"
@@ -76,20 +76,6 @@ if find . -type f "${HX_TEXT_FILES_[@]}" -exec grep -nP '[ \t]+$' {} + >&2; then
 	exit 1
 fi
 
-# Check for non-ASCII characters other than the allowed set. No Unicode BOM allowed.
-HX_NON_ASCII_ALLOW_='©Θ…²₁₂≤≥❌🗀🪓'
-if find . -type f \( "${HX_TEXT_FILES_[@]}" \) -exec grep -nP "[^[:ascii:]$HX_NON_ASCII_ALLOW_]" {} + >&2; then
-	echo "error: Non-ASCII characters other than '$HX_NON_ASCII_ALLOW_' found."
-	exit 1
-fi
-
-# Reject ASCII control characters below 128 that are illegal in C/C++ source.
-if find . -type f "${HX_TEXT_FILES_[@]}" \
-		-exec grep -nP '[\x00-\x08\x0b-\x1f\x7f]' {} + >&2; then
-	echo "error: Illegal control characters found in C/C++ source."
-	exit 1
-fi
-
 # Check text files end with exactly one newline.
 find . -type f "${HX_TEXT_FILES_[@]}" | while read -r HX_FILE_; do
 	if [[ $(tail -c 2 "$HX_FILE_" | tr -dc '\n' | wc -c) -ne 1 ]]; then
@@ -97,6 +83,20 @@ find . -type f "${HX_TEXT_FILES_[@]}" | while read -r HX_FILE_; do
 		exit 1
 	fi
 done
+
+# Check for non-ASCII characters other than the allowed set.
+HX_NON_ASCII_ALLOW_='©…²₁₂≤≥🗀❌🪓'
+if find . -type f \( "${HX_TEXT_FILES_[@]}" \) -exec grep -nP "[^[:ascii:]$HX_NON_ASCII_ALLOW_]" {} + >&2; then
+	echo "error: Non-ASCII characters other than '$HX_NON_ASCII_ALLOW_' found."
+	exit 1
+fi
+
+# Reject ASCII control characters that are illegal in C/C++ source.
+if find . -type f "${HX_TEXT_FILES_[@]}" \
+		-exec grep -nP '[\x00-\x08\x0b-\x1f\x7f]' {} + >&2; then
+	echo "error: Illegal control characters found in C/C++ source."
+	exit 1
+fi
 
 PS4='\e[38;5;208m[${SECONDS}s] ${BASH_SOURCE}:${LINENO}: \e[0m'
 set -o xtrace

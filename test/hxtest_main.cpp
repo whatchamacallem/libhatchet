@@ -40,7 +40,7 @@ TEST(hxtest_main, set_assert_handler) {
 	hxs_test_assert_handler_count = 0;
 	hxset_assert_handler(hxtest_assert_handler);
 	const volatile bool failing = false;
-	hxassert_always((bool)failing, "hxtest_set_assert_handler_intentional");
+	hxassert_always((bool)failing, "hxset_assert_handler should have fired");
 	hxset_assert_handler(hxnull);
 	EXPECT_EQ(hxs_test_assert_handler_count, 1);
 
@@ -110,14 +110,14 @@ bool run_all_tests(const char* test_suite_filter) {
 #endif
 
 #if HX_TEST_ERROR_HANDLING
-	const int hxs_expected_failures = 8;
-	hxassert_always(tests_failing == hxs_expected_failures,
-		"unexpected_failures Expected exactly %d tests to fail...", hxs_expected_failures);
-	if(tests_failing == hxs_expected_failures) {
+	const int expected_failures = 8;
+	hxassert_always(tests_failing == expected_failures,
+		"stray_failures want %d", expected_failures);
+	if(tests_failing == expected_failures) {
 		hxlog_handler(hxlog_level_warning,
-			"expected_failures Expected exactly %d tests to fail...", hxs_expected_failures);
+			"expected_failures Expected exactly %d tests to fail...", expected_failures);
 	}
-	return tests_failing == hxs_expected_failures;
+	return tests_failing == expected_failures;
 #else
 	return tests_failing == 0;
 #endif
@@ -159,7 +159,7 @@ int test_main(int argc, char**argv) {
 	// listing tests as gtest_discover_tests does, since nothing has run.
 	const hxmemory_manager_stats stats = hxmemory_manager_utilization(true, false);
 	hxassert_always(stats.allocator_overflows == 2,
-		"allocator_overflows expected 2 overflows got %zu", stats.allocator_overflows);
+		"allocator_overflow count %zu", stats.allocator_overflows);
 #endif
 
 	hxshutdown();

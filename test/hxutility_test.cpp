@@ -24,10 +24,18 @@ public:
 
 hxutility_test_forward_t hxutility_test_forward_make_forwarded() { return { 11 }; }
 hxutility_test_forward_t hxutility_test_forward_make_const_forwarded() { return { 13 }; }
-hxutility_test_forward hxutility_test_forward_detect(hxutility_test_forward_t&) { return hxutility_test_forward::lvalue; }
-hxutility_test_forward hxutility_test_forward_detect(const hxutility_test_forward_t&) { return hxutility_test_forward::const_lvalue; }
-hxutility_test_forward hxutility_test_forward_detect(hxutility_test_forward_t&&) { return hxutility_test_forward::rvalue; }
-hxutility_test_forward hxutility_test_forward_detect(const hxutility_test_forward_t&&) { return hxutility_test_forward::const_rvalue; }
+hxutility_test_forward hxutility_test_forward_detect(hxutility_test_forward_t&) {
+	return hxutility_test_forward::lvalue;
+}
+hxutility_test_forward hxutility_test_forward_detect(const hxutility_test_forward_t&) {
+	return hxutility_test_forward::const_lvalue;
+}
+hxutility_test_forward hxutility_test_forward_detect(hxutility_test_forward_t&&) {
+	return hxutility_test_forward::rvalue;
+}
+hxutility_test_forward hxutility_test_forward_detect(const hxutility_test_forward_t&&) {
+	return hxutility_test_forward::const_rvalue;
+}
 template<typename T>
 hxutility_test_forward hxutility_test_forward_through_template(T&& value) {
 	return hxutility_test_forward_detect(hxforward<T>(value));
@@ -56,95 +64,128 @@ public:
 
 static_assert(hxtrue_t::value, "hxtrue_t must report true");
 static_assert(!hxfalse_t::value, "hxfalse_t must report false");
-static_assert(hxis_same<hxenable_if_t<true, int>, int>::value,
+static_assert(hxis_same<hxenable_if_t<true, int>, int>(),
 	"hxenable_if_t<true> must expose the requested type");
-static_assert(hxis_same<hxremove_reference_t<int>, int>::value,
+static_assert(hxis_same<hxremove_reference_t<int>, int>(),
 	"hxremove_reference leaves non-references untouched");
-static_assert(hxis_same<hxremove_reference_t<int&>, int>::value,
+static_assert(hxis_same<hxremove_reference_t<int&>, int>(),
 	"hxremove_reference_t strips lvalue references");
-static_assert(hxis_same<hxremove_reference_t<int&&>, int>::value,
+static_assert(hxis_same<hxremove_reference_t<int&&>, int>(),
 	"hxremove_reference_t strips rvalue references");
-static_assert(hxis_same<hxremove_pointer_t<int*>, int>::value,
+static_assert(hxis_same<hxremove_pointer_t<int*>, int>(),
 	"hxremove_pointer should strip pointers");
-static_assert(hxis_same<hxremove_pointer_t<int* const>, int>::value,
+static_assert(hxis_same<hxremove_pointer_t<int* const>, int>(),
 	"hxremove_pointer should ignore const pointers");
-static_assert(hxis_same<hxremove_pointer_t<const int*>, const int>::value,
+static_assert(hxis_same<hxremove_pointer_t<const int*>, const int>(),
 	"hxremove_pointer should leave pointed-to qualifiers");
-static_assert(hxis_same<hxremove_pointer_t<int* volatile>, int>::value,
+static_assert(hxis_same<hxremove_pointer_t<int* volatile>, int>(),
 	"hxremove_pointer_t should ignore volatile pointers");
-static_assert(hxis_same<hxremove_pointer_t<int>, int>::value,
+static_assert(hxis_same<hxremove_pointer_t<int>, int>(),
 	"hxremove_pointer_t should leave non-pointers untouched");
-static_assert(hxis_lvalue_reference<int&>::value,
+static_assert(hxis_lvalue_reference<int&>(),
 	"hxis_lvalue_reference should detect lvalues");
-static_assert(!hxis_lvalue_reference<int>::value,
+static_assert(!hxis_lvalue_reference<int>(),
 	"hxis_lvalue_reference should reject non-references");
-static_assert(hxis_rvalue_reference<int&&>::value,
+static_assert(hxis_same<decltype(hxforward_like<int&>(hxdeclval<int&>())), int&>(),
+	"hxforward_like should produce mutable lvalues");
+static_assert(hxis_same<decltype(hxforward_like<const int&>(hxdeclval<int&>())), const int&>(),
+	"hxforward_like should produce const lvalues");
+static_assert(hxis_same<decltype(hxforward_like<int>(hxdeclval<int&>())), int&&>(),
+	"hxforward_like should produce mutable rvalues");
+static_assert(hxis_same<decltype(hxforward_like<const int>(hxdeclval<int&>())), const int&&>(),
+	"hxforward_like should produce const rvalues");
+static_assert(hxis_rvalue_reference<int&&>(),
 	"hxis_rvalue_reference should detect rvalues");
-static_assert(!hxis_rvalue_reference<int&>::value,
+static_assert(!hxis_rvalue_reference<int&>(),
 	"hxis_rvalue_reference should reject lvalues");
-static_assert(hxis_same<hxremove_cv_t<int>, int>::value,
+static_assert(hxis_same<hxremove_cv_t<int>, int>(),
 	"hxremove_cv_t leaves plain types untouched");
-static_assert(hxis_same<hxremove_cv_t<const volatile int>, int>::value,
+static_assert(hxis_same<hxremove_cv_t<const volatile int>, int>(),
 	"hxremove_cv strips const volatile");
-static_assert(hxis_same<hxremove_cv_t<const int>, int>::value,
+static_assert(hxis_same<hxremove_cv_t<const int>, int>(),
 	"hxremove_cv_t strips const");
-static_assert(hxis_same<hxremove_cv_t<volatile int>, int>::value,
+static_assert(hxis_same<hxremove_cv_t<volatile int>, int>(),
 	"hxremove_cv_t strips volatile");
-static_assert(!hxis_const<int>::value, "hxis_const should reject mutable");
-static_assert(hxis_const<const int>::value,
+static_assert(!hxis_const<int>(), "hxis_const should reject mutable");
+static_assert(hxis_const<const int>(),
 	"hxis_const should detect const");
-static_assert(hxis_void<void>::value, "hxis_void should detect void");
-static_assert(hxis_void<const void>::value,
+static_assert(hxis_void<void>(), "hxis_void should detect void");
+static_assert(hxis_void<const void>(),
 	"hxis_void should ignore qualifiers");
-static_assert(!hxis_void<int>::value, "hxis_void should reject others");
-static_assert(hxis_integral<int>::value,
+static_assert(!hxis_void<int>(), "hxis_void should reject others");
+static_assert(hxis_integral<int>(),
 	"hxis_integral should detect int");
-static_assert(hxis_integral<const unsigned long>::value,
+static_assert(hxis_integral<const unsigned long>(),
 	"hxis_integral should ignore qualifiers");
-static_assert(!hxis_integral<float>::value,
+static_assert(!hxis_integral<float>(),
 	"hxis_integral should reject floats");
-static_assert(hxis_floating_point<float>::value,
+static_assert(hxis_floating_point<float>(),
 	"hxis_floating_point should detect floats");
-static_assert(hxis_floating_point<const long double>::value,
+static_assert(hxis_floating_point<const long double>(),
 	"hxis_floating_point should ignore qualifiers");
-static_assert(!hxis_floating_point<int>::value,
+static_assert(!hxis_floating_point<int>(),
 	"hxis_floating_point should reject ints");
-static_assert(!hxis_array<int>::value,
+static_assert(!hxis_array<int>(),
 	"hxis_array should reject non-arrays");
-static_assert(hxis_array<int[4]>::value,
+static_assert(hxis_array<int[4]>(),
 	"hxis_array should detect sized arrays");
-static_assert(hxis_array<const int[]>::value,
+static_assert(hxis_array<const int[]>(),
 	"hxis_array should detect unsized arrays");
-static_assert(hxis_pointer<int*>::value,
+static_assert(hxis_pointer<int*>(),
 	"hxis_pointer should detect pointers");
-static_assert(hxis_pointer<const int*>::value,
+static_assert(hxis_pointer<const int*>(),
 	"hxis_pointer should ignore qualifiers");
-static_assert(!hxis_pointer<int>::value,
+static_assert(!hxis_pointer<int>(),
 	"hxis_pointer should reject non-pointers");
-static_assert(hxis_same<hxrestrict_t<int>, int>::value,
+static_assert(hxis_same<hxrestrict_t<int>, int>(),
 	"hxrestrict_t should leave non-pointers untouched");
 static_assert(sizeof(hxrestrict_t<int*>) == sizeof(int*),
 	"hxrestrict_t should preserve pointer representation");
-static_assert(hxbinds_directly<int, int>::value,
+static_assert(hxbinds_directly<int, int>(),
 	"hxbinds_directly should accept identical types");
-static_assert(hxbinds_directly<const int, int>::value,
+static_assert(hxbinds_directly<const int, int>(),
 	"hxbinds_directly should accept adding const");
-static_assert(!hxbinds_directly<int, const int>::value,
+static_assert(!hxbinds_directly<int, const int>(),
 	"hxbinds_directly should reject removing const");
-static_assert(!hxbinds_directly<const short, int>::value,
+static_assert(!hxbinds_directly<const short, int>(),
 	"hxbinds_directly should reject a type requiring conversion, even as a const reference");
-static_assert(!hxbinds_directly<short, int>::value,
+static_assert(!hxbinds_directly<short, int>(),
 	"hxbinds_directly should reject a type requiring conversion");
-static_assert(hxbinds_directly<hxutility_test_binds_base_t, hxutility_test_binds_derived_t>::value,
+static_assert(hxbinds_directly<hxutility_test_binds_base_t, hxutility_test_binds_derived_t>(),
 	"hxbinds_directly should accept derived to base");
-static_assert(!hxbinds_directly<hxutility_test_binds_derived_t, hxutility_test_binds_base_t>::value,
+static_assert(!hxbinds_directly<hxutility_test_binds_derived_t, hxutility_test_binds_base_t>(),
 	"hxbinds_directly should reject base to derived");
-static_assert(hxbinds_directly<long, hxutility_test_binds_ref_conversion_t>::value,
+static_assert(hxbinds_directly<long, hxutility_test_binds_ref_conversion_t>(),
 	"hxbinds_directly should accept conversion operators returning references");
-static_assert(!hxbinds_directly<long, const hxutility_test_binds_ref_conversion_t>::value,
+static_assert(!hxbinds_directly<long, const hxutility_test_binds_ref_conversion_t>(),
 	"hxbinds_directly should reject conversion operators requiring non-const");
-static_assert(!hxbinds_directly<const long, hxutility_test_binds_value_conversion_t>::value,
+static_assert(!hxbinds_directly<const long, hxutility_test_binds_value_conversion_t>(),
 	"hxbinds_directly should reject conversion operators returning values");
+
+TEST(hxutility_test, type_trait_functions_evaluate_at_runtime) {
+	EXPECT_TRUE((hxbinds_directly<int, int>()));
+	EXPECT_FALSE((hxbinds_directly<int, const int>()));
+	EXPECT_TRUE(hxis_array<int[4]>());
+	EXPECT_FALSE(hxis_array<int>());
+	EXPECT_TRUE(hxis_const<const int>());
+	EXPECT_FALSE(hxis_const<int>());
+	EXPECT_TRUE(hxis_floating_point<float>());
+	EXPECT_FALSE(hxis_floating_point<int>());
+	EXPECT_TRUE(hxis_integral<int>());
+	EXPECT_FALSE(hxis_integral<float>());
+	EXPECT_TRUE(hxis_lvalue_reference<int&>());
+	EXPECT_FALSE(hxis_lvalue_reference<int>());
+	EXPECT_TRUE(hxis_pointer<int*>());
+	EXPECT_FALSE(hxis_pointer<int>());
+	EXPECT_TRUE(hxis_reference<int&>());
+	EXPECT_FALSE(hxis_reference<int>());
+	EXPECT_TRUE(hxis_rvalue_reference<int&&>());
+	EXPECT_FALSE(hxis_rvalue_reference<int&>());
+	EXPECT_TRUE((hxis_same<int, int>()));
+	EXPECT_FALSE((hxis_same<int, float>()));
+	EXPECT_TRUE(hxis_void<void>());
+	EXPECT_FALSE(hxis_void<int>());
+}
 
 TEST(hxutility_test, hxabs_double) {
 	const double negative = -34.75;
@@ -156,9 +197,11 @@ TEST(hxutility_test, hxabs_double) {
 
 TEST(hxutility_test, hxforward) {
 	EXPECT_EQ(hxutility_test_forward::rvalue,
-		hxutility_test_forward_detect(hxforward<hxutility_test_forward_t>(hxutility_test_forward_make_forwarded())));
+		hxutility_test_forward_detect(hxforward<hxutility_test_forward_t>(
+			hxutility_test_forward_make_forwarded())));
 	EXPECT_EQ(hxutility_test_forward::const_rvalue,
-		hxutility_test_forward_detect(hxforward<const hxutility_test_forward_t>(hxutility_test_forward_make_const_forwarded())));
+		hxutility_test_forward_detect(hxforward<const hxutility_test_forward_t>(
+			hxutility_test_forward_make_const_forwarded())));
 	hxutility_test_forward_t lvalue = { 7 };
 	EXPECT_EQ(hxutility_test_forward::lvalue, hxutility_test_forward_through_template(lvalue));
 	const hxutility_test_forward_t const_lvalue = { 9 };
@@ -174,13 +217,16 @@ TEST(hxutility_test, hxforward) {
 		hxutility_test_forward_through_template(hxmove(const_movable_value)));
 }
 
-TEST(hxutility_test, hxnullptr_converts_only_to_null) {
-	const hxnullptr_t null_object;
-	const int* int_ptr = null_object;
-	EXPECT_EQ(int_ptr, hxnullptr);
-	struct hxutility_test_method_holder_t { int value; };
-	int hxutility_test_method_holder_t::* const method_ptr = null_object;
-	EXPECT_EQ(method_ptr, hxnullptr);
+TEST(hxutility_test, hxforward_like) {
+	hxutility_test_forward_t value = { 23 };
+	EXPECT_EQ(hxutility_test_forward::lvalue,
+		hxutility_test_forward_detect(hxforward_like<int&>(value)));
+	EXPECT_EQ(hxutility_test_forward::const_lvalue,
+		hxutility_test_forward_detect(hxforward_like<const int&>(value)));
+	EXPECT_EQ(hxutility_test_forward::rvalue,
+		hxutility_test_forward_detect(hxforward_like<int>(value)));
+	EXPECT_EQ(hxutility_test_forward::const_rvalue,
+		hxutility_test_forward_detect(hxforward_like<const int>(value)));
 }
 
 TEST(hxutility_test, hxlog2i_returns_highest_set_bit) {
@@ -292,18 +338,18 @@ TEST(hxutility_test, hxisgraph) {
 	EXPECT_TRUE(hxisgraph(static_cast<char>(0xFF)));
 }
 
-TEST(hxutility_test, hxhex_dump) {
+TEST(hxutility_test, hxhex_view) {
 	const uint8_t bytes[32] = { 0 };
-	hxhex_dump(bytes, 0u, false);
-	hxhex_dump(bytes, sizeof bytes, false);
-	hxhex_dump(bytes, sizeof bytes, true);
+	hxhex_view(bytes, 0u, false);
+	hxhex_view(bytes, sizeof bytes, false);
+	hxhex_view(bytes, sizeof bytes, true);
 	SUCCEED();
 }
 
-TEST(hxutility_test, hxfloat_dump) {
+TEST(hxutility_test, hxfloat_view) {
 	const float floats[8] = { 0.0f };
-	hxfloat_dump(floats, 0u);
-	hxfloat_dump(floats, 4u);
-	hxfloat_dump(floats, sizeof floats / sizeof floats[0]);
+	hxfloat_view(floats, 0u);
+	hxfloat_view(floats, 4u);
+	hxfloat_view(floats, sizeof floats / sizeof floats[0]);
 	SUCCEED();
 }

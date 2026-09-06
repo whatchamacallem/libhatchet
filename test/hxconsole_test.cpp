@@ -77,7 +77,9 @@ volatile float hxs_console_test_file_var1 = 0.0f;
 volatile float hxs_console_test_file_var2 = 0.0f;
 
 bool hxconsole_test_fn_mixed(int32_t a_, float b_, const char* c_) {
-	hxs_console_test_fn_mixed_i32 = a_; hxs_console_test_fn_mixed_f32 = b_; hxs_console_test_fn_mixed_str = c_;
+	hxs_console_test_fn_mixed_i32 = a_;
+	hxs_console_test_fn_mixed_f32 = b_;
+	hxs_console_test_fn_mixed_str = c_;
 	return true;
 }
 bool hxconsole_test_fn_ints(int32_t a_, uint32_t b_) {
@@ -428,7 +430,8 @@ TEST(hxconsole_test, function_types) {
 	EXPECT_EQ(hxs_console_test_fn_bool, false);
 	hxs_console_test_fn_str = hxnull;
 	EXPECT_TRUE(hxconsole_exec_line("hxconsole_test_fn_str hello world"));
-	EXPECT_TRUE(hxs_console_test_fn_str != hxnull && ::strncmp(hxs_console_test_fn_str, "hello", 5) == 0);
+	EXPECT_TRUE(hxs_console_test_fn_str != hxnull
+		&& ::strncmp(hxs_console_test_fn_str, "hello", 5) == 0);
 }
 
 TEST(hxconsole_test, function_overflow) {
@@ -502,11 +505,14 @@ TEST(hxconsole_test, function_overflow) {
 }
 
 TEST(hxconsole_test, function_multi_arg) {
-	hxs_console_test_fn_mixed_i32 = 0; hxs_console_test_fn_mixed_f32 = 0.0f; hxs_console_test_fn_mixed_str = hxnull;
+	hxs_console_test_fn_mixed_i32 = 0;
+	hxs_console_test_fn_mixed_f32 = 0.0f;
+	hxs_console_test_fn_mixed_str = hxnull;
 	EXPECT_TRUE(hxconsole_exec_line("hxconsole_test_fn_mixed 7 2.5 hello"));
 	EXPECT_EQ(hxs_console_test_fn_mixed_i32, static_cast<int32_t>(7));
 	EXPECT_EQ(hxs_console_test_fn_mixed_f32, 2.5f);
-	EXPECT_TRUE(hxs_console_test_fn_mixed_str != hxnull && ::strncmp(hxs_console_test_fn_mixed_str, "hello", 5) == 0);
+	EXPECT_TRUE(hxs_console_test_fn_mixed_str != hxnull
+		&& ::strncmp(hxs_console_test_fn_mixed_str, "hello", 5) == 0);
 	hxs_console_test_fn_ints_i32 = 0; hxs_console_test_fn_ints_u32 = 0;
 	EXPECT_TRUE(hxconsole_exec_line("hxconsole_test_fn_ints -5 100"));
 	EXPECT_EQ(hxs_console_test_fn_ints_i32, static_cast<int32_t>(-5));
@@ -679,7 +685,8 @@ TEST(hxconsole_test, file_fail) {
 	}
 	EXPECT_FALSE(hxconsole_exec_filename("hxconsole_test_file_test.txt"));
 	{
-		hxfile(hxfile::open_mode_out, "hxconsole_test_file_test.txt") << "hxconsole_test_failing_command\n";
+		hxfile(hxfile::open_mode_out, "hxconsole_test_file_test.txt")
+			<< "hxconsole_test_failing_command\n";
 	}
 	EXPECT_FALSE(hxconsole_exec_filename("hxconsole_test_file_test.txt"));
 	hxs_console_test_file_var1 = 0.0f;
@@ -700,7 +707,7 @@ TEST(hxconsole_test, file_peek_poke) {
 		hxfile f(hxfile::open_mode_out, "hxconsole_test_file_test.txt");
 		f.print("peek 0x%zx 4\n", reinterpret_cast<size_t>(target));
 		f.print("poke 0x%zx 4 0xde\n", reinterpret_cast<size_t>(target + 1));
-		f.print("hexdump 0x%zx 12\n", reinterpret_cast<size_t>(target));
+		f.print("hexview 0x%zx 12\n", reinterpret_cast<size_t>(target));
 	}
 	EXPECT_TRUE(hxconsole_exec_line("exec hxconsole_test_file_test.txt"));
 	EXPECT_EQ(target[0], 111);
@@ -713,7 +720,7 @@ TEST(hxconsole_test, file_peek_poke_floats) {
 	{
 		hxfile f(hxfile::open_mode_out, "hxconsole_test_file_test.txt");
 		f.print("poke 0x%zx 4 0x435E0000\n", reinterpret_cast<size_t>(target + 1));
-		f.print("floatdump 0x%zx 3\n", reinterpret_cast<size_t>(target));
+		f.print("floatview 0x%zx 3\n", reinterpret_cast<size_t>(target));
 	}
 	EXPECT_TRUE(hxconsole_exec_line("exec hxconsole_test_file_test.txt"));
 	EXPECT_EQ(target[0], 111.0f);
@@ -725,11 +732,11 @@ TEST(hxconsole_test, file_final_line_without_newline) {
 	hxs_console_test_file_var1 = 0.0f;
 	{
 		hxfile f(hxfile::open_mode_out, "hxconsole_test_file_test.txt");
-		f << "hxconsole_test_file_var 41\n"
-			 "hxconsole_test_file_var 42";
+		f << "hxconsole_test_file_var 30\n"
+			 "hxconsole_test_file_var 31";
 	}
 	EXPECT_TRUE(hxconsole_exec_filename("hxconsole_test_file_test.txt"));
-	EXPECT_EQ(hxs_console_test_file_var1, 42.0f);
+	EXPECT_EQ(hxs_console_test_file_var1, 31.0f);
 }
 
 TEST(hxconsole_test, file_partial_line_carried_across_reads) {

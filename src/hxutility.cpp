@@ -10,22 +10,25 @@ extern "C" {
 __attribute__((no_sanitize("address")))
 __attribute__((no_sanitize("memory")))
 #endif
-void hxhex_dump(const void* address, size_t bytes, bool pretty) {
+void hxhex_view(const void* address, size_t bytes, bool pretty) {
 	// Caller is responsible for passing a valid size; bytes near SIZE_MAX will overflow.
 	bytes = (bytes + 15u) & ~(size_t)15; // round up to 16 bytes.
 	const volatile uint8_t* addr = reinterpret_cast<const volatile uint8_t*>(address);
 	for(size_t i = 0; i < bytes;) {
 		if(pretty) {
-			hxlog_handler(hxlog_level_console, "%0*zx: ", static_cast<int>(sizeof(size_t) * 2u), reinterpret_cast<size_t>(addr));
+			hxlog_handler(hxlog_level_console, "%0*zx: ", static_cast<int>(sizeof(size_t) * 2u),
+				reinterpret_cast<size_t>(addr));
 		}
 		const volatile uint8_t* str = addr;
 		for(size_t maximum = 4u; i < bytes && maximum-- != 0u; i += 4) {
-			hxlog_handler(hxlog_level_console, "%02x%02x%02x%02x ", addr[0], addr[1], addr[2], addr[3]);
+			hxlog_handler(hxlog_level_console, "%02x%02x%02x%02x ", addr[0], addr[1], addr[2],
+				addr[3]);
 			addr += 4;
 		}
 		if(pretty) {
 			while(str < addr) {
-				hxlog_handler(hxlog_level_console, "%c", (*str >= 0x20 && *str <= 0x7e) ? *str : '.');
+				hxlog_handler(hxlog_level_console, "%c",
+					(*str >= 0x20 && *str <= 0x7e) ? *str : '.');
 				++str;
 			}
 		}
@@ -37,9 +40,10 @@ void hxhex_dump(const void* address, size_t bytes, bool pretty) {
 __attribute__((no_sanitize("address")))
 __attribute__((no_sanitize("memory")))
 #endif
-void hxfloat_dump(const float* address, size_t count) {
+void hxfloat_view(const float* address, size_t count) {
 	for(size_t i = 0; i < count;) {
-		hxlog_handler(hxlog_level_console, "%0*zx: ", static_cast<int>(sizeof(size_t) * 2u), reinterpret_cast<size_t>(address));
+		hxlog_handler(hxlog_level_console, "%0*zx: ", static_cast<int>(sizeof(size_t) * 2u),
+			reinterpret_cast<size_t>(address));
 		for(size_t maximum = 4u; i < count && maximum-- != 0u; i++) {
 			hxlog_handler(hxlog_level_console, "%a ", *address++);
 		}

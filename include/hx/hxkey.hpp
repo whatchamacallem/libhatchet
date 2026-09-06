@@ -4,15 +4,13 @@
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
 /// \file
-/// User-overloadable key-equal, key-less, and key-hash functions. By default
-/// this code uses only the `==` and `<` operators, which works with a defaulted
-/// `<=>` operator. Alternatively, these functions can be overloaded to resolve
-/// key operations without global operator overloads. This code uses C++20
-/// concepts when available and provides no fallbacks for SFINAE otherwise.
-/// Partial specialization does not work before C++20. As an alternative,
-/// callables are recommended and supported for complex use cases because they
-/// are relatively easy to debug. See `hxkey_equal_t` and `hxkey_less_t` for
-/// generating default callables.
+/// User-specializable key-equal, key-less, and key-hash callables. By default
+/// these compare with `==` and `<`, which works with a defaulted `<=>`
+/// operator, and hash with an xxhash32-derived mix. Override key operations
+/// for a type by explicitly specializing `hxkey_equal_t`, `hxkey_less_t`, or
+/// `hxkey_hash_t`, the same way `std::hash` is specialized. Specializations
+/// are evaluated when and where the derived container is instantiated and
+/// must be consistently available.
 
 #include "libhatchet.h"
 
@@ -26,119 +24,101 @@
 HX_NS_BEGIN_
 
 /// \cond HIDDEN
-// Used for readability.
-using hxcstring_const_ = const char*;
-using hxcstring_ = char*;
+// UTF-8 string detection. Does not match signed/unsigned char.
+template<typename T_> struct hxis_string_ : public hxfalse_t { };
+template<> struct hxis_string_<char*> : public hxtrue_t { };
+template<> struct hxis_string_<const char*> : public hxtrue_t { };
+template<> struct hxis_string_<volatile char*> : public hxtrue_t { };
+template<> struct hxis_string_<const volatile char*> : public hxtrue_t { };
+template<size_t size_> struct hxis_string_<char[size_]> : public hxtrue_t { };
+template<size_t size_> struct hxis_string_<const char[size_]> : public hxtrue_t { };
+template<size_t size_> struct hxis_string_<volatile char[size_]> : public hxtrue_t { };
+template<size_t size_> struct hxis_string_<const volatile char[size_]> : public hxtrue_t { };
+template<> struct hxis_string_<char[]> : public hxtrue_t { };
+template<> struct hxis_string_<const char[]> : public hxtrue_t { };
+template<> struct hxis_string_<volatile char[]> : public hxtrue_t { };
+template<> struct hxis_string_<const volatile char[]> : public hxtrue_t { };
 /// \endcond
 
-#if HX_CPLUSPLUS >= 202002L
-/// `hxconvertible_to` - A concept that requires one type to be convertible to
-/// another. See usage below. The compiler applies some unintuitive rules when
-/// evaluating this.
-/// - `from_t` : The source type.
-/// - `to_t` : The target type.
-template<typename from_t_, typename to_t_>
-concept hxconvertible_to = requires(from_t_ (&&from_)()) {
-	requires requires { static_cast<to_t_>(from_()); };
-};
-
-/// `hxsame_as` - A concept that requires two types to be the same. Used with the
-/// `->` return-type constraint syntax in requires-expressions to enforce that a
-/// return type is exactly `to_t` rather than merely convertible.
-/// - `from_t` : The first type.
-/// - `to_t` : The second type.
-template<typename from_t_, typename to_t_>
-concept hxsame_as = hxis_same<from_t_, to_t_>::value;
-#endif
-
-/// `hxkey_equal(const A& a, const B& b)` - Returns true if two objects are
-/// equivalent. If your key type does not support `operator==`, then this
-/// function may need to be overridden for your key type(s). Function overloads
-/// are evaluated when and where the derived container is instantiated and must
-/// be consistently available. Uses `operator==`.
-template<typename A_, typename B_>
-#if HX_CPLUSPLUS >= 202002L
-requires requires(const A_& a_, const B_& b_) { { a_ == b_ } -> hxconvertible_to<bool>; }
-#endif
-hxattr_nodiscard hxinline hxattr_flatten  constexpr bool hxkey_equal(const A_& a_, const B_& b_) {
-	return a_ == b_;
-}
-
-/// `hxkey_equal(const char*, const char*)` - Returns true if two C strings are
-/// equal (`strcmp(a, b) == 0`).
-/// - `a` : The first C string.
-/// - `b` : The second C string.
-hxattr_nodiscard hxinline bool hxkey_equal(const hxcstring_const_& a_, const hxcstring_const_& b_) {
-	return ::strcmp(a_, b_) == 0;
-}
-hxattr_nodiscard hxinline bool hxkey_equal(const hxcstring_const_& a_, const hxcstring_& b_) {
-	return ::strcmp(a_, b_) == 0;
-}
-hxattr_nodiscard hxinline bool hxkey_equal(const hxcstring_& a_, const hxcstring_const_& b_) {
-	return ::strcmp(a_, b_) == 0;
-}
-hxattr_nodiscard hxinline bool hxkey_equal(const hxcstring_& a_, const hxcstring_& b_) {
-	return ::strcmp(a_, b_) == 0;
-}
-
-/// `hxkey_equal_t<T>` - A `constexpr` callable that invokes `hxkey_equal`.
-/// - `T` : The type to compare.
+/// `hxis_string<T>` - Checks if T is some kind of `char*` or `char` array,
+/// ignoring any top level const, volatile or reference qualifiers on `T`
+/// itself.
 template<typename T_>
+hxattr_nodiscard constexpr hxinline
+bool hxis_string(void) {
+	return hxis_string_<hxremove_cvref_t<T_>>::value;
+}
+
+/// `hxkey_equal_t<T>` - A `constexpr` callable that returns true if two
+/// objects are equivalent. Invokes `operator==` by default. Specialize for a
+/// key type `T` to resolve equality without a global `operator==`.
+/// - `T` : The type to compare.
+template<typename T_=void, typename enabled_t=void>
 class hxkey_equal_t {
 public:
-	hxattr_nodiscard hxinline hxattr_flatten  constexpr bool operator()(const hxremove_cvref_t<T_>& a_,
-			const hxremove_cvref_t<T_>& b_) const {
-		return hxkey_equal(a_, b_);
+	template<typename A_, typename B_>
+	hxattr_nodiscard hxinline hxconstexpr hxattr_flatten
+	bool operator()(const A_& a_, const B_& b_) const { return a_ == b_; }
+};
+
+/// `hxkey_equal_t<T>` for a C string pointer `T` - Compares two C strings with
+/// `strcmp(a, b) == 0`.
+template<typename T_>
+class hxkey_equal_t<T_, hxenable_if_t<hxis_string<T_>()>> {
+public:
+	hxattr_nodiscard hxinline bool operator()(const volatile char* a_, const volatile char* b_) const {
+		return ::strcmp(const_cast<const char*>(a_), const_cast<const char*>(b_)) == 0;
 	}
 };
 
-/// `hxkey_less(const T&, const T&)` - User-overloadable function for performing
-/// comparisons. Invokes `operator<` by default. All the other comparison
-/// operators can be written using `operator<`. However `hxkey_equal` is also used
-/// for efficiency. Returns true if the first object is less than the second.
-/// Override for custom ordering.
-/// - `a` : The first object.
-/// - `b` : The second object.
+/// `hxkey_equal` - Returns true if `a` and `b` are equivalent, deducing `A`
+/// and invoking `hxkey_equal_t<A>`.
+/// - `a` : The first value to compare.
+/// - `b` : The second value to compare.
 template<typename A_, typename B_>
-#if HX_CPLUSPLUS >= 202002L
-requires requires(const A_& a_, const B_& b_) { { a_ < b_ } -> hxconvertible_to<bool>; }
-#endif
-hxattr_nodiscard hxinline hxattr_flatten  constexpr bool hxkey_less(const A_& a_, const B_& b_) {
-	return a_ < b_;
+hxattr_nodiscard hxinline hxconstexpr hxattr_flatten
+bool hxkey_equal(const A_& a_, const B_& b_) {
+	return hxkey_equal_t<A_>{}(a_, b_);
 }
 
-/// `hxkey_less(const char*, const char*)` - Returns true if the first C string
-/// is lexicographically less than the second by ASCII. UTF-8 is assigned a
-/// stable ordering without looking up a locale. Uses (`strcmp(a, b) < 0`).
-/// - `a` : The first C string.
-/// - `b` : The second C string.
-hxattr_nodiscard hxinline bool hxkey_less(const hxcstring_const_& a_, const hxcstring_const_& b_) {
-	return ::strcmp(a_, b_) < 0;
-}
-hxattr_nodiscard hxinline bool hxkey_less(const hxcstring_const_& a_, const hxcstring_& b_) {
-	return ::strcmp(a_, b_) < 0;
-}
-hxattr_nodiscard hxinline bool hxkey_less(const hxcstring_& a_, const hxcstring_const_& b_) {
-	return ::strcmp(a_, b_) < 0;
-}
-hxattr_nodiscard hxinline bool hxkey_less(const hxcstring_& a_, const hxcstring_& b_) {
-	return ::strcmp(a_, b_) < 0;
-}
-
-/// `hxkey_less_t<T>` - A `constexpr` callable that invokes `hxkey_less`.
+/// `hxkey_less_t<T>` - A `constexpr` callable that returns true if the first
+/// object is less than the second. Invokes `operator<` by default. All the
+/// other comparison operators can be written using `operator<`. However
+/// `hxkey_equal_t` is also used for efficiency. Specialize for a key type `T`
+/// to resolve custom ordering.
 /// - `T` : The type to compare.
-template<typename T_>
+template<typename T_=void, typename enabled_t=void>
 class hxkey_less_t {
 public:
-	hxattr_nodiscard hxinline hxattr_flatten  constexpr bool operator()(const hxremove_cvref_t<T_>& a_,
-			const hxremove_cvref_t<T_>& b_) const {
-		return hxkey_less(a_, b_);
+	template<typename A_, typename B_>
+	hxattr_nodiscard hxinline hxconstexpr hxattr_flatten
+	bool operator()(const A_& a_, const B_& b_) const { return a_ < b_; }
+};
+
+/// `hxkey_less_t<T>` for a C string pointer `T` - Returns true if the first C
+/// string is lexicographically less than the second by ASCII. UTF-8 is assigned
+/// a stable ordering without looking up a locale. Uses (`strcmp(a, b) < 0`).
+template<typename T_>
+class hxkey_less_t<T_, hxenable_if_t<hxis_string<T_>()>> {
+public:
+	hxattr_nodiscard hxinline bool operator()(const volatile char* a_, const volatile char* b_) const {
+		return ::strcmp(const_cast<const char*>(a_), const_cast<const char*>(b_)) < 0;
 	}
 };
+
+/// `hxkey_less` - Returns true if `a` is less than `b`, deducing `A` and
+/// invoking `hxkey_less_t<A>`.
+/// - `a` : The first value to compare.
+/// - `b` : The second value to compare.
+template<typename A_, typename B_>
+hxattr_nodiscard hxinline hxconstexpr hxattr_flatten
+bool hxkey_less(const A_& a_, const B_& b_) {
+	return hxkey_less_t<A_>{}(a_, b_);
+}
 
 /// \cond HIDDEN
 // xxhash32 prime constants and avalanche mixing. Useful when hashing sequential
-// data. These are used by hxkey_hash overloads below.
+// data. These are used by hxkey_hash_t specializations below.
 hxinline_constexpr hxhash_t hxhash_prime1_ = hxhash_t{0x9E3779B1u};
 hxinline_constexpr hxhash_t hxhash_prime2_ = hxhash_t{0x85EBCA77u};
 hxinline_constexpr hxhash_t hxhash_prime3_ = hxhash_t{0xC2B2AE3Du};
@@ -146,7 +126,8 @@ hxinline_constexpr hxhash_t hxhash_prime4_ = hxhash_t{0x27D4EB2Fu};
 hxinline_constexpr hxhash_t hxhash_prime5_ = hxhash_t{0x165667B1u};
 
 // xxhash32 avalanche: x ^= x >> 15, x *= prime2, x ^= x >> 13, x *= prime3, x ^= x >> 16.
-hxattr_nodiscard hxinline hxconstexpr hxhash_t hxhash_avalanche_(hxhash_t x_) {
+hxattr_nodiscard hxinline hxconstexpr
+hxhash_t hxhash_avalanche_(hxhash_t x_) {
 	x_ ^= x_ >> 15u;
 	x_ *= hxhash_prime2_;
 	x_ ^= x_ >> 13u;
@@ -156,32 +137,47 @@ hxattr_nodiscard hxinline hxconstexpr hxhash_t hxhash_avalanche_(hxhash_t x_) {
 }
 /// \endcond
 
-/// `hxkey_hash(T)` - Returns the xxhash32 of a numeric value cast to 32 bits.
-/// Used by the base hash table node. Override for custom key types. Overrides
-/// are evaluated when and where the hash table is instantiated. Uses the
-/// xxhash32 short-input path for a single 4-byte word.
-/// - `x` : The input value.
-template<typename T_>
-hxattr_nodiscard hxinline hxhash_t hxkey_hash(T_ x_) {
-	// xxhash32 short-input path: seed=0, length=4, single 4-byte word.
-	hxhash_t h_ = hxhash_prime5_ + hxhash_t{4u};
-	// Did you write a custom hxkey_hash()?
-	h_ += static_cast<hxhash_t>(x_) * hxhash_prime3_;
-	h_  = ((h_ << 17u) | (h_ >> 15u)) * hxhash_prime4_;
-	return hxhash_avalanche_(h_);
-}
-
-/// `hxkey_hash(const char*)` - Returns the xxhash32 style hash of a C string.
-/// Mixes each byte with the xxhash32 primes in a single pass and applies the
-/// xxhash32 avalanche.
-/// - `s` : The C string.
-hxattr_nodiscard hxinline hxhash_t hxkey_hash(const char* s_) {
-	hxhash_t h_ = hxhash_prime5_;
-	while(*s_ != '\0') {
-		h_ += static_cast<hxhash_t>(static_cast<unsigned char>(*s_++)) * hxhash_prime5_;
-		h_ = ((h_ << 11u) | (h_ >> 21u)) * hxhash_prime1_;
+/// `hxkey_hash_t<T>` - A callable that returns the xxhash32 of a numeric value
+/// cast to 32 bits. Used by the base hash table node. Specialize for custom
+/// key types, the same way `std::hash` is specialized. Uses the xxhash32
+/// short-input path for a single 4-byte word.
+/// - `T` : The type to hash.
+template<typename T_, typename enabled_t=void>
+class hxkey_hash_t {
+public:
+	hxattr_nodiscard hxinline hxhash_t operator()(const T_& x_) const {
+		// xxhash32 short-input path: seed=0, length=4, single 4-byte word.
+		hxhash_t h_ = hxhash_prime5_ + hxhash_t{4u};
+		// Did you write a custom hxkey_hash_t specialization?
+		h_ += static_cast<hxhash_t>(x_) * hxhash_prime3_;
+		h_  = ((h_ << 17u) | (h_ >> 15u)) * hxhash_prime4_;
+		return hxhash_avalanche_(h_);
 	}
-	return hxhash_avalanche_(h_);
+};
+
+/// `hxkey_hash_t<T>` for a C string pointer `T` - Returns the xxhash32 style
+/// hash of a C string. Mixes each byte with the xxhash32 primes in a single
+/// pass and applies the xxhash32 avalanche.
+template<typename T_>
+class hxkey_hash_t<T_, hxenable_if_t<hxis_string<T_>()>> {
+public:
+	hxattr_nodiscard hxinline hxhash_t operator()(const volatile char* s_) const {
+		const char* t_ = const_cast<const char*>(s_);
+		hxhash_t h_ = hxhash_prime5_;
+		while(*t_ != '\0') {
+			h_ += static_cast<hxhash_t>(static_cast<unsigned char>(*t_++)) * hxhash_prime5_;
+			h_ = ((h_ << 11u) | (h_ >> 21u)) * hxhash_prime1_;
+		}
+		return hxhash_avalanche_(h_);
+	}
+};
+
+/// `hxkey_hash` - Returns the hash of `x`, deducing `T` and invoking
+/// `hxkey_hash_t<T>`.
+/// - `x` : The value to hash.
+template<typename T_>
+hxattr_nodiscard hxinline hxattr_flatten hxhash_t hxkey_hash(const T_& x_) {
+	return hxkey_hash_t<T_>{}(x_);
 }
 
 HX_NS_END_

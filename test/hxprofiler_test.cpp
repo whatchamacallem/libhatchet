@@ -105,7 +105,6 @@ TEST(hxprofiler_test, start_and_stop_console_commands) {
 
 #if HX_USE_FILE_IO
 TEST(hxprofiler_test, write_to_chrome_tracing_command) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	hxprofiler_stop();
 #if HX_USE_CONSOLE
 	hxconsole_exec_line("profilestart");
@@ -130,7 +129,6 @@ TEST(hxprofiler_test, write_to_chrome_tracing_command) {
 }
 
 TEST(hxprofiler_test, write_to_chrome_tracing_with_no_records) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
 	hxprofiler_start();
 	hxprofiler_write_to_chrome_tracing("profile_empty.json");
 	SUCCEED();

@@ -5,7 +5,9 @@
 
 /// \file
 /// A fixed-size hash table with embedded singly-linked list buckets. Used for
-/// both maps and sets.
+/// both maps and sets. This is not intended to be the fastest, it is intended
+/// to enforce libhatchet's real-time memory allocation strategy and to avoid
+/// code bloat.
 
 #include "libhatchet.h"
 
@@ -17,35 +19,51 @@
 #include "hxkey.hpp"
 #include "hxptr.hpp"
 #include "hxallocator.hpp"
+#include "hxalgorithm.hpp"
 
 HX_NS_BEGIN_
 
 #include "detail/hxpow2_allocator.hpp"
 
+class hxhash_node_base;
+
 #if HX_CPLUSPLUS >= 202002L
-/// `hxhash_table_concept` - Concept capturing the interface requirements for
-/// `hxhash_table` nodes.
+/// \cond HIDDEN
 template<typename node_t_>
 concept hxhash_table_concept_ =
 	requires(node_t_& node_, const node_t_& const_node_) {
-		sizeof(node_t_);
-		sizeof(typename node_t_::key_t);
-		node_.set_hash_next(static_cast<node_t_*>(hxnull));
-		{ const_node_.hash_next() } -> hxsame_as<node_t_*>;
+		sizeof(typename node_t_::key_t); // node must publish a key_t type
+		{ &node_ } -> hxconvertible_to<hxhash_node_base*>; // node_t must derive from hxhash_node_base
+		// returns the node's key
 		{ const_node_.hash_key() } -> hxconvertible_to<const typename node_t_::key_t&>;
-		{ const_node_.hash_value() } -> hxconvertible_to<hxhash_t>;
 	};
+/// \endcond
 #else
 #define hxhash_table_concept_ typename
 #endif
 
+/// `hxhash_node_base` - Intrusive hash-chain node base. Derive from
+/// `hxhash_node_base` to make a node linkable into an `hxhash_table`.
+class hxhash_node_base {
+protected:
+	friend class hxhash_table_base_;
+	template<hxhash_table_concept_ node_t_, typename deleter_t_, bool multi_t_,
+		uint32_t table_size_bits_> friend class hxhash_table;
+
+	/// Constructs an unlinked node with the given cached hash.
+	/// - `hash` : The hash value to cache.
+	hxhash_node_base(hxhash_t hash_) : hash_next(hxnull), hash_val(hash_) { }
+
+	hxhash_node_base* hash_next;
+	hxhash_t hash_val;
+};
+
 /// `hxhash_table_set_node` - Optional base class for unordered set entries.
 /// Caches the hash value. See `hxhash_table_map_node` if you need a map node.
-/// Copy and move construction produce an unlinked node with the same key and
-/// hash. Copy and move assignment leave the linkage of either node unchanged.
-/// The hash table uses duck typing, so only the interface is required.
+/// Copying and assignment are unimplemented and the key must be immutable in
+/// any assignment operation in a subclass.
 template<typename key_t_>
-class hxhash_table_set_node {
+class hxhash_table_set_node : public hxhash_node_base {
 public:
 	using key_t = key_t_;
 
@@ -53,25 +71,30 @@ public:
 	/// - `key` : Key used to identify the node.
 	template<typename ref_t_>
 	hxhash_table_set_node(ref_t_&& key_)
-		: m_hash_next_(hxnull), m_key_(hxforward<ref_t_>(key_)), m_hash_(hxkey_hash(m_key_)) { }
+		: hxhash_node_base(0), m_key_(hxforward<ref_t_>(key_)) {
+		this->hash_val = hxkey_hash(m_key_);
+	}
 
-	/// Constructs an unlinked node with the same key.
-	hxhash_table_set_node(const hxhash_table_set_node& src_)
-		: m_hash_next_(hxnull), m_key_(src_.m_key_), m_hash_(src_.m_hash_) { }
+	/// Assignment is undefined. The key is immutable.
+	hxhash_table_set_node(void) = delete;
+	hxhash_table_set_node(const hxhash_table_set_node& src_) = delete;
+	hxhash_table_set_node& operator=(const hxhash_table_set_node& x_) = delete;
 
-	/// Returns the next node in the table's embedded linked list.
-	hxhash_table_set_node* hash_next(void) const { return m_hash_next_; }
+	/// Returns `true` if this node and `x` have equal keys, using `hxkey_equal`.
+	/// - `x` : The node to compare against.
+	bool operator==(const hxhash_table_set_node& x_) const { return hxkey_equal(m_key_, x_.m_key_); }
 
-	/// Sets the next node in the table's embedded linked list.
-	/// - `next` : The new next node pointer.
-	void set_hash_next(hxhash_table_set_node* next_) { m_hash_next_ = next_; }
+	/// Returns `true` if this node's key is ordered before `x`'s key, using
+	/// `hxkey_less`.
+	/// - `x` : The node to compare against.
+	bool operator<(const hxhash_table_set_node& x_) const { return hxkey_less(m_key_, x_.m_key_); }
 
 	/// The key and hash identify the `node_t` and should not change once added.
 	const key_t_& hash_key(void) const { return m_key_; }
 
 	/// Returns the cached hash value for the stored key. Hash values are not
 	/// required to be unique.
-	hxhash_t hash_value(void) const { return m_hash_; }
+	hxhash_t hash_value(void) const { return this->hash_val; }
 
 	/// Returns the hash value computed for `key`. Hash values are not required
 	/// to be unique.
@@ -79,13 +102,7 @@ public:
 	static hxhash_t hash_value(const key_t_& key_) { return hxkey_hash(key_); }
 
 private:
-	hxhash_table_set_node(void) = delete;
-	// Deleted for being bug prone.
-	hxhash_table_set_node& operator=(const hxhash_table_set_node& n_) = delete;
-
-	hxhash_table_set_node* m_hash_next_;
 	key_t_ m_key_;
-	hxhash_t m_hash_;
 };
 
 /// `hxhash_table_map_node` - Base class for unordered map entries.
@@ -108,11 +125,15 @@ public:
 	hxhash_table_map_node(const key_t_& key_, ref_t_&& value_) :
 		hxhash_table_set_node<key_t_>(key_), m_value_(hxforward<ref_t_>(value_)) { }
 
-	/// Returns the next node in the table's embedded linked list.
-	hxhash_table_map_node* hash_next(void) const {
-		return static_cast<hxhash_table_map_node*>(
-			hxhash_table_set_node<key_t_>::hash_next());
-	}
+	/// Returns `true` if this node and `x` have equal keys and values, using
+	/// `hxkey_equal`.
+	/// - `x` : The node to compare against.
+	bool operator==(const hxhash_table_map_node& x_) const;
+
+	/// Returns `true` if this node is ordered before `x`, comparing keys first
+	/// and then values with `hxkey_equal` and `hxkey_less`.
+	/// - `x` : The node to compare against.
+	bool operator<(const hxhash_table_map_node& x_) const;
 
 	/// Returns the stored value.
 	const value_t_& value(void) const { return m_value_; }
@@ -124,6 +145,29 @@ private:
 	value_t_ m_value_;
 };
 
+/// \cond HIDDEN
+// Internal. Type erased shared code.
+class hxhash_table_base_ {
+private:
+	template<hxhash_table_concept_ node_t_, typename deleter_t_, bool multi_t_, uint32_t table_size_bits_>
+	friend class hxhash_table;
+	using hxhash_equal_fn_ = bool(*)(const hxhash_node_base* node_, const void* key_);
+	using hxhash_deleter_fn_ = void(*)(hxhash_node_base* node_, void* context_);
+	static hxsize_t chain_count_multi_(const hxhash_node_base* head_, const void* key_,
+		hxhash_equal_fn_ equal_);
+	static void chain_erase_at_(hxhash_node_base** head_, hxhash_node_base* node_);
+	static hxsize_t chain_erase_multi_(hxhash_node_base** head_, const void* key_,
+		hxhash_equal_fn_ equal_, hxhash_deleter_fn_ deleter_, void* deleter_context_);
+	static hxhash_node_base* chain_extract_(hxhash_node_base** head_, const void* key_,
+		hxhash_equal_fn_ equal_);
+	static hxsize_t chain_length_(const hxhash_node_base* head_);
+	static hxhash_node_base* chain_replace_(hxhash_node_base** head_, hxhash_node_base* node_,
+		const void* key_, hxhash_equal_fn_ equal_);
+	static void table_clear_(hxhash_node_base** table_, hxsize_t bucket_count_,
+		hxhash_deleter_fn_ deleter_, void* deleter_context_);
+};
+/// \endcond
+
 /// `hxhash_table` - A hash table that operates without reallocating memory or
 /// copying data. Each bucket uses an embedded singly-linked list. This design
 /// tries to use a sparse table that allocates the maximum amount of memory
@@ -132,23 +176,21 @@ private:
 /// or an unordered set and support operations that allow for unique or
 /// duplicate keys.
 ///
-/// Any node `T` using key `K` will work as long as it has the following fields
-/// and `K` has an `operator==` or an `hxkey_equal` overload.
+/// Any node `T` derived from `hxhash_node_base` and using key `K` will work as
+/// long as `K` has an `operator==` or an `hxkey_equal_t` specialization.
 ///
 /// ```
-/// class T {
+/// class T : public hxhash_node_base {
 ///   using key_t = K;               // Tell the hash table what key to use.
-///   T* hash_next() const;          // Next node in hxhash_table's embedded linked list.
-///   void set_hash_next(node_t_*);        // Sets the next node in the embedded linked list.
 ///   const key_t& hash_key() const; // Returns key constructed with.
-///   hxhash_t hash_value() const;   // Returns hash of key constructed with.
 /// };
 /// ```
 ///
 /// `hxhash_table_set_node` and `hxhash_table_map_node` are provided and
 /// recommended as replacements for `std::unordered_set` and
 /// `std::unordered_map`. Custom key types will require either an `operator==`
-/// or an `hxkey_equal` overload and will require an `hxkey_hash` overload.
+/// or an `hxkey_equal_t` specialization and will require an `hxkey_hash_t`
+/// specialization.
 ///
 /// They might be used as follows:
 ///
@@ -171,20 +213,20 @@ private:
 /// - `multi_t` : When `false`and a node with an equal key already exists,
 ///   insertion into the list will fail when a node with the same key already
 ///   exists.
-/// - `table_size_bits` : If  non-zero, `table_size_bits` configures the hash
-///   table size to `2^table_size_bits`. Otherwise use `set_size_bits` to to
+/// - `table_size_bits` : If non-zero, `table_size_bits` configures the hash
+///   table size to `2^table_size_bits`. Otherwise use `set_size_bits` to
 ///   configure hash bits dynamically.
 template<hxhash_table_concept_ node_t_,
 	typename deleter_t_=hxdefault_delete,
 	bool multi_t_ = false,
 	uint32_t table_size_bits_=hxallocator_dynamic_capacity>
-class hxhash_table : private deleter_t_ {
+class hxhash_table : private deleter_t_, private hxhash_table_base_ {
 public:
 	using node_t = node_t_;
 	using key_t = typename node_t_::key_t;
 
 	/// `const_iterator` - A const forward iterator over the elements of the
-	/// hash table. Iteration is Θ(`n + (1 << table_size_bits)`). Iterators are
+	/// hash table. Iteration is O(`n + (1 << table_size_bits)`). Iterators are
 	/// only invalidated by the removal of the `node_t` referenced. WARNING: The
 	/// iterators will automatically convert themselves to pointers when used in
 	/// pointer context.
@@ -216,8 +258,8 @@ public:
 		const_iterator(const hxhash_table* table_);
 		const_iterator(const hxhash_table* table_, node_t_* node_);
 		void next_bucket_(void);
-		node_t_** m_next_bucket_;
-		node_t_** m_bucket_end_;
+		hxhash_node_base** m_next_bucket_;
+		hxhash_node_base** m_bucket_end_;
 	protected:
 		node_t_* m_current_node_;
 		/// \endcond
@@ -228,9 +270,6 @@ public:
 	class iterator : public const_iterator
 	{
 	public:
-		/// Constructs an iterator pointing to the beginning of the hash table.
-		/// - `tbl` : The hash table to iterate over.
-		iterator(hxhash_table* tbl_) : const_iterator(tbl_) { }
 		/// Constructs an iterator pointing to the end of the hash table.
 		iterator(void) { }
 		/// Advances the iterator to the next element.
@@ -242,8 +281,12 @@ public:
 		/// Dereferences the iterator to access the current `node_t`'s pointer.
 		node_t_* operator->(void) const;
 	private:
+		/// \cond HIDDEN
 		friend class hxhash_table;
+		iterator(hxhash_table* table_) : const_iterator(table_) { }
 		iterator(hxhash_table* table_, node_t_* node_) : const_iterator(table_, node_) { }
+		iterator(const const_iterator& src_) : const_iterator(src_) { }
+		/// \endcond
 	};
 
 	/// Constructs an empty hash table with a capacity of `2^table_size_bits`
@@ -253,6 +296,39 @@ public:
 
 	/// Destructs the hash table and deletes all resources.
 	~hxhash_table(void) { this->clear(this->deleter()); }
+
+	/// Links each `node_t` from a temporary range into this hash table by
+	/// address, exactly as `insert(node_t*)` would. The range's nodes are
+	/// threaded into the table in place and are not copied or allocated, so
+	/// `range` must own storage it is relinquishing to the table.
+	/// - `range` : The range of nodes to link into the table.
+	template<hxrange_concept_ range_t_,
+		hxenable_if_t<!hxis_lvalue_reference<range_t_>(), int> = 0>
+	void add_range(range_t_&& range_) noexcept;
+
+#if HX_CPLUSPLUS >= 202302L
+	/// Returns the result of calling `callable` with the first node matching
+	/// `key`, otherwise returns `hxnil`. Use `and_then` to return `hxptr`,
+	/// `hxref` or `hxexpected`.
+	/// - `key` : The key to search for.
+	/// - `callable` : The function to call with the found node.
+	template<typename self_t_, typename callable_t_>
+	hxattr_nodiscard auto and_then(
+		this self_t_&& self_, const key_t& key_, callable_t_&& callable_)
+		-> hxremove_cvref_t<decltype(
+			hxforward<callable_t_>(callable_)(
+				hxforward_like<self_t_>(hxdeclval<node_t_&>())))>;
+
+	/// Iterator overload of `and_then`.
+	/// - `it` : A const iterator to a node or `end()`.
+	/// - `callable` : The function to call with the node.
+	template<typename self_t_, typename callable_t_>
+	hxattr_nodiscard auto and_then(
+		this self_t_&& self_, const_iterator it_, callable_t_&& callable_)
+		-> hxremove_cvref_t<decltype(
+			hxforward<callable_t_>(callable_)(hxforward_like<self_t_>(
+				hxdeclval<const node_t_&>())))>;
+#endif // HX_CPLUSPLUS >= 202302L
 
 	/// Returns a const iterator pointing to the beginning of the hash table.
 	const_iterator begin(void) const { return const_iterator(this); }
@@ -282,6 +358,11 @@ public:
 	/// - `key` : The key to count occurrences of in the hash table.
 	hxattr_nodiscard hxsize_t count(const typename node_t_::key_t& key_) const;
 
+	/// Returns a const reference to the stored deleter.
+	hxattr_nodiscard const deleter_t_& deleter(void) const;
+
+	hxattr_nodiscard deleter_t_& deleter(void);
+
 	/// `emplace` - Returns an iterator to the node constructed with `hxnew`.
 	/// The table must have `multi_t` set to `true`.
 	/// - `allocator` : The memory manager ID to use for allocation. Defaults to
@@ -289,8 +370,8 @@ public:
 	/// - `align` : Alignment to use when allocating new pointers. Defaults to
 	///   `hxalignment`.
 	/// - `args` : Arguments forwarded to the node constructor.
-	template<hxsystem_allocator_t allocator_=hxsystem_allocator_current, hxalignment_t align_=hxalignment,
-		bool multi_=multi_t_, class... args_t_>
+	template<hxsystem_allocator_t allocator_=hxsystem_allocator_current,
+		hxalignment_t align_=hxalignment, bool multi_=multi_t_, class... args_t_>
 	hxenable_if_t<multi_, iterator> emplace(args_t_&&... args_) noexcept;
 
 	/// Checks if the hash table is empty.
@@ -302,10 +383,11 @@ public:
 	/// Returns an iterator pointing to the end of the hash table.
 	iterator end(void) { return iterator(); }
 
-	/// Releases all nodes matching key and calls `deleter` on every node. Returns
-	/// the number of nodes released. Deleter can be functions with signature `void
-	/// deleter(node_t*)` and callables supporting `operator()(node_t*)` and with
-	/// an `operator bool`. e.g., a free list or a null pointer.
+	/// Releases all nodes matching key and calls `deleter` on every node.
+	/// Returns the number of nodes released. Deleter can be functions with
+	/// signature `void deleter(node_t*)` and callables supporting
+	/// `operator()(node_t*)` and with an `operator bool`. e.g., a free list or
+	/// a null pointer.
 	/// - `key` : The key to search for and remove from the hash table.
 	/// - `deleter` : Callable with signature `bool deleter(node_t_*)`.
 	template<typename deleter_u_>
@@ -315,8 +397,8 @@ public:
 	/// - `key` : The key to search for and remove from the hash table.
 	hxsize_t erase(const typename node_t_::key_t& key_) noexcept;
 
-	/// Removes the `node_t` referenced by `it` without invoking the deleter.
-	/// Returns an iterator to the node following `it`, or `end()`.
+	/// Removes and calls the stored deleter on the `node_t` referenced by
+	/// `it`. Returns an iterator to the node following `it`, or `end()`.
 	/// - `it` : A valid iterator into this hash table.
 	iterator erase(const const_iterator& it_) noexcept;
 
@@ -325,26 +407,27 @@ public:
 	/// - `key` : The key to search for and remove from the hash table.
 	hxptr<node_t_, deleter_t_> extract(const typename node_t_::key_t& key_) noexcept;
 
-	/// Returns a `node_t` matching key if any. If previous is non-null it must be
-	/// a node previously returned from `find()` with the same key and that has not
-	/// been removed. Then `find()` will return a subsequent node if any.
-	/// The previous object is non-const as it may be modified.
+	/// Removes the `node_t` referenced by `it` and returns an `hxptr` owning
+	/// it.
+	/// - `it` : A valid iterator into this hash table.
+	hxptr<node_t_, deleter_t_> extract(const const_iterator& it_) noexcept;
+
+	/// Returns an iterator to a `node_t` matching `key`, or `end()` if none
+	/// exists. If `previous` is not `end()` it must be an iterator previously
+	/// returned from `find()` with the same key that has not been removed. Then
+	/// `find()` will return a subsequent node if any.
 	/// - `key` : The key to search for in the hash table.
-	/// - `previous` : A previously found `node_t` with the same key, or hxnull.
-	hxattr_nodiscard hxattr_flatten node_t_* find(
-		const typename node_t_::key_t& key_, const node_t_* previous_=hxnull);
+	/// - `previous` : A previously found iterator with the same key, or
+	///   `end()`.
+	hxattr_nodiscard hxattr_flatten const_iterator find(
+		const typename node_t_::key_t& key_, const const_iterator& previous_=const_iterator()) const;
 
-	/// `const` version of `find`.
-	/// - `key` : The key to search for in the hash table.
-	/// - `previous` : A previously found `node_t` with the same key, or hxnull.
-	hxattr_nodiscard hxattr_flatten const node_t_* find(
-		const typename node_t_::key_t& key_, const node_t_* previous_=hxnull) const;
+	hxattr_nodiscard hxattr_flatten iterator find(
+		const typename node_t_::key_t& key_, const const_iterator& previous_=const_iterator());
 
-	/// Returns a const reference to the stored deleter.
-	hxattr_nodiscard const deleter_t_& deleter(void) const;
-
-	/// Returns a reference to the stored deleter.
-	hxattr_nodiscard deleter_t_& deleter(void);
+	/// Returns `true` if a node matching `key` exists.
+	/// - `key` : The key to search for.
+	hxattr_nodiscard bool has_value(const key_t& key_) const;
 
 	/// `insert` - Returns an iterator to the inserted node. When `multi_t` is
 	/// `false` and a node with an equal key already exists, invokes `deleter_t`
@@ -355,8 +438,7 @@ public:
 
 	/// `insert` - Returns an iterator to the inserted node. When `multi_t` is
 	/// `false` and a node with an equal key already exists, returns an iterator
-	/// to the existing node and invokes the deleter on `ptr`. `ptr` must not be
-	/// null.
+	/// to the existing node and `ptr` is destroyed, invoking its deleter.
 	/// - `ptr` : The `hxptr` owning the node to insert.
 	template<typename deleter_u_>
 	iterator insert(hxptr<node_t_, deleter_u_>&& ptr_) noexcept;
@@ -366,6 +448,27 @@ public:
 
 	/// Returns the size of the largest bucket.
 	hxattr_nodiscard hxsize_t load_max(void) const;
+
+#if HX_CPLUSPLUS >= 202302L
+	/// Returns an iterator to the first node matching `key`, or the result
+	/// of calling `callable` when lookup fails.
+	/// - `key` : The key to search for.
+	/// - `callable` : The function to call when lookup fails. Must return an
+	///   iterator.
+	template<typename self_t_, typename callable_t_>
+	hxattr_nodiscard auto or_else(
+		this self_t_&& self_, const key_t& key_, callable_t_&& callable_)
+		-> decltype(self_.end());
+
+	/// Iterator overload of `or_else`.
+	/// - `it` : An iterator to a node or `end()`.
+	/// - `callable` : The function to call for `end()`. Must return an
+	///   iterator.
+	template<typename self_t_, typename callable_t_>
+	hxattr_nodiscard auto or_else(
+		this self_t_&& self_, const_iterator it_, callable_t_&& callable_)
+		-> decltype(self_.end());
+#endif // HX_CPLUSPLUS >= 202302L
 
 	/// Clears the hash table without deleting any nodes.
 	void release_all(void);
@@ -390,19 +493,36 @@ public:
 	/// Returns the number of elements in the hash table.
 	hxattr_nodiscard hxsize_t size(void) const { return m_size_; }
 
-	/// `try_emplace` - Returns an iterator to the node if it was inserted, or an
-	/// iterator to the existing node if a node with an equal key already exists.
-	/// The table must have `multi_t` set to `false`.
+	/// `try_emplace` - Returns an iterator to the node if it was inserted, or
+	/// an iterator to the existing node if a node with an equal key already
+	/// exists. The table must have `multi_t` set to `false`.
 	/// - `allocator` : The memory manager ID to use for allocation. Defaults to
 	///   `hxsystem_allocator_current`.
 	/// - `align` : Alignment to use when allocating new pointers. Defaults to
 	///   `hxalignment`.
 	/// - `key` : The key the node will have once constructed.
 	/// - `args` : Arguments forwarded to the node constructor.
-	template<hxsystem_allocator_t allocator_=hxsystem_allocator_current, hxalignment_t align_=hxalignment,
-		bool multi_=multi_t_, class... args_t_>
+	template<hxsystem_allocator_t allocator_=hxsystem_allocator_current,
+		hxalignment_t align_=hxalignment, bool multi_=multi_t_, class... args_t_>
 	hxenable_if_t<!multi_, iterator> try_emplace(
 		const typename node_t_::key_t& key_, args_t_&&... args_) noexcept;
+
+#if HX_CPLUSPLUS >= 202302L
+	/// Returns an iterator to the first node matching `key`, or an iterator to
+	/// `default_value` when lookup fails.
+	/// - `key` : The key to search for.
+	/// - `default_value` : The node to reference when lookup fails.
+	template<typename self_t_> hxattr_nodiscard
+	auto value_or(this self_t_&& self_, const key_t& key_, const node_t_* default_value_)
+		-> decltype(self_.end());
+
+	/// Iterator overload of `value_or`.
+	/// - `it` : A const iterator to a node or `end()`.
+	/// - `default_value` : The node to reference for `end()`.
+	template<typename self_t_> hxattr_nodiscard
+	auto value_or(this self_t_&& self_, const_iterator it_, const node_t_* default_value_)
+		-> decltype(self_.end());
+#endif // HX_CPLUSPLUS >= 202302L
 
 private:
 	static_assert(table_size_bits_ < hxhash_bits, "Hash bits must be [0..hxhash_bits)");
@@ -410,11 +530,11 @@ private:
 	// Deleted for being bug prone.
 	hxhash_table(const hxhash_table&) = delete;
 
-	node_t_** get_bucket_head_(hxhash_t hash_);
-	const node_t_*const* get_bucket_head_(hxhash_t hash_) const;
+	hxhash_node_base** get_bucket_head_(hxhash_t hash_);
+	const hxhash_node_base*const* get_bucket_head_(hxhash_t hash_) const;
 
 	hxsize_t m_size_;
-	hxdetail_::hxpow2_allocator_<node_t_*, table_size_bits_, true> m_table_;
+	hxdetail_::hxpow2_allocator_<hxhash_node_base*, table_size_bits_, true> m_table_;
 };
 
 #include "detail/hxhash_table.inl"

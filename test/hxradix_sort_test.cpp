@@ -27,16 +27,15 @@ class hxradix_sort_test_f :
 {
 public:
 	template<typename key_t>
-	class hxtest_object {
+	class hxradix_sort_test_object {
 	public:
-		hxtest_object(key_t k) : id(k) { }
-		~hxtest_object(void) { id = static_cast<key_t>(0); }
-		bool operator<(const hxtest_object& x) const { return id < x.id; }
+		hxradix_sort_test_object(key_t k) : id(k) { }
+		~hxradix_sort_test_object(void) { id = static_cast<key_t>(0); }
+		bool operator<(const hxradix_sort_test_object& x) const { return id < x.id; }
 		key_t id;
 	};
-	hxradix_sort_test_f(void) : m_temporary_stack_scope(hxsystem_allocator_stack_0) { }
 	template<typename key_t>
-	void generate(hxvector<hxtest_object<key_t> >& a, uint32_t size, uint32_t mask, key_t offset) {
+	void generate(hxvector<hxradix_sort_test_object<key_t> >& a, uint32_t size, uint32_t mask, key_t offset) {
 		a.reserve(static_cast<hxsize_t>(size));
 		for(uint32_t i= size;i--;) {
 			const uint32_t x = m_prng() & mask;
@@ -45,20 +44,22 @@ public:
 	}
 	template<typename key_t>
 	static int q_sort_compare(const void* a, const void* b) {
-		const hxtest_object<key_t>* lhs = static_cast<const hxtest_object<key_t>*>(a);
-		const hxtest_object<key_t>* rhs = static_cast<const hxtest_object<key_t>*>(b);
-		if(*lhs < *rhs) { return -1; }
-		if(*rhs < *lhs) { return 1; }
+		const hxradix_sort_test_object<key_t>* pa = static_cast<const hxradix_sort_test_object<key_t>*>(a);
+		const hxradix_sort_test_object<key_t>* pb = static_cast<const hxradix_sort_test_object<key_t>*>(b);
+		if(*pa < *pb) { return -1; }
+		if(*pb < *pa) { return 1; }
 		return 0;
 	}
 	template<typename key_t>
 	void test_range_and_type(uint32_t size, uint32_t mask, key_t offset) {
 		const hxsystem_allocator_scope temporary_stack_scope_2(hxsystem_allocator_stack_0);
-		hxvector<hxtest_object<key_t> > a;
+		hxvector<hxradix_sort_test_object<key_t> > a;
 		generate<key_t>(a, size, mask, offset);
-		hxvector<hxtest_object<key_t> > b(a);
-		::qsort(b.data(), static_cast<size_t>(b.size()), sizeof(hxtest_object<key_t>), q_sort_compare<key_t>);
-		hxvector<hxradix_sort_key<key_t, hxtest_object<key_t>*>> rs; rs.reserve(static_cast<hxsize_t>(size));
+		hxvector<hxradix_sort_test_object<key_t> > b(a);
+		::qsort(b.data(), static_cast<size_t>(b.size()),
+			sizeof(hxradix_sort_test_object<key_t>), q_sort_compare<key_t>);
+		hxvector<hxradix_sort_key<key_t, hxradix_sort_test_object<key_t>*>> rs;
+		rs.reserve(static_cast<hxsize_t>(size));
 		for(uint32_t i = size; i--;) {
 			rs.emplace_back(a[static_cast<hxsize_t>(i)].id, &a[static_cast<hxsize_t>(i)]);
 		}
@@ -70,7 +71,8 @@ public:
 		}
 		rs.clear();
 		for(uint32_t i = size; i--;) {
-			rs.push_back(hxradix_sort_key<key_t, hxtest_object<key_t>*>(a[static_cast<hxsize_t>(i)].id, &a[static_cast<hxsize_t>(i)]));
+			rs.push_back(hxradix_sort_key<key_t, hxradix_sort_test_object<key_t>*>(
+				a[static_cast<hxsize_t>(i)].id, &a[static_cast<hxsize_t>(i)]));
 		}
 		hxradix_sort11(rs.begin(), rs.end(), hxsystem_allocator_stack_0);
 		EXPECT_EQ(b.size(), static_cast<hxsize_t>(size));
@@ -79,7 +81,6 @@ public:
 			EXPECT_EQ(b[static_cast<hxsize_t>(i)].id, rs[static_cast<hxsize_t>(i)].get_value()->id);
 		}
 	}
-	hxsystem_allocator_scope m_temporary_stack_scope;
 	hxrandom m_prng;
 };
 } // namespace {
@@ -172,7 +173,6 @@ TEST_F(hxradix_sort_test_f, key_set_preserves_relative_order) {
 }
 
 TEST_F(hxradix_sort_test_f, two_elements_sorted) {
-	const hxsystem_allocator_scope scope2(hxsystem_allocator_stack_0);
 	hxvector<hxradix_sort_key<uint32_t, uint32_t>> rs;
 	rs.reserve(2);
 	rs.push_back(hxradix_sort_key<uint32_t, uint32_t>(2u, 2u));
@@ -183,7 +183,6 @@ TEST_F(hxradix_sort_test_f, two_elements_sorted) {
 }
 
 TEST_F(hxradix_sort_test_f, two_elements_sorted11) {
-	const hxsystem_allocator_scope scope2(hxsystem_allocator_stack_0);
 	hxvector<hxradix_sort_key<uint32_t, uint32_t>> rs;
 	rs.reserve(2);
 	rs.push_back(hxradix_sort_key<uint32_t, uint32_t>(2u, 2u));
@@ -194,7 +193,6 @@ TEST_F(hxradix_sort_test_f, two_elements_sorted11) {
 }
 
 TEST_F(hxradix_sort_test_f, all_256_low_byte_values) {
-	const hxsystem_allocator_scope scope2(hxsystem_allocator_stack_0);
 	hxvector<hxradix_sort_key<uint32_t, uint32_t>> rs;
 	rs.reserve(256);
 	for(uint32_t i = 0u; i < 256u; ++i) {
@@ -207,7 +205,6 @@ TEST_F(hxradix_sort_test_f, all_256_low_byte_values) {
 }
 
 TEST_F(hxradix_sort_test_f, all_256_low_byte_values11) {
-	const hxsystem_allocator_scope scope2(hxsystem_allocator_stack_0);
 	hxvector<hxradix_sort_key<uint32_t, uint32_t>> rs;
 	rs.reserve(256);
 	for(uint32_t i = 0u; i < 256u; ++i) {
@@ -220,7 +217,6 @@ TEST_F(hxradix_sort_test_f, all_256_low_byte_values11) {
 }
 
 TEST_F(hxradix_sort_test_f, four_pass_upper_bytes_differ) {
-	const hxsystem_allocator_scope scope2(hxsystem_allocator_stack_0);
 	hxvector<hxradix_sort_key<uint32_t, uint32_t>> rs;
 	rs.reserve(32);
 	for(uint32_t i = 0u; i < 32u; ++i) {
@@ -234,7 +230,6 @@ TEST_F(hxradix_sort_test_f, four_pass_upper_bytes_differ) {
 }
 
 TEST_F(hxradix_sort_test_f, skip_pass0_byte0_constant) {
-	const hxsystem_allocator_scope scope2(hxsystem_allocator_stack_0);
 	hxvector<hxradix_sort_key<uint32_t, uint32_t>> rs;
 	rs.reserve(32);
 	for(uint32_t i = 0u; i < 32u; ++i) {
@@ -248,7 +243,6 @@ TEST_F(hxradix_sort_test_f, skip_pass0_byte0_constant) {
 }
 
 TEST_F(hxradix_sort_test_f, skip_pass1_byte1_constant) {
-	const hxsystem_allocator_scope scope2(hxsystem_allocator_stack_0);
 	hxvector<hxradix_sort_key<uint32_t, uint32_t>> rs;
 	rs.reserve(32);
 	for(uint32_t i = 0u; i < 32u; ++i) {
@@ -262,7 +256,6 @@ TEST_F(hxradix_sort_test_f, skip_pass1_byte1_constant) {
 }
 
 TEST_F(hxradix_sort_test_f, skip_pass2_byte2_constant) {
-	const hxsystem_allocator_scope scope2(hxsystem_allocator_stack_0);
 	hxvector<hxradix_sort_key<uint32_t, uint32_t>> rs;
 	rs.reserve(32);
 	for(uint32_t i = 0u; i < 32u; ++i) {
@@ -276,7 +269,6 @@ TEST_F(hxradix_sort_test_f, skip_pass2_byte2_constant) {
 }
 
 TEST_F(hxradix_sort_test_f, skip_pass3_byte3_constant) {
-	const hxsystem_allocator_scope scope2(hxsystem_allocator_stack_0);
 	hxvector<hxradix_sort_key<uint32_t, uint32_t>> rs;
 	rs.reserve(32);
 	for(uint32_t i = 0u; i < 32u; ++i) {
@@ -290,7 +282,6 @@ TEST_F(hxradix_sort_test_f, skip_pass3_byte3_constant) {
 }
 
 TEST_F(hxradix_sort_test_f, skip11_pass0_low11_constant) {
-	const hxsystem_allocator_scope scope2(hxsystem_allocator_stack_0);
 	hxvector<hxradix_sort_key<uint32_t, uint32_t>> rs;
 	rs.reserve(32);
 	for(uint32_t i = 0u; i < 32u; ++i) {
@@ -304,7 +295,6 @@ TEST_F(hxradix_sort_test_f, skip11_pass0_low11_constant) {
 }
 
 TEST_F(hxradix_sort_test_f, skip11_pass1_mid11_constant) {
-	const hxsystem_allocator_scope scope2(hxsystem_allocator_stack_0);
 	hxvector<hxradix_sort_key<uint32_t, uint32_t>> rs;
 	rs.reserve(32);
 	for(uint32_t i = 0u; i < 32u; ++i) {
@@ -318,7 +308,6 @@ TEST_F(hxradix_sort_test_f, skip11_pass1_mid11_constant) {
 }
 
 TEST_F(hxradix_sort_test_f, skip_pass1_only_ternary_false_at_pass2) {
-	const hxsystem_allocator_scope scope2(hxsystem_allocator_stack_0);
 	hxvector<hxradix_sort_key<uint32_t, uint32_t>> rs;
 	rs.reserve(32);
 	for(uint32_t i = 0u; i < 32u; ++i) {
@@ -332,7 +321,6 @@ TEST_F(hxradix_sort_test_f, skip_pass1_only_ternary_false_at_pass2) {
 }
 
 TEST_F(hxradix_sort_test_f, skip_pass0_and_pass1_ternary_true_at_pass2) {
-	const hxsystem_allocator_scope scope2(hxsystem_allocator_stack_0);
 	hxvector<hxradix_sort_key<uint32_t, uint32_t>> rs;
 	rs.reserve(32);
 	for(uint32_t i = 0u; i < 32u; ++i) {
@@ -346,7 +334,6 @@ TEST_F(hxradix_sort_test_f, skip_pass0_and_pass1_ternary_true_at_pass2) {
 }
 
 TEST_F(hxradix_sort_test_f, skip_pass0_pass1_pass2_ternary_true_at_pass3) {
-	const hxsystem_allocator_scope scope2(hxsystem_allocator_stack_0);
 	hxvector<hxradix_sort_key<uint32_t, uint32_t>> rs;
 	rs.reserve(32);
 	for(uint32_t i = 0u; i < 32u; ++i) {
@@ -360,7 +347,6 @@ TEST_F(hxradix_sort_test_f, skip_pass0_pass1_pass2_ternary_true_at_pass3) {
 }
 
 TEST_F(hxradix_sort_test_f, skip11_pass0_and_pass1_ternary_true_at_pass2) {
-	const hxsystem_allocator_scope scope2(hxsystem_allocator_stack_0);
 	hxvector<hxradix_sort_key<uint32_t, uint32_t>> rs;
 	rs.reserve(32);
 	for(uint32_t i = 0u; i < 32u; ++i) {
@@ -374,7 +360,6 @@ TEST_F(hxradix_sort_test_f, skip11_pass0_and_pass1_ternary_true_at_pass2) {
 }
 
 TEST_F(hxradix_sort_test_f, skip11_pass2_high10_constant) {
-	const hxsystem_allocator_scope scope2(hxsystem_allocator_stack_0);
 	hxvector<hxradix_sort_key<uint32_t, uint32_t>> rs;
 	rs.reserve(32);
 	for(uint32_t i = 0u; i < 32u; ++i) {

@@ -16,22 +16,20 @@
 #endif
 
 #include "hxallocator.hpp"
-#include "hxsort.hpp"
+#include "hxalgorithm.hpp"
 #include "hxinitializer_list.hpp"
+#include "hxsort.hpp"
 
 HX_NS_BEGIN_
 
 #if HX_CPLUSPLUS >= 202002L
-
-/// `hxvector_concept` - Concept smoke testing the `hxvector` element. Any kind
-/// of constructor or assignment operator may or may not be required depending
-/// on use. All operator usage should be reasonably predictable. Only the
-/// destructor is explicitly required.
+/// \cond HIDDEN
 template<typename T_>
 concept hxvector_concept_ = requires(T_& x_) {
 	sizeof(T_);
-	{ x_.~T_() };
+	x_.~T_();
 };
+/// \endcond
 #else
 #define hxvector_concept_ typename
 #endif
@@ -43,7 +41,7 @@ class hxarray_back_inserter_ {
 public:
 	// Internal. Extends the array using placement new when assigned to.
 	template<typename arg_t_>
-	typename array_t_::value_type& operator=(arg_t_&& arg_) {
+	typename array_t_::value_t& operator=(arg_t_&& arg_) {
 		return m_x_.push_back(hxforward<arg_t_>(arg_));
 	}
 private:
@@ -64,9 +62,9 @@ private:
 /// unimplemented.
 /// Uses raw pointers as an iterator type so that you get compile errors and
 /// debug symbols that use plain C++ pointers instead. There are exhaustive
-/// asserts. `hxvector` uses the `hxkey_less` and `hxkey_equal` overloads. They
-/// default to using operators `<` and `==`. See `hxalgorithm.hpp` for callable
-/// versions of the algorithms here.
+/// asserts. `hxvector` uses the `hxkey_less_t` and `hxkey_equal_t` callables.
+/// They default to using operators `<` and `==`. See `hxalgorithm.hpp` for
+/// callable versions of the algorithms here.
 ///
 /// `hxvector` can be constructed from C string literals as follows:
 ///   `hxvector<char, HX_MAX_LINE> string_buffer("example C string");`
@@ -77,7 +75,8 @@ private:
 /// special provisions for `std::vector` that were  not made for this class. The
 /// excessive number of operators is due to the rules about default operators.
 /// - `T` : Element type stored by the array.
-/// - `capacity` : Maximum element count or `hxallocator_dynamic_capacity` for dynamic storage.
+/// - `capacity` : Maximum element count or `hxallocator_dynamic_capacity` for
+///   dynamic storage.
 template<hxvector_concept_ T_, hxsize_t capacity_=hxallocator_dynamic_capacity>
 class hxvector : private hxallocator<T_, capacity_> {
 public:
@@ -87,8 +86,8 @@ public:
 	/// Const random access iterator.
 	using const_iterator = const T_*;
 
-	/// Publishes the value type. Doesn't end with `_t` because of the standard.
-	using value_type = T_;
+	/// Publishes the value type.
+	using value_t = T_;
 
 	/// Constructs an empty array with a capacity of `capacity`. `m_end_` will be 0
 	/// if `capacity` is 0.
@@ -124,7 +123,7 @@ public:
 	/// static const int initial_values[] = { 5, 4, 3 };
 	/// hxvector<int, 32> current_values(initial_values);
 	/// ```
-	/// - `array` : A const array of `array_length_` `value_type`.
+	/// - `array` : A const array of `array_length_` `value_t`.
 	template<typename other_value_t_, hxsize_t array_length_>
 	hxvector(const other_value_t_(&array_)[array_length_]) noexcept;
 
@@ -137,17 +136,55 @@ public:
 	template <typename other_value_t_>
 	hxvector(std::initializer_list<other_value_t_> x_) noexcept;
 
+#if HX_CPLUSPLUS >= 202002L
+	/// Constructs by copying elements from a range referenced by an lvalue.
+	/// - `range` : A range of at most `capacity` elements.
+	template<hxrange_concept_ range_t_>
+	requires(!hxis_same<hxremove_cvref_t<range_t_>, hxvector>())
+	explicit hxvector(range_t_& range_) noexcept;
+
+	/// Constructs by moving elements from a temporary range. This overload
+	/// enables moving the range elements into the array when forwarding
+	/// rvalues.
+	/// - `range` : A temporary range of at most `capacity` elements.
+	template<hxrange_concept_ range_t_>
+	requires(!hxis_lvalue_reference<range_t_>()
+			&& !hxis_same<hxremove_cvref_t<range_t_>, hxvector>())
+	explicit hxvector(range_t_&& range_) noexcept;
+#endif
+
 	/// Destructs the array and destroys all elements.
 	~hxvector(void) noexcept;
+
+#if HX_CPLUSPLUS >= 202302L
+	/// Returns the result of calling `callable` with the element at `index`,
+	/// otherwise returns `hxnil`. Use `and_then` to return `hxptr`, `hxref` or
+	/// `hxexpected`.
+	/// - `index` : The 0-based position of the element.
+	/// - `callable` : The function to call with the element.
+	template<typename self_t_, typename callable_t_>
+	hxattr_nodiscard auto and_then(
+		this self_t_&& self_, hxsize_t index_, callable_t_&& callable_)
+		-> hxremove_cvref_t<decltype(
+			hxforward<callable_t_>(callable_)(
+				hxforward_like<self_t_>(hxdeclval<T_&>())))>;
+
+	/// Iterator overload of `and_then`.
+	/// - `it` : A const iterator to an element or `end()`.
+	/// - `callable` : The function to call with the element.
+	template<typename self_t_, typename callable_t_>
+	hxattr_nodiscard auto and_then(
+		this self_t_&& self_, const T_* it_, callable_t_&& callable_)
+		-> hxremove_cvref_t<decltype(
+			hxforward<callable_t_>(callable_)(hxforward_like<self_t_>(
+				hxdeclval<const T_&>())))>;
+#endif // HX_CPLUSPLUS >= 202302L
 
 	/// Assigns the contents of another `hxvector` to this array. Standard except
 	/// reallocation is disallowed.
 	/// - `x` : A non-temporary `hxvector<T>`.
 	void operator=(const hxvector& x_) noexcept;
 
-	/// Assigns the contents of another `hxvector` to this array. Standard except
-	/// reallocation is disallowed.
-	/// - `x` : A non-temporary `hxvector<T>`.
 	template <hxsize_t capacity_x_>
 	void operator=(const hxvector<T_, capacity_x_>& x_) noexcept;
 
@@ -163,7 +200,7 @@ public:
 	/// static const int initial_values[] = { 5, 4, 3 };
 	/// hxvector<int, 32> current_values(initial_values);
 	/// ```
-	/// - `array` : A const array of `array_length` `value_type`.
+	/// - `array` : A const array of `array_length` `value_t`.
 	template<typename other_value_t_, hxsize_t array_length_>
 	void operator=(const other_value_t_(&array_)[array_length_]) noexcept;
 
@@ -171,8 +208,6 @@ public:
 	/// - `index` : The 0-based offset of the element.
 	const T_& operator[](hxsize_t index_) const;
 
-	/// Returns a reference to the element at the specified index.
-	/// - `index` : The 0-based offset of the element.
 	T_& operator[](hxsize_t index_);
 
 	/// Appends an element. (Non-standard.) Vector math is not a goal so this
@@ -215,6 +250,20 @@ public:
 	/// Postfix version.
 	hxvector& operator++(int) { return *this; }
 
+	/// Appends elements from a range referenced by an lvalue by copying each
+	/// element with `push_back`.
+	/// - `range` : The range to copy elements from.
+	template<hxrange_concept_ range_t_>
+	void add_range(range_t_& range_) noexcept;
+
+	/// Appends elements from a temporary range by moving each element with
+	/// `push_back`. This overload enables moving the range elements into the
+	/// array when forwarding rvalues.
+	/// - `range` : The range to move elements from.
+	template<hxrange_concept_ range_t_,
+		hxenable_if_t<!hxis_lvalue_reference<range_t_>(), int> = 0>
+	void add_range(range_t_&& range_) noexcept;
+
 	/// Returns true if the predicate returns true for every element and false
 	/// otherwise. Will stop iterating when the predicate returns false. e.g.,
 	/// ```cpp
@@ -227,7 +276,6 @@ public:
 	template<typename callable_t_>
 	hxattr_nodiscard bool all_of(callable_t_&& callable_) const;
 
-	/// A non-const version of `all_of`.
 	template<typename callable_t_>
 	bool all_of(callable_t_&& callable_);
 
@@ -243,7 +291,6 @@ public:
 	template<typename callable_t_>
 	hxattr_nodiscard bool any_of(callable_t_&& callable_) const;
 
-	/// A non-const version of `any_of`.
 	template<typename callable_t_>
 	bool any_of(callable_t_&& callable_);
 
@@ -254,32 +301,14 @@ public:
 	template <typename iter_t_>
 	void assign(iter_t_ begin_, iter_t_ end_) noexcept;
 
-#if HX_CPLUSPLUS >= 202002L
-	/// Assigns elements from a range referenced by an lvalue. `range_t::begin`
-	/// and `range_t::end` are required as `std::begin` and `std::end` may not
-	/// exist. Use `operator=` to assign from a C-style array.
-	/// - `range` : The range to copy elements from.
-	template <typename range_t_>
-	void assign_range(range_t_& range_) noexcept;
-
-	/// Assigns elements from a temporary range. This overload enables moving the
-	/// range elements into the array when forwarding rvalues.
-	/// - `range` : The range to move elements from.
-	template <typename range_t_>
-	requires(!hxis_lvalue_reference<range_t_>::value)
-	void assign_range(range_t_&& range_) noexcept;
-#endif
-
 	/// Returns a const reference to the last element in the array.
 	const T_& back(void) const;
 
-	/// Returns a reference to the last element in the array.
 	T_& back(void);
 
 	/// Returns a `const T*` to the beginning of the array.
 	const T_* begin(void) const { return this->data(); }
 
-	/// Returns a `T*` to the beginning of the array.
 	T_* begin(void) { return this->data(); }
 
 	/// Performs a binary search using `hxkey_less`. Returns `end()` when not
@@ -287,9 +316,6 @@ public:
 	/// - `value` : The value to locate.
 	hxattr_nodiscard const T_* binary_search(const T_& value_) const;
 
-	/// Non-const version. Performs a binary search using `hxkey_less`. Returns
-	/// `end` when not found.
-	/// - `value` : The value to locate.
 	hxattr_nodiscard T_* binary_search(const T_& value_);
 
 	/// Returns the capacity of the array or 0 if unallocated.
@@ -314,12 +340,6 @@ public:
 	template<typename... args_t_>
 	T_& emplace_back(args_t_&&... args_) noexcept;
 
-	/// Returns true if the arrays compare equivalent using `hxkey_equal`.
-	/// Callers must check the return value to detect mismatches.
-	/// - `x` : The other array.
-	template<hxsize_t capacity_x_>
-	hxattr_nodiscard bool equal(const hxvector<T_, capacity_x_>& x_) const;
-
 	/// Returns true if the array is empty.
 	/// Callers must check the return value instead of discarding it.
 	hxattr_nodiscard bool empty(void) const { return m_end_ == this->data(); }
@@ -327,13 +347,18 @@ public:
 	/// Returns a `const T*` to the end of the array.
 	const T_* end(void) const { return m_end_; }
 
-	/// Returns a `T*` to the end of the array.
 	T_* end(void) { return m_end_; }
+
+	/// Returns true if the arrays compare equivalent using `hxkey_equal`.
+	/// Callers must check the return value to detect mismatches.
+	/// - `x` : The other array.
+	template<hxsize_t capacity_x_>
+	hxattr_nodiscard bool equal(const hxvector<T_, capacity_x_>& x_) const;
 
 	/// Erases the element indicated. Should not compile with hxnull. Support
 	/// for erasing ranges has not been added yet.
-	/// - `pos` : Non-null pointer to an element currently stored in the array.
-	void erase(T_* pos_) noexcept hxattr_nonnull(2);
+	/// - `it` : Non-null pointer to an element currently stored in the array.
+	void erase(T_* it_) noexcept hxattr_nonnull(2);
 
 	/// Erases the element indicated. Use `hxsize_t{0}` to write the integer
 	/// literal 0.
@@ -351,17 +376,6 @@ public:
 	template<typename callable_t_>
 	hxsize_t erase_if_unordered(callable_t_&& callable_) noexcept;
 
-	/// Removes elements for which the predicate returns true while preserving
-	/// the max-heap property maintained by `push_heap`/`pop_heap`. Returns the
-	/// number of erased elements. e.g.,
-	/// ```cpp
-	/// // Erase all the 10s in a heap.
-	/// ints.erase_if_heap([](const int& value) -> bool { return value == 10; });
-	/// ```
-	/// - `callable` : A callable returning boolean.
-	template<typename callable_t_>
-	hxsize_t erase_if_heap(callable_t_&& callable_) noexcept;
-
 	/// Variant of `erase` that moves the end element down to replace the erased
 	/// element. Should not compile with hxnull. (Non-standard.) Can be used to
 	/// erase elements of an array as it is traversed as follows:
@@ -372,8 +386,8 @@ public:
 	/// 	}
 	/// }
 	/// ```
-	/// - `pos` : Non-null pointer to an element currently stored in the array.
-	void erase_unordered(const T_* pos_) noexcept hxattr_nonnull(2);
+	/// - `it` : Non-null pointer to an element currently stored in the array.
+	void erase_unordered(const T_* it_) noexcept hxattr_nonnull(2);
 
 	/// Variant of `erase` that moves the end element down to replace the erased
 	/// element. Use `hxsize_t{0}` to write the integer literal 0. (Non-standard.)
@@ -385,8 +399,6 @@ public:
 	/// - `value` : The value to locate.
 	hxattr_nodiscard const T_* find(const T_& value_) const;
 
-	/// Non-const version of `find` using `hxkey_equal`.
-	/// - `value` : The value to locate.
 	hxattr_nodiscard T_* find(const T_& value_);
 
 	/// Finds the first element for which the predicate returns true. Returns
@@ -401,7 +413,6 @@ public:
 	template<typename callable_t_>
 	hxattr_nodiscard const T_* find_if(callable_t_&& callable_) const;
 
-	/// Non-const version of `find_if`.
 	template<typename callable_t_>
 	hxattr_nodiscard T_* find_if(callable_t_&& callable_);
 
@@ -418,14 +429,12 @@ public:
 	template<typename callable_t_>
 	void for_each(callable_t_&& callable_) const;
 
-	/// Non-const version of `for_each`.
 	template<typename callable_t_>
 	void for_each(callable_t_&& callable_);
 
 	/// Returns a const reference to the first element in the array.
 	const T_& front(void) const;
 
-	/// Returns a reference to the first element in the array.
 	T_& front(void);
 
 	/// Returns true when the array is full (size equals capacity).
@@ -439,16 +448,20 @@ public:
 	template<typename callable_t_>
 	void generate_n(hxsize_t size_, callable_t_&& callable_) noexcept;
 
+	/// Returns a hash mixing the hashes of every element in order using
+	/// `hxkey_hash`.
+	hxattr_nodiscard hxhash_t hash(void) const;
+
 	/// Inserts the element at the offset indicated. Should not compile with
 	/// `hxnull`. `insert(begin(), x)` and `insert(end(), x)` will work as long as
 	/// the array is allocated. Not intended for objects that are expensive to
 	/// move. Support for inserting ranges has not been added yet. Consider using
 	/// `emplace_back` for storing large objects.
-	/// - `pos` : Non-null pointer to the location where the new element will be
+	/// - `it` : Non-null pointer to the location where the new element will be
 	///   inserted. Must point inside or one past the current range.
 	/// - `x` : The new element.
 	template<typename ref_t_>
-	void insert(const T_* pos_, ref_t_&& x_) noexcept hxattr_nonnull(2);
+	void insert(const T_* it_, ref_t_&& x_) noexcept hxattr_nonnull(2);
 
 	/// Inserts the element at the offset indicated. Use `hxsize_t{0}` to write
 	/// the integer literal 0. `insert(begin(), x)` and `insert(end(), x)` will
@@ -484,6 +497,26 @@ public:
 	/// - `byte` : The byte that is repeated. May be a negative char value.
 	void memset(int byte_=0x00);
 
+#if HX_CPLUSPLUS >= 202302L
+	/// Returns an iterator to the element at `index`, or the result of
+	/// calling `callable` when the index is outside the array.
+	/// - `index` : The 0-based position of the element.
+	/// - `callable` : The function to call when lookup fails. Must return an
+	///   iterator.
+	template<typename self_t_, typename callable_t_>
+	hxattr_nodiscard auto or_else(
+		this self_t_&& self_, hxsize_t index_, callable_t_&& callable_)
+		-> decltype(self_.end());
+
+	/// Iterator overload of `or_else`.
+	/// - `it` : An iterator to an element or `end()`.
+	/// - `callable` : The function to call for `end()`. Must return an iterator.
+	template<typename self_t_, typename callable_t_>
+	hxattr_nodiscard auto or_else(
+		this self_t_&& self_, const T_* it_, callable_t_&& callable_)
+		-> decltype(self_.end());
+#endif // HX_CPLUSPLUS >= 202302L
+
 	/// Removes the end element from the array.
 	void pop_back(void) noexcept;
 
@@ -508,7 +541,8 @@ public:
 
 	/// Reserves storage for at least the specified number of elements.
 	/// - `size` : The number of elements to reserve storage for.
-	/// - `allocator` : The memory manager ID to use for allocation (default: `hxsystem_allocator_current`)
+	/// - `allocator` : The memory manager ID to use for allocation (default:
+	///   `hxsystem_allocator_current`)
 	/// - `alignment` : The alignment for the allocation. (default: `hxalignment`)
 	void reserve(hxsize_t size_,
 			hxsystem_allocator_t allocator_=hxsystem_allocator_current,
@@ -541,6 +575,23 @@ public:
 	/// - `x` : The array to swap with.
 	void swap(hxvector& x_) noexcept;
 
+#if HX_CPLUSPLUS >= 202302L
+	/// Returns a copy of the element at `index`, or a `T` constructed from
+	/// `args` when the index is outside the array.
+	/// - `index` : The 0-based position of the element.
+	/// - `args` : The arguments used to construct the value when lookup fails.
+	template<typename self_t_, typename... args_t_>
+	hxattr_nodiscard T_ value_or(
+		this self_t_&& self_, hxsize_t index_, args_t_&&... args_);
+
+	/// Iterator overload of `value_or`.
+	/// - `it` : A const iterator to an element or `end()`.
+	/// - `args` : The arguments used to construct the value for `end()`.
+	template<typename self_t_, typename... args_t_>
+	hxattr_nodiscard T_ value_or(
+		this self_t_&& self_, const T_* it_, args_t_&&... args_);
+#endif // HX_CPLUSPLUS >= 202302L
+
 private:
 	void destruct_(T_* begin_, T_* end_) noexcept;
 	void* push_back_unconstructed_(void);
@@ -548,35 +599,40 @@ private:
 	T_* m_end_;
 };
 
-// Without the "requires" keyword these end up being ambiguous.
-#if HX_CPLUSPLUS >= 202002L
+/// `hxkey_equal_t<hxvector<T>>` - Compares the contents of `x` and `y` for
+/// equivalence.
+template<typename T_, hxsize_t capacity_x_>
+class hxkey_equal_t<hxvector<T_, capacity_x_> > {
+public:
+	template<hxsize_t capacity_y_>
+	hxattr_nodiscard hxinline hxattr_flatten
+	bool operator()(
+			const hxvector<T_, capacity_x_>& x_, const hxvector<T_, capacity_y_>& y_) const {
+		return x_.equal(y_);
+	}
+};
 
-/// `bool hxkey_equal(hxvector<T>& x, hxvector<T>& y)` - Compares the contents
-/// of `x` and `y` for equivalence.
-template<typename T_, hxsize_t capacity_x_, hxsize_t capacity_y_>
-hxinline hxattr_flatten bool hxkey_equal(const hxvector<T_, capacity_x_>& x_,
-		const hxvector<T_, capacity_y_>& y_) {
-	return x_.equal(y_);
-}
+/// `hxkey_less_t<hxvector<T>>` - Compares the contents of `x` and `y`
+/// lexicographically using `hxkey_equal_t` and `hxkey_less_t` on each element.
+template<typename T_, hxsize_t capacity_x_>
+class hxkey_less_t<hxvector<T_, capacity_x_> > {
+public:
+	template<hxsize_t capacity_y_>
+	hxattr_nodiscard hxinline hxattr_flatten
+	bool operator()(
+			const hxvector<T_, capacity_x_>& x_, const hxvector<T_, capacity_y_>& y_) const {
+		return x_.less(y_);
+	}
+};
 
-/// `bool hxkey_less(hxvector<T>& x, hxvector<T>& y)` - Compares the contents of
-/// `x` and `y` lexicographically using `hxkey_equal` and `hxkey_less` on each
-/// element.
-template<typename T_, hxsize_t capacity_x_, hxsize_t capacity_y_>
-hxinline hxattr_flatten bool hxkey_less(const hxvector<T_, capacity_x_>& x_,
-		const hxvector<T_, capacity_y_>& y_) {
-	return x_.less(y_);
-}
+/// `hxkey_hash_t<hxvector<T>>` - Returns a hash mixing the hashes of every
+/// element in order.
+template<typename T_, hxsize_t capacity_x_>
+class hxkey_hash_t<hxvector<T_, capacity_x_> > {
+public:
+	hxattr_nodiscard hxinline hxattr_flatten
+	hxhash_t operator()(const hxvector<T_, capacity_x_>& x_) const { return x_.hash(); }
+};
 
-/// `void hxswap(hxvector<T>& x, hxvector<T>& y)` - Exchanges the contents of x
-/// and y. Only works with `hxallocator_dynamic_capacity`. Dynamically allocated
-/// arrays are swapped with very little overhead.
-template<typename T_>
-hxinline hxattr_flatten void hxswap(hxvector<T_, hxallocator_dynamic_capacity>& x_,
-		hxvector<T_, hxallocator_dynamic_capacity>& y_) noexcept {
-	hxswap_memcpy(x_, y_);
-}
-
-#endif // HX_CPLUSPLUS >= 202002L
 #include "detail/hxvector.inl"
 HX_NS_END_

@@ -60,11 +60,11 @@ module;
 
 // Out of line declarations (.inl files) have to be outside the export block.
 #ifdef HX_USE_NAMESPACE
-#define HX_BEGIN_INL_ } } namespace HX_USE_NAMESPACE {
-#define HX_END_INL_ } export { namespace HX_USE_NAMESPACE {
+#define HX_INL_BEGIN_ } } namespace HX_USE_NAMESPACE {
+#define HX_INL_END_ } export { namespace HX_USE_NAMESPACE {
 #else
-#define HX_BEGIN_INL_ }
-#define HX_END_INL_ export {
+#define HX_INL_BEGIN_ }
+#define HX_INL_END_ export {
 #endif
 
 // hxmemory_manager.h and hxsettings.h are not meant to be included directly.
@@ -83,19 +83,24 @@ export {
 #include "../include/hx/hxfree_list.hpp"
 #include "../include/hx/hxflat_map.hpp"
 #include "../include/hx/hxflat_set.hpp"
-#include "../include/hx/hxhandle_map.hpp"
+#include "../include/hx/hxslot_map.hpp"
 #include "../include/hx/hxhandle_table.hpp"
 #include "../include/hx/hxhash_table.hpp"
 #include "../include/hx/hxhash_table_nodes.hpp"
 #include "../include/hx/hxinitializer_list.hpp"
+#include "../include/hx/hxset_operations.hpp"
 #include "../include/hx/hxkey.hpp"
 #include "../include/hx/hxlist.hpp"
 //#include "../include/hx/hxmemory_manager.h"
-#include "../include/hx/hxoptional.hpp"
+#if HX_CPLUSPLUS >= 202302L
+#include "../include/hx/hxexpected.hpp"
+#endif // HX_CPLUSPLUS >= 202302L
 #include "../include/hx/hxprofiler.hpp"
 #include "../include/hx/hxptr.hpp"
 #include "../include/hx/hxradix_sort.hpp"
+#if HX_CPLUSPLUS >= 202302L
 #include "../include/hx/hxref.hpp"
+#endif // HX_CPLUSPLUS >= 202302L
 #include "../include/hx/hxrandom.hpp"
 //#include "../include/hx/hxsettings.h"
 #include "../include/hx/hxsort.hpp"
@@ -110,6 +115,8 @@ export {
 #include "./hxconsole.cpp"
 #include "./hxfile_c.cpp"
 #include "./hxfile_posix.cpp"
+#include "./hxhash_table.cpp"
+#include "./hxlist.cpp"
 #include "./hxmemory_manager.cpp"
 #include "./hxprofiler.cpp"
 #include "./hxradix_sort.cpp"

@@ -8,32 +8,29 @@
 
 #include "libhatchet.h"
 
-#if HX_CPLUSPLUS
-extern "C" {
-
 // HX_USE_MACROS_WITH_MODULE allows including macros alongside the module.
 #if HX_USE_MACROS_WITH_MODULE
 #error Header does not provide macros alone.
 #endif
-#endif
+
+HX_C_BEGIN_
 
 // -- C Utilities --------------------------------------------------------------
 
-/// `hxfloat_dump` - Prints an array of floating point values.
+/// `hxfloat_view` - Prints an array of floating point values.
 /// - `address` : Non-null pointer to the start of the float array.
-/// - `floats` : The number of floats to print.
-void hxfloat_dump(const float* address_, size_t floats_) hxattr_nonnull(1) hxattr_cold;
+/// - `size` : The number of floats to print.
+void hxfloat_view(const float* address_, size_t size_) hxattr_nonnull(1) hxattr_cold;
 
-/// `hxhex_dump` - Prints an array of bytes formatted in hexadecimal. Additional
+/// `hxhex_view` - Prints an array of bytes formatted in hexadecimal. Additional
 /// information provided when pretty is non-zero.
 /// - `address` : Non-null pointer to the start of the byte array.
 /// - `bytes` : The number of bytes to print.
 /// - `pretty` : Set non-zero to include extended visualization.
-void hxhex_dump(const void* address_, size_t bytes_, bool pretty_) hxattr_nonnull(1) hxattr_cold;
+void hxhex_view(const void* address_, size_t bytes_, bool pretty_) hxattr_nonnull(1) hxattr_cold;
 
+HX_C_END_
 #if HX_CPLUSPLUS
-} // extern "C"
-
 HX_NS_BEGIN_
 
 // -- C and C++ Utilities ------------------------------------------------------
@@ -49,36 +46,26 @@ hxsize_t hxsize(T_ (&)[N_]) { return N_; }
 /// \cond HIDDEN
 template<bool condition_, typename type_=void> struct hxenable_if_ { };
 template<typename type_> struct hxenable_if_<true, type_> { using type = type_; };
-/// \endcond
-
-/// \cond HIDDEN
-/// `hxenable_if_t<condition>` - Implements `std::enable_if_t`. This is available
-/// instead of the `requires` keyword when backwards compatibility is required.
 template<bool condition_, typename type_=void>
 using hxenable_if_t = typename hxenable_if_<condition_, type_>::type;
 /// \endcond
 
-/// `hxnullptr_t` - A class that will only convert to a null `T` pointer. Useful
-/// when an integer constant arg would be ambiguous or otherwise break template
-/// code. `hxnullptr` is a `hxnullptr_t`. Use plain `hxnull` for comparisons.
-class hxnullptr_t {
+/// `hxnil_t` - A class that will only convert to a null `T` pointer or a null
+/// `hxhandle_t`. Useful when an integer literal 0 arg would be ambiguous or
+/// otherwise break template code. Also used as a tag for nothing. Use plain
+/// `hxnull` for `==` and `!=` comparisons.
+class hxnil_t {
 public:
 	/// Null `T` pointer.
-	template<typename T_> constexpr operator T_*() const { return 0; }
+	template<typename T_> hxinline constexpr operator T_*() const { return 0; }
 	/// Null `T` method pointer.
-	template<typename T_, typename M_> constexpr operator M_ T_::*() const { return 0; }
-private:
-	// No address-of operator.
-	void operator&(void) const = delete;
+	template<typename T_, typename M_> hxinline constexpr operator M_ T_::*() const { return 0; }
 };
 
-/// `hxnullptr` - An instance of a class that will only convert to a null
-/// pointer. Useful when an integer constant arg would be ambiguous or otherwise
-/// break template code. `hxnullptr` is a `hxnullptr_t`. Use plain `hxnull` for
-/// `==` and `!=` comparisons.
-hxinline_constexpr hxnullptr_t hxnullptr{};
+/// `hxnil` - An instance of `hxnil_t` useful as a shorthand. Also used as a tag
+/// for nothing. Use plain `hxnull` for `==` and `!=` comparisons.
+hxinline_constexpr hxnil_t hxnil{};
 
-/// Internal. Implements `std::remove_cv`.
 /// \cond HIDDEN
 template<typename T_> struct hxremove_cv_ { using type = T_; };
 template<typename T_> struct hxremove_cv_<const T_> { using type = T_; };
@@ -111,11 +98,12 @@ template<typename T_> struct hxremove_reference_<T_&&> { using type = T_; };
 /// `hxremove_reference_t<T>` - Returns `T` with references removed.
 template<typename T_> using hxremove_reference_t = typename hxremove_reference_<T_>::type;
 
-/// `hxremove_cvref_t<T>` - Returns `T` with const, volatile, and references removed.
+/// `hxremove_cvref_t<T>` - Returns `T` with const, volatile, and references
+/// removed.
 template<typename T_> using hxremove_cvref_t = hxremove_cv_t<hxremove_reference_t<T_>>;
 
-/// `hxdeclval` - Implements `std::declval`. Returns a `T&&` reference for use in
-/// unevaluated contexts such as `decltype`. Must not be called or defined.
+/// `hxdeclval` - Implements `std::declval`. Returns a `T&&` reference for use
+/// in unevaluated contexts such as `decltype`. Must not be called or defined.
 template<typename T_> T_&& hxdeclval(void) noexcept;
 
 /// `hxtrue_t` - Implements `std::true_type`.
@@ -123,18 +111,13 @@ struct hxtrue_t { constexpr static bool value = true; };
 /// `hxfalse_t` - Implements `std::false_type`.
 struct hxfalse_t { constexpr static bool value = false; };
 
-/// `hxbinds_directly<T, U>` - Provides a `value` constant that is true when an
-/// lvalue of type `U` binds to `T&` without creating a temporary.
-/// - `T` : The referenced type.
-/// - `U` : The type of the lvalue being bound.
+/// \cond HIDDEN
 template<typename T_, typename U_>
-struct hxbinds_directly {
+struct hxbinds_directly_ {
 private:
-	/// \cond HIDDEN
 	static hxtrue_t test_(T_&);
 	static hxfalse_t test_(T_&&);
 	static hxfalse_t test_(...);
-	/// \endcond
 public:
 #if defined _MSC_VER
 #pragma warning(push)
@@ -145,15 +128,33 @@ public:
 #pragma warning(pop)
 #endif
 };
+/// \endcond
 
-/// `hxis_array` - Implements `std::is_array`.
-template<typename T_> struct hxis_array : public hxfalse_t { };
-template<typename T_, size_t size_> struct hxis_array<T_[size_]> : public hxtrue_t { };
-template<typename T_> struct hxis_array<T_[]> : public hxtrue_t { };
+/// `hxbinds_directly<T, U>` - Returns true when an lvalue of type `U` binds to
+/// `T&` without creating a temporary.
+/// - `T` : The referenced type.
+/// - `U` : The type of the lvalue being bound.
+template<typename T_, typename U_>
+hxattr_nodiscard constexpr bool hxbinds_directly(void) { return hxbinds_directly_<T_, U_>::value; }
 
-/// `hxis_const` - Implements `std::is_const`.
-template<typename T_> struct hxis_const : public hxfalse_t { };
-template<typename T_> struct hxis_const<const T_> : public hxtrue_t { };
+/// \cond HIDDEN
+template<typename T_> struct hxis_array_ : public hxfalse_t { };
+template<typename T_, size_t size_> struct hxis_array_<T_[size_]> : public hxtrue_t { };
+template<typename T_> struct hxis_array_<T_[]> : public hxtrue_t { };
+/// \endcond
+
+/// `hxis_array<T>` - Implements `std::is_array`.
+template<typename T_>
+hxattr_nodiscard constexpr bool hxis_array(void) { return hxis_array_<T_>::value; }
+
+/// \cond HIDDEN
+template<typename T_> struct hxis_const_ : public hxfalse_t { };
+template<typename T_> struct hxis_const_<const T_> : public hxtrue_t { };
+/// \endcond
+
+/// `hxis_const<T>` - Implements `std::is_const`.
+template<typename T_>
+hxattr_nodiscard constexpr bool hxis_const(void) { return hxis_const_<T_>::value; }
 
 /// \cond HIDDEN
 template<typename T_> struct hxis_floating_point_ : public hxfalse_t { };
@@ -162,9 +163,11 @@ template<> struct hxis_floating_point_<double> : public hxtrue_t { };
 template<> struct hxis_floating_point_<long double> : public hxtrue_t { };
 /// \endcond
 
-/// `hxis_floating_point` - Implements `std::is_floating_point`.
+/// `hxis_floating_point<T>` - Implements `std::is_floating_point`.
 template<typename T_>
-struct hxis_floating_point : public hxis_floating_point_<hxremove_cv_t<T_>> { };
+hxattr_nodiscard constexpr bool hxis_floating_point(void) {
+	return hxis_floating_point_<hxremove_cv_t<T_>>::value;
+}
 
 /// \cond HIDDEN
 template<typename T_> struct hxis_integral_ : public hxfalse_t { };
@@ -188,43 +191,90 @@ template<> struct hxis_integral_<long long> : public hxtrue_t { };
 template<> struct hxis_integral_<unsigned long long> : public hxtrue_t { };
 /// \endcond
 
-/// `hxis_integral` - Implements `std::is_integral`.
+/// `hxis_integral<T>` - Implements `std::is_integral`.
 template<typename T_>
-struct hxis_integral : public hxis_integral_<hxremove_cv_t<T_>> { };
+hxattr_nodiscard constexpr bool hxis_integral(void) {
+	return hxis_integral_<hxremove_cv_t<T_>>::value;
+}
 
-/// `hxis_lvalue_reference` - Implements `std::is_lvalue_reference`.
-template<typename T_> struct hxis_lvalue_reference : public hxfalse_t { };
-template<typename T_> struct hxis_lvalue_reference<T_&> : public hxtrue_t { };
+/// \cond HIDDEN
+template<typename T_> struct hxis_lvalue_reference_ : public hxfalse_t { };
+template<typename T_> struct hxis_lvalue_reference_<T_&> : public hxtrue_t { };
+/// \endcond
+
+/// `hxis_lvalue_reference<T>` - Implements `std::is_lvalue_reference`.
+template<typename T_>
+hxattr_nodiscard constexpr bool hxis_lvalue_reference(void) { return hxis_lvalue_reference_<T_>::value; }
 
 /// \cond HIDDEN
 template<typename T_> struct hxis_pointer_ : public hxfalse_t { };
 template<typename T_> struct hxis_pointer_<T_*> : public hxtrue_t { };
 /// \endcond
 
-/// `hxis_pointer` - Returns whether T is a pointer type as
-/// `hxis_pointer<T>::value`. Implements `std::is_pointer`.
-template<typename T> struct hxis_pointer : hxis_pointer_<hxremove_cv_t<T>> { };
+/// `hxis_pointer<T>` - Implements `std::is_pointer`.
+template<typename T_>
+hxattr_nodiscard constexpr bool hxis_pointer(void) {
+	return hxis_pointer_<hxremove_cv_t<T_>>::value;
+}
 
-/// `hxis_reference` - Implements `std::is_reference`.
-template<typename T_> struct hxis_reference : public hxfalse_t { };
-template<typename T_> struct hxis_reference<T_&>  : public hxtrue_t { };
-template<typename T_> struct hxis_reference<T_&&> : public hxtrue_t { };
+/// \cond HIDDEN
+template<typename T_> struct hxis_reference_ : public hxfalse_t { };
+template<typename T_> struct hxis_reference_<T_&>  : public hxtrue_t { };
+template<typename T_> struct hxis_reference_<T_&&> : public hxtrue_t { };
+/// \endcond
 
-/// `hxis_rvalue_reference` - Implements `std::is_rvalue_reference`.
-template<typename T_> struct hxis_rvalue_reference : public hxfalse_t { };
-template<typename T_> struct hxis_rvalue_reference<T_&&> : public hxtrue_t { };
+/// `hxis_reference<T>` - Implements `std::is_reference`.
+template<typename T_>
+hxattr_nodiscard constexpr bool hxis_reference(void) { return hxis_reference_<T_>::value; }
 
-/// `hxis_same` - Implements `std::is_same`.
-template<typename A_, typename B_> struct hxis_same : public hxfalse_t { };
-template<typename A_> struct hxis_same<A_, A_> : public hxtrue_t { };
+/// \cond HIDDEN
+template<typename T_> struct hxis_rvalue_reference_ : public hxfalse_t { };
+template<typename T_> struct hxis_rvalue_reference_<T_&&> : public hxtrue_t { };
+/// \endcond
+
+/// `hxis_rvalue_reference<T>` - Implements `std::is_rvalue_reference`.
+template<typename T_>
+hxattr_nodiscard constexpr bool hxis_rvalue_reference(void) { return hxis_rvalue_reference_<T_>::value; }
+
+/// \cond HIDDEN
+template<typename A_, typename B_> struct hxis_same_ : public hxfalse_t { };
+template<typename A_> struct hxis_same_<A_, A_> : public hxtrue_t { };
+/// \endcond
+
+/// `hxis_same<A, B>` - Implements `std::is_same`.
+template<typename A_, typename B_>
+hxattr_nodiscard constexpr bool hxis_same(void) { return hxis_same_<A_, B_>::value; }
+
+#if HX_CPLUSPLUS >= 202002L
+/// `hxconvertible_to` - A concept that requires one type to be convertible to
+/// another. See usage below. The compiler applies some unintuitive rules when
+/// evaluating this.
+/// - `from_t` : The source type.
+/// - `to_t` : The target type.
+template<typename from_t_, typename to_t_>
+concept hxconvertible_to = requires(from_t_ (&&from_)()) {
+	requires requires { static_cast<to_t_>(from_()); };
+};
+
+/// `hxsame_as` - A concept that requires two types to be the same. Used with
+/// the `->` return-type constraint syntax in requires-expressions to enforce
+/// that a return type is exactly `to_t` rather than merely convertible.
+/// - `from_t` : The first type.
+/// - `to_t` : The second type.
+template<typename from_t_, typename to_t_>
+concept hxsame_as = hxis_same_<from_t_, to_t_>::value;
+#endif
 
 /// \cond HIDDEN
 template<typename T_> struct hxis_void_ : public hxfalse_t { };
 template<> struct hxis_void_<void> : public hxtrue_t { };
 /// \endcond
 
-/// `hxis_void` - Implements `std::is_void`.
-template<typename T_> struct hxis_void : public hxis_void_<hxremove_cv_t<T_>> { };
+/// `hxis_void<T>` - Implements `std::is_void`.
+template<typename T_>
+hxattr_nodiscard constexpr bool hxis_void(void) {
+	return hxis_void_<hxremove_cv_t<T_>>::value;
+}
 
 /// \cond HIDDEN
 template<typename T_> struct hxrestrict_t_ { using type = T_; };
@@ -279,15 +329,15 @@ hxattr_nodiscard hxinline int hxlog2i(uint32_t i_) {
 template<typename T_>
 hxattr_nodiscard constexpr T_ hxabs(T_ x_) { return (x_ < T_()) ? (T_() - x_) : x_; }
 
-/// `hxclamp` - Returns `x` clamped between the `minimum` and `maximum` using `<`
-/// comparisons.
+/// `hxclamp` - Returns `x` clamped between the `minimum` and `maximum` using
+/// `<` comparisons.
 /// - `x` : The value to clamp.
 /// - `minimum` : The minimum allowable value.
 /// - `maximum` : The maximum allowable value.
 template<typename T_>
 hxattr_nodiscard constexpr T_ hxclamp(T_ x_, T_ minimum_, T_ maximum_) {
 #if HX_CPLUSPLUS >= 201402L
-	hxassertmsg(!(maximum_ < minimum_), "minimum <= maximum");
+	hxassertmsg(!(maximum_ < minimum_), "bad_span inversion");
 #endif
 	return (x_ < minimum_) ? minimum_ : ((maximum_ < x_) ? maximum_ : x_);
 }
@@ -302,7 +352,7 @@ hxattr_nodiscard constexpr T_ hxclamp(T_ x_, T_ minimum_, T_ maximum_) {
 /// This is the `T&&` version of hxforward<T>.
 template<typename T_>
 constexpr T_&& hxforward(hxremove_reference_t<T_>&& x_) {
-	static_assert(!hxis_lvalue_reference<T_>::value, "T must be a `T&&` reference");
+	static_assert(!hxis_lvalue_reference<T_>(), "T must be a `T&&` reference");
 	return static_cast<T_&&>(x_);
 }
 
@@ -312,6 +362,31 @@ constexpr T_&& hxforward(hxremove_reference_t<T_>&& x_) {
 template<typename T_>
 constexpr T_&& hxforward(hxremove_reference_t<T_>& x_) {
 	return static_cast<T_&&>(x_);
+}
+
+/// \cond HIDDEN
+template<typename value_t_>
+value_t_& hxforward_like_result_(value_t_&, hxtrue_t, hxfalse_t);
+template<typename value_t_>
+const value_t_& hxforward_like_result_(value_t_&, hxtrue_t, hxtrue_t);
+template<typename value_t_>
+value_t_&& hxforward_like_result_(value_t_&, hxfalse_t, hxfalse_t);
+template<typename value_t_>
+const value_t_&& hxforward_like_result_(value_t_&, hxfalse_t, hxtrue_t);
+
+template<typename like_t_, typename value_t_>
+using hxforward_like_t_ = decltype(hxforward_like_result_(
+	hxdeclval<value_t_&>(),
+	hxis_lvalue_reference_<like_t_>(),
+	hxis_const_<hxremove_reference_t<like_t_>>()));
+/// \endcond
+
+/// `hxforward_like<T>` - Returns `value` with the constness and value category
+/// of `T`. `T` must be explicitly specified.
+/// - `value` : The value to forward.
+template<typename like_t_, typename value_t_>
+hxattr_nodiscard constexpr hxforward_like_t_<like_t_, value_t_> hxforward_like(value_t_& value_) {
+	return static_cast<hxforward_like_t_<like_t_, value_t_>>(value_);
 }
 
 /// `hxmax` - Returns the maximum value of `x` and `y` using a `<` comparison.
@@ -338,8 +413,6 @@ constexpr hxremove_reference_t<T_>&& hxmove(T_&& t_) {
 /// has `T::T(T&&)` or `T::operator=(T&&)` then those will be used.
 template<typename T_>
 hxconstexpr void hxswap(T_& x_, T_& y_) {
-	// Provides an optimization hint.
-	hxassertmsg(&x_ != &y_, "hxswap No swapping with self");
 	T_ t_(hxmove(x_));
 	x_ = hxmove(y_);
 	y_ = hxmove(t_);
@@ -352,7 +425,6 @@ hxconstexpr void hxswap(T_& x_, T_& y_) {
 /// - `y` : Second `T&`.
 template<typename T_>
 void hxswap_memcpy(T_& x_, T_& y_) {
-	hxassertmsg(&x_ != &y_, "hxswap_memcpy No swapping with self");
 	char t_[sizeof x_];
 	::memcpy(t_, &y_, sizeof x_); // NOLINT(bugprone-undefined-memory-manipulation)
 	::memcpy(static_cast<void*>(&y_), &x_, sizeof x_); // NOLINT(bugprone-undefined-memory-manipulation)
@@ -373,8 +445,8 @@ HX_NS_END_
 /// - `x` : The value to compute the absolute value for.
 #define hxabs(x_) ((x_) < 0 ? (0 - (x_)) : (x_))
 
-/// `hxclamp` - Returns `x` clamped between the `minimum` and `maximum` using `<`
-/// comparisons. WARNING: Args will be multiply instantiated.
+/// `hxclamp` - Returns `x` clamped between the `minimum` and `maximum` using
+/// `<` comparisons. WARNING: Args will be multiply instantiated.
 /// - `x` : The value to clamp.
 /// - `minimum` : The minimum allowable value.
 /// - `maximum` : The maximum allowable value.

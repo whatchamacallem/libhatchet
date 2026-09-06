@@ -8,7 +8,7 @@
 #endif
 
 #ifndef HX_DOXYGEN_PARSER
-HX_BEGIN_INL_
+HX_INL_BEGIN_
 
 template<typename callable_t_>
 hxinline hxattr_flatten bool hxtask_queue::all_of(callable_t_&& callable_) const noexcept {
@@ -67,5 +67,5 @@ hxinline hxattr_flatten hxsize_t hxtask_queue::size(void) const {
 	return m_tasks_.size();
 }
 
-HX_END_INL_
+HX_INL_END_
 #endif // HX_DOXYGEN_PARSER
