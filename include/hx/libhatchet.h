@@ -153,18 +153,18 @@
 /// - `...` Variadic arguments for the formatted warning message.
 #define hxlog_warning(...) hxlog_handler(hxlog_level_warning, __VA_ARGS__)
 
-/// `hxwarn_msg(bool x, ...)` - Enters formatted warnings in the system log when
+/// `hxwarn(bool x, ...)` - Enters formatted warnings in the system log when
 /// `x` is false.
 /// - `x` : The condition to evaluate.
 /// - `...` Variadic arguments for the formatted warning message.
-#define hxwarn_msg(x_, ...) (void)((bool)(x_) \
+#define hxwarn(x_, ...) (void)((bool)(x_) \
 	|| (hxlog_handler(hxlog_level_warning, __VA_ARGS__), 0))
 
 #else // !HX_USE_LOGGING
 #define hxlog_release(...) ((void)0)
 #define hxlog_console(...) ((void)0)
 #define hxlog_warning(...) ((void)0)
-#define hxwarn_msg(x_, ...) ((void)0)
+#define hxwarn(x_, ...) ((void)0)
 #endif // !HX_USE_LOGGING
 
 // hxassert_hard has 4 variations. See above. It is only evaluated when

@@ -462,7 +462,7 @@ void hxmemory_manager::free(void* ptr) {
 
 #if (HX_MEMORY_BUDGET_PERMANENT) != 0
 	if(m_memory_allocator_permanent.contains(ptr)) {
-		hxwarn_msg(hxg_settings.deallocate_permanent, "ERROR: free from permanent");
+		hxwarn(hxg_settings.deallocate_permanent, "ERROR: free from permanent");
 		m_memory_allocator_permanent.deallocate(ptr);
 		return;
 	}

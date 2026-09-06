@@ -176,7 +176,7 @@ hxattr_cold bool hxconsole_exec_line(const char* command) {
 	const hxconsole_command_table::const_iterator node =
 		hxconsole_commands_().find(hxdetail_::hxconsole_hash_table_key_(pos));
 	if(node == hxconsole_commands_().end()) {
-		hxwarn_msg(0, "unknown_command %s", command);
+		hxwarn(0, "unknown_command %s", command);
 		return false;
 	}
 
@@ -190,12 +190,12 @@ hxattr_cold bool hxconsole_exec_line(const char* command) {
 #endif
 	{
 		const bool result = node->command_()->execute_(pos);
-		hxwarn_msg(result, "command_failed %s", command);
+		hxwarn(result, "command_failed %s", command);
 		return result;
 	}
 #ifdef __cpp_exceptions
 	catch (...) {
-		hxwarn_msg(0, "unexpected_exception %s", command);
+		hxwarn(0, "unexpected_exception %s", command);
 		return false;
 	}
 #endif
@@ -218,7 +218,7 @@ hxattr_cold bool hxconsole_help(void) {
 	}
 	// Do not remove. This is potentially a warning about dead code.
 	const hxsize_t skipped = commands.size() - cmds.size();
-	hxwarn_msg(skipped == 0, "help_skipped %d test symbols", static_cast<int>(skipped));
+	hxwarn(skipped == 0, "help_skipped %d test symbols", static_cast<int>(skipped));
 
 	hxinsertion_sort<const hxdetail_::hxconsole_hash_table_node_**, hxconsole_less>(
 		cmds.begin(), cmds.end(), hxconsole_less());
@@ -279,10 +279,10 @@ hxattr_cold bool hxconsole_exec_file(hxfile& file) {
 
 hxattr_cold bool hxconsole_exec_filename(const char* filename) {
 	hxfile file(hxfile::open_mode_in, "%s", filename);
-	hxwarn_msg(file, "cannot open: %s", filename);
+	hxwarn(file, "cannot open: %s", filename);
 	if(file) {
 		const bool is_ok = hxconsole_exec_file(file);
-		hxwarn_msg(is_ok, "encountering errors: %s", filename);
+		hxwarn(is_ok, "encountering errors: %s", filename);
 		return is_ok;
 	}
 	return false;

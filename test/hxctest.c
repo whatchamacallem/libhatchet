@@ -14,7 +14,7 @@ bool hxctest_libhatchet_h(void) {
 	hxassertmsg(1, "hxassertmsg val %d", 5);
 	hxassert(1 == 1);
 	hxassert_always(1.0, "hxassert_always val %f", 1.0f);
-	hxwarn_msg(1, "not true");
+	hxwarn(1, "not true");
 	return true;
 }
 

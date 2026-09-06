@@ -148,7 +148,7 @@ hxattr_weak hxattr_noexcept bool hxassert_handler(const char* file, size_t line)
 		return hxg_assert_handler();
 	}
 	// GCOVR_EXCL_START
-	hxwarn_msg(false, "breakpoint %s(%zu)", file, line);
+	hxwarn(false, "breakpoint %s(%zu)", file, line);
 	// Return to hxbreakpoint at the calling line.
 	return !hxg_settings.test_break_on_failure;
 	// GCOVR_EXCL_STOP

@@ -35,11 +35,9 @@ bool hxtest_console_failing_command(void) { return false; }
 #endif // HX_USE_CONSOLE
 
 #if !(HX_USE_GOOGLE_TEST)
-// Recognizes "--gtest_break_on_failure" and "--gtest_filter=..." in argv,
-// sets hxg_settings from them and erases every "--gtest_"-prefixed argument
-// from argv/argc using ::memmove. It is a usage error to pass --gtest_filter
-// twice.
-void hxtest_handle_gtest_args(int* argc, const char** argv) {
+// Recognizes "--gtest_break_on_failure" and "--gtest_filter=..." in argv, sets
+// hxg_settings from them and then erases them from argv/argc.
+void hxtest_handle_gtest_args(int* argc, const char** argv, bool verbose) {
 	const char gtest_break_on_failure[] = "--gtest_break_on_failure";
 	const char gtest_filter_prefix[] = "--gtest_filter=";
 	for(int i = 1; i < *argc; ) {
@@ -50,12 +48,13 @@ void hxtest_handle_gtest_args(int* argc, const char** argv) {
 		}
 		else if(::strncmp(argv[i], gtest_filter_prefix,
 				sizeof(gtest_filter_prefix)-1) == 0) {
-			hxassert_always(hxg_settings.test_filter == hxnull, "gtest_filter_reused");
+			hxassert_always(hxg_settings.test_filter == hxnull, "gtest_filter passed twice");
 			hxg_settings.test_filter = argv[i] + sizeof(gtest_filter_prefix) - 1;
 			found = true;
 		}
 
 		if(found) {
+			hxwarn(!verbose, "gtest_arg %s", argv[i]);
 			::memmove(argv + i, argv + i + 1,
 				sizeof(char*) * static_cast<size_t>(*argc - i));
 			--*argc;
@@ -78,7 +77,11 @@ TEST(hxtest_main, set_assert_handler) {
 	EXPECT_EQ(hxs_test_assert_handler_count, 1);
 
 #if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
-	// Normally hxassert_handler returning false causes a breakpoint.
+	// Normally hxassert_handler returning false causes a breakpoint. Forced
+	// off here because these calls exercise that return value directly
+	// instead of going through a real EXPECT_*/ASSERT_* failure.
+	const bool break_on_failure = hxg_settings.test_break_on_failure;
+	hxg_settings.test_break_on_failure = false;
 
 	hxset_assert_handler(hxtest_assert_handler);
 	EXPECT_TRUE(hxassert_handler("no_slash_or_backslash.cpp", 1u));
@@ -91,6 +94,8 @@ TEST(hxtest_main, set_assert_handler) {
 	hxset_assert_handler(hxnull);
 
 	EXPECT_TRUE(hxassert_handler(__FILE__, __LINE__));
+
+	hxg_settings.test_break_on_failure = break_on_failure;
 #endif
 }
 
@@ -190,7 +195,7 @@ TEST(hxtest_main, hxtest_strip_g_args) {
 	};
 	int argc = 5;
 
-	hxtest_handle_gtest_args(&argc, argv);
+	hxtest_handle_gtest_args(&argc, argv, false);
 
 	EXPECT_EQ(argc, 3);
 	EXPECT_STREQ(argv[0], "hxtest");
@@ -301,7 +306,7 @@ int main(int argc, char**argv) {
 	}
 #else // !HX_USE_GOOGLE_TEST
 	hxinit(); // Init hxsettings.
-	hxtest_handle_gtest_args(&argc, const_cast<const char**>(argv));
+	hxtest_handle_gtest_args(&argc, const_cast<const char**>(argv), true);
 #endif
 	// Calling hxexit would break coverage.
 	return test_main(argc, argv);

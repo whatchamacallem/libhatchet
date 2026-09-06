@@ -60,6 +60,12 @@ run_example() {
 		echo "error: output differs from $HX_CORRECT_"
 		exit 1
 	fi
+
+	# Require that the test suite was not linked against.
+	if grep -q "help_skipped" build/hxexample_out.txt; then
+		echo "error: help_skipped found in output"
+		exit 1
+	fi
 }
 
 if [ "$HX_VERBOSE_" = "--verbose" ]; then
