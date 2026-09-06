@@ -218,7 +218,7 @@ hxattr_cold bool hxconsole_help(void) {
 	}
 	// Do not remove. This is potentially a warning about dead code.
 	const hxsize_t skipped = commands.size() - cmds.size();
-	hxwarn_msg(skipped == 0, "help skipped %d test symbols", static_cast<int>(skipped));
+	hxwarn_msg(skipped == 0, "help_skipped %d test symbols", static_cast<int>(skipped));
 
 	hxinsertion_sort<const hxdetail_::hxconsole_hash_table_node_**, hxconsole_less>(
 		cmds.begin(), cmds.end(), hxconsole_less());
