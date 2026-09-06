@@ -98,7 +98,7 @@
 /// %d", x)`. May be used as a compile time assert after C++23.
 /// - `x` : The condition to evaluate.
 /// - `...` Printf-style formatted log message.
-#define hxassertmsg(x_, ...) (void)((bool)(x_)    /* THIS IS USED AS A COMPILE TIME ASSERT: */ \
+#define hxassertmsg(x_, ...) (void)((bool)(x_)     /* THIS IS USED AS A COMPILE TIME ASSERT: */ \
 	|| (hxlog_handler_(hxlog_level_assert, __VA_ARGS__), hxassert_handler(__FILE__, __LINE__)) \
 	|| hxbreakpoint())
 
@@ -108,7 +108,7 @@
 /// May be used as a compile time assert after C++23.
 /// - `x` : The condition to evaluate.
 /// - `...` Printf-style formatted log message.
-#define hxassert_hard(x_, ...) (void)((bool)(x_) /* THIS IS USED AS A COMPILE TIME ASSERT: */  \
+#define hxassert_hard(x_, ...) (void)((bool)(x_)  /* THIS IS USED AS A COMPILE TIME ASSERT: */ \
 	|| (hxlog_handler_(hxlog_level_assert, __VA_ARGS__), hxassert_handler(__FILE__, __LINE__)) \
 	|| hxbreakpoint())
 
@@ -118,8 +118,8 @@
 /// time assert after C++23.
 /// - `x` : The condition to evaluate.
 /// - `...` Printf-style formatted log message.
-#define hxassert_always(x_, ...) (void)((bool)(x_) /* THIS IS USED AS A COMPILE TIME ASSERT: */ \
-	|| (hxlog_handler_(hxlog_level_assert, __VA_ARGS__), hxassert_handler(__FILE__, __LINE__))  \
+#define hxassert_always(x_, ...) (void)((bool)(x_)  /* THIS IS USED AS A COMPILE TIME ASSERT: */ \
+	|| (hxlog_handler_(hxlog_level_assert, __VA_ARGS__), hxassert_handler(__FILE__, __LINE__))    \
 	|| hxbreakpoint())
 
 #else // HX_HARDENING_MODE != HX_HARDENING_MODE_DEBUG
@@ -228,9 +228,9 @@ void hxshutdown(void) hxattr_cold;
 
 #if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
 /// `hxassert_handler` - Assert handler. Do not call directly, signature changes
-/// and then is removed.
-/// WARNING: Compile errors from consteval code calling this function are
-/// intentional and are how you know a compile time assert has been hit.
+/// and then is removed. Returning true indicates an assert was successfully
+/// handled. WARNING: Compile errors from consteval code calling this function
+/// are intentional and are how you know a compile time assert has been hit.
 hxattr_noexcept hxattr_nonnull(1) hxattr_cold
 bool hxassert_handler(const char* file_, size_t line_);
 #else // HX_HARDENING_MODE != HX_HARDENING_MODE_DEBUG

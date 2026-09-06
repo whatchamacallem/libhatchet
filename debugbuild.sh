@@ -24,6 +24,8 @@ export POSIXLY_CORRECT=1
 trap 'trap "" INT; pkill -9 -P $$ 2>/dev/null; wait 2>/dev/null; exit 1' INT
 set -eu
 
+HX_OPT_GTEST_BREAKPOINTS_="${GTEST_BREAK_ON_FAILURE:-0}"
+HX_OPT_GTEST_FILTER_=""
 HX_OPT_CLEAR_=0
 HX_OPT_GRIND_=0
 HX_OPT_RUN_=0
@@ -31,19 +33,29 @@ HX_OPT_VERBOSE_=0
 for HX_ARG_ in "$@"; do
 	case "$HX_ARG_" in
 		"")        ;;
+		--gtest_break_on_failure) HX_OPT_GTEST_BREAKPOINTS_=1 ;;
+		--gtest_filter=*) HX_OPT_GTEST_FILTER_="$HX_ARG_" ;;
 		--clear)   HX_OPT_CLEAR_=1 ;;
 		--grind)   HX_OPT_GRIND_=1 ;;
 		--run)     HX_OPT_RUN_=1 ;;
 		--verbose) HX_OPT_VERBOSE_=1 ;;
 		*)
-			echo "usage: $0 [--clear] [--grind] [--run] [--verbose]"
-			echo "  --clear   Clear the terminal before building."
-			echo "  --grind   Build all configuration combinations."
-			echo "  --run     Run hxtest after building."
-			echo "  --verbose Full output."
+			echo "usage: $0 [--gtest_break_on_failure] [--gtest_filter=pattern] [--clear] [--grind] [--run] [--verbose]"
+			echo "  --gtest_break_on_failure  Break on EXPECT_*/ASSERT_*/hxassert* failure."
+			echo "                            Also read from GTEST_BREAK_ON_FAILURE."
+			echo "  --gtest_filter=pattern    Forward a gtest-style filter to hxtest."
+			echo "  --clear                   Clear the terminal before building."
+			echo "  --grind                   Build all configuration combinations."
+			echo "  --run                     Run hxtest after building."
+			echo "  --verbose                 Full output."
 			exit 1 ;;
 	esac
 done
+
+HX_GTEST_FLAG_="$HX_OPT_GTEST_FILTER_"
+if [ "$HX_OPT_GTEST_BREAKPOINTS_" != "0" ]; then
+	HX_GTEST_FLAG_="$HX_GTEST_FLAG_ --gtest_break_on_failure"
+fi
 
 # Clear the output window when building from the editor.
 if [ "$HX_OPT_CLEAR_" = "1" ]; then
@@ -134,9 +146,9 @@ fi
 if [ "$HX_OPT_RUN_" = "1" ]; then
 	cd build
 	if [ "$HX_OPT_VERBOSE_" = "1" ]; then
-		./hxtest "check_stats 1" runtests
+		./hxtest $HX_GTEST_FLAG_ "check_stats 1" runtests
 	else
-		if ./hxtest "check_stats 1" runtests > console_output.txt 2>&1; then
+		if ./hxtest $HX_GTEST_FLAG_ "check_stats 1" runtests > console_output.txt 2>&1; then
 			grep -E '\[  PASSED  \]|\[  FAILED  \]|FAILED TESTS' console_output.txt
 		else
 			cat console_output.txt

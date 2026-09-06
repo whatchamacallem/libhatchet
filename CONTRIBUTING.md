@@ -123,11 +123,11 @@ even when the name of the parameter is made incorrect by modification.
 Specifically, do not gratuitously copy templated parameters as the cost of the
 copy may be significant.
 
-## Inline Files
+## Detail Files
 
-Create a new `detail/*.inl` for any new class that has its own `.hpp` header.
-When there is an `.inl` file, create out of line definitions for all methods
-that do not fit on a single line within 100 chars.
+Do not hide includes in the detail directory and place them in the corresponding
+public header. If a class has a `detail/*.inl` file then it must be used for any
+methods that do not fit on one line in 100 columns for that class.
 
 ## Naming
 

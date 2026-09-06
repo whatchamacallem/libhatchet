@@ -475,6 +475,14 @@ struct hxsettings_t {
 	/// `deallocate_permanent` - Allows deallocation of permanent resources at
 	/// system shut down.
 	bool deallocate_permanent;
+
+	/// `test_break_on_failure` - Triggers a breakpoint when an hxassert,
+	/// `ASSERT_*` or `EXPECT_*` condition fails in a debug build.
+	bool test_break_on_failure;
+
+	/// `test_filter` - Used by `hxtest` to support simple Google Test style
+	/// filtering.
+	const char* test_filter;
 };
 
 /// `hxg_settings` - Global class constructed by `hxinit`.
