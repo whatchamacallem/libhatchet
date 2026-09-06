@@ -95,7 +95,8 @@ public:
 	/// value is also constructed by forwarding `args`.
 	/// - `error` : An error that converts to bool.
 	/// - `args` : The args to construct the value from. Must be convertible to `T`.
-	template<typename error_t_=E_, typename... args_t_>
+	template<typename error_t_=E_, typename... args_t_, hxenable_if_t<
+		!hxis_hxexpected_<hxremove_cvref_t<error_t_>>::value, bool> = true>
 	explicit hxexpected(error_t_&& error_, args_t_&&... args_) noexcept;
 
 	/// Destroys the contained value if non-null.

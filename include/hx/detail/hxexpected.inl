@@ -34,7 +34,8 @@ hxinline hxattr_flatten hxexpected<T_, E_>::hxexpected(hxexpected&& x_) noexcept
 }
 
 template<hxexpected_concept_ T_, hxunexpected_concept_ E_>
-template<typename error_t_, typename... args_t_>
+template<typename error_t_, typename... args_t_, hxenable_if_t<
+	!hxis_hxexpected_<hxremove_cvref_t<error_t_>>::value, bool>>
 hxinline hxattr_flatten hxexpected<T_, E_>::hxexpected(error_t_&& error_, args_t_&&... args_) noexcept
 		: m_error_(hxforward<error_t_>(error_)) {
 	if(this->has_value()) {

@@ -201,6 +201,12 @@ TEST(hxexpected_test, copy_construction) {
 	const hxexpected<int> non_null(false, 99);
 	EXPECT_TRUE((bool)hxexpected<int>(non_null));
 	EXPECT_EQ(*hxexpected<int>(non_null), 99);
+	hxexpected<int> mutable_non_null(false, 31);
+	const hxexpected<int> copy_of_mutable(mutable_non_null);
+	EXPECT_TRUE((bool)copy_of_mutable);
+	EXPECT_EQ(*copy_of_mutable, 31);
+	EXPECT_TRUE((bool)mutable_non_null);
+	EXPECT_EQ(*mutable_non_null, 31);
 }
 
 TEST(hxexpected_test, move_construction) {
@@ -504,6 +510,13 @@ TEST_F(hxexpected_test_f, emplace) {
 TEST_F(hxexpected_test_f, destructor_exactly_one_call) {
 	{ const hxexpected<hxtest_object> o(false, 1); }
 	EXPECT_TRUE(check_stats(1, 1, 0, 1, 0, 0, 0, 0, 0, 0));
+}
+
+TEST_F(hxexpected_test_f, construction_forwards_two_args) {
+	const hxexpected<hxtest_object> o(false, 31, 32);
+	EXPECT_TRUE((bool)o);
+	EXPECT_EQ(o->value(), 63);
+	EXPECT_TRUE(check_stats(1, 0, 0, 1, 0, 0, 0, 0, 0, 0));
 }
 
 TEST(hxexpected_test, and_then_engaged) {

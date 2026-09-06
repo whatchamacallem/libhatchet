@@ -16,8 +16,10 @@ static_assert(sizeof(hxtest_object) == 8u, "hxtest_object must be 8 bytes");
 
 hxtest_object_fixture* hxs_object_current = hxnull;
 
-bool check_stats = false;
-hxconsole_variable(check_stats);
+// Test scripts must opt in to operator call counting. E.g. the coverage test
+// uses compiler flags that cause stats checking to fail.
+static bool hxs_check_stats = false;
+hxconsole_variable_named(hxs_check_stats, check_stats);
 
 hxtest_object_fixture::hxtest_object_fixture(void) :
 		m_constructed(0),
@@ -49,7 +51,7 @@ bool hxtest_object_fixture::check_stats(int constructed, int destructed,
 		int equal_to, int less_than) {
 	m_check_stats_called = true;
 	bool ok = true;
-	if(!::check_stats) {
+	if(!hxs_check_stats) {
 		return ok;
 	}
 	// GCOVR_EXCL_START
