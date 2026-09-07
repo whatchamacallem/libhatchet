@@ -24,13 +24,13 @@ hxinline hxattr_flatten hxref<T_>::hxref(hxexpected<T_, E_>& x_)
 
 template<typename T_>
 hxinline hxattr_flatten T_& hxref<T_>::operator*(void) const {
-	hxassertmsg(m_value_ != hxnull, "bad_value");
+	hxassertf(m_value_ != hxnull, "bad_value");
 	return *m_value_;
 }
 
 template<typename T_>
 hxinline hxattr_flatten T_* hxref<T_>::operator->(void) const {
-	hxassertmsg(m_value_ != hxnull, "bad_value");
+	hxassertf(m_value_ != hxnull, "bad_value");
 	return m_value_;
 }
 
@@ -90,7 +90,7 @@ hxinline hxattr_flatten void hxref<T_>::swap(hxref& x_) noexcept {
 
 template<typename T_>
 hxinline hxattr_flatten T_& hxref<T_>::value(void) const {
-	hxassertmsg(m_value_ != hxnull, "bad_value");
+	hxassertf(m_value_ != hxnull, "bad_value");
 	return *m_value_;
 }
 

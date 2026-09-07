@@ -4,7 +4,7 @@
 
 #include <hx/hxvector.hpp>
 #include <hx/hxsort.hpp>
-#include <hx/hxalgorithm.hpp>
+#include <hx/hxrange.hpp>
 #include "./hxtest_util.hpp"
 #include <limits.h>
 #if HX_USE_LIBCXX
@@ -415,7 +415,7 @@ TEST(hxvector_test, for_each_invokes_callables) {
 	EXPECT_EQ(x.n, 5);
 	objs.clear();
 	struct hxvector_test_y_t {
-		void operator()(int&) const { hxassertmsg(0, "sys_err"); }
+		void operator()(int&) const { hxassertf(0, "sys_err"); }
 	} y;
 	objs.for_each(y);
 }
@@ -453,7 +453,7 @@ TEST(hxvector_test, generate_n_appends_callable_results) {
 	EXPECT_EQ(values[3], 7);
 	values.generate_n(0, []() -> int {
 		// GCOVR_EXCL_START
-		hxassertmsg(0, "generate_n called with zero size");
+		hxassertf(0, "generate_n called with zero size");
 		return 0;
 		// GCOVR_EXCL_STOP
 	});
@@ -501,7 +501,7 @@ TEST(hxvector_test, all_of_any_of) {
 	objs.clear();
 	// GCOVR_EXCL_START
 	auto empty_predicate = [](const int&) -> bool {
-		hxassertmsg(0, "sys_err");
+		hxassertf(0, "sys_err");
 		return false;
 	};
 	// GCOVR_EXCL_STOP
@@ -641,7 +641,7 @@ TEST(hxvector_test, erase_if_unordered) {
 	objs.clear();
 	// GCOVR_EXCL_START
 	auto empty_predicate = [](int&) -> bool {
-		hxassertmsg(0, "sys_err");
+		hxassertf(0, "sys_err");
 		return false;
 	};
 	// GCOVR_EXCL_STOP

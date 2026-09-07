@@ -16,8 +16,8 @@ template<hxflat_map_concept_ key_t_, hxflat_map_concept_ mapped_t_, typename com
 hxinline auto hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capacity_>::const_iterator::operator+=(
 		hxsize_t n_) -> const_iterator& {
 	m_index_ += n_;
-	hxassertmsg(m_map_ != hxnull, "bad_iter");
-	hxassertmsg(static_cast<size_t>(m_index_) <= static_cast<size_t>(m_map_->m_size_), // NOLINT(clang-analyzer-core.NullDereference)
+	hxassertf(m_map_ != hxnull, "bad_iter");
+	hxassertf(static_cast<size_t>(m_index_) <= static_cast<size_t>(m_map_->m_size_), // NOLINT(clang-analyzer-core.NullDereference)
 		"bad_iter %zd size %zd", m_index_, m_map_->m_size_);
 	return *this;
 }
@@ -25,21 +25,21 @@ hxinline auto hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capacity_>::co
 template<hxflat_map_concept_ key_t_, hxflat_map_concept_ mapped_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
 hxinline hxsize_t hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capacity_>::const_iterator::operator-(
 		const const_iterator& x_) const {
-	hxassertmsg(m_map_ != hxnull && m_map_ == x_.m_map_, "bad_iter");
+	hxassertf(m_map_ != hxnull && m_map_ == x_.m_map_, "bad_iter");
 	return m_index_ - x_.m_index_;
 }
 
 template<hxflat_map_concept_ key_t_, hxflat_map_concept_ mapped_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
 hxinline bool hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capacity_>::const_iterator::operator==(
 		const const_iterator& x_) const {
-	hxassertmsg(m_map_ != hxnull && m_map_ == x_.m_map_, "bad_iter");
+	hxassertf(m_map_ != hxnull && m_map_ == x_.m_map_, "bad_iter");
 	return m_index_ == x_.m_index_;
 }
 
 template<hxflat_map_concept_ key_t_, hxflat_map_concept_ mapped_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
 hxinline bool hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capacity_>::const_iterator::operator<(
 		const const_iterator& x_) const {
-	hxassertmsg(m_map_ != hxnull && m_map_ == x_.m_map_, "bad_iter");
+	hxassertf(m_map_ != hxnull && m_map_ == x_.m_map_, "bad_iter");
 	return m_index_ < x_.m_index_;
 }
 
@@ -47,31 +47,31 @@ hxinline bool hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capacity_>::co
 template<hxflat_map_concept_ key_t_, hxflat_map_concept_ mapped_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
 hxinline bool hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capacity_>::const_iterator::operator!=(
 		const const_iterator& x_) const {
-	hxassertmsg(m_map_ != hxnull && m_map_ == x_.m_map_, "bad_iter");
+	hxassertf(m_map_ != hxnull && m_map_ == x_.m_map_, "bad_iter");
 	return m_index_ != x_.m_index_;
 }
 #endif
 
 template<hxflat_map_concept_ key_t_, hxflat_map_concept_ mapped_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
 hxinline hxattr_flatten const key_t_& hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capacity_>::const_iterator::key(void) const {
-	hxassertmsg(m_map_ != hxnull, "bad_iter");
-	hxassertmsg(static_cast<size_t>(m_index_) < static_cast<size_t>(m_map_->m_size_), // NOLINT(clang-analyzer-core.NullDereference)
+	hxassertf(m_map_ != hxnull, "bad_iter");
+	hxassertf(static_cast<size_t>(m_index_) < static_cast<size_t>(m_map_->m_size_), // NOLINT(clang-analyzer-core.NullDereference)
 		"bad_iter %zd size %zd", m_index_, m_map_->m_size_);
 	return m_map_->m_keys_.data()[m_index_];
 }
 
 template<hxflat_map_concept_ key_t_, hxflat_map_concept_ mapped_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
 hxinline hxattr_flatten const mapped_t_& hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capacity_>::const_iterator::value(void) const {
-	hxassertmsg(m_map_ != hxnull, "bad_iter");
-	hxassertmsg(static_cast<size_t>(m_index_) < static_cast<size_t>(m_map_->m_size_), // NOLINT(clang-analyzer-core.NullDereference)
+	hxassertf(m_map_ != hxnull, "bad_iter");
+	hxassertf(static_cast<size_t>(m_index_) < static_cast<size_t>(m_map_->m_size_), // NOLINT(clang-analyzer-core.NullDereference)
 		"bad_iter %zd size %zd", m_index_, m_map_->m_size_);
 	return m_map_->m_values_.data()[m_index_];
 }
 
 template<hxflat_map_concept_ key_t_, hxflat_map_concept_ mapped_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
 hxinline hxattr_flatten mapped_t_& hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capacity_>::iterator::value(void) const {
-	hxassertmsg(this->m_map_ != hxnull, "bad_iter");
-	hxassertmsg(static_cast<size_t>(this->m_index_) < static_cast<size_t>(this->m_map_->m_size_),
+	hxassertf(this->m_map_ != hxnull, "bad_iter");
+	hxassertf(static_cast<size_t>(this->m_index_) < static_cast<size_t>(this->m_map_->m_size_),
 		"bad_iter %zd size %zd", this->m_index_, this->m_map_->m_size_);
 	return const_cast<hxflat_map*>(this->m_map_)->m_values_.data()[this->m_index_];
 }
@@ -146,7 +146,7 @@ hxinline hxattr_flatten auto hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_,
 template<hxflat_map_concept_ key_t_, hxflat_map_concept_ mapped_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
 hxinline hxattr_flatten void hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capacity_>::operator=(
 		const hxflat_map& x_) noexcept {
-	hxassertmsg(static_cast<const void*>(this) != static_cast<const void*>(&x_), "bad_ref");
+	hxassertf(static_cast<const void*>(this) != static_cast<const void*>(&x_), "bad_ref");
 	this->clear();
 	const hxsize_t size_ = x_.m_size_;
 	const key_t_* hxrestrict ks_ = x_.m_keys_.data();
@@ -165,7 +165,7 @@ template<hxflat_map_concept_ key_t_, hxflat_map_concept_ mapped_t_, typename com
 template<hxsize_t capacity_x_>
 hxinline hxattr_flatten void hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capacity_>::operator=(
 		const hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capacity_x_>& x_) noexcept {
-	hxassertmsg(static_cast<const void*>(this) != static_cast<const void*>(&x_), "bad_ref");
+	hxassertf(static_cast<const void*>(this) != static_cast<const void*>(&x_), "bad_ref");
 	this->clear();
 	const hxsize_t size_ = x_.m_size_;
 	const key_t_* hxrestrict ks_ = x_.m_keys_.data();
@@ -183,7 +183,7 @@ hxinline hxattr_flatten void hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_,
 template<hxflat_map_concept_ key_t_, hxflat_map_concept_ mapped_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
 hxinline hxattr_flatten void hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capacity_>::operator=(
 		hxflat_map&& x_) noexcept {
-	hxassertmsg(static_cast<const void*>(this) != static_cast<const void*>(&x_), "bad_ref");
+	hxassertf(static_cast<const void*>(this) != static_cast<const void*>(&x_), "bad_ref");
 	this->swap(x_);
 }
 
@@ -285,7 +285,7 @@ template<hxflat_map_concept_ key_t_, hxflat_map_concept_ mapped_t_, typename com
 hxattr_flatten auto hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_, capacity_>::erase(const_iterator it_)
 		noexcept -> iterator {
 	const hxsize_t size_ = m_size_;
-	hxassertmsg(it_.m_map_ == this && static_cast<size_t>(it_.m_index_) < static_cast<size_t>(size_),
+	hxassertf(it_.m_map_ == this && static_cast<size_t>(it_.m_index_) < static_cast<size_t>(size_),
 		"bad_iter %zd size %zd", it_.m_index_, size_);
 	const hxsize_t index_ = it_.m_index_;
 	key_t_* hxrestrict k_ = m_keys_.data();

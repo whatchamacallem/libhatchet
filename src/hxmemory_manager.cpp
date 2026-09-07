@@ -131,7 +131,7 @@ public:
 		// 0 (implementation-defined). Integer overflow due to trying to
 		// allocate max memory is UB.
 		const size_t rounded = hxmax<size_t>((size + alignment_mask) & ~alignment_mask, alignment);
-		hxassertmsg(rounded >= size, "no_memory size %zu", size);
+		hxassertf(rounded >= size, "no_memory size %zu", size);
 
 		void* t = ::aligned_alloc(alignment, rounded);
 		hxassert_always(t, "aligned_alloc %zu %zu", static_cast<size_t>(alignment), rounded);
@@ -144,7 +144,7 @@ public:
 		// Place header immediately before aligned allocation. malloc is aligned.
 		// Integer overflow due to trying to allocate max memory is UB.
 		const size_t total = size + sizeof(hxmemory_allocation_header) + alignment_mask;
-		hxassertmsg(total > size, "no_memory size %zu", size);
+		hxassertf(total > size, "no_memory size %zu", size);
 		const uintptr_t actual = reinterpret_cast<uintptr_t>(hxmalloc_checked_(total));
 		const uintptr_t aligned = (actual + sizeof(hxmemory_allocation_header)
 			+ alignment_mask) & ~alignment_mask;
@@ -161,14 +161,14 @@ public:
 
 	hxattr_hot void deallocate(void* ptr) {
 #if HX_USE_STD_ALIGNED_ALLOC
-		hxassertmsg(m_allocation_count > 0u, "bad_free nothing allocated");
+		hxassertf(m_allocation_count > 0u, "bad_free nothing allocated");
 		--m_allocation_count;
 		::free(ptr);
 #else
 
 		const hxmemory_allocation_header& hdr = reinterpret_cast<hxmemory_allocation_header*>(ptr)[-1];
-		hxassertmsg(m_allocation_count > 0u, "bad_free sentinel corrupt");
-		hxassertmsg(hdr.size <= m_bytes_allocated,
+		hxassertf(m_allocation_count > 0u, "bad_free sentinel corrupt");
+		hxassertf(hdr.size <= m_bytes_allocated,
 			"bad_free sentinel corrupt %zu %zu", hdr.size, m_bytes_allocated);
 		--m_allocation_count;
 		m_bytes_allocated -= hdr.size;
@@ -231,7 +231,7 @@ public:
 		// Use ≤ because an outstanding allocation of size 0 could have been
 		// made at m_current.
 		const uintptr_t ptr_value = reinterpret_cast<uintptr_t>(ptr);
-		hxassertmsg(m_allocation_count > 0 && ptr_value >= m_begin_
+		hxassertf(m_allocation_count > 0 && ptr_value >= m_begin_
 			&& ptr_value <= m_current, "bad_free %s %zx", m_label_, static_cast<size_t>(ptr_value));
 		(void)ptr_value;
 		--m_allocation_count;
@@ -263,7 +263,7 @@ public:
 
 	hxattr_hot void begin_allocation_scope(hxsystem_allocator_scope* scope) {
 #if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
-		hxassertmsg(m_owner_thread == 0u || m_owner_thread == hxthread_id(),
+		hxassertf(m_owner_thread == 0u || m_owner_thread == hxthread_id(),
 			"temp_stack cross-thread scope %s", m_label_);
 		m_owner_thread = hxthread_id();
 		++m_scope_depth;
@@ -273,12 +273,12 @@ public:
 
 	hxattr_hot void end_allocation_scope(hxsystem_allocator_scope* scope) {
 #if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
-		hxassertmsg(m_owner_thread == hxthread_id(), "temp_stack cross-thread scope %s", m_label_);
+		hxassertf(m_owner_thread == hxthread_id(), "temp_stack cross-thread scope %s", m_label_);
 		if(--m_scope_depth == 0u) {
 			m_owner_thread = 0u;
 		}
 #endif
-		hxassertmsg(m_allocation_count <= scope->get_initial_allocation_count(),
+		hxassertf(m_allocation_count <= scope->get_initial_allocation_count(),
 			"memory_leak scope %s allocations %zu", m_label_,
 			m_allocation_count - scope->get_initial_allocation_count());
 
@@ -391,17 +391,17 @@ void* hxmemory_manager::allocate(size_t size, hxsystem_allocator_t id, hxalignme
 
 	// The result of a size 0 allocation is UB and the pointer may or may not
 	// equal a prior result.
-	hxassertmsg(size != 0u, "bad_alloc size 0");
+	hxassertf(size != 0u, "bad_alloc size 0");
 
 	// Provide an alignment of 1 for strings and unaligned allocations. The
 	// following code assumes that "alignment-1" is a valid mask of unused bits
 	// and not a mask containing every bit.
-	hxassertmsg(alignment != 0u, "bad_align use 1 not 0");
-	hxassertmsg(((alignment - 1u) & alignment) == 0u,
+	hxassertf(alignment != 0u, "bad_align use 1 not 0");
+	hxassertf(((alignment - 1u) & alignment) == 0u,
 		"bad_align not pow2 %#zx", static_cast<size_t>(alignment));
 
 	HX_MEMORY_MANAGER_LOCK_();
-	hxassertmsg(id >= 0 && id < (hxsystem_allocator_stack_0
+	hxassertf(id >= 0 && id < (hxsystem_allocator_stack_0
 		+ static_cast<hxsystem_allocator_t>(m_stack_count)),
 		"bad_arg %d", static_cast<int>(id));
 
@@ -436,7 +436,7 @@ void* hxmemory_manager::allocate(size_t size, hxsystem_allocator_t id, hxalignme
 
 	const uintptr_t alignment_mask = static_cast<uintptr_t>(alignment) - 1u;
 	const uintptr_t ptr_value = reinterpret_cast<uintptr_t>(ptr);
-	hxassertmsg((ptr_value & alignment_mask) == 0,
+	hxassertf((ptr_value & alignment_mask) == 0,
 		"bad_align wrong %zx from %d", static_cast<size_t>(ptr_value), id);
 	 (void)alignment_mask; (void)ptr_value;
 
@@ -462,7 +462,7 @@ void hxmemory_manager::free(void* ptr) {
 
 #if (HX_MEMORY_BUDGET_PERMANENT) != 0
 	if(m_memory_allocator_permanent.contains(ptr)) {
-		hxwarn_msg(hxg_settings.deallocate_permanent, "ERROR: free from permanent");
+		hxwarn(hxg_settings.deallocate_permanent, "ERROR: free from permanent");
 		m_memory_allocator_permanent.deallocate(ptr);
 		return;
 	}
@@ -474,7 +474,7 @@ void hxmemory_manager::free(void* ptr) {
 hxsystem_allocator_t hxmemory_manager::begin_allocation_scope(
 		hxsystem_allocator_scope* scope, hxsystem_allocator_t new_id) {
 	HX_MEMORY_MANAGER_LOCK_();
-	hxassertmsg(new_id >= 0 && new_id < (hxsystem_allocator_stack_0
+	hxassertf(new_id >= 0 && new_id < (hxsystem_allocator_stack_0
 		+ static_cast<hxsystem_allocator_t>(m_stack_count)),
 		"bad_arg %d", static_cast<int>(new_id));
 
@@ -495,7 +495,7 @@ void hxmemory_manager::end_allocation_scope(
 	HX_MEMORY_MANAGER_LOCK_();
 	const hxsystem_allocator_t current_id = hxs_current_memory_allocator;
 	if(current_id >= hxsystem_allocator_stack_0) {
-		hxassertmsg(current_id < (hxsystem_allocator_stack_0
+		hxassertf(current_id < (hxsystem_allocator_stack_0
 			+ static_cast<hxsystem_allocator_t>(m_stack_count)),
 			"bad_arg %d", static_cast<int>(current_id));
 		m_memory_allocator_stacks[current_id - hxsystem_allocator_stack_0].end_allocation_scope(scope);
@@ -504,7 +504,7 @@ void hxmemory_manager::end_allocation_scope(
 }
 
 size_t hxmemory_manager::get_allocation_count(hxsystem_allocator_t id) {
-	hxassertmsg(id >= 0 && id < (hxsystem_allocator_stack_0
+	hxassertf(id >= 0 && id < (hxsystem_allocator_stack_0
 		+ static_cast<hxsystem_allocator_t>(m_stack_count)),
 		"bad_arg %d", static_cast<int>(id));
 	if(id >= hxsystem_allocator_stack_0) {
@@ -519,7 +519,7 @@ size_t hxmemory_manager::get_allocation_count(hxsystem_allocator_t id) {
 }
 
 size_t hxmemory_manager::get_bytes_allocated(hxsystem_allocator_t id) {
-	hxassertmsg(id >= 0 && id < (hxsystem_allocator_stack_0
+	hxassertf(id >= 0 && id < (hxsystem_allocator_stack_0
 		+ static_cast<hxsystem_allocator_t>(m_stack_count)),
 		"bad_arg %d", static_cast<int>(id));
 	if(id >= hxsystem_allocator_stack_0) {
@@ -588,7 +588,7 @@ size_t hxsystem_allocator_scope::get_current_bytes_allocated(void) const {
 
 void hxmemory_manager_init_(void) {
 	// This library is not designed to be reinitialized.
-	hxassertmsg(!hxg_init_ver_, "memory_manager reinitialized");
+	hxassertf(!hxg_init_ver_, "memory_manager reinitialized");
 	hxs_memory_manager.construct();
 }
 
@@ -671,7 +671,7 @@ hxattr_noexcept void* hxmalloc(size_t size) {
 extern "C"
 hxattr_noexcept void* hxmalloc_ext(size_t size, hxsystem_allocator_t id, hxalignment_t alignment) {
 	(void)id; (void)alignment;
-	hxassertmsg(alignment <= hxalignment, "bad_align alignment disabled %#zx",
+	hxassertf(alignment <= hxalignment, "bad_align alignment disabled %#zx",
 		static_cast<size_t>(alignment));
 	return hxmalloc_checked_(size);
 }

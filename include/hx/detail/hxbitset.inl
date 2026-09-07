@@ -34,7 +34,7 @@ template<typename int_t_>
 hxinline hxconstexpr hxbitset<bit_count_>::hxbitset(std::initializer_list<int_t_> x_) {
 	static_assert(sizeof(size_t) % sizeof(int_t_) == 0u,
 		"sizeof(size_t) must be a multiple of sizeof(int_t_)");
-	hxassertmsg(x_.size() == s_words_ * (sizeof(size_t) / sizeof(int_t_)),
+	hxassertf(x_.size() == s_words_ * (sizeof(size_t) / sizeof(int_t_)),
 		"initializer_list size %zu want %zu", x_.size(), s_words_ * (sizeof(size_t) / sizeof(int_t_)));
 	const int_t_* hxrestrict src_ = x_.begin();
 	hxif_constexpr(sizeof(int_t_) == sizeof(size_t)) {
@@ -56,13 +56,13 @@ hxinline hxconstexpr hxbitset<bit_count_>::hxbitset(std::initializer_list<int_t_
 			*dst_ = word_;
 		}
 	}
-	hxassertmsg((m_data_[s_words_-1u] & ~s_trailing_mask_) == 0u, "stray_bits");
+	hxassertf((m_data_[s_words_-1u] & ~s_trailing_mask_) == 0u, "stray_bits");
 }
 // GCOVR_EXCL_STOP
 
 template<size_t bit_count_>
 hxinline hxconstexpr void hxbitset<bit_count_>::operator=(const hxbitset& x_) {
-	hxassertmsg(static_cast<const void*>(this) != static_cast<const void*>(&x_), "bad_ref");
+	hxassertf(static_cast<const void*>(this) != static_cast<const void*>(&x_), "bad_ref");
 	const size_t* hxrestrict src_ = x_.m_data_;
 	for(size_t* hxrestrict dst_ = m_data_, *const end_ = m_data_ + s_words_;
 			dst_ != end_; ++dst_, ++src_) {
@@ -79,7 +79,7 @@ hxinline hxconstexpr bool hxbitset<bit_count_>::operator[](size_t pos_) const {
 
 template<size_t bit_count_>
 hxinline hxconstexpr hxbitset<bit_count_>& hxbitset<bit_count_>::operator&=(const hxbitset& x_) {
-	hxassertmsg(static_cast<const void*>(this) != static_cast<const void*>(&x_), "bad_ref");
+	hxassertf(static_cast<const void*>(this) != static_cast<const void*>(&x_), "bad_ref");
 	const size_t* hxrestrict src_ = x_.m_data_;
 	for(size_t* hxrestrict dst_ = m_data_, *const end_ = m_data_ + s_words_;
 			dst_ != end_; ++dst_, ++src_) {
@@ -90,25 +90,25 @@ hxinline hxconstexpr hxbitset<bit_count_>& hxbitset<bit_count_>::operator&=(cons
 
 template<size_t bit_count_>
 hxinline hxconstexpr hxbitset<bit_count_>& hxbitset<bit_count_>::operator|=(const hxbitset& x_) {
-	hxassertmsg(static_cast<const void*>(this) != static_cast<const void*>(&x_), "bad_ref");
+	hxassertf(static_cast<const void*>(this) != static_cast<const void*>(&x_), "bad_ref");
 	const size_t* hxrestrict src_ = x_.m_data_;
 	for(size_t* hxrestrict dst_ = m_data_, *const end_ = m_data_ + s_words_;
 			dst_ != end_; ++dst_, ++src_) {
 		*dst_ |= *src_;
 	}
-	hxassertmsg((m_data_[s_words_-1u] & ~s_trailing_mask_) == 0u, "stray_bits");
+	hxassertf((m_data_[s_words_-1u] & ~s_trailing_mask_) == 0u, "stray_bits");
 	return *this;
 }
 
 template<size_t bit_count_>
 hxinline hxconstexpr hxbitset<bit_count_>& hxbitset<bit_count_>::operator^=(const hxbitset& x_) {
-	hxassertmsg(static_cast<const void*>(this) != static_cast<const void*>(&x_), "bad_ref");
+	hxassertf(static_cast<const void*>(this) != static_cast<const void*>(&x_), "bad_ref");
 	const size_t* hxrestrict src_ = x_.m_data_;
 	for(size_t* hxrestrict dst_ = m_data_, *const end_ = m_data_ + s_words_;
 			dst_ != end_; ++dst_, ++src_) {
 		*dst_ ^= *src_;
 	}
-	hxassertmsg((m_data_[s_words_-1u] & ~s_trailing_mask_) == 0u, "stray_bits");
+	hxassertf((m_data_[s_words_-1u] & ~s_trailing_mask_) == 0u, "stray_bits");
 	return *this;
 }
 
@@ -164,13 +164,13 @@ inline hxconstexpr hxbitset<bit_count_>& hxbitset<bit_count_>::operator>>=(size_
 	for(; i_ < s_words_; ++i_) {
 		m_data_[i_] = 0u;
 	}
-	hxassertmsg((m_data_[s_words_-1u] & ~s_trailing_mask_) == 0u, "stray_bits");
+	hxassertf((m_data_[s_words_-1u] & ~s_trailing_mask_) == 0u, "stray_bits");
 	return *this;
 }
 
 template<size_t bit_count_>
 hxinline hxconstexpr bool hxbitset<bit_count_>::operator==(const hxbitset& x_) const {
-	hxassertmsg(static_cast<const void*>(this) != static_cast<const void*>(&x_), "bad_ref");
+	hxassertf(static_cast<const void*>(this) != static_cast<const void*>(&x_), "bad_ref");
 	size_t difference_ = 0u;
 	const size_t* hxrestrict src_ = x_.m_data_;
 	for(const size_t* hxrestrict dst_ = m_data_, *const end_ = m_data_ + s_words_;
@@ -189,7 +189,7 @@ hxinline hxconstexpr bool hxbitset<bit_count_>::operator!=(const hxbitset& x_) c
 
 template<size_t bit_count_>
 hxinline hxconstexpr bool hxbitset<bit_count_>::all(void) const {
-	hxassertmsg((m_data_[s_words_-1u] & ~s_trailing_mask_) == 0u, "stray_bits");
+	hxassertf((m_data_[s_words_-1u] & ~s_trailing_mask_) == 0u, "stray_bits");
 	size_t missing_ = m_data_[s_words_-1u] ^ s_trailing_mask_;
 	for(const size_t* dst_ = m_data_, *const end_ = m_data_ + (s_words_-1u);
 			dst_ != end_; ++dst_) {
@@ -200,7 +200,7 @@ hxinline hxconstexpr bool hxbitset<bit_count_>::all(void) const {
 
 template<size_t bit_count_>
 hxinline hxconstexpr bool hxbitset<bit_count_>::any(void) const {
-	hxassertmsg((m_data_[s_words_-1u] & ~s_trailing_mask_) == 0u, "stray_bits");
+	hxassertf((m_data_[s_words_-1u] & ~s_trailing_mask_) == 0u, "stray_bits");
 	size_t bits_ = 0u;
 	for(const size_t* dst_ = m_data_, *const end_ = m_data_ + s_words_;
 			dst_ != end_; ++dst_) {

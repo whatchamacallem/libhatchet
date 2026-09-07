@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-#include <hx/hxset_operations.hpp>
+#include <hx/hxset_algorithms.hpp>
 #include <hx/hxvector.hpp>
 #include <hx/hxrandom.hpp>
 #include <hx/hxtest.hpp>
@@ -19,7 +19,7 @@ TEST(hxmerge_test, pointer_range_tails) {
 	const int left1[1] = { 1 };
 	const int right2[2] = { 2, 3 };
 	int dest3a[3] = { };
-	const int* merge_end_a = hxmerge(hxmake_range(left1 + 0, left1 + 1), hxmake_range(right2 + 0, right2 + 2), dest3a + 0);
+	const int* merge_end_a = hxmerge(hxmake_range(+left1, left1 + 1), hxmake_range(+right2, right2 + 2), +dest3a);
 	EXPECT_EQ(merge_end_a - dest3a, ptrdiff_t{3});
 	EXPECT_EQ(dest3a[0], 1);
 	EXPECT_EQ(dest3a[1], 2);
@@ -27,7 +27,7 @@ TEST(hxmerge_test, pointer_range_tails) {
 	const int left2[2] = { 1, 3 };
 	const int right1[1] = { 2 };
 	int dest3b[3] = { };
-	const int* merge_end_b = hxmerge(hxmake_range(left2 + 0, left2 + 2), hxmake_range(right1 + 0, right1 + 1), dest3b + 0);
+	const int* merge_end_b = hxmerge(hxmake_range(+left2, left2 + 2), hxmake_range(+right1, right1 + 1), +dest3b);
 	EXPECT_EQ(merge_end_b - dest3b, ptrdiff_t{3});
 	EXPECT_EQ(dest3b[0], 1);
 	EXPECT_EQ(dest3b[1], 2);
@@ -52,7 +52,7 @@ TEST(hxmerge_test, preserves_stable_ordering) {
 	const hxsize_t left_count = hxsize(left);
 	const hxsize_t right_count = hxsize(right);
 	const hxmerge_test_record_t* merge_end = hxmerge(
-		hxmake_range(left + 0, left + left_count), hxmake_range(right + 0, right + right_count), dest + 0);
+		hxmake_range(+left, left + left_count), hxmake_range(+right, right + right_count), +dest);
 	EXPECT_EQ(merge_end - dest, hxsize_t{8});
 	const hxmerge_test_record_t expected[] = {
 		{ 1, 0 }, { 1, 1 }, { 3, 0 }, { 3, 1 },
@@ -195,26 +195,26 @@ TEST(hxset_algorithms_test, edge_cases) {
 	int dest_intersection[1] = { };
 	int dest_difference[1] = { };
 	const int* union_end = hxset_union(
-		hxmake_range(single_left + 0, single_left + 1), hxmake_range(single_right + 0, single_right + 1), dest_union + 0);
+		hxmake_range(+single_left, single_left + 1), hxmake_range(+single_right, single_right + 1), +dest_union);
 	EXPECT_EQ(union_end - dest_union, ptrdiff_t{2});
 	EXPECT_EQ(dest_union[0], 2);
 	EXPECT_EQ(dest_union[1], 3);
 	const int* intersection_end = hxset_intersection(
-		hxmake_range(single_left + 0, single_left + 1), hxmake_range(single_right + 0, single_right + 1), dest_intersection + 0);
+		hxmake_range(+single_left, single_left + 1), hxmake_range(+single_right, single_right + 1), +dest_intersection);
 	EXPECT_EQ(intersection_end - dest_intersection, ptrdiff_t{0});
 	const int* difference_end = hxset_difference(
-		hxmake_range(single_left + 0, single_left + 1), hxmake_range(single_right + 0, single_right + 1), dest_difference + 0);
+		hxmake_range(+single_left, single_left + 1), hxmake_range(+single_right, single_right + 1), +dest_difference);
 	EXPECT_EQ(difference_end - dest_difference, ptrdiff_t{1});
 	EXPECT_EQ(dest_difference[0], 2);
 	const int left3[3] = { 1, 5, 9 };
 	const int right1[1] = { 5 };
 	int dest3[3] = { };
-	const int* diff_end = hxset_difference(hxmake_range(left3 + 0, left3 + 3), hxmake_range(right1 + 0, right1 + 1), dest3 + 0);
+	const int* diff_end = hxset_difference(hxmake_range(+left3, left3 + 3), hxmake_range(+right1, right1 + 1), +dest3);
 	EXPECT_EQ(diff_end - dest3, ptrdiff_t{2});
 	EXPECT_EQ(dest3[0], 1);
 	EXPECT_EQ(dest3[1], 9);
 	int dest4[1] = { };
-	const int* inter_end = hxset_intersection(hxmake_range(left3 + 0, left3 + 3), hxmake_range(right1 + 0, right1 + 1), dest4 + 0);
+	const int* inter_end = hxset_intersection(hxmake_range(+left3, left3 + 3), hxmake_range(+right1, right1 + 1), +dest4);
 	EXPECT_EQ(inter_end - dest4, ptrdiff_t{1});
 	EXPECT_EQ(dest4[0], 5);
 }
@@ -223,13 +223,13 @@ TEST(hxset_algorithms_test, largest_element_at_tail) {
 	const int left_a[3] = { 1, 3, 9 };
 	const int right_a[2] = { 2, 4 };
 	int dest_a[5] = { };
-	const int* union_end_a = hxset_union(hxmake_range(left_a + 0, left_a + 3), hxmake_range(right_a + 0, right_a + 2), dest_a + 0);
+	const int* union_end_a = hxset_union(hxmake_range(+left_a, left_a + 3), hxmake_range(+right_a, right_a + 2), +dest_a);
 	EXPECT_EQ(union_end_a - dest_a, ptrdiff_t{5});
 	EXPECT_EQ(dest_a[4], 9);
 	const int left_b[2] = { 1, 3 };
 	const int right_b[3] = { 2, 4, 9 };
 	int dest_b[5] = { };
-	const int* union_end_b = hxset_union(hxmake_range(left_b + 0, left_b + 2), hxmake_range(right_b + 0, right_b + 3), dest_b + 0);
+	const int* union_end_b = hxset_union(hxmake_range(+left_b, left_b + 2), hxmake_range(+right_b, right_b + 3), +dest_b);
 	EXPECT_EQ(union_end_b - dest_b, ptrdiff_t{5});
 	EXPECT_EQ(dest_b[4], 9);
 }
@@ -246,17 +246,17 @@ TEST(hxset_algorithms_test, int_pointer_ranges) {
 		}
 	};
 	const int* union_end = hxset_union(
-		hxmake_range(left + 0, left + hxsize(left)), hxmake_range(right + 0, right + hxsize(right)), dest_union+0);
+		hxmake_range(+left, left + hxsize(left)), hxmake_range(+right, right + hxsize(right)), +dest_union);
 	const int expected_union[] = { 1, 3, 4, 5, 7, 9 };
 	EXPECT_EQ(union_end - dest_union, hxsize(expected_union));
 	expect_range(dest_union, union_end, expected_union);
 	const int* intersection_end = hxset_intersection(
-		hxmake_range(left + 0, left + hxsize(left)), hxmake_range(right + 0, right + hxsize(right)), dest_intersection+0);
+		hxmake_range(+left, left + hxsize(left)), hxmake_range(+right, right + hxsize(right)), +dest_intersection);
 	const int expected_intersection[] = { 3, 7 };
 	EXPECT_EQ(intersection_end - dest_intersection, hxsize(expected_intersection));
 	expect_range(dest_intersection, intersection_end, expected_intersection);
 	const int* difference_end = hxset_difference(
-		hxmake_range(left + 0, left + hxsize(left)), hxmake_range(right + 0, right + hxsize(right)), dest_difference+0);
+		hxmake_range(+left, left + hxsize(left)), hxmake_range(+right, right + hxsize(right)), +dest_difference);
 	const int expected_difference[] = { 1, 5 };
 	EXPECT_EQ(difference_end - dest_difference, hxsize(expected_difference));
 	expect_range(dest_difference, difference_end, expected_difference);
@@ -517,8 +517,8 @@ TEST(hxunique_test, boundary_counts) {
 	EXPECT_EQ(mixed[1], 2);
 	EXPECT_EQ(mixed[2], 3);
 	EXPECT_EQ(mixed[3], 4);
-	int* const empty_end = hxunique(mixed + 0, mixed + 0);
-	EXPECT_EQ(empty_end, mixed + 0);
+	int* const empty_end = hxunique(+mixed, +mixed);
+	EXPECT_EQ(empty_end, +mixed);
 }
 
 TEST_F(hxunique_test_f, empty_range_explicit_equal) {

@@ -17,7 +17,7 @@ targets such as DSPs, FPGAs, ASICs and WebAssembly. When a modern toolchain is
 unavailable it falls back to a C++11 compiler and C99 libraries, and it never
 depends on the C++ standard library. If you have a low-level mindset, the
 developer experience is better than with the standard library. Template
-instantiation errors are easier to read, `hxassertmsg` formats your assert
+instantiation errors are easier to read, `hxassertf` formats your assert
 message before setting a breakpoint for you, and there is nothing unnecessary to
 step through in the debugger.
 
@@ -81,12 +81,11 @@ unused except when initializing system allocators.
   They generally use the same names as the standard.
 
 - **Algorithms**: The implementation uses the `__restrict` keyword wherever
-  appropriate. See `<hx/hxalgorithm.hpp>` for the core range algorithms. The
-  contents of `<hx/hxsort.hpp>` and `<hx/hxset_operations.hpp>` were moved out
-  of that header to improve compile times. Prefer sorting with
-  `<hx/hxradix_sort.hpp>` when you want O(n) sorting. This codebase tries not to
-  give an AI rope to hang itself with. Showing inner-loop assembly to an AI is
-  also advised.
+  appropriate. See `<hx/hxrange.hpp>` for the core range algorithms. Comparison
+  based sorting is in `<hx/hxsort.hpp>` and the set algorithms are in
+  `<hx/hxset_algorithms.hpp>`. Prefer sorting with `<hx/hxradix_sort.hpp>` when
+  you want O(n) sorting. This codebase tries not to give an AI rope to hang
+  itself with. Showing inner-loop assembly to an AI is also advised.
 
 - **Memory Management**: Fast and deterministic. Several allocation semantics
   are supported, which matters most when crashing from memory fragmentation is
@@ -215,7 +214,7 @@ are also available.
   detection, and it pulls in `hxsettings.h` and `hxmemory_manager.h`, which
   cannot be included directly.
 - Choose an `HX_HARDENING_MODE` on the compile line. `hxassert` and
-  `hxassertmsg` are active only at `DEBUG`, `hxassert_hard` at `STANDARD` and
+  `hxassertf` are active only at `DEBUG`, `hxassert_hard` at `STANDARD` and
   above, and `hxassert_always` in every mode. Null pointer checks only happen in
   `DEBUG`.
 - Log through `hxlog`, `hxlog_warning`, `hxlog_release` and `hxlog_console`.
@@ -294,7 +293,7 @@ error values and returned together, instead of ad hoc error checking.
 
 Differences from the standard versions are listed.
 
-- `hxalgorithm.hpp` provides searching and set utilities taking callables:
+- `hxrange.hpp` provides searching and set utilities taking callables:
   `hxall_of`, `hxany_of`, `hxbinary_search`, `hxcount_if`, `hxexchange`,
   `hxfind_if`, `hxfor_each`, `hxlower_bound`, `hxmerge`, `hxminmax`,
   `hxset_difference`, `hxset_intersection`, `hxset_union`, `hxunique` and

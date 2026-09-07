@@ -14,7 +14,7 @@
 #endif
 
 #include "hxallocator.hpp"
-#include "hxalgorithm.hpp"
+#include "hxrange.hpp"
 #include "hxinitializer_list.hpp"
 #include "hxkey.hpp"
 

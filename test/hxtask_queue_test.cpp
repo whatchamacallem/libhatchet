@@ -129,8 +129,8 @@ TEST(hxtask_queue_test, priority_ordering_single_threaded) {
 			priority_value = p;
 		}
 		bool execute(hxtask_queue*) override {
-			hxassertmsg(execution_order, "no_priority");
-			hxassertmsg(write_index, "no_priority");
+			hxassertf(execution_order, "no_priority");
+			hxassertf(write_index, "no_priority");
 			const int32_t slot = (*write_index)++;
 			execution_order[slot] = priority_value;
 			return true;
@@ -310,7 +310,7 @@ TEST(hxtask_queue_test, two_threads_two_stacks_stress) {
 				allocations.reserve(allocation_count, allocator);
 				for(int32_t i = 0; i < allocation_count; ++i) {
 					void* p = hxmalloc(bytes);
-					hxassertmsg(p, "stress_alloc");
+					hxassertf(p, "stress_alloc");
 					::memset(p, 0x5a, bytes);
 					allocations[i] = p;
 				}

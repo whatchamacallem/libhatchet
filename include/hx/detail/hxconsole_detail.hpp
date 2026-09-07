@@ -271,7 +271,7 @@ public:
 		while(hxisgraph(*k_)) {
 			++k_;
 		}
-		hxassertmsg(*k_ == '\0', "bad_glyph in name \"%s\"", key_.str_);
+		hxassertf(*k_ == '\0', "bad_glyph in name \"%s\"", key_.str_);
 #endif
 	}
 

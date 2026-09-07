@@ -161,7 +161,7 @@ public:
 	/// Sets the number of index bits and allocates memory for the table (only
 	/// for dynamic capacity).
 	/// - `bits` : The number of index bits to set for the table, in the range
-	///   [1, 31].
+	///   [1, 30].
 	void set_size_bits(uint32_t bits_);
 
 	/// Returns the number of values in the table.

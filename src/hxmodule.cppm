@@ -71,7 +71,7 @@ module;
 export module hx;
 export {
 #include "../include/hx/libhatchet.h"
-#include "../include/hx/hxalgorithm.hpp"
+#include "../include/hx/hxrange.hpp"
 #include "../include/hx/hxallocator.hpp"
 #include "../include/hx/hxarray.hpp"
 #include "../include/hx/hxvector.hpp"
@@ -88,7 +88,7 @@ export {
 #include "../include/hx/hxhash_table.hpp"
 #include "../include/hx/hxhash_table_nodes.hpp"
 #include "../include/hx/hxinitializer_list.hpp"
-#include "../include/hx/hxset_operations.hpp"
+#include "../include/hx/hxset_algorithms.hpp"
 #include "../include/hx/hxkey.hpp"
 #include "../include/hx/hxlist.hpp"
 //#include "../include/hx/hxmemory_manager.h"

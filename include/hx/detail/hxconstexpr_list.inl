@@ -16,7 +16,7 @@ template<hxconstexpr_list_concept_ T_, typename deleter_t_>
 hxinline hxconstexpr auto hxconstexpr_list<T_, deleter_t_>::const_iterator::operator++(void)
 		-> const_iterator& {
 	// Checking for m_sentinel_ is not done for symmetry.
-	hxassertmsg(this->m_current_node_ != hxnull, "bad_iter");
+	hxassertf(this->m_current_node_ != hxnull, "bad_iter");
 	m_current_node_ = m_current_node_->m_list_next_;
 	return *this;
 }
@@ -32,7 +32,7 @@ hxinline hxattr_flatten hxconstexpr auto hxconstexpr_list<T_, deleter_t_>::const
 template<hxconstexpr_list_concept_ T_, typename deleter_t_>
 hxinline hxconstexpr auto hxconstexpr_list<T_, deleter_t_>::const_iterator::operator--(void)
 		-> const_iterator& {
-	hxassertmsg(this->m_current_node_ != hxnull, "bad_iter");
+	hxassertf(this->m_current_node_ != hxnull, "bad_iter");
 	m_current_node_ = m_current_node_->m_list_prev_;
 	return *this;
 }
@@ -364,8 +364,8 @@ hxinline hxconstexpr void hxconstexpr_list<T_, deleter_t_>::reverse(void) {
 template<hxconstexpr_list_concept_ T_, typename deleter_t_>
 hxattr_flatten hxconstexpr void hxconstexpr_list<T_, deleter_t_>::splice(
 		const_iterator it_, hxconstexpr_list& x_) {
-	hxassertmsg(&x_ != this, "bad_splice same list");
-	hxassertmsg(it_.m_current_node_ != hxnull, "bad_iter");
+	hxassertf(&x_ != this, "bad_splice same list");
+	hxassertf(it_.m_current_node_ != hxnull, "bad_iter");
 	if(x_.empty()) {
 		return;
 	}
@@ -384,7 +384,7 @@ hxattr_flatten hxconstexpr void hxconstexpr_list<T_, deleter_t_>::splice(
 template<hxconstexpr_list_concept_ T_, typename deleter_t_>
 hxinline hxattr_flatten hxconstexpr void hxconstexpr_list<T_, deleter_t_>::insert_(
 		hxconstexpr_list_node* prev_, hxconstexpr_list_node* next_, hxconstexpr_list_node* ptr_) {
-	hxassertmsg(ptr_ != hxnull, "bad_node");
+	hxassertf(ptr_ != hxnull, "bad_node");
 	ptr_->m_list_prev_ = prev_;
 	ptr_->m_list_next_ = next_;
 	prev_->m_list_next_ = ptr_;
@@ -395,7 +395,7 @@ hxinline hxattr_flatten hxconstexpr void hxconstexpr_list<T_, deleter_t_>::inser
 template<hxconstexpr_list_concept_ T_, typename deleter_t_>
 hxinline hxattr_flatten hxconstexpr void hxconstexpr_list<T_, deleter_t_>::extract_(hxconstexpr_list_node* ptr_) {
 	hxassert_hard(!this->empty(), "list_empty");
-	hxassertmsg(ptr_ != hxnull, "bad_node");
+	hxassertf(ptr_ != hxnull, "bad_node");
 	ptr_->m_list_prev_->m_list_next_ = ptr_->m_list_next_;
 	ptr_->m_list_next_->m_list_prev_ = ptr_->m_list_prev_;
 	--m_size_;

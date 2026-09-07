@@ -104,7 +104,7 @@ public:
 	bool operator||(const hxtest_object&) = delete;
 private:
 	explicit hxtest_iterator_api_base_t(hxtest_object* pointer) : m_pointer(pointer) {
-		hxassert(m_pointer != hxnull);
+		hxassertf(m_pointer != hxnull, "sys_err");
 	}
 
 	friend derived_t;
@@ -189,7 +189,7 @@ public:
 	explicit hxtest_skip_asserts(int count);
 	~hxtest_skip_asserts(void);
 	static int remaining(void) { return hxs_remaining; }
-	static bool handler(void);
+	static bool handler(const char* file, size_t line);
 private:
 	hxtest_skip_asserts(const hxtest_skip_asserts&) = delete;
 	hxtest_skip_asserts& operator=(const hxtest_skip_asserts&) = delete;

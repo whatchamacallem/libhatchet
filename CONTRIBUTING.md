@@ -35,6 +35,10 @@ touches two different places.
 If the prompt is only an error message or warning assume it is a request to have
 the error fixed.
 
+Instead of tracing manually, the expected values for a number of `check_stats`
+calls can be found in a single run. These must be monitored for optimal performance and
+any changes root caused.
+
 Do not add tokens to your context window that are not required for future
 correct operation or to inform the user of actionable information. If an
 assumption is being made that modifies the interpretation of the prompt then
@@ -73,7 +77,7 @@ in `<hx/hxalgortims.hpp>`.
 
 Do not use C++ exceptions, RTTI or assume asserts are enabled. Check when adding
 includes whether they are redundant and write them as `<stdio.h>` not
-`<cstdio>`. Generously use `hxassertmsg` for debug asserts and `hxassert_hard`
+`<cstdio>`. Generously use `hxassertf` for debug asserts and `hxassert_hard`
 for release asserts. Declare and define functions (except destructors) with no
 args as `void x(void)` instead of `void x()`.
 
@@ -95,7 +99,7 @@ less qualified overloads and only document the const version.
 Do not use defensive programming or guard against mistakes. Never implement
 hypothetical safety guarantees. Unintended use cases need to be identified with
 asserts and fixed instead of guarded against. Compile errors are cheaper than
-debugging. Asserts are cheaper than debugging. Use `hxassertmsg` to document
+debugging. Asserts are cheaper than debugging. Use `hxassertf` to document
 preconditions and post conditions instead of null checks.
 
 Prefer wrapping C-style implementation details in C++ classes with normal
@@ -123,11 +127,11 @@ even when the name of the parameter is made incorrect by modification.
 Specifically, do not gratuitously copy templated parameters as the cost of the
 copy may be significant.
 
-## Inline Files
+## Detail Files
 
-Create a new `detail/*.inl` for any new class that has its own `.hpp` header.
-When there is an `.inl` file, create out of line definitions for all methods
-that do not fit on a single line within 100 chars.
+Do not hide includes in the detail directory and place them in the corresponding
+public header. If a class has a `detail/*.inl` file then it must be used for any
+methods that do not fit on one line in 100 columns for that class.
 
 ## Naming
 
@@ -225,13 +229,13 @@ for arbitrary values. The hashed value of `hxnull`/`hxnil` is also
 
 Debug non-obvious test failures, asserts, and crashes with GDB. When debugging,
 build with `debugbuild.sh` without `--run`. Then run GDB in batch mode passing
-`-x .gdbinit` explicitly to load pretty printers, with `-ex "run"` and
-`-ex "bt"` to capture the backtrace, and `build/hxtest` as the target with no
-args (do not use `--gtest_filter`). Use the `--cd` arg to specify the `build`
-directory as the working directory to avoid polluting the unstaged changes. Both
-`hxassert()` and `hxbreakpoint()` will raise `SIGTRAP` and can be added
-temporarily to stop execution at a specific point. Automatic core dumps are
-discarded on WSL, so do not look for one. If `ptrace` is not allowed then
+`-x .gdbinit` explicitly to load pretty printers, with `-ex "run"` and `-ex
+"bt"` to capture the backtrace, and `build/hxtest` as the target (use
+`--gtest_break_on_failure` and `--gtest_filter`). Use the `--cd` arg to specify
+the `build` directory as the working directory to avoid polluting the unstaged
+changes. Both `hxassert()` and `hxbreakpoint()` will raise `SIGTRAP` and can be
+added temporarily to stop execution at a specific point. Automatic core dumps
+are discarded on WSL, so do not look for one. If `ptrace` is not allowed then
 explicitly generate a core dump to debug instead.
 
 ## Documentation

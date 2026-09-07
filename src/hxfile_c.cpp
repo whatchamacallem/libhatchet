@@ -53,7 +53,7 @@ hxfile::hxfile(uint8_t mode, const char* filename, ...) : hxfile() {
 }
 
 hxfile::hxfile(hxfile&& file) noexcept {
-	hxassertmsg(this != &file, "self_copy");
+	hxassertf(this != &file, "self_copy");
 	::memcpy(static_cast<void*>(this), static_cast<const void*>(&file), sizeof file);
 	::memset(static_cast<void*>(&file), 0x00, sizeof file);
 }
@@ -63,7 +63,7 @@ hxfile::~hxfile(void) {
 }
 
 void hxfile::operator=(hxfile&& file) noexcept {
-	hxassertmsg(this != &file, "self_copy");
+	hxassertf(this != &file, "self_copy");
 	close();
 	::memcpy(static_cast<void*>(this), static_cast<const void*>(&file), sizeof file);
 	::memset(static_cast<void*>(&file), 0x00, sizeof file);
@@ -84,7 +84,7 @@ bool hxfile::open(uint8_t mode, const char* filename, ...) {
 }
 
 bool hxfile::openv_(uint8_t mode, const char* filename, va_list args) {
-	hxassert(m_file_pimpl_ == 0);
+	hxassertf(m_file_pimpl_ == 0, "sys_err");
 
 	m_open_mode_ = mode; // Record mode regardless.
 
@@ -105,7 +105,7 @@ bool hxfile::openv_(uint8_t mode, const char* filename, va_list args) {
 
 	char line_buf[HX_MAX_LINE];
 	const int len = ::vsnprintf(line_buf, HX_MAX_LINE, filename, args);
-	hxassertmsg(len >= 0 && len < HX_MAX_LINE, "vsnprintf %d", len); (void)len;
+	hxassertf(len >= 0 && len < HX_MAX_LINE, "vsnprintf %d", len); (void)len;
 
 	m_file_pimpl_ = reinterpret_cast<intptr_t>(::fopen(line_buf, m));
 	hxassert_hard((m_file_pimpl_ != 0) || ((mode & hxfile::open_mode_asserts) == 0u),
@@ -119,7 +119,7 @@ bool hxfile::openv_(uint8_t mode, const char* filename, va_list args) {
 void hxfile::close(void) {
 	if(m_owns_) {
 		const int code = ::fclose(reinterpret_cast<FILE*>(m_file_pimpl_));
-		hxassertmsg(code == 0, "fclose"); (void)code;
+		hxassertf(code == 0, "fclose"); (void)code;
 	}
 	::memset(static_cast<void*>(this), 0x00, sizeof *this);
 }
@@ -137,13 +137,13 @@ void hxfile::clear(void) {
 }
 
 size_t hxfile::get_pos(void) const {
-	hxassertmsg(m_file_pimpl_ != 0, "bad_file");
+	hxassertf(m_file_pimpl_ != 0, "bad_file");
 	// Requires a 64-bit long to support 64-bit files.
 	return static_cast<size_t>(::ftell(reinterpret_cast<FILE*>(m_file_pimpl_)));
 }
 
 bool hxfile::set_pos(size_t position) {
-	hxassertmsg(m_file_pimpl_ != 0, "bad_file");
+	hxassertf(m_file_pimpl_ != 0, "bad_file");
 	// Requires a 64-bit long to support 64-bit files.
 	m_fail_ = ::fseek(reinterpret_cast<FILE*>(m_file_pimpl_), static_cast<long>(position), 0) != 0;
 	if(!m_fail_) {
@@ -153,7 +153,7 @@ bool hxfile::set_pos(size_t position) {
 }
 
 size_t hxfile::read(void* bytes, size_t buffer_size, size_t byte_count) {
-	hxassertmsg(((m_open_mode_ & hxfile::open_mode_in) != 0u) && (m_file_pimpl_ != 0), "bad_file");
+	hxassertf(((m_open_mode_ & hxfile::open_mode_in) != 0u) && (m_file_pimpl_ != 0), "bad_file");
 	hxassert_hard(byte_count <= buffer_size || ((m_open_mode_ & hxfile::open_mode_asserts) == 0u),
 		"read want %zu cap %zu", byte_count, buffer_size);
 
@@ -164,7 +164,7 @@ size_t hxfile::read(void* bytes, size_t buffer_size, size_t byte_count) {
 
 	const size_t bytes_read = ::fread(bytes, 1, byte_count, reinterpret_cast<FILE*>(m_file_pimpl_)); // NOLINT(clang-analyzer-core.NonNullParamChecker)
 
-	hxassertmsg((byte_count == bytes_read) || ((m_open_mode_ & hxfile::open_mode_asserts) == 0u),
+	hxassertf((byte_count == bytes_read) || ((m_open_mode_ & hxfile::open_mode_asserts) == 0u),
 		"fread want %zu got %zu %s", byte_count, bytes_read, ::strerror(errno));
 
 	if(byte_count != bytes_read) {
@@ -175,7 +175,7 @@ size_t hxfile::read(void* bytes, size_t buffer_size, size_t byte_count) {
 }
 
 size_t hxfile::write(const void* bytes, size_t byte_count) {
-	hxassertmsg((m_open_mode_ & hxfile::open_mode_out) != 0u, "bad_file");
+	hxassertf((m_open_mode_ & hxfile::open_mode_out) != 0u, "bad_file");
 
 	if(m_file_pimpl_ == 0) {
 		// Writing to null emulates /dev/null support.
@@ -184,7 +184,7 @@ size_t hxfile::write(const void* bytes, size_t byte_count) {
 	const size_t bytes_written = ::fwrite(bytes, 1, byte_count,
 		reinterpret_cast<FILE*>(m_file_pimpl_));
 
-	hxassertmsg((byte_count == bytes_written) || ((m_open_mode_ & hxfile::open_mode_asserts) == 0u),
+	hxassertf((byte_count == bytes_written) || ((m_open_mode_ & hxfile::open_mode_asserts) == 0u),
 		"fwrite want %zu got %zu %s", byte_count, bytes_written, ::strerror(errno));
 
 	// Can restore goodness.
@@ -193,20 +193,20 @@ size_t hxfile::write(const void* bytes, size_t byte_count) {
 }
 
 bool hxfile::flush(void) { // NOLINT(readability-make-member-function-const)
-	hxassertmsg((m_open_mode_ & hxfile::open_mode_out) != 0u, "bad_file");
+	hxassertf((m_open_mode_ & hxfile::open_mode_out) != 0u, "bad_file");
 	if(m_file_pimpl_ == 0) {
 		return true;
 	}
 
 	const int result = ::fflush(reinterpret_cast<FILE*>(m_file_pimpl_));
-	hxassertmsg((result == 0) || ((m_open_mode_ & hxfile::open_mode_asserts) == 0u),
+	hxassertf((result == 0) || ((m_open_mode_ & hxfile::open_mode_asserts) == 0u),
 		"fflush %s", ::strerror(errno));
 	return result == 0;
 }
 
 // See vsnprintf to reimplement this without FILE* support.
 bool hxfile::print(const char* format, ...) {
-	hxassertmsg((m_open_mode_ & hxfile::open_mode_out) != 0u, "bad_file");
+	hxassertf((m_open_mode_ & hxfile::open_mode_out) != 0u, "bad_file");
 
 	if(m_file_pimpl_ == 0) {
 		// Writing to null emulates /dev/null support.

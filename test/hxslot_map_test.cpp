@@ -117,7 +117,7 @@ TEST_F(hxslot_map_f, hxslot_map_reset_last_value_skips_move) {
 	EXPECT_EQ(m.size(), hxsize_t{3});
 	EXPECT_TRUE(m.reset(h2));
 	EXPECT_EQ(m.size(), hxsize_t{2});
-	EXPECT_EQ(*(m.data() + 0), 0);
+	EXPECT_EQ(*m.data(), 0);
 	EXPECT_EQ(*(m.data() + 1), 1);
 	EXPECT_TRUE(check_stats(3, 1, 0, 3, 0, 0, 0, 0, 0, 0));
 }
@@ -130,7 +130,7 @@ TEST_F(hxslot_map_f, hxslot_map_reset_non_last_value_moves_last_into_hole) {
 	EXPECT_TRUE(m.reset(h0));
 	EXPECT_EQ(m.size(), hxsize_t{2});
 	// The last value (2) is moved into the hole left by h0.
-	EXPECT_EQ(*(m.data() + 0), 2);
+	EXPECT_EQ(*m.data(), 2);
 	EXPECT_EQ(*(m.data() + 1), 1);
 	hxtest_object* const v1 = m.value(h1);
 	hxtest_object* const v2 = m.value(h2);
@@ -141,7 +141,7 @@ TEST_F(hxslot_map_f, hxslot_map_reset_non_last_value_moves_last_into_hole) {
 	// The moved value's backref must be fixed up so it can be erased correctly.
 	EXPECT_TRUE(m.reset(h2));
 	EXPECT_EQ(m.size(), hxsize_t{1});
-	EXPECT_EQ(*(m.data() + 0), 1);
+	EXPECT_EQ(*m.data(), 1);
 	EXPECT_TRUE(m.reset(h1));
 	EXPECT_EQ(m.size(), hxsize_t{0});
 	EXPECT_TRUE(check_stats(3, 3, 0, 3, 0, 0, 0, 2, 0, 0));
@@ -346,7 +346,7 @@ TEST_F(hxslot_map_f, hxslot_map_erase_if_removes_last_value_only) {
 	});
 	EXPECT_EQ(removed, hxsize_t{1});
 	EXPECT_EQ(m.size(), hxsize_t{2});
-	EXPECT_EQ(*(m.data() + 0), 0);
+	EXPECT_EQ(*m.data(), 0);
 	EXPECT_EQ(*(m.data() + 1), 1);
 	EXPECT_EQ(m.value(h2), m.end());
 	EXPECT_TRUE(check_stats(3, 1, 0, 3, 0, 0, 0, 0, 0, 0));

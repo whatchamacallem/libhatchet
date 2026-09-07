@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-#include <hx/hxalgorithm.hpp>
+#include <hx/hxrange.hpp>
 #include <hx/hxflat_map.hpp>
 #include <hx/hxrandom.hpp>
 #include <hx/hxsort.hpp>
@@ -42,22 +42,22 @@ TEST_F(hxbinary_search_test_f, iterator_support) {
 
 TEST(hxbinary_search_test, two_element_boundary) {
 	const int values[2] = { 3, 7 };
-	const int* found = hxbinary_search(values + 0, values + 2, 3, hxkey_less_t<int>{});
+	const int* found = hxbinary_search(+values, values + 2, 3, hxkey_less_t<int>{});
 	EXPECT_NE(found, values + 2);
 	EXPECT_EQ(*found, 3);
-	found = hxbinary_search(values + 0, values + 2, 7, hxkey_less_t<int>{});
+	found = hxbinary_search(+values, values + 2, 7, hxkey_less_t<int>{});
 	EXPECT_NE(found, values + 2);
 	EXPECT_EQ(*found, 7);
-	found = hxbinary_search(values + 0, values + 2, 5, hxkey_less_t<int>{});
+	found = hxbinary_search(+values, values + 2, 5, hxkey_less_t<int>{});
 	EXPECT_EQ(found, values + 2);
 }
 
 TEST(hxbinary_search_test, range_overload_with_less) {
 	const int values[3] = { 1, 3, 5 };
-	const int* found = hxbinary_search(hxmake_range(values + 0, values + 3), 3, hxkey_less_t<int>{});
+	const int* found = hxbinary_search(hxmake_range(+values, values + 3), 3, hxkey_less_t<int>{});
 	EXPECT_NE(found, values + 3);
 	EXPECT_EQ(*found, 3);
-	found = hxbinary_search(hxmake_range(values + 0, values + 3), 4, hxkey_less_t<int>{});
+	found = hxbinary_search(hxmake_range(+values, values + 3), 4, hxkey_less_t<int>{});
 	EXPECT_EQ(found, values + 3);
 }
 
@@ -286,12 +286,12 @@ TEST_F(hxtest_test_f, iter_api_types) {
 TEST(hxrange_test, constructors) {
 	int array[3] = { 31, 32, 33 };
 	const hxrange<int*> from_array(array);
-	EXPECT_EQ(from_array.begin(), array + 0);
+	EXPECT_EQ(from_array.begin(), +array);
 	EXPECT_EQ(from_array.end(), array + 3);
 	const hxrange<int*> from_signed_length(array, hxsize_t{3});
-	EXPECT_EQ(from_signed_length.begin(), array + 0);
+	EXPECT_EQ(from_signed_length.begin(), +array);
 	EXPECT_EQ(from_signed_length.end(), array + 3);
 	const hxrange<int*> from_unsigned_length(array, size_t{3});
-	EXPECT_EQ(from_unsigned_length.begin(), array + 0);
+	EXPECT_EQ(from_unsigned_length.begin(), +array);
 	EXPECT_EQ(from_unsigned_length.end(), array + 3);
 }

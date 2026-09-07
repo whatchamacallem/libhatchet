@@ -41,6 +41,8 @@ public:
 // hxtest_ - Internal. The test tracking and dispatching singleton.
 class hxtest_ {
 public:
+	using test_cases_t_ = hxvector<hxtest_case_*, HX_TEST_MAX_CASES>;
+
 	enum class test_state_ : uint8_t {
 		nothing_asserted_,
 		pass_,
@@ -55,19 +57,21 @@ public:
 	// Called by global constructors.
 	void add_test_(hxtest_case_* fn_) hxattr_nonnull(2);
 
+	const test_cases_t_& test_cases_(void) const;
+
 	// Assert callback used by macros.
 	void condition_check_(bool condition_, const char* file_, int line_,
 		const char* message_, bool is_assert_) hxattr_nonnull(3,5);
 
-	// Run tests. test_suite_filter_ must match exactly.
-	int run_all_tests_(const char* test_suite_filter_=hxnull);
+	static bool filter_(const char* filter_, test_cases_t_& test_cases_) hxattr_nonnull(1);
+
+	int run_all_tests_(void);
 
 private:
 	hxtest_(const hxtest_&) = delete;
 	void operator=(const hxtest_&) = delete;
 
-	hxtest_case_* m_test_cases_[HX_TEST_MAX_CASES];
-	int m_num_test_cases_;
+	test_cases_t_ m_test_cases_;
 	hxtest_case_* m_current_test_;
 	test_state_ m_test_state_;
 	int m_pass_count_;
