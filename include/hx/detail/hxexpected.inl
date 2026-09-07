@@ -34,7 +34,8 @@ hxinline hxattr_flatten hxexpected<T_, E_>::hxexpected(hxexpected&& x_) noexcept
 }
 
 template<hxexpected_concept_ T_, hxunexpected_concept_ E_>
-template<typename error_t_, typename... args_t_>
+template<typename error_t_, typename... args_t_, hxenable_if_t<
+	!hxis_hxexpected_<hxremove_cvref_t<error_t_>>::value, bool>>
 hxinline hxattr_flatten hxexpected<T_, E_>::hxexpected(error_t_&& error_, args_t_&&... args_) noexcept
 		: m_error_(hxforward<error_t_>(error_)) {
 	if(this->has_value()) {
@@ -51,32 +52,32 @@ hxinline hxattr_flatten hxexpected<T_, E_>::~hxexpected(void) {
 
 template<hxexpected_concept_ T_, hxunexpected_concept_ E_>
 hxinline hxattr_flatten const T_& hxexpected<T_, E_>::operator*(void) const {
-	hxassertmsg(this->has_value(), "bad_value");
+	hxassertf(this->has_value(), "bad_value");
 	return *this->data();
 }
 
 template<hxexpected_concept_ T_, hxunexpected_concept_ E_>
 hxinline hxattr_flatten T_& hxexpected<T_, E_>::operator*(void) {
-	hxassertmsg(this->has_value(), "bad_value");
+	hxassertf(this->has_value(), "bad_value");
 	return *this->data();
 }
 
 template<hxexpected_concept_ T_, hxunexpected_concept_ E_>
 hxinline hxattr_flatten const T_* hxexpected<T_, E_>::operator->(void) const {
-	hxassertmsg(this->has_value(), "bad_value");
+	hxassertf(this->has_value(), "bad_value");
 	return this->data();
 }
 
 template<hxexpected_concept_ T_, hxunexpected_concept_ E_>
 hxinline hxattr_flatten T_* hxexpected<T_, E_>::operator->(void) {
-	hxassertmsg(this->has_value(), "bad_value");
+	hxassertf(this->has_value(), "bad_value");
 	return this->data();
 }
 
 template<hxexpected_concept_ T_, hxunexpected_concept_ E_>
 hxinline hxattr_flatten hxexpected<T_, E_>&
 hxexpected<T_, E_>::operator=(const hxexpected& x_) noexcept {
-	hxassertmsg(this != &x_, "self_copy");
+	hxassertf(this != &x_, "self_copy");
 	const bool has_value_ = this->has_value();
 	const bool other_has_value_ = x_.has_value();
 	if(other_has_value_) {
@@ -95,7 +96,7 @@ hxexpected<T_, E_>::operator=(const hxexpected& x_) noexcept {
 template<hxexpected_concept_ T_, hxunexpected_concept_ E_>
 hxinline hxattr_flatten hxexpected<T_, E_>&
 hxexpected<T_, E_>::operator=(hxexpected&& x_) noexcept {
-	hxassertmsg(this != &x_, "self_copy");
+	hxassertf(this != &x_, "self_copy");
 	const bool has_value_ = this->has_value();
 	const bool other_has_value_ = x_.has_value();
 	if(other_has_value_) {
@@ -174,7 +175,7 @@ template<hxexpected_concept_ T_, hxunexpected_concept_ E_>
 template<typename self_t_>
 hxinline hxattr_flatten auto hxexpected<T_, E_>::error(this self_t_&& self_)
 		-> decltype(hxforward_like<self_t_>(hxdeclval<E_&>())) {
-	hxassertmsg(static_cast<bool>(self_.m_error_), "wanted_error");
+	hxassertf(static_cast<bool>(self_.m_error_), "wanted_error");
 	return hxforward_like<self_t_>(self_.m_error_);
 }
 
@@ -235,7 +236,7 @@ template<hxexpected_concept_ T_, hxunexpected_concept_ E_>
 template<typename self_t_>
 hxinline hxattr_flatten auto hxexpected<T_, E_>::value(this self_t_&& self_)
 		-> decltype(hxforward_like<self_t_>(hxdeclval<T_&>())) {
-	hxassertmsg(self_.has_value(), "bad_value");
+	hxassertf(self_.has_value(), "bad_value");
 	return hxforward_like<self_t_>(*self_.data());
 }
 

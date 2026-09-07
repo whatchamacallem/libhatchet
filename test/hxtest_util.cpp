@@ -16,8 +16,10 @@ static_assert(sizeof(hxtest_object) == 8u, "hxtest_object must be 8 bytes");
 
 hxtest_object_fixture* hxs_object_current = hxnull;
 
-bool check_stats = false;
-hxconsole_variable(check_stats);
+// Test scripts must opt in to operator call counting. E.g. the coverage test
+// uses compiler flags that cause stats checking to fail.
+static bool hxs_check_stats = false;
+hxconsole_variable_named(hxs_check_stats, check_stats);
 
 hxtest_object_fixture::hxtest_object_fixture(void) :
 		m_constructed(0),
@@ -32,7 +34,7 @@ hxtest_object_fixture::hxtest_object_fixture(void) :
 		m_value_construct(0),
 		m_check_stats_called(false),
 		m_next_ticket(100u) {
-	hxassert(hxs_object_current == hxnull);
+	hxassertf(hxs_object_current == hxnull, "sys_err");
 	hxs_object_current = this;
 }
 
@@ -49,7 +51,7 @@ bool hxtest_object_fixture::check_stats(int constructed, int destructed,
 		int equal_to, int less_than) {
 	m_check_stats_called = true;
 	bool ok = true;
-	if(!::check_stats) {
+	if(!hxs_check_stats) {
 		return ok;
 	}
 	// GCOVR_EXCL_START
@@ -172,7 +174,7 @@ hxtest_object::~hxtest_object(void) {
 }
 
 void hxtest_object::operator=(const hxtest_object& x) {
-	hxassert(this != &x);
+	hxassertf(this != &x, "self_assign");
 	hxassert_always(x.m_state == hxtest_object_state::valid, "copy_from_bad");
 	hxassert_always(this->m_state == hxtest_object_state::valid
 		|| this->m_state == hxtest_object_state::moved, "copy_to_dead");
@@ -183,7 +185,7 @@ void hxtest_object::operator=(const hxtest_object& x) {
 }
 
 hxtest_object& hxtest_object::operator=(hxtest_object&& x) noexcept {
-	hxassert(this != &x);
+	hxassertf(this != &x, "self_assign");
 	hxassert_always(x.m_state == hxtest_object_state::valid, "move_from_bad");
 	hxassert_always(this->m_state == hxtest_object_state::valid
 		|| this->m_state == hxtest_object_state::moved, "move_to_dead");
@@ -290,7 +292,7 @@ hxtest_skip_asserts::~hxtest_skip_asserts(void) {
 	hxs_remaining = 0;
 }
 
-bool hxtest_skip_asserts::handler(void) {
+bool hxtest_skip_asserts::handler(const char*, size_t) {
 	if(hxs_remaining > 0) {
 		--hxs_remaining;
 		return true;

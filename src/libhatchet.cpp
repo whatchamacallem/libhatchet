@@ -4,7 +4,7 @@
 
 #include "../include/hx/libhatchet.h"
 #include "../include/hx/hxfile.hpp"
-#include "../include/hx/hxalgorithm.hpp"
+#include "../include/hx/hxrange.hpp"
 
 #include <stdio.h>
 #if defined HX_USE_FLOATING_POINT_TRAPS
@@ -22,7 +22,7 @@ extern "C" {
 int hxg_init_ver_; // Static initialize to 0.
 
 // Allows observation of asserts. Return true to ignore.
-bool (*hxg_assert_handler)(void);
+bool (*hxg_assert_handler)(const char* file, size_t line);
 
 // Exception-handling semantics exist in a few places in case they are enabled,
 // but you are advised to use -fno-exceptions. This library does not provide the
@@ -51,10 +51,10 @@ void __cxa_pure_virtual(void);
 
 hxattr_weak int __cxa_guard_acquire(guard_t* guard) {
 	uint8_t *status = reinterpret_cast<uint8_t*>(guard);
-	if (__atomic_load_n(status, __ATOMIC_ACQUIRE) == 2) { return 0; } // GCOVR_EXCL_LINE
+	if (__atomic_load_n(status, __ATOMIC_ACQUIRE) == 2) { return 0; }
 
 	uint8_t expected = 0;
-	while (!__atomic_compare_exchange_n(status, &expected, 1, false, __ATOMIC_ACQ_REL, __ATOMIC_ACQUIRE)) { // GCOVR_EXCL_LINE
+	while (!__atomic_compare_exchange_n(status, &expected, 1, false, __ATOMIC_ACQ_REL, __ATOMIC_ACQUIRE)) {
 		// GCOVR_EXCL_START
 		if (expected == 2) { return 0; }
 		expected = 0;
@@ -103,11 +103,9 @@ hxattr_weak void __sanitizer_report_error_summary(const char *error_summary) { /
 hxattr_weak void hxinit_internal(int version) {
 	// Check if compile time version matches callers.
 	hxassert_hard(LIBHATCHET_VER == version, "hxinit version mismatch %zd %zd",
-		static_cast<hxsize_t>(LIBHATCHET_VER), static_cast<hxsize_t>(version));
-	hxassert_hard((hxg_init_ver_ == 0) || (hxg_init_ver_ == version),
-		"hxinit already shut down %zd %zd", static_cast<hxsize_t>(hxg_init_ver_),
-		static_cast<hxsize_t>(version));
-	(void)version;
+		static_cast<hxsize_t>(LIBHATCHET_VER), static_cast<hxsize_t>(version)); (void)version;
+	hxassert_hard((hxg_init_ver_ == 0) || (hxg_init_ver_ == LIBHATCHET_VER), "hxinit already run %zd %zd",
+		static_cast<hxsize_t>(hxg_init_ver_), static_cast<hxsize_t>(LIBHATCHET_VER));
 
 	if(hxg_init_ver_ == 0) {
 		hxsettings_construct_();
@@ -123,17 +121,14 @@ hxattr_weak void hxinit_internal(int version) {
 }
 
 hxattr_weak void hxshutdown(void) {
-	if(hxg_init_ver_ != 0) { // GCOVR_EXCL_LINE. Should only be called once.
+	if(hxg_init_ver_ == LIBHATCHET_VER) {
 		hxmemory_manager_shut_down_();
 
 #if HX_USE_FLOATING_POINT_TRAPS
 		::feenableexcept(0);
 #endif
-
-		// Trap reinitialization. This intentionally breaks global destructors
-		// that call hxfree. Leak tracking has to run before that. Just don't
-		// call hxshutdown() if you don't need this.
-		hxg_init_ver_ = 1;
+		// Trap reinitialization.
+		hxg_init_ver_ = 31;
 	}
 }
 
@@ -144,18 +139,20 @@ hxattr_weak hxattr_noexcept bool hxassert_handler(const char* file, size_t line)
 			file = it + 1;
 		}
 	}
-	if(hxg_assert_handler != hxnull && hxg_assert_handler()) {
-		return true;
+	if(hxg_assert_handler != hxnull) {
+		return hxg_assert_handler(file, line);
 	}
-	// GCOVR_EXCL_START
-	hxlog_handler(hxlog_level_assert, "breakpoint %s(%zu)", file, line);
-	// Return to hxbreakpoint at the calling line.
-	return false;
-	// GCOVR_EXCL_STOP
+	if(hxg_settings.test_break_on_failure) {
+		hxwarn(false, "BREAKPOINT %s(%zu)", file, line);
+		return false;
+	}
+
+	// Already logged reason.
+	hxexit(EXIT_FAILURE); // GCOVR_EXCL_LINE
 }
 #else
 hxattr_weak hxattr_noexcept void hxassert_handler(void) {
-	if(hxg_assert_handler != hxnull && hxg_assert_handler()) {
+	if(hxg_assert_handler != hxnull && hxg_assert_handler(hxnull, 0)) {
 		return;
 	}
 	hxlog_handler(hxlog_level_assert, "ASSERT_FAIL\n");
@@ -163,7 +160,7 @@ hxattr_weak hxattr_noexcept void hxassert_handler(void) {
 }
 #endif
 
-hxattr_weak hxattr_noexcept void hxset_assert_handler(bool (*handler)(void)) {
+hxattr_weak hxattr_noexcept void hxset_assert_handler(bool (*handler)(const char* file, size_t line)) {
 	hxg_assert_handler = handler;
 }
 
@@ -175,7 +172,7 @@ hxattr_weak hxattr_noexcept void hxlog_handler(hxlog_level_t level, const char* 
 }
 
 hxattr_weak hxattr_noexcept void hxlog_handler_v(hxlog_level_t level, const char* format, va_list args) {
-	if(hxg_settings.log_level > level && (hxg_init_ver_ != 0)) { // GCOVR_EXCL_LINE
+	if(hxg_settings.log_level > level && (hxg_init_ver_ != 0)) {
 		return;
 	}
 

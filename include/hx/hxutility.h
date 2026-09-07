@@ -297,10 +297,9 @@ hxattr_nodiscard constexpr bool hxisgraph(char ch_) {
 
 /// `hxisspace` - Implements standard `isspace` for a locale where all non-ASCII
 /// characters are considered graphical or mark making. Returns nonzero for
-/// space and `\t
-/// \n \v \f \r`. This is compatible with scanf-style parsing of UTF-8 string
-/// parameters. However, this is not `en_US.UTF-8`. It does match the the
-/// default C locale and the POSIX locale.
+/// space and `\t \n \v \f \r`. This is compatible with scanf-style parsing of
+/// UTF-8 string parameters. However, this is not `en_US.UTF-8`. It does match
+/// the default C locale and the POSIX locale.
 hxattr_nodiscard constexpr bool hxisspace(char ch_) {
 	return ch_ == ' ' || (static_cast<unsigned char>(ch_) - 0x09u) < 0x05u;
 }
@@ -337,7 +336,7 @@ hxattr_nodiscard constexpr T_ hxabs(T_ x_) { return (x_ < T_()) ? (T_() - x_) : 
 template<typename T_>
 hxattr_nodiscard constexpr T_ hxclamp(T_ x_, T_ minimum_, T_ maximum_) {
 #if HX_CPLUSPLUS >= 201402L
-	hxassertmsg(!(maximum_ < minimum_), "bad_span inversion");
+	hxassertf(!(maximum_ < minimum_), "bad_span inversion");
 #endif
 	return (x_ < minimum_) ? minimum_ : ((maximum_ < x_) ? maximum_ : x_);
 }

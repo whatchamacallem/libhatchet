@@ -4,7 +4,7 @@
 
 #include <hx/hxradix_sort.hpp>
 #include <hx/hxrandom.hpp>
-#include <hx/hxalgorithm.hpp>
+#include <hx/hxrange.hpp>
 #include <hx/hxvector.hpp>
 #include <hx/hxtest.hpp>
 

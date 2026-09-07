@@ -29,7 +29,7 @@ hxinline hxconstexpr hxptr<T_, deleter_t_>::~hxptr(void) noexcept {
 
 template<typename T_, typename deleter_t_>
 hxinline hxconstexpr hxptr<T_, deleter_t_>& hxptr<T_, deleter_t_>::operator=(hxptr&& x_) noexcept {
-	hxassertmsg(this != &x_, "self_copy");
+	hxassertf(this != &x_, "self_copy");
 	if(m_ptr_ != hxnull) {
 		static_cast<deleter_t_&>(*this)(m_ptr_);
 	}
@@ -41,13 +41,13 @@ hxinline hxconstexpr hxptr<T_, deleter_t_>& hxptr<T_, deleter_t_>::operator=(hxp
 
 template<typename T_, typename deleter_t_>
 hxinline hxconstexpr T_& hxptr<T_, deleter_t_>::operator*(void) const {
-	hxassertmsg(m_ptr_ != hxnull, "null_ptr");
+	hxassertf(m_ptr_ != hxnull, "null_ptr");
 	return *m_ptr_;
 }
 
 template<typename T_, typename deleter_t_>
 hxinline hxconstexpr T_* hxptr<T_, deleter_t_>::operator->(void) const {
-	hxassertmsg(m_ptr_ != hxnull, "null_ptr");
+	hxassertf(m_ptr_ != hxnull, "null_ptr");
 	return m_ptr_;
 }
 
@@ -134,7 +134,7 @@ hxinline hxconstexpr T_* hxptr<T_, deleter_t_>::release(void) {
 
 template<typename T_, typename deleter_t_>
 hxinline hxconstexpr void hxptr<T_, deleter_t_>::reset(T_* ptr_) noexcept {
-	hxassertmsg(ptr_ != m_ptr_ || m_ptr_ == hxnull, "self_reset");
+	hxassertf(ptr_ != m_ptr_ || m_ptr_ == hxnull, "self_reset");
 	if(m_ptr_ != hxnull) {
 		static_cast<deleter_t_&>(*this)(m_ptr_);
 	}
@@ -161,7 +161,7 @@ hxinline hxconstexpr hxremove_cv_t<T_> hxptr<T_, deleter_t_>::value_or(
 
 template<typename T_, typename deleter_t_>
 hxinline hxconstexpr T_& hxptr<T_, deleter_t_>::value(void) const {
-	hxassertmsg(m_ptr_ != hxnull, "null_ptr");
+	hxassertf(m_ptr_ != hxnull, "null_ptr");
 	return *m_ptr_;
 }
 

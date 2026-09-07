@@ -15,7 +15,7 @@
 #endif
 
 #include "hxallocator.hpp"
-#include "hxalgorithm.hpp"
+#include "hxrange.hpp"
 #include "hxinitializer_list.hpp"
 
 HX_NS_BEGIN_

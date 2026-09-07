@@ -57,7 +57,7 @@ hxinline hxattr_flatten hxarray<T_, capacity_>::hxarray(
 		const other_value_t_(&array_)[array_length_]) noexcept {
 	// Will assert on a size mismatch.
 	this->reserve_storage(array_length_);
-	const other_value_t_* hxrestrict src_ = array_ + 0;
+	const other_value_t_* hxrestrict src_ = +array_;
 	T_* hxrestrict dst_ = this->data();
 	for(const T_*const end_ = dst_ + array_length_; dst_ != end_; ++dst_, ++src_) {
 		::new(dst_) T_(*src_);
@@ -169,7 +169,7 @@ hxinline hxattr_flatten auto hxarray<T_, capacity_>::and_then(
 
 template<hxarray_concept_ T_, hxsize_t capacity_>
 hxinline hxattr_flatten void hxarray<T_, capacity_>::operator=(const hxarray& x_) noexcept {
-	hxassertmsg(static_cast<const void*>(this) != static_cast<const void*>(&x_), "bad_ref");
+	hxassertf(static_cast<const void*>(this) != static_cast<const void*>(&x_), "bad_ref");
 	hxif_constexpr(capacity_ == hxallocator_dynamic_capacity) {
 		if(this->capacity() == 0) {
 			const hxsize_t c_ = x_.capacity();
@@ -195,7 +195,7 @@ template<hxarray_concept_ T_, hxsize_t capacity_>
 hxinline hxattr_flatten void hxarray<T_, capacity_>::operator=(hxarray&& x_) noexcept {
 	static_assert(capacity_ == hxallocator_dynamic_capacity,
 		"hxallocator_dynamic_capacity required for temporaries");
-	hxassertmsg(static_cast<const void*>(this) != static_cast<const void*>(&x_), "bad_ref");
+	hxassertf(static_cast<const void*>(this) != static_cast<const void*>(&x_), "bad_ref");
 	this->swap(x_);
 }
 
@@ -206,7 +206,7 @@ hxinline hxattr_flatten void hxarray<T_, capacity_>::operator=(
 	hxif_constexpr(capacity_ == hxallocator_dynamic_capacity) {
 		if(this->capacity() == 0) {
 			this->reserve_storage(array_length_);
-			const other_value_t_* hxrestrict src_ = array_ + 0;
+			const other_value_t_* hxrestrict src_ = +array_;
 			T_* hxrestrict dst_ = this->data();
 			for(const T_*const end_ = dst_ + array_length_; dst_ != end_; ++dst_, ++src_) {
 				::new(dst_) T_(*src_);
@@ -216,7 +216,7 @@ hxinline hxattr_flatten void hxarray<T_, capacity_>::operator=(
 	}
 	hxassert_hard(this->capacity() == array_length_,
 		"array_size mismatch %zd %zd", this->capacity(), hxsize_t{array_length_});
-	const other_value_t_* hxrestrict src_ = array_ + 0;
+	const other_value_t_* hxrestrict src_ = +array_;
 	T_* hxrestrict dst_ = this->data();
 	for(const T_*const end_ = dst_ + this->capacity(); dst_ != end_; ++dst_, ++src_) {
 		*dst_ = *src_;
@@ -399,7 +399,7 @@ hxinline hxattr_flatten bool hxarray<T_, capacity_>::less(const hxarray& x_) con
 
 template<hxarray_concept_ T_, hxsize_t capacity_>
 hxinline hxattr_flatten void hxarray<T_, capacity_>::memcpy(const hxarray& x_) {
-	hxassertmsg(static_cast<const void*>(this) != static_cast<const void*>(&x_), "bad_ref");
+	hxassertf(static_cast<const void*>(this) != static_cast<const void*>(&x_), "bad_ref");
 	hxassert_hard(this->capacity() == x_.capacity(),
 		"array_size mismatch %zd %zd", this->capacity(), x_.capacity());
 	::memcpy(static_cast<void*>(this->data()), x_.data(), static_cast<size_t>(this->size_bytes()));

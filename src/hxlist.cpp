@@ -20,7 +20,7 @@ hxlist_node* hxlist_base_::front_(void) const {
 
 void hxlist_base_::extract_(hxlist_node* prev_, hxlist_node* current_) {
 	hxassert_hard(m_size_ != 0, "list_empty");
-	hxassertmsg(current_ != hxnull, "bad_node");
+	hxassertf(current_ != hxnull, "bad_node");
 	hxlist_node* const next_ = reinterpret_cast<hxlist_node*>(
 		reinterpret_cast<intptr_t>(prev_) ^ current_->m_list_link_);
 	prev_->m_list_link_ ^= reinterpret_cast<intptr_t>(current_) ^ reinterpret_cast<intptr_t>(next_);
@@ -35,7 +35,7 @@ void hxlist_base_::insert_after_(hxlist_node* prev_, hxlist_node* current_, hxli
 	hxlist_node* const new_prev_ = current_;
 	hxlist_node* const new_next_ = reinterpret_cast<hxlist_node*>(
 		reinterpret_cast<intptr_t>(prev_) ^ new_prev_->m_list_link_);
-	hxassertmsg(ptr_ != hxnull, "bad_node");
+	hxassertf(ptr_ != hxnull, "bad_node");
 	ptr_->m_list_link_ = reinterpret_cast<intptr_t>(new_prev_) ^ reinterpret_cast<intptr_t>(new_next_);
 	new_prev_->m_list_link_ ^= reinterpret_cast<intptr_t>(new_next_) ^ reinterpret_cast<intptr_t>(ptr_);
 	new_next_->m_list_link_ ^= reinterpret_cast<intptr_t>(new_prev_) ^ reinterpret_cast<intptr_t>(ptr_);
@@ -46,7 +46,7 @@ void hxlist_base_::insert_after_(hxlist_node* prev_, hxlist_node* current_, hxli
 }
 
 void hxlist_base_::insert_before_(hxlist_node* prev_, hxlist_node* current_, hxlist_node* ptr_) {
-	hxassertmsg(ptr_ != hxnull, "bad_node");
+	hxassertf(ptr_ != hxnull, "bad_node");
 	ptr_->m_list_link_ = reinterpret_cast<intptr_t>(prev_) ^ reinterpret_cast<intptr_t>(current_);
 	prev_->m_list_link_ ^= reinterpret_cast<intptr_t>(current_) ^ reinterpret_cast<intptr_t>(ptr_);
 	current_->m_list_link_ ^= reinterpret_cast<intptr_t>(prev_) ^ reinterpret_cast<intptr_t>(ptr_);
@@ -119,7 +119,7 @@ void hxlist_base_::reverse_(void) {
 }
 
 void hxlist_base_::splice_(hxlist_node* prev_, hxlist_node* current_, hxlist_base_& x_) {
-	hxassertmsg(&x_ != this, "bad_splice");
+	hxassertf(&x_ != this, "bad_splice");
 	if(x_.m_size_ == 0) {
 		return;
 	}

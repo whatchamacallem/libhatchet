@@ -16,7 +16,7 @@ template<hxlist_concept_ T_, typename deleter_t_>
 hxinline auto hxlist<T_, deleter_t_>::const_iterator::operator++(void)
 		-> const_iterator& {
 	// Checking for m_sentinel_ is not done for symmetry.
-	hxassertmsg(m_sentinel_ != hxnull, "bad_iter");
+	hxassertf(m_sentinel_ != hxnull, "bad_iter");
 	hxlist_node* next_ = reinterpret_cast<hxlist_node*>(
 		reinterpret_cast<intptr_t>(m_prev_) ^ m_current_node_->m_list_link_);
 	m_prev_ = m_current_node_;
@@ -35,7 +35,7 @@ hxinline hxattr_flatten auto hxlist<T_, deleter_t_>::const_iterator::operator++(
 template<hxlist_concept_ T_, typename deleter_t_>
 hxinline auto hxlist<T_, deleter_t_>::const_iterator::operator--(void)
 		-> const_iterator& {
-	hxassertmsg(m_sentinel_ != hxnull, "bad_iter");
+	hxassertf(m_sentinel_ != hxnull, "bad_iter");
 	hxlist_node* prev_of_prev_ = reinterpret_cast<hxlist_node*>(
 		reinterpret_cast<intptr_t>(m_current_node_) ^ m_prev_->m_list_link_);
 	m_current_node_ = m_prev_;

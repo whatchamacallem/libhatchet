@@ -67,7 +67,7 @@ template<hxrandom_iterator_concept_ iterator_t_, typename less_t_, typename sort
 hxinline hxconstexpr hxattr_flatten
 void hxpartition_sort_(hxrestrict_t<iterator_t_> begin_, iterator_t_ end_, const less_t_& less_,
 						const sort_callback_t_& sort_callback_, int depth_) {
-	hxassertmsg((end_ - begin_) > hxpartition_sort_cutoff_, "bad_range too small %zd",
+	hxassertf((end_ - begin_) > hxpartition_sort_cutoff_, "bad_range too small %zd",
 		static_cast<hxsize_t>(end_ - begin_));
 	const hxsize_t length_ = end_ - begin_;
 
@@ -157,7 +157,7 @@ void hxpartition_sort_(hxrestrict_t<iterator_t_> begin_, iterator_t_ end_, const
 template<hxrandom_iterator_concept_ iterator_t_, typename less_t_>
 inline hxconstexpr hxattr_noinline
 void hxintro_sort_(iterator_t_ begin_, iterator_t_ end_, const less_t_& less_, int depth_) {
-	hxassertmsg(!(end_ < begin_), "bad_range end before begin %zd",
+	hxassertf(!(end_ < begin_), "bad_range end before begin %zd",
 		static_cast<hxsize_t>(end_ - begin_));
 
 	if((end_ - begin_) <= hxpartition_sort_cutoff_) {

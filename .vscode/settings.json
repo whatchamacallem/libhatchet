@@ -17,6 +17,7 @@
         "bugprone",
         "buildtype",
         "busid",
+        "callees",
         "ccache",
         "CFLAGS",
         "charmap",

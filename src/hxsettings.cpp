@@ -15,6 +15,8 @@ struct hxsettings_t hxg_settings;
 void hxsettings_construct_(void) {
 	hxg_settings.log_level = hxlog_level_log;
 	hxg_settings.deallocate_permanent = false;
+	hxg_settings.test_break_on_failure = false;
+	hxg_settings.test_filter = hxnull;
 }
 
 } // extern "C"

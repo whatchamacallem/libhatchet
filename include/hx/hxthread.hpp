@@ -144,7 +144,7 @@ public:
 		::mtx_destroy(&m_mutex_);
 #else
 		const int code_ = ::pthread_mutex_destroy(&m_mutex_);
-		hxassertmsg(code_ == 0, "pthread_mutex_destroy %s", ::strerror(code_)); (void)code_;
+		hxassertf(code_ == 0, "pthread_mutex_destroy %s", ::strerror(code_)); (void)code_;
 #endif
 	}
 
@@ -154,11 +154,11 @@ public:
 	hxinline hxattr_nodiscard bool lock(void) {
 #if (HX_USE_THREADS) == 11
 		const int code_ = ::mtx_lock(&m_mutex_);
-		hxassertmsg(code_ == thrd_success, "mtx_lock %d", code_);
+		hxassertf(code_ == thrd_success, "mtx_lock %d", code_);
 		return code_ == thrd_success;
 #else
 		const int code_ = ::pthread_mutex_lock(&m_mutex_);
-		hxassertmsg(code_ == 0 || code_ == EAGAIN, "pthread_mutex_lock %s", ::strerror(code_));
+		hxassertf(code_ == 0 || code_ == EAGAIN, "pthread_mutex_lock %s", ::strerror(code_));
 		return code_ == 0;
 #endif
 	}
@@ -169,11 +169,11 @@ public:
 	hxinline bool unlock(void) {
 #if (HX_USE_THREADS) == 11
 		const int code_ = ::mtx_unlock(&m_mutex_);
-		hxassertmsg(code_ == thrd_success, "mtx_unlock %d", code_);
+		hxassertf(code_ == thrd_success, "mtx_unlock %d", code_);
 		return code_ == thrd_success;
 #else
 		const int code_ = ::pthread_mutex_unlock(&m_mutex_);
-		hxassertmsg(code_ == 0, "pthread_mutex_unlock %s", ::strerror(code_));
+		hxassertf(code_ == 0, "pthread_mutex_unlock %s", ::strerror(code_));
 		return code_ == 0;
 #endif
 	}
@@ -263,7 +263,7 @@ public:
 		::cnd_destroy(&m_cond_);
 #else
 		const int code_ = ::pthread_cond_destroy(&m_cond_);
-		hxassertmsg(code_ == 0, "pthread_cond_destroy %s", ::strerror(code_)); (void)code_;
+		hxassertf(code_ == 0, "pthread_cond_destroy %s", ::strerror(code_)); (void)code_;
 #endif
 	}
 
@@ -274,11 +274,11 @@ public:
 	hxinline hxattr_nodiscard bool wait(hxmutex& mutex_) {
 #if (HX_USE_THREADS) == 11
 		const int code_ = ::cnd_wait(&m_cond_, mutex_.native_handle());
-		hxassertmsg(code_ == thrd_success, "cnd_wait %d", code_);
+		hxassertf(code_ == thrd_success, "cnd_wait %d", code_);
 		return code_ == thrd_success;
 #else
 		const int code_ = ::pthread_cond_wait(&m_cond_, mutex_.native_handle());
-		hxassertmsg(code_ == 0, "pthread_cond_wait %s", ::strerror(code_));
+		hxassertf(code_ == 0, "pthread_cond_wait %s", ::strerror(code_));
 		return code_ == 0;
 #endif
 	}
@@ -297,7 +297,7 @@ public:
 		while(!callable_()) {
 			// Failure is undefined as per the standard.
 			const bool wait_result_ = this->wait(lock_);
-			hxassertmsg(wait_result_, "wait"); (void)wait_result_;
+			hxassertf(wait_result_, "wait"); (void)wait_result_;
 		}
 	}
 
@@ -305,11 +305,11 @@ public:
 	hxinline bool notify_one(void) {
 #if (HX_USE_THREADS) == 11
 		const int code_ = ::cnd_signal(&m_cond_);
-		hxassertmsg(code_ == thrd_success, "cnd_signal %d", code_);
+		hxassertf(code_ == thrd_success, "cnd_signal %d", code_);
 		return code_ == thrd_success;
 #else
 		const int code_ = ::pthread_cond_signal(&m_cond_);
-		hxassertmsg(code_ == 0, "pthread_cond_signal %s", ::strerror(code_));
+		hxassertf(code_ == 0, "pthread_cond_signal %s", ::strerror(code_));
 		return code_ == 0;
 #endif
 	}
@@ -318,11 +318,11 @@ public:
 	hxinline bool notify_all(void) {
 #if (HX_USE_THREADS) == 11
 		const int code_ = ::cnd_broadcast(&m_cond_);
-		hxassertmsg(code_ == thrd_success, "cnd_broadcast %d", code_);
+		hxassertf(code_ == thrd_success, "cnd_broadcast %d", code_);
 		return code_ == thrd_success;
 #else
 		const int code_ = ::pthread_cond_broadcast(&m_cond_);
-		hxassertmsg(code_ == 0, "pthread_cond_broadcast %s", ::strerror(code_));
+		hxassertf(code_ == 0, "pthread_cond_broadcast %s", ::strerror(code_));
 		return code_ == 0;
 #endif
 	}
@@ -385,7 +385,7 @@ public:
 	/// - `parameter` : `T*` to pass to the function.
 	template<typename parameter_t_>
 	hxinline void start(return_t (*entry_point_)(parameter_t_*), parameter_t_* parameter_) {
-		hxassertmsg(!this->joinable(), "thread_busy");
+		hxassertf(!this->joinable(), "thread_busy");
 
 		// Stay on the right side of the C++ standard by avoiding assumptions
 		// about pointer representations. The parameter is being reinterpreted
@@ -412,7 +412,7 @@ public:
 
 	/// Joins the thread. Blocks until the thread finishes.
 	hxinline void join(void) {
-		hxassertmsg(this->joinable(), "task_idle");
+		hxassertf(this->joinable(), "task_idle");
 #if (HX_USE_THREADS) == 11
 		const int code_ = ::thrd_join(m_thread_, hxnull);
 		hxassert_always(code_ == thrd_success, "thrd_join %d", code_);

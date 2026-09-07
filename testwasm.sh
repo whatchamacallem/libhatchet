@@ -3,8 +3,8 @@
 # SPDX-License-Identifier: MIT
 # This file is licensed under the terms of the LICENSE.md file.
 #
-# Requires the the emsdk. After installing the emsdk it is recommended to add it
-# to your .bashrc.
+# Requires the emsdk. After installing the emsdk it is recommended to add it to
+# your .bashrc.
 
 trap 'trap "" INT; pkill -9 -P $$ 2>/dev/null; wait 2>/dev/null; exit 1' INT
 set -eu

@@ -19,7 +19,7 @@
 #include "hxkey.hpp"
 #include "hxptr.hpp"
 #include "hxallocator.hpp"
-#include "hxalgorithm.hpp"
+#include "hxrange.hpp"
 
 HX_NS_BEGIN_
 

@@ -84,8 +84,9 @@ hxtest_case_::hxtest_case_(void (*run_function)(void), const char* suite_name,
 	hxtest_::dispatcher_().add_test_(this);
 }
 
-hxtest_::hxtest_(void) {
-	::memset(static_cast<void*>(this), 0x00, sizeof *this);
+hxtest_::hxtest_(void)
+	: m_test_cases_(), m_current_test_(hxnull), m_test_state_(test_state_::nothing_asserted_),
+	  m_pass_count_(0), m_fail_count_(0), m_total_assert_count_(0), m_assert_count_(0) {
 }
 
 hxtest_& hxtest_::dispatcher_(void) {
@@ -95,8 +96,12 @@ hxtest_& hxtest_::dispatcher_(void) {
 
 void hxtest_::add_test_(hxtest_case_* fn) {
 	// Use -DHX_TEST_MAX_CASES to provide enough room for all tests.
-	hxassert_always(m_num_test_cases_ < (int)HX_TEST_MAX_CASES, "HX_TEST_MAX_CASES overflow");
-	m_test_cases_[m_num_test_cases_++] = fn;
+	hxassert_always(!m_test_cases_.full(), "HX_TEST_MAX_CASES overflow");
+	m_test_cases_.push_back(fn);
+}
+
+const hxtest_::test_cases_t_& hxtest_::test_cases_(void) const {
+	return m_test_cases_;
 }
 
 void hxtest_::condition_check_(bool condition, const char* file, int line,
@@ -135,29 +140,81 @@ void hxtest_::condition_check_(bool condition, const char* file, int line,
 			m_current_test_->m_case_);
 		hxlog_handler(hxlog_level_assert, "test_fail_at %s(%d): %s", file, line, message);
 
-		// Debug builds always set breakpoints on unexpected failures.
-		// Implements GTEST_FLAG_SET(break_on_failure, true);
+		// Implements GTEST_FLAG_SET(break_on_failure, true) when requested by
+		// --gtest_break_on_failure. Off by default.
 #if (HX_TEST_ERROR_HANDLING) == 0 && (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
-		hxbreakpoint();
+		if(hxg_settings.test_break_on_failure) {
+			hxbreakpoint();
+		}
 #endif
 	}
 }
 
-int hxtest_::run_all_tests_(const char* test_suite_filter) {
+// hxtest_pattern_match_ - Internal. Matches "Suite.*" against a test case's
+// suite name, otherwise matches "Suite.Case" exactly. pattern_end is one past
+// the last character of the pattern, which is not null terminated.
+static bool hxtest_pattern_match_(const char* pattern, const char* pattern_end,
+		const hxtest_case_* test_case) {
+	const hxsize_t pattern_length = static_cast<hxsize_t>(pattern_end - pattern);
+	const hxsize_t suite_length = static_cast<hxsize_t>(::strlen(test_case->m_suite_));
+	if(pattern_length == suite_length + 2
+			&& pattern[suite_length] == '.' && pattern[suite_length + 1] == '*') {
+		return ::strncmp(pattern, test_case->m_suite_, static_cast<size_t>(suite_length)) == 0;
+	}
+	const hxsize_t case_length = static_cast<hxsize_t>(::strlen(test_case->m_case_));
+	if(pattern_length != suite_length + 1 + case_length || pattern[suite_length] != '.') {
+		return false;
+	}
+	return ::strncmp(pattern, test_case->m_suite_, static_cast<size_t>(suite_length)) == 0
+		&& ::strncmp(pattern + suite_length + 1, test_case->m_case_, static_cast<size_t>(case_length)) == 0;
+}
+
+// hxtest_pattern_list_match_ - Internal. Matches any ':'-separated pattern in
+// pattern_list against a test case.
+static bool hxtest_pattern_list_match_(const char* pattern_list, const hxtest_case_* test_case) {
+	for(const char* pattern = pattern_list; *pattern != 0; ) {
+		const char* pattern_end = ::strchr(pattern, ':');
+		pattern_end = pattern_end ? pattern_end : (pattern + ::strlen(pattern));
+		if(hxtest_pattern_match_(pattern, pattern_end, test_case)) {
+			return true;
+		}
+		pattern = pattern_end + (*pattern_end == ':' ? 1 : 0);
+	}
+	return false;
+}
+
+bool hxtest_::filter_(const char* filter, test_cases_t_& test_cases) {
+	if(filter[0] == '-') {
+		const char* const pattern_list = filter + 1;
+		test_cases.erase_if_unordered([&](hxtest_case_* test_case) -> bool {
+			return hxtest_pattern_list_match_(pattern_list, test_case);
+		});
+	}
+	else {
+		test_cases.erase_if_unordered([&](hxtest_case_* test_case) -> bool {
+			return !hxtest_pattern_list_match_(filter, test_case);
+		});
+	}
+	return !test_cases.empty();
+}
+
+int hxtest_::run_all_tests_(void) {
 	hxinit(); // GCOVR_EXCL_LINE. RUN_ALL_TESTS could be called first.
 
-	if(test_suite_filter != hxnull && test_suite_filter[0] == 0) { // GCOVR_EXCL_LINE
-		test_suite_filter = hxnull;
+	if(hxg_settings.test_filter != hxnull) { // GCOVR_EXCL_LINE
+		hxassert_hard(hxtest_::filter_(hxg_settings.test_filter, m_test_cases_),
+			"gtest_filter no matches %s", hxg_settings.test_filter);
 	}
+
 	hxlog_console("[==========] Running tests: %s\n", // GCOVR_EXCL_LINE
-		(test_suite_filter ? test_suite_filter : "All"));
+		(hxg_settings.test_filter ? hxg_settings.test_filter : "All"));
 
 	m_pass_count_ = m_fail_count_ = 0;
 	m_total_assert_count_ = 0;
 
 	// Run tests by suite name and then by line number. This runs smoke tests
 	// before complex tests. Don't trust <hx/hxsort.h>.
-	::qsort(m_test_cases_, (size_t)m_num_test_cases_, sizeof(hxtest_case_*),
+	::qsort(m_test_cases_.data(), (size_t)m_test_cases_.size(), sizeof(hxtest_case_*),
 		[](const void* lhs, const void* rhs) -> int {
 			const hxtest_case_* a = *static_cast<const hxtest_case_* const*>(lhs);
 			const hxtest_case_* b = *static_cast<const hxtest_case_* const*>(rhs);
@@ -170,49 +227,46 @@ int hxtest_::run_all_tests_(const char* test_suite_filter) {
 	hxassert_always(hxmemory_manager_utilization(true, false).allocations_outstanding == 0u,
 		"test_leak temp stacks not empty");
 
-	for(hxtest_case_** it = m_test_cases_; it != (m_test_cases_ + m_num_test_cases_); ++it) {
-		if((test_suite_filter == hxnull)                                  // GCOVR_EXCL_LINE
-				|| (::strcmp(test_suite_filter, (*it)->m_suite_) == 0)) { // GCOVR_EXCL_LINE
-			hxlog_console("[ RUN      ] %s.%s\n", (*it)->m_suite_, (*it)->m_case_);
-			m_current_test_ = *it;
-			m_test_state_ = test_state_::nothing_asserted_;
-			m_assert_count_ = 0;
+	for(hxtest_case_** it = m_test_cases_.begin(); it != m_test_cases_.end(); ++it) {
+		hxlog_console("[ RUN      ] %s.%s\n", (*it)->m_suite_, (*it)->m_case_);
+		m_current_test_ = *it;
+		m_test_state_ = test_state_::nothing_asserted_;
+		m_assert_count_ = 0;
 
 #ifdef __cpp_exceptions
-			try
+		try
 #endif
+		{
+			// Tests default onto stack 0. A test that opens another scope
+			// is expected to reset it before returning.
 			{
-				// Tests default onto stack 0. A test that opens another scope
-				// is expected to reset it before returning.
-				{
-					const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
-					(*it)->m_run_();
-				}
+				const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
+				(*it)->m_run_();
+			}
 
-				hxmemory_manager_stats stats = hxmemory_manager_utilization(true, false);
-				// GCOVR_EXCL_START
-				if(stats.allocations_outstanding != 0u || stats.bytes_outstanding != 0u) {
-					this->condition_check_(false, (*it)->m_file_, (*it)->m_line_,
-						"test_leak All tests must reset the temp stack.", true);
-				}
-				// GCOVR_EXCL_STOP
+			hxmemory_manager_stats stats = hxmemory_manager_utilization(true, false);
+			// GCOVR_EXCL_START
+			if(stats.allocations_outstanding != 0u || stats.bytes_outstanding != 0u) {
+				this->condition_check_(false, (*it)->m_file_, (*it)->m_line_,
+					"test_leak All tests must reset the temp stack.", true);
 			}
+			// GCOVR_EXCL_STOP
+		}
 #ifdef __cpp_exceptions
-			catch (...) {
-				this->condition_check_(false, (*it)->m_file_, (*it)->m_line_, "unexpected_exception", true);
-			}
+		catch (...) {
+			this->condition_check_(false, (*it)->m_file_, (*it)->m_line_, "unexpected_exception", true);
+		}
 #endif
-			if(m_test_state_ == test_state_::nothing_asserted_) {
-				this->condition_check_(false, (*it)->m_file_, (*it)->m_line_, "nothing_tested", false);
-			}
-			if(m_test_state_ == test_state_::pass_) {
-				++m_pass_count_;
-				hxlog_console("[       OK ] %s.%s\n", (*it)->m_suite_, (*it)->m_case_);
-			}
-			else {
-				++m_fail_count_;
-				hxlog_console("[  FAILED  ] %s.%s\n", (*it)->m_suite_, (*it)->m_case_);
-			}
+		if(m_test_state_ == test_state_::nothing_asserted_) {
+			this->condition_check_(false, (*it)->m_file_, (*it)->m_line_, "nothing_tested", false);
+		}
+		if(m_test_state_ == test_state_::pass_) {
+			++m_pass_count_;
+			hxlog_console("[       OK ] %s.%s\n", (*it)->m_suite_, (*it)->m_case_);
+		}
+		else {
+			++m_fail_count_;
+			hxlog_console("[  FAILED  ] %s.%s\n", (*it)->m_suite_, (*it)->m_case_);
 		}
 	}
 	m_current_test_ = hxnull;
@@ -220,7 +274,7 @@ int hxtest_::run_all_tests_(const char* test_suite_filter) {
 	hxmemory_manager_utilization(false, true);
 
 	hxlog_console("[==========] skipped %d tests. failed %d assertions.\n",
-		m_num_test_cases_ - m_pass_count_ - m_fail_count_, m_total_assert_count_);
+		(int)m_test_cases_.size() - m_pass_count_ - m_fail_count_, m_total_assert_count_);
 
 	// GCOVR_EXCL_START
 	hxassert_always(m_pass_count_ + m_fail_count_, "nothing_tested");

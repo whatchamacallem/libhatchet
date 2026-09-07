@@ -13,7 +13,7 @@
 /// `hxlog_warning` which vary by `HX_USE_LOGGING` and defines log verbosity
 /// { log, console, warning, assert }.
 ///
-/// Assertion macros `hxassert`, `hxassertmsg` are active only when
+/// Assertion macros `hxassert`, `hxassertf` are active only when
 /// `HX_HARDENING_MODE == HX_HARDENING_MODE_DEBUG`. `hxassert_hard` is active
 /// when `HX_HARDENING_MODE != HX_HARDENING_MODE_NONE`.
 
@@ -41,10 +41,10 @@
 
 /// `int LIBHATCHET_VER` - One digit major, and two digit minor and patch
 /// versions.
-#define LIBHATCHET_VER 15200
+#define LIBHATCHET_VER 15201
 
 /// `LIBHATCHET_TAG` - Major, minor and patch version tag name.
-#define LIBHATCHET_TAG "v1.52.0"
+#define LIBHATCHET_TAG "v1.52.1"
 
 #if !defined HX_HARDENING_MODE
 /// `HX_HARDENING_MODE` - Library hardening level. See the README.md for levels.
@@ -91,14 +91,14 @@
 	|| (hxlog_handler_(hxlog_level_assert, #x_), hxassert_handler(__FILE__, __LINE__)) \
 	|| hxbreakpoint())
 
-/// `hxassertmsg(bool x, ...)` - Logs an error and terminates execution if `x`
+/// `hxassertf(bool x, ...)` - Logs an error and terminates execution if `x`
 /// is false. Does not evaluate message args unless condition fails. This is
 /// only evaluated when `HX_HARDENING_MODE == HX_HARDENING_MODE_DEBUG`. Always
-/// evaluates to an expression of type `void`. e.g., `hxassertmsg(x == 0, "x:
+/// evaluates to an expression of type `void`. e.g., `hxassertf(x == 0, "x:
 /// %d", x)`. May be used as a compile time assert after C++23.
 /// - `x` : The condition to evaluate.
 /// - `...` Printf-style formatted log message.
-#define hxassertmsg(x_, ...) (void)((bool)(x_)    /* THIS IS USED AS A COMPILE TIME ASSERT: */ \
+#define hxassertf(x_, ...) (void)((bool)(x_)     /* THIS IS USED AS A COMPILE TIME ASSERT: */ \
 	|| (hxlog_handler_(hxlog_level_assert, __VA_ARGS__), hxassert_handler(__FILE__, __LINE__)) \
 	|| hxbreakpoint())
 
@@ -108,7 +108,7 @@
 /// May be used as a compile time assert after C++23.
 /// - `x` : The condition to evaluate.
 /// - `...` Printf-style formatted log message.
-#define hxassert_hard(x_, ...) (void)((bool)(x_) /* THIS IS USED AS A COMPILE TIME ASSERT: */  \
+#define hxassert_hard(x_, ...) (void)((bool)(x_)  /* THIS IS USED AS A COMPILE TIME ASSERT: */ \
 	|| (hxlog_handler_(hxlog_level_assert, __VA_ARGS__), hxassert_handler(__FILE__, __LINE__)) \
 	|| hxbreakpoint())
 
@@ -118,12 +118,12 @@
 /// time assert after C++23.
 /// - `x` : The condition to evaluate.
 /// - `...` Printf-style formatted log message.
-#define hxassert_always(x_, ...) (void)((bool)(x_) /* THIS IS USED AS A COMPILE TIME ASSERT: */ \
-	|| (hxlog_handler_(hxlog_level_assert, __VA_ARGS__), hxassert_handler(__FILE__, __LINE__))  \
+#define hxassert_always(x_, ...) (void)((bool)(x_)  /* THIS IS USED AS A COMPILE TIME ASSERT: */ \
+	|| (hxlog_handler_(hxlog_level_assert, __VA_ARGS__), hxassert_handler(__FILE__, __LINE__))    \
 	|| hxbreakpoint())
 
 #else // HX_HARDENING_MODE != HX_HARDENING_MODE_DEBUG
-#define hxassertmsg(x_, ...) ((void)0)
+#define hxassertf(x_, ...) ((void)0)
 #define hxassert(x_) ((void)0)
 #define hxassert_always(x_, ...) (void)((bool)(x_) \
 	|| (hxassert_handler(), 0)) // THIS IS USED AS A COMPILE TIME ASSERT.
@@ -153,18 +153,18 @@
 /// - `...` Variadic arguments for the formatted warning message.
 #define hxlog_warning(...) hxlog_handler(hxlog_level_warning, __VA_ARGS__)
 
-/// `hxwarn_msg(bool x, ...)` - Enters formatted warnings in the system log when
+/// `hxwarn(bool x, ...)` - Enters formatted warnings in the system log when
 /// `x` is false.
 /// - `x` : The condition to evaluate.
 /// - `...` Variadic arguments for the formatted warning message.
-#define hxwarn_msg(x_, ...) (void)((bool)(x_) \
+#define hxwarn(x_, ...) (void)((bool)(x_) \
 	|| (hxlog_handler(hxlog_level_warning, __VA_ARGS__), 0))
 
 #else // !HX_USE_LOGGING
 #define hxlog_release(...) ((void)0)
 #define hxlog_console(...) ((void)0)
 #define hxlog_warning(...) ((void)0)
-#define hxwarn_msg(x_, ...) ((void)0)
+#define hxwarn(x_, ...) ((void)0)
 #endif // !HX_USE_LOGGING
 
 // hxassert_hard has 4 variations. See above. It is only evaluated when
@@ -228,9 +228,9 @@ void hxshutdown(void) hxattr_cold;
 
 #if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
 /// `hxassert_handler` - Assert handler. Do not call directly, signature changes
-/// and then is removed.
-/// WARNING: Compile errors from consteval code calling this function are
-/// intentional and are how you know a compile time assert has been hit.
+/// and then is removed. Returning true indicates an assert was successfully
+/// handled. WARNING: Compile errors from consteval code calling this function
+/// are intentional and are how you know a compile time assert has been hit.
 hxattr_noexcept hxattr_nonnull(1) hxattr_cold
 bool hxassert_handler(const char* file_, size_t line_);
 #else // HX_HARDENING_MODE != HX_HARDENING_MODE_DEBUG
@@ -243,9 +243,11 @@ void hxassert_handler(void) hxattr_noexcept hxattr_cold;
 
 /// `hxset_assert_handler` - Installs a custom handler called when an assertion
 /// fails. Pass `hxnull` to disable. If it returns true the assert will not exit
-/// or trigger a breakpoint.
-/// - `handler` : Function pointer of type `bool (*)(void)`, or `hxnull`.
-void hxset_assert_handler(bool (*handler_)(void)) hxattr_noexcept;
+/// or trigger a breakpoint. `file` and `line` are `hxnull` and `0` when not
+/// built with `HX_HARDENING_MODE_DEBUG`.
+/// - `handler` : Function pointer of type `bool (*)(const char*, size_t)`, or
+///   `hxnull`.
+void hxset_assert_handler(bool (*handler_)(const char* file_, size_t line_)) hxattr_noexcept;
 
 /// `hxlog_handler` - Enters formatted messages in the system log.
 /// - `level` : The log level (e.g., `hxlog_level_log`, `hxlog_level_warning`).

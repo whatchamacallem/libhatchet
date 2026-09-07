@@ -9,7 +9,7 @@
 /// `T::operator==(const T&)` are used. The other relational operators are
 /// not used.
 ///
-/// See `hxset_operations.hpp` for iterator based set algorithms. See `hxsort.hpp` for
+/// See `hxset_algorithms.hpp` for iterator based set algorithms. See `hxsort.hpp` for
 /// sorting algorithms including `hxinsertion_sort`, `hxheapsort` and `hxsort`.
 ///
 /// All the `hxrestrict_t` sprinkled around has measurable benefits in certain
@@ -97,7 +97,7 @@ public:
 	/// - `array` : The array to wrap.
 	template<typename T_, size_t N_>
 	hxinline hxconstexpr hxrange(T_ (&array_)[N_])
-		: m_begin_(array_ + 0), m_end_(array_ + N_) { }
+		: m_begin_(+array_), m_end_(array_ + N_) { }
 
 	/// Constructs from the iterator pair `[begin, end)`.
 	/// - `begin` : Iterator to the first element.
@@ -142,7 +142,7 @@ hxrange<iterator_t_> hxmake_range(iterator_t_ begin_, iterator_t_ end_) {
 
 template<typename T_, size_t N_>
 hxattr_nodiscard hxinline hxconstexpr hxattr_flatten
-hxrange<T_*> hxmake_range(T_(&array_)[N_]) { return hxrange<T_*>(array_ + 0, array_ + N_); }
+hxrange<T_*> hxmake_range(T_(&array_)[N_]) { return hxrange<T_*>(+array_, array_ + N_); }
 
 /// `hxall_of` - Returns true if the predicate `callable` returns true for every
 /// element of `range`. Returns true for an empty range. Requires a

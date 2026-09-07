@@ -9,10 +9,10 @@
 /// `T::operator==(const T&)` are used. The other relational operators are not
 /// used.
 ///
-/// See `hxalgorithm.hpp` for range algorithms. See `hxsort.hpp` for sorting
+/// See `hxrange.hpp` for range algorithms. See `hxsort.hpp` for sorting
 /// algorithms including `hxinsertion_sort`, `hxheapsort` and `hxsort`.
 
-#include "hxalgorithm.hpp"
+#include "hxrange.hpp"
 
 // HX_USE_MACROS_WITH_MODULE allows including macros alongside the module.
 #if HX_USE_MACROS_WITH_MODULE
@@ -25,11 +25,11 @@ HX_NS_BEGIN_
 /// `range1` -> `output`. The input ranges must not overlap each other or the
 /// destination array. Elements are copy-assigned out of an input range passed
 /// as an l-value and move-assigned out of an input range passed as an
-/// r-value. Passing a hxvector as an output iterator like this `hxmerge<const int*,
-/// hxvector<int>&>(...)` will append to the array. Assumes both `range0` and
-/// `range1` are ordered by the `less` callable. Returns an output iterator
-/// positioned one past the last element written. Requires a
-/// `random-iterator`.
+/// r-value. Passing a hxvector as an output iterator like this
+/// `hxmerge<const int*, hxvector<int>&>(...)` will append to the array.
+/// Assumes both `range0` and `range1` are ordered by the `less` callable.
+/// Returns an output iterator positioned one past the last element written.
+/// Requires a `random-iterator`.
 template<hxrandom_range_concept_ range0_t_, hxrandom_range_concept_ range1_t_,
 		typename output_iterator_t_, typename less_t_>
 inline hxconstexpr hxattr_flatten

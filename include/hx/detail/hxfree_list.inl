@@ -31,7 +31,7 @@ hxinline hxattr_flatten hxfree_list<T_, capacity_>::hxfree_list(hxfree_list&& x_
 
 template<hxfree_list_concept_ T_, hxsize_t capacity_>
 hxinline hxattr_flatten hxfree_list<T_, capacity_>::~hxfree_list(void) noexcept {
-	hxassertmsg(m_size_ == this->capacity(), "hxfree_list destroyed with unreleased slots %zd cap %zd", m_size_, this->capacity());
+	hxassertf(m_size_ == this->capacity(), "hxfree_list destroyed with unreleased slots %zd cap %zd", m_size_, this->capacity());
 }
 
 template<hxfree_list_concept_ T_, hxsize_t capacity_>
@@ -68,7 +68,7 @@ hxinline hxattr_flatten bool
 
 template<hxfree_list_concept_ T_, hxsize_t capacity_>
 hxinline hxattr_flatten void hxfree_list<T_, capacity_>::release(T_* ptr_) noexcept {
-	hxassertmsg(this->is_allocator(ptr_), "bad_ptr %zx",
+	hxassertf(this->is_allocator(ptr_), "bad_ptr %zx",
 		static_cast<size_t>(reinterpret_cast<uintptr_t>(ptr_)));
 	ptr_->T_::~T_();
 	slot_* const s_ = reinterpret_cast<slot_*>(ptr_);

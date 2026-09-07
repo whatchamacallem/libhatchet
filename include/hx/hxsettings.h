@@ -4,9 +4,9 @@
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
 /// \file
-/// Compiler detection and target specific C++ feature polyfill. Use `#if
-/// HX_...` instead of `#ifdef HX_...` for all `HX_`* macros. `HX_USE_NAMESPACE`
-/// can be used to wrap the library in a namespace.
+/// Compiler detection and target specific C++ feature polyfill. Use
+/// `#if HX_...` instead of `#ifdef HX_...` for all `HX_`* macros. Except
+/// `HX_USE_NAMESPACE` which can be used to wrap the library in a namespace.
 
 #if !LIBHATCHET_VER
 #error #include <hx/libhatchet.h> instead.
@@ -475,6 +475,14 @@ struct hxsettings_t {
 	/// `deallocate_permanent` - Allows deallocation of permanent resources at
 	/// system shut down.
 	bool deallocate_permanent;
+
+	/// `test_break_on_failure` - Triggers a breakpoint when an hxassert,
+	/// `ASSERT_*` or `EXPECT_*` condition fails in a debug build.
+	bool test_break_on_failure;
+
+	/// `test_filter` - Used by `hxtest` to support simple Google Test style
+	/// filtering.
+	const char* test_filter;
 };
 
 /// `hxg_settings` - Global class constructed by `hxinit`.

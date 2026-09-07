@@ -124,7 +124,7 @@ hxinline hxattr_flatten hxsize_t hxhandle_table<T_, deleter_t_, table_size_bits_
 template<hxhandle_table_concept_ T_, typename deleter_t_, uint32_t table_size_bits_>
 hxinline hxattr_flatten hxptr<T_, deleter_t_>
 hxhandle_table<T_, deleter_t_, table_size_bits_>::extract(hxhandle_t handle_) noexcept {
-	hxassertmsg(m_table_.capacity() != 0, "no_table");
+	hxassertf(m_table_.capacity() != 0, "no_table");
 	const uint32_t mask_ = m_table_.get_mask_();
 	slot_t_* const slot_ = m_table_.data() + (static_cast<uint32_t>(handle_) & mask_);
 	if(slot_->m_key_ != handle_) {
@@ -145,7 +145,7 @@ hxhandle_table<T_, deleter_t_, table_size_bits_>::extract(hxhandle_t handle_) no
 template<hxhandle_table_concept_ T_, typename deleter_t_, uint32_t table_size_bits_>
 hxinline hxattr_flatten hxhandle_t
 hxhandle_table<T_, deleter_t_, table_size_bits_>::insert(T_* ptr_) noexcept {
-	hxassertmsg(m_table_.capacity() != 0, "no_table");
+	hxassertf(m_table_.capacity() != 0, "no_table");
 	hxassert_hard(m_free_head_ != m_table_.data(), "table_full");
 	if(ptr_ == hxnull) {
 		return hxnull_handle;
@@ -182,7 +182,7 @@ template<hxhandle_table_concept_ T_, typename deleter_t_, uint32_t table_size_bi
 template<typename deleter_u_>
 hxinline hxattr_flatten bool hxhandle_table<T_, deleter_t_, table_size_bits_>::reset(
 		hxhandle_t handle_, deleter_u_&& deleter_) noexcept {
-	hxassertmsg(m_table_.capacity() != 0, "no_table");
+	hxassertf(m_table_.capacity() != 0, "no_table");
 	const uint32_t mask_ = m_table_.get_mask_();
 	slot_t_* const slot_ = m_table_.data() + (static_cast<uint32_t>(handle_) & mask_);
 	if(slot_->m_key_ != handle_) {
@@ -210,7 +210,7 @@ hxhandle_table<T_, deleter_t_, table_size_bits_>::set_size_bits(uint32_t bits_) 
 template<hxhandle_table_concept_ T_, typename deleter_t_, uint32_t table_size_bits_>
 hxinline hxattr_flatten const T_*
 hxhandle_table<T_, deleter_t_, table_size_bits_>::value(hxhandle_t handle_) const noexcept {
-	hxassertmsg(m_table_.capacity() != 0, "no_table");
+	hxassertf(m_table_.capacity() != 0, "no_table");
 	const slot_t_* const slot_ = m_table_.data()
 		+ (static_cast<uint32_t>(handle_) & m_table_.get_mask_());
 	return (slot_->m_key_ == handle_) ? slot_->m_ptr_ : hxnull;
@@ -219,7 +219,7 @@ hxhandle_table<T_, deleter_t_, table_size_bits_>::value(hxhandle_t handle_) cons
 template<hxhandle_table_concept_ T_, typename deleter_t_, uint32_t table_size_bits_>
 hxinline hxattr_flatten T_* hxhandle_table<T_, deleter_t_, table_size_bits_>::value(
 		hxhandle_t handle_) noexcept {
-	hxassertmsg(m_table_.capacity() != 0, "no_table");
+	hxassertf(m_table_.capacity() != 0, "no_table");
 	const slot_t_* const slot_ = m_table_.data()
 		+ (static_cast<uint32_t>(handle_) & m_table_.get_mask_());
 	return (slot_->m_key_ == handle_) ? slot_->m_ptr_ : hxnull;

@@ -75,7 +75,7 @@ hxinline hxattr_flatten auto hxflat_set<key_t_, compare_t_, multi_t_, capacity_>
 template<hxflat_set_concept_ key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
 hxinline hxattr_flatten void hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::operator=(
 		const hxflat_set& x_) noexcept {
-	hxassertmsg(static_cast<const void*>(this) != static_cast<const void*>(&x_), "bad_ref");
+	hxassertf(static_cast<const void*>(this) != static_cast<const void*>(&x_), "bad_ref");
 	this->clear();
 	const key_t_* hxrestrict src_ = x_.data();
 	const key_t_* const src_end_ = x_.m_end_;
@@ -92,7 +92,7 @@ template<hxflat_set_concept_ key_t_, typename compare_t_, bool multi_t_, hxsize_
 template<hxsize_t capacity_x_>
 hxinline hxattr_flatten void hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::operator=(
 		const hxflat_set<key_t_, compare_t_, multi_t_, capacity_x_>& x_) noexcept {
-	hxassertmsg(static_cast<const void*>(this) != static_cast<const void*>(&x_), "bad_ref");
+	hxassertf(static_cast<const void*>(this) != static_cast<const void*>(&x_), "bad_ref");
 	this->clear();
 	const key_t_* hxrestrict src_ = x_.data();
 	const key_t_* const src_end_ = x_.m_end_;
@@ -108,7 +108,7 @@ hxinline hxattr_flatten void hxflat_set<key_t_, compare_t_, multi_t_, capacity_>
 template<hxflat_set_concept_ key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
 hxinline hxattr_flatten void hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::operator=(
 		hxflat_set&& x_) noexcept {
-	hxassertmsg(static_cast<const void*>(this) != static_cast<const void*>(&x_), "bad_ref");
+	hxassertf(static_cast<const void*>(this) != static_cast<const void*>(&x_), "bad_ref");
 	this->swap(x_);
 }
 
@@ -218,7 +218,7 @@ hxattr_flatten hxsize_t hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::era
 
 template<hxflat_set_concept_ key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
 hxinline hxattr_flatten auto hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::erase(const key_t_* it_) noexcept -> const key_t_* {
-	hxassertmsg(it_ != hxnull && static_cast<size_t>(it_ - this->data()) < static_cast<size_t>(m_end_ - this->data()),
+	hxassertf(it_ != hxnull && static_cast<size_t>(it_ - this->data()) < static_cast<size_t>(m_end_ - this->data()),
 		"bad_iter");
 	key_t_* const k_ = const_cast<key_t_*>(it_);
 	key_t_* const end_ = m_end_ - 1;

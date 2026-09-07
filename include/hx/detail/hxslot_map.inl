@@ -106,7 +106,7 @@ template<hxslot_map_concept_ T_, uint32_t table_size_bits_>
 template<typename callable_t_>
 inline hxattr_flatten hxsize_t hxslot_map<T_, table_size_bits_>::erase_if(
 		callable_t_&& callable_) noexcept {
-	hxassertmsg(m_slots_.capacity() != 0, "no_table");
+	hxassertf(m_slots_.capacity() != 0, "no_table");
 	const uint32_t mask_ = m_mask_.get_mask_();
 	slot_t_* const hxrestrict slots_ = m_slots_.data();
 	T_* const hxrestrict values_ = m_values_.data();
@@ -141,7 +141,7 @@ hxinline hxattr_flatten bool hxslot_map<T_, table_size_bits_>::full(void) const 
 template<hxslot_map_concept_ T_, uint32_t table_size_bits_>
 hxinline hxattr_flatten hxhandle_t
 hxslot_map<T_, table_size_bits_>::handle_at(hxsize_t index_) const noexcept {
-	hxassertmsg(static_cast<size_t>(index_) < static_cast<size_t>(m_size_), "bad_index %zd", index_);
+	hxassertf(static_cast<size_t>(index_) < static_cast<size_t>(m_size_), "bad_index %zd", index_);
 	const slot_t_* const slots_ = m_slots_.data();
 	return slots_[slots_[static_cast<uint32_t>(index_)].m_backref_].m_handle_;
 }
@@ -169,7 +169,7 @@ hxinline hxattr_flatten auto hxslot_map<T_, table_size_bits_>::or_else(
 
 template<hxslot_map_concept_ T_, uint32_t table_size_bits_>
 inline hxattr_flatten bool hxslot_map<T_, table_size_bits_>::reset(hxhandle_t handle_) noexcept {
-	hxassertmsg(m_slots_.capacity() != 0, "no_table");
+	hxassertf(m_slots_.capacity() != 0, "no_table");
 	const uint32_t mask_ = m_mask_.get_mask_();
 	const uint32_t index_ = static_cast<uint32_t>(handle_) & mask_;
 	slot_t_* const hxrestrict slots_ = m_slots_.data();
@@ -198,7 +198,7 @@ template<hxslot_map_concept_ T_, uint32_t table_size_bits_>
 inline hxattr_flatten void hxslot_map<T_, table_size_bits_>::set_size_bits(uint32_t bits_) {
 	static_assert(table_size_bits_ == hxallocator_dynamic_capacity,
 		"set_size_bits requires dynamic capacity");
-	hxassertmsg(bits_ - 1u < 30u, "bad_bits %u", bits_); // bits_ must be > 0.
+	hxassertf(bits_ - 1u < 30u, "bad_bits %u", bits_); // bits_ must be > 0.
 	const hxsize_t capacity_ = static_cast<hxsize_t>(1) << bits_;
 	m_mask_.set_mask_(static_cast<uint32_t>(capacity_) - 1u);
 	m_slots_.reserve_storage(capacity_);
@@ -209,14 +209,14 @@ inline hxattr_flatten void hxslot_map<T_, table_size_bits_>::set_size_bits(uint3
 template<hxslot_map_concept_ T_, uint32_t table_size_bits_>
 hxinline hxattr_flatten const T_*
 hxslot_map<T_, table_size_bits_>::value(hxhandle_t handle_) const noexcept {
-	hxassertmsg(m_slots_.capacity() != 0, "no_table");
+	hxassertf(m_slots_.capacity() != 0, "no_table");
 	const slot_t_* const slot_ = m_slots_.data() + (static_cast<uint32_t>(handle_) & m_mask_.get_mask_());
 	return slot_->m_handle_ == handle_ ? m_values_.data() + slot_->m_index_ : this->end();
 }
 
 template<hxslot_map_concept_ T_, uint32_t table_size_bits_>
 hxinline hxattr_flatten T_* hxslot_map<T_, table_size_bits_>::value(hxhandle_t handle_) noexcept {
-	hxassertmsg(m_slots_.capacity() != 0, "no_table");
+	hxassertf(m_slots_.capacity() != 0, "no_table");
 	const slot_t_* const slot_ = m_slots_.data() + (static_cast<uint32_t>(handle_) & m_mask_.get_mask_());
 	return slot_->m_handle_ == handle_ ? m_values_.data() + slot_->m_index_ : this->end();
 }

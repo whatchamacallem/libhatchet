@@ -16,7 +16,7 @@
 #endif
 
 #include "hxallocator.hpp"
-#include "hxalgorithm.hpp"
+#include "hxrange.hpp"
 #include "hxinitializer_list.hpp"
 #include "hxsort.hpp"
 
@@ -63,7 +63,7 @@ private:
 /// Uses raw pointers as an iterator type so that you get compile errors and
 /// debug symbols that use plain C++ pointers instead. There are exhaustive
 /// asserts. `hxvector` uses the `hxkey_less_t` and `hxkey_equal_t` callables.
-/// They default to using operators `<` and `==`. See `hxalgorithm.hpp` for
+/// They default to using operators `<` and `==`. See `hxrange.hpp` for
 /// callable versions of the algorithms here.
 ///
 /// `hxvector` can be constructed from C string literals as follows:
@@ -140,7 +140,7 @@ public:
 	/// Constructs by copying elements from a range referenced by an lvalue.
 	/// - `range` : A range of at most `capacity` elements.
 	template<hxrange_concept_ range_t_>
-	requires(!hxis_same<hxremove_cvref_t<range_t_>, hxvector>())
+	requires(!hxis_same<hxremove_cvref_t<range_t_>, hxvector<T_, capacity_> >())
 	explicit hxvector(range_t_& range_) noexcept;
 
 	/// Constructs by moving elements from a temporary range. This overload
@@ -149,7 +149,7 @@ public:
 	/// - `range` : A temporary range of at most `capacity` elements.
 	template<hxrange_concept_ range_t_>
 	requires(!hxis_lvalue_reference<range_t_>()
-			&& !hxis_same<hxremove_cvref_t<range_t_>, hxvector>())
+			&& !hxis_same<hxremove_cvref_t<range_t_>, hxvector<T_, capacity_> >())
 	explicit hxvector(range_t_&& range_) noexcept;
 #endif
 
@@ -244,7 +244,7 @@ public:
 	/// Allows an array to be passed as a reference and then used as an output
 	/// iterator similar to `std::back_insert_iterator`. This operator doesn't
 	/// do anything but allow the container to be used with pointer sematics.
-	/// See `hxalgorithm.hpp` for usage.
+	/// See `hxrange.hpp` for usage.
 	hxvector& operator++(void) { return *this; }
 
 	/// Postfix version.

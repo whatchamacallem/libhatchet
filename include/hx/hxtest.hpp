@@ -88,6 +88,7 @@
 
 #if !(HX_USE_MACROS_WITH_MODULE)
 
+#include "hxvector.hpp"
 #include "detail/hxtest_detail.hpp"
 
 /// `testing` - A partial Google Test reimplementation. Use
@@ -143,10 +144,9 @@ public:
 		HX_TEST_NAME_(hxtest_f_, suite_fixture_, case_name_)::hxrun_, #suite_fixture_, #case_name_, __FILE__, __LINE__); \
 	void HX_TEST_NAME_(hxtest_f_, suite_fixture_, case_name_)::hxrun_test_f_(void)
 
-/// `int RUN_ALL_TESTS(...)` - Executes all registered test cases.
-/// - `...` : Optional const char* matching a specific test suite to run.
-///   (Non-standard.)
-#define RUN_ALL_TESTS(...) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().run_all_tests_(__VA_ARGS__)
+/// `int RUN_ALL_TESTS(void)` - Executes all registered test cases. See
+/// `hxg_settings.test_filter` for restricting which tests run.
+#define RUN_ALL_TESTS() HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().run_all_tests_()
 
 /// `void SUCCEED(void)` - Marks the current test as successful without any
 /// checks.
