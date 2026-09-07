@@ -1,0 +1,28 @@
+var classhxptr =
+[
+    [ "element_t", "classhxptr.html#a8a275af17043769937a1b90f218bc3b4", null ],
+    [ "hxptr", "classhxptr.html#a12134a26a8fed835238b4861c8d6a895", null ],
+    [ "hxptr", "classhxptr.html#a92499e4a70d773ef2189d49118195aa2", null ],
+    [ "hxptr", "classhxptr.html#a72f8d8df0623a0bd558fda760c92a83e", null ],
+    [ "~hxptr", "classhxptr.html#a2e8660db5f94592874ab0d059bf81640", null ],
+    [ "and_then", "classhxptr.html#a4c23c14b73efa01e3ee443c76e269899", null ],
+    [ "deleter", "classhxptr.html#a9e65cd8623a1736dc876bb242269795c", null ],
+    [ "deleter", "classhxptr.html#a65aa1ecc9633bf57b7e5b2146881a823", null ],
+    [ "emplace", "classhxptr.html#a8d6de642c5a235f75703adae99eae1d8", null ],
+    [ "equal", "classhxptr.html#aa90e8bc041f375936dfd2c341bea2fd6", null ],
+    [ "get", "classhxptr.html#a1b95990c9446ef449e94c41292b60ee2", null ],
+    [ "has_value", "classhxptr.html#a1e3d044405acccb93b38a095f93bfd82", null ],
+    [ "hash", "classhxptr.html#aec3ed2f57a65388a5f1e7146fa130d04", null ],
+    [ "operator bool", "classhxptr.html#a1e6433e11c36b4800cc1dcb8cd627815", null ],
+    [ "operator*", "classhxptr.html#a2119b79c550f16417ea83116bcdfb46f", null ],
+    [ "operator->", "classhxptr.html#ad502616527c0a9ab0066def670dff72c", null ],
+    [ "operator=", "classhxptr.html#adb1c8c9a709aaeeb59a21bb53b844eab", null ],
+    [ "operator==", "classhxptr.html#a7f5cfdd57a86bad49c77090736463257", null ],
+    [ "operator==", "classhxptr.html#ae3c3e5f174b5c8c0e35418642bb78dae", null ],
+    [ "or_else", "classhxptr.html#a26081d8c01ef22652c19c2944c45f703", null ],
+    [ "release", "classhxptr.html#a5128f9e7ff068e8f4105b73c8051ee8f", null ],
+    [ "reset", "classhxptr.html#a5dff1a17165acb3a50ffb9d6cf1390b5", null ],
+    [ "swap", "classhxptr.html#a762697635c4b2db3dbcb5e3f67e60591", null ],
+    [ "value", "classhxptr.html#a990a275b473299607f83038a308cf856", null ],
+    [ "value_or", "classhxptr.html#a03fee4fcbbd3348b6a26785b821cab24", null ]
+];

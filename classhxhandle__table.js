@@ -1,0 +1,28 @@
+var classhxhandle__table =
+[
+    [ "value_t", "classhxhandle__table.html#a8386273bfec132a757241601319eb34c", null ],
+    [ "hxhandle_table", "classhxhandle__table.html#a7856f8b301fbddd27b903c179bd432e9", null ],
+    [ "~hxhandle_table", "classhxhandle__table.html#ae4b6b2d662bef0e1e083138367ad502e", null ],
+    [ "and_then", "classhxhandle__table.html#a52066d4a9c22d35b9c624c147abcf961", null ],
+    [ "capacity", "classhxhandle__table.html#a2144ef6269a1d5b681ec5bf404393f44", null ],
+    [ "clear", "classhxhandle__table.html#a9395476532c7687617ba9e837fba1240", null ],
+    [ "clear", "classhxhandle__table.html#ade4553efc383ddcd21a47df51fd0767c", null ],
+    [ "deleter", "classhxhandle__table.html#a2b549416704d04b44b6be8ead6b63963", null ],
+    [ "deleter", "classhxhandle__table.html#a6a33066af39cf5e9394451d5fd070647", null ],
+    [ "empty", "classhxhandle__table.html#a653af92685319a7fd33e73414d803b98", null ],
+    [ "erase_if", "classhxhandle__table.html#ab7c10de38088912cfcfed9d0dbe09085", null ],
+    [ "extract", "classhxhandle__table.html#a5f0baf71da5a6eb14f6be00bf02c57eb", null ],
+    [ "full", "classhxhandle__table.html#a5787a5201979c5a35295062fd7ff9977", null ],
+    [ "insert", "classhxhandle__table.html#a2cd8a1093201a2cddfa38cc23c8fb3d9", null ],
+    [ "insert", "classhxhandle__table.html#a37a29a8d54f4e3b35c488fd3a594cd8b", null ],
+    [ "max_size", "classhxhandle__table.html#a174130e746a83f6113d75c0f814d6660", null ],
+    [ "or_else", "classhxhandle__table.html#a650dab2a3287410540848838a1dd9e9b", null ],
+    [ "release_all", "classhxhandle__table.html#ac89bc302e3047eacc55d4f32d59daa70", null ],
+    [ "reset", "classhxhandle__table.html#abbe494ebe005cb38530b80ff65b9a773", null ],
+    [ "reset", "classhxhandle__table.html#aba9e1bb06ce11965db9424ac0f40c1e8", null ],
+    [ "set_size_bits", "classhxhandle__table.html#a727bcd8d509e3ca7f5f5d5fb26554455", null ],
+    [ "size", "classhxhandle__table.html#ac87b6e2ae9bda34303673c84617ab6a3", null ],
+    [ "value", "classhxhandle__table.html#a070e5e077da7a53b5c812008c6373f1a", null ],
+    [ "value", "classhxhandle__table.html#afff05fea35f85ae9230d42b03970b84b", null ],
+    [ "value_or", "classhxhandle__table.html#a49ef6605f80d6d442ef4e7e9e0708c46", null ]
+];

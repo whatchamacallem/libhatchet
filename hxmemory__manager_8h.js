@@ -1,0 +1,28 @@
+var hxmemory__manager_8h =
+[
+    [ "hxsystem_allocator_scope", "classhxsystem__allocator__scope.html", "classhxsystem__allocator__scope" ],
+    [ "hxdefault_delete", "classhxdefault__delete.html", "classhxdefault__delete" ],
+    [ "hxdo_not_delete", "classhxdo__not__delete.html", "classhxdo__not__delete" ],
+    [ "hxconsteval_delete", "classhxconsteval__delete.html", "classhxconsteval__delete" ],
+    [ "hxmemory_manager_stats", "classhxmemory__manager__stats.html", "classhxmemory__manager__stats" ],
+    [ "hxsystem_allocator_t", "hxmemory__manager_8h.html#a1fc854df8cad79a0f563908373b7e865", null ],
+    [ "hxattr_allocator", "hxmemory__manager_8h.html#aef21280baa7f6a02b1f28d31c9d4b98b", null ],
+    [ "hxdelete", "hxmemory__manager_8h.html#a6de5291cb1995e3122eda8f1288c05d1", null ],
+    [ "hxfree", "hxmemory__manager_8h.html#a44b034a94fa16428a21ddd0916d27d5e", null ],
+    [ "hxmalloc", "hxmemory__manager_8h.html#a43aad1fc90c9a781d8b4fd2376d07074", null ],
+    [ "hxmemory_manager_allocate_stacks", "hxmemory__manager_8h.html#ab10acbf236c539ef8828846d0a22e277", null ],
+    [ "hxmemory_manager_allocate_stacks", "hxmemory__manager_8h.html#ad1cf67538191504c3d9ba0526b405397", null ],
+    [ "hxmemory_manager_utilization", "hxmemory__manager_8h.html#afffeffce00cd62aebae1a029e47070d1", null ],
+    [ "hxnew", "hxmemory__manager_8h.html#a7b6ba46fea06faf7acf9254b68ea85d8", null ],
+    [ "hxstring_duplicate", "hxmemory__manager_8h.html#a315ddd8241d237bab644197a55e98fe5", null ],
+    [ "operator delete", "hxmemory__manager_8h.html#ae1e349704d27da28211b8ba6bdd85183", null ],
+    [ "operator delete[]", "hxmemory__manager_8h.html#aa6a455c56dd96eac71e0c16e43717192", null ],
+    [ "operator new", "hxmemory__manager_8h.html#a6e569af0a0493c18f909b3c7541147c1", null ],
+    [ "operator new", "hxmemory__manager_8h.html#ae326e0f614374957bbde2021aacd4f44", null ],
+    [ "operator new[]", "hxmemory__manager_8h.html#a150e6d950f750134eec1055d94df8454", null ],
+    [ "operator new[]", "hxmemory__manager_8h.html#ad712644e5584b096a788ab60f631ac93", null ],
+    [ "alignment_", "hxmemory__manager_8h.html#aa46ab1cf3f6f9bd0cd738a527e53bcda", null ],
+    [ "allocator_", "hxmemory__manager_8h.html#a70aa8a040c64da06fe06dddfaa6818d9", null ],
+    [ "hxalignment", "hxmemory__manager_8h.html#ae5a99d9f54fea35ce19fabcca0801f5f", null ],
+    [ "hxalignment_t", "hxmemory__manager_8h.html#a10b77d0d8417a801041d31183e6fe478", null ]
+];
