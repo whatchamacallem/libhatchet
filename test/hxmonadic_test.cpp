@@ -242,29 +242,29 @@ TEST_F(hxmonadic_test_f, hxslot_map_value_or) {
 }
 
 TEST_F(hxmonadic_test_f, hxptr_and_then) {
-	const hxptr<hxtest_object> p = hxmake_ptr<hxtest_object>(hxtest_object(31));
+	const hxptr<hxtest_object> p = hxemplace_ptr<hxtest_object>(15, 16);
 	EXPECT_TRUE((bool)p.and_then(hxmake_expected<hxtest_object>));
 	EXPECT_EQ(p.and_then(hxmake_expected<hxtest_object>), hxtest_object(31));
 	EXPECT_EQ(*p.and_then(hxmake_expected<hxtest_object>), 31);
 	EXPECT_EQ(*p.and_then(hxmake_ref<hxtest_object>), 31);
 	EXPECT_EQ(*p.and_then(hxmake_ptr<hxtest_object>), 31);
-	EXPECT_TRUE(check_stats(7, 6, 0, 2, 5, 0, 0, 0, 1, 0));
+	EXPECT_TRUE(check_stats(6, 5, 0, 2, 4, 0, 0, 0, 1, 0));
 }
 
 TEST_F(hxmonadic_test_f, hxptr_or_else) {
-	hxptr<hxtest_object> p = hxmake_ptr<hxtest_object>(hxtest_object(31));
+	hxptr<hxtest_object> p = hxemplace_ptr<hxtest_object>(15, 16);
 	hxptr<hxtest_object> empty;
-	EXPECT_EQ(*hxmove(p).or_else([]{ return hxmake_ptr<hxtest_object>(hxtest_object(32)); }), 31);
-	EXPECT_EQ(*hxmove(empty).or_else([]{ return hxmake_ptr<hxtest_object>(hxtest_object(32)); }), 32);
-	EXPECT_TRUE(check_stats(4, 4, 0, 2, 2, 0, 0, 0, 0, 0));
+	EXPECT_EQ(*hxmove(p).or_else([]{ return hxemplace_ptr<hxtest_object>(14, 18); }), 31);
+	EXPECT_EQ(*hxmove(empty).or_else([]{ return hxemplace_ptr<hxtest_object>(14, 18); }), 32);
+	EXPECT_TRUE(check_stats(2, 2, 0, 2, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxmonadic_test_f, hxptr_value_or) {
-	const hxptr<hxtest_object> p = hxmake_ptr<hxtest_object>(hxtest_object(31));
+	const hxptr<hxtest_object> p = hxemplace_ptr<hxtest_object>(15, 16);
 	const hxptr<hxtest_object> empty;
 	EXPECT_EQ(p.value_or(hxtest_object(32)), 31);
 	EXPECT_EQ(empty.value_or(hxtest_object(32)), 32);
-	EXPECT_TRUE(check_stats(6, 5, 0, 3, 2, 1, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(5, 4, 0, 3, 1, 1, 0, 0, 0, 0));
 }
 
 #endif // HX_CPLUSPLUS >= 202302L

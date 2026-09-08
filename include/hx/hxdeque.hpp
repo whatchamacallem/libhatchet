@@ -178,18 +178,11 @@ public:
 
 	iterator begin(void) { return iterator(this, 0); }
 
-	/// Appends elements from a range referenced by an lvalue, copying each
-	/// element with `push_back`.
-	/// - `range` : The range to copy elements from.
-	template<hxrange_concept_ range_t_>
-	void add_range(range_t_& range_) noexcept;
-
 	/// Appends elements from a temporary range, moving each element with
 	/// `push_back`. This overload enables moving the range elements into the
 	/// deque when forwarding rvalues.
 	/// - `range` : The range to move elements from.
-	template<hxrange_concept_ range_t_,
-		hxenable_if_t<!hxis_lvalue_reference<range_t_>(), int> = 0>
+	template<hxrange_concept_ range_t_>
 	void add_range(range_t_&& range_) noexcept;
 
 	/// Returns a reference to the back element. The deque must not be empty.

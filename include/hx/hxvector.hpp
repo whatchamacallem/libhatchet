@@ -250,18 +250,11 @@ public:
 	/// Postfix version.
 	hxvector& operator++(int) { return *this; }
 
-	/// Appends elements from a range referenced by an lvalue by copying each
-	/// element with `push_back`.
-	/// - `range` : The range to copy elements from.
-	template<hxrange_concept_ range_t_>
-	void add_range(range_t_& range_) noexcept;
-
 	/// Appends elements from a temporary range by moving each element with
 	/// `push_back`. This overload enables moving the range elements into the
 	/// array when forwarding rvalues.
 	/// - `range` : The range to move elements from.
-	template<hxrange_concept_ range_t_,
-		hxenable_if_t<!hxis_lvalue_reference<range_t_>(), int> = 0>
+	template<hxrange_concept_ range_t_>
 	void add_range(range_t_&& range_) noexcept;
 
 	/// Returns true if the predicate returns true for every element and false

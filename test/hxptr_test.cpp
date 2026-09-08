@@ -168,12 +168,12 @@ TEST_F(hxptr_test_f, and_then) {
 	EXPECT_FALSE((bool)from_null);
 	EXPECT_FALSE(called);
 	hxptr<hxtest_object> rvalue(hxnew<hxtest_object>(5));
-	const hxexpected<int> from_rvalue = hxmove(rvalue).and_then([](hxtest_object& value) {
-		return hxexpected<int>(false, value.value());
+	const hxexpected<hxtest_object> from_rvalue = hxmove(rvalue).and_then([](hxtest_object&& value) {
+		return hxexpected<hxtest_object>(false, hxmove(value));
 	});
 	EXPECT_TRUE((bool)from_rvalue);
-	EXPECT_EQ(from_rvalue, 5);
-	EXPECT_TRUE(check_stats(2, 0, 0, 2, 0, 0, 0, 0, 0, 0));
+	EXPECT_EQ(*from_rvalue, 5);
+	EXPECT_TRUE(check_stats(3, 0, 0, 2, 0, 1, 0, 0, 0, 0));
 }
 #endif // HX_CPLUSPLUS >= 202302L
 

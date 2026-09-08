@@ -143,7 +143,7 @@ hxattr_weak hxattr_noexcept bool hxassert_handler(const char* file, size_t line)
 		return hxg_assert_handler(file, line);
 	}
 	if(hxg_settings.test_break_on_failure) {
-		hxwarn(false, "BREAKPOINT %s(%zu)", file, line);
+		hxlog_handler(hxlog_level_assert, "BREAKPOINT %s(%zu)", file, line);
 		return false;
 	}
 

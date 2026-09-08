@@ -112,11 +112,10 @@ hxattr_cold bool hxconsole_command_::execute_(const char* str) const {
 }
 
 hxattr_cold void hxconsole_command_::usage_(const char* id) const {
-	hxlog_handler(hxlog_level_console, "%s", (id != hxnull) ? id : "usage:");
+	hxlog_console("%s", (id != hxnull) ? id : "usage:");
 	for(const char* const* label = m_labels_; *label != hxnull; ++label) {
-		hxlog_handler(hxlog_level_console, " %s", *label);
+		hxlog_console(" %s", *label);
 	}
-	hxlog_handler(hxlog_level_console, "\n");
 }
 
 } // hxdetail_
@@ -152,7 +151,7 @@ hxattr_cold void hxdetail_::hxconsole_register_(hxconsole_hash_table_node_* node
 	hxconsole_command_table& commands = hxconsole_commands_();
 	hxassertf(node->hash_key().str_, "bad_arg");
 	if(commands.replace(node)) {
-		hxlog_handler(hxlog_level_warning, "command_reregistered %s\n", node->hash_key().str_);
+		hxlog_warning("command_reregistered %s\n", node->hash_key().str_);
 	}
 }
 
@@ -176,7 +175,7 @@ hxattr_cold bool hxconsole_exec_line(const char* command) {
 	const hxconsole_command_table::const_iterator node =
 		hxconsole_commands_().find(hxdetail_::hxconsole_hash_table_key_(pos));
 	if(node == hxconsole_commands_().end()) {
-		hxwarn(0, "unknown_command %s", command);
+		hxlog_warning("unknown_command %s", command);
 		return false;
 	}
 
@@ -195,7 +194,7 @@ hxattr_cold bool hxconsole_exec_line(const char* command) {
 	}
 #ifdef __cpp_exceptions
 	catch (...) {
-		hxwarn(0, "unexpected_exception %s", command);
+		hxlog_warning("unexpected_exception %s", command);
 		return false;
 	}
 #endif
@@ -281,9 +280,9 @@ hxattr_cold bool hxconsole_exec_filename(const char* filename) {
 	hxfile file(hxfile::open_mode_in, "%s", filename);
 	hxwarn(file, "cannot open: %s", filename);
 	if(file) {
-		const bool is_ok = hxconsole_exec_file(file);
-		hxwarn(is_ok, "encountering errors: %s", filename);
-		return is_ok;
+		const bool result = hxconsole_exec_file(file);
+		hxwarn(result, "bad_file errors in: %s", filename);
+		return result;
 	}
 	return false;
 }

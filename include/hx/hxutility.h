@@ -364,28 +364,36 @@ constexpr T_&& hxforward(hxremove_reference_t<T_>& x_) {
 }
 
 /// \cond HIDDEN
-template<typename value_t_>
-value_t_& hxforward_like_result_(value_t_&, hxtrue_t, hxfalse_t);
-template<typename value_t_>
-const value_t_& hxforward_like_result_(value_t_&, hxtrue_t, hxtrue_t);
-template<typename value_t_>
-value_t_&& hxforward_like_result_(value_t_&, hxfalse_t, hxfalse_t);
-template<typename value_t_>
-const value_t_&& hxforward_like_result_(value_t_&, hxfalse_t, hxtrue_t);
+template<typename value_t_> value_t_&        hxforward_like_result_(value_t_&, hxtrue_t,  hxfalse_t);
+template<typename value_t_> const value_t_&  hxforward_like_result_(value_t_&, hxtrue_t,  hxtrue_t);
+template<typename value_t_> value_t_&&       hxforward_like_result_(value_t_&, hxfalse_t, hxfalse_t);
+template<typename value_t_> const value_t_&& hxforward_like_result_(value_t_&, hxfalse_t, hxtrue_t);
 
 template<typename like_t_, typename value_t_>
-using hxforward_like_t_ = decltype(hxforward_like_result_(
-	hxdeclval<value_t_&>(),
-	hxis_lvalue_reference_<like_t_>(),
-	hxis_const_<hxremove_reference_t<like_t_>>()));
+using hxforward_like_t_ = decltype(hxforward_like_result_(hxdeclval<value_t_&>(),
+	hxis_lvalue_reference_<like_t_>(), hxis_const_<hxremove_reference_t<like_t_>>()));
+
+template<typename category_like_t_, typename const_like_t_, typename value_t_>
+using hxforward_like_category_const_t_ = decltype(hxforward_like_result_(hxdeclval<value_t_&>(),
+	hxis_lvalue_reference_<category_like_t_>(), hxis_const_<hxremove_reference_t<const_like_t_>>()));
 /// \endcond
 
 /// `hxforward_like<T>` - Returns `value` with the constness and value category
 /// of `T`. `T` must be explicitly specified.
 /// - `value` : The value to forward.
 template<typename like_t_, typename value_t_>
-hxattr_nodiscard constexpr hxforward_like_t_<like_t_, value_t_> hxforward_like(value_t_& value_) {
+hxattr_nodiscard constexpr hxforward_like_t_<like_t_, value_t_> hxforward_like(value_t_&& value_) {
 	return static_cast<hxforward_like_t_<like_t_, value_t_>>(value_);
+}
+
+/// `hxforward_like<Category, Const>` - Returns `value` with the value category
+/// of `Category` and the constness of `Const`. `Category` and `Const` must be
+/// explicitly specified.
+/// - `value` : The value to forward.
+template<typename category_like_t_, typename const_like_t_, typename value_t_>
+hxattr_nodiscard constexpr hxforward_like_category_const_t_<category_like_t_, const_like_t_, value_t_>
+hxforward_like(value_t_&& value_) {
+	return static_cast<hxforward_like_category_const_t_<category_like_t_, const_like_t_, value_t_>>(value_);
 }
 
 /// `hxmax` - Returns the maximum value of `x` and `y` using a `<` comparison.
@@ -424,7 +432,7 @@ hxconstexpr void hxswap(T_& x_, T_& y_) {
 /// - `y` : Second `T&`.
 template<typename T_>
 void hxswap_memcpy(T_& x_, T_& y_) {
-	char t_[sizeof x_];
+	unsigned char t_[sizeof x_];
 	::memcpy(t_, &y_, sizeof x_); // NOLINT(bugprone-undefined-memory-manipulation)
 	::memcpy(static_cast<void*>(&y_), &x_, sizeof x_); // NOLINT(bugprone-undefined-memory-manipulation)
 	::memcpy(static_cast<void*>(&x_), t_, sizeof x_); // NOLINT(bugprone-undefined-memory-manipulation)
@@ -470,7 +478,7 @@ HX_NS_END_
 /// - `x` : First object.
 /// - `y` : Second object.
 #define hxswap_memcpy(x_,y_) do { \
-	char t_[sizeof(x_) == sizeof(y_) ? (int)sizeof(x_) : -1]; \
+	unsigned char t_[sizeof(x_) == sizeof(y_) ? (int)sizeof(x_) : -1]; \
 	memcpy(t_, &(y_), sizeof(x_)); \
 	memcpy(&(y_), &(x_), sizeof(x_)); \
 	memcpy(&(x_), t_, sizeof(x_)); } while(0)

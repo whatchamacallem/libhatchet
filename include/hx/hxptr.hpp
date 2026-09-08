@@ -94,7 +94,8 @@ public:
 	/// - `callable` : The function to call with the referenced value.
 	template<typename self_t_, typename callable_t_>
 	hxattr_nodiscard hxconstexpr auto and_then(this self_t_&& self_, callable_t_&& callable_)
-		-> hxremove_cvref_t<decltype(hxforward<callable_t_>(callable_)(hxdeclval<T_&>()))>;
+		-> hxremove_cvref_t<decltype(hxforward<callable_t_>(callable_)(
+			hxforward_like<self_t_, T_>(hxdeclval<T_&>())))>;
 #endif // HX_CPLUSPLUS >= 202302L
 
 	/// Returns a const reference to the stored deleter.
@@ -169,17 +170,24 @@ private:
 /// `hxmake_ptr<T, deleter, allocator, align>(value)` - Allocates and
 /// constructs an object of type `T` from `value` and returns it wrapped in an
 /// `hxptr`. Will not return on failure.
-/// - `deleter` : The deleter type invoked on destruction. Defaults to
-///    `hxdefault_delete`.
-/// - `allocator` : The memory manager ID to use for allocation. Defaults to
-///    `hxsystem_allocator_current`.
-/// - `align` : Alignment to use when allocating. Defaults to `hxalignment`.
 /// - `value` : The value used to construct `T`.
 template<typename T_, typename deleter_t_=hxdefault_delete,
 	hxsystem_allocator_t allocator_=hxsystem_allocator_current,
 	hxalignment_t align_=hxalignment, typename U_=T_>
 hxattr_nodiscard hxptr<T_, deleter_t_> hxmake_ptr(const U_& value_) noexcept {
 	return hxptr<T_, deleter_t_>(::new(hxmalloc_ext(sizeof(T_), allocator_, align_)) T_(value_));
+}
+
+/// `hxemplace_ptr<T, deleter, allocator, align>(args...)` - Allocates an
+/// object of type `T` constructed in place from `args` and returns it wrapped
+/// in an `hxptr`.
+/// - `args` : Arguments forwarded to the constructor of `T`.
+template<typename T_, typename deleter_t_=hxdefault_delete,
+	hxsystem_allocator_t allocator_=hxsystem_allocator_current,
+	hxalignment_t align_=hxalignment, typename... args_t_>
+hxattr_nodiscard hxptr<T_, deleter_t_> hxemplace_ptr(args_t_&&... args_) noexcept {
+	return hxptr<T_, deleter_t_>(::new(hxmalloc_ext(sizeof(T_), allocator_, align_))
+		T_(hxforward<args_t_>(args_)...));
 }
 
 /// `hxkey_equal_t<hxptr<T>>` - Compares `x` and `y` for equivalence.

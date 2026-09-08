@@ -210,19 +210,10 @@ hxvector<T_, capacity_>::operator*(void) {
 
 template<hxvector_concept_ T_, hxsize_t capacity_>
 template<hxrange_concept_ range_t_>
-hxinline hxattr_flatten void hxvector<T_, capacity_>::add_range(range_t_& range_) noexcept {
-	hxrestrict_t<decltype(range_.begin())> it_(range_.begin());
-	for(const auto end_ = range_.end(); it_ != end_; ++it_) {
-		this->push_back(*it_);
-	}
-}
-
-template<hxvector_concept_ T_, hxsize_t capacity_>
-template<hxrange_concept_ range_t_, hxenable_if_t<!hxis_lvalue_reference<range_t_>(), int> >
 hxinline hxattr_flatten void hxvector<T_, capacity_>::add_range(range_t_&& range_) noexcept {
 	hxrestrict_t<decltype(range_.begin())> it_(range_.begin());
 	for(const auto end_ = range_.end(); it_ != end_; ++it_) {
-		this->push_back(hxmove(*it_));
+		this->push_back(hxforward_like<range_t_>(*it_));
 	}
 }
 

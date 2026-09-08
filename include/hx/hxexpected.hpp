@@ -217,11 +217,16 @@ private:
 };
 
 /// `hxmake_expected<T>` - Returns an non-null `hxexpected<T>` constructed by
-/// copying `value`.
-/// - `value` : The value to copy into the expected value.
+/// copying `args`.
+/// - `args` : Arguments.
 template<typename T_>
-hxattr_nodiscard hxexpected<T_> hxmake_expected(const T_& value_) {
-	return hxexpected<T_>(false, value_);
+hxattr_nodiscard hxexpected<T_> hxmake_expected(const T_& arg_) {
+	return hxexpected<T_>(false, arg_);
+}
+
+template<typename T_, typename... args_t_>
+hxattr_nodiscard hxexpected<T_> hxemplace_expected(args_t_&&... args_) {
+	return hxexpected<T_>(false, hxforward<args_t_>(args_)...);
 }
 
 /// `hxmake_expected<T, E>` - Returns an non-null `hxexpected<T, E>` constructed

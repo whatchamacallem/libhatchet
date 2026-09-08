@@ -153,18 +153,11 @@ public:
 	template<hxsize_t capacity_x_>
 	hxattr_nodiscard bool operator<(const hxflat_set<key_t_, compare_t_, multi_t_, capacity_x_>& x_) const;
 
-	/// Inserts every key from a range referenced by an lvalue by copying each
-	/// key with `insert`.
-	/// - `range` : The range to copy keys from.
-	template<hxrange_concept_ range_t_>
-	void add_range(range_t_& range_) noexcept;
-
 	/// Inserts every key from a temporary range by moving each key with
 	/// `insert`. This overload enables moving the range keys into the set
 	/// when forwarding rvalues.
 	/// - `range` : The range to move keys from.
-	template<hxrange_concept_ range_t_,
-		hxenable_if_t<!hxis_lvalue_reference<range_t_>(), int> = 0>
+	template<hxrange_concept_ range_t_>
 	void add_range(range_t_&& range_) noexcept;
 
 	/// Returns a const pointer to the first element.

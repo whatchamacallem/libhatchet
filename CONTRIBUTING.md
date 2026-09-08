@@ -36,8 +36,8 @@ If the prompt is only an error message or warning assume it is a request to have
 the error fixed.
 
 Instead of tracing manually, the expected values for a number of `check_stats`
-calls can be found in a single run. These must be monitored for optimal performance and
-any changes root caused.
+calls can be found in a single run. These must be monitored for optimal
+performance and any changes root caused.
 
 Do not add tokens to your context window that are not required for future
 correct operation or to inform the user of actionable information. If an

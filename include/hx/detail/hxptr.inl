@@ -76,9 +76,10 @@ template<typename T_, typename deleter_t_>
 template<typename self_t_, typename callable_t_>
 hxinline hxconstexpr auto hxptr<T_, deleter_t_>::and_then(
 		this self_t_&& self_, callable_t_&& callable_)
-		-> hxremove_cvref_t<decltype(hxforward<callable_t_>(callable_)(hxdeclval<T_&>()))> {
+		-> hxremove_cvref_t<decltype(hxforward<callable_t_>(callable_)(
+			hxforward_like<self_t_, T_>(hxdeclval<T_&>())))> {
 	if(self_.m_ptr_ != hxnull) {
-		return hxforward<callable_t_>(callable_)(*self_.m_ptr_);
+		return hxforward<callable_t_>(callable_)(hxforward_like<self_t_, T_>(*self_.m_ptr_));
 	}
 	return hxnil;
 }
@@ -153,7 +154,7 @@ template<typename self_t_, typename... args_t_>
 hxinline hxconstexpr hxremove_cv_t<T_> hxptr<T_, deleter_t_>::value_or(
 		this self_t_&& self_, args_t_&&... args_) {
 	if(self_.m_ptr_ != hxnull) {
-		return static_cast<hxremove_cv_t<T_>>(*self_.m_ptr_);
+		return static_cast<hxremove_cv_t<T_>>(hxforward_like<self_t_, T_>(*self_.m_ptr_));
 	}
 	return hxremove_cv_t<T_>(hxforward<args_t_>(args_)...);
 }

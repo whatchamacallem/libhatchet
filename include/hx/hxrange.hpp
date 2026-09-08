@@ -152,7 +152,7 @@ hxattr_nodiscard hxinline hxconstexpr hxattr_flatten
 bool hxall_of(range_t_&& range_, callable_t_&& callable_) {
 	hxrestrict_t<decltype(range_.begin())> it_(range_.begin());
 	for(const auto end_ = range_.end(); it_ != end_; ++it_) {
-		if(!hxforward<callable_t_>(callable_)(*it_)) {
+		if(!hxforward<callable_t_>(callable_)(hxforward_like<range_t_>(*it_))) {
 			return false;
 		}
 	}
@@ -167,7 +167,7 @@ hxattr_nodiscard hxinline hxconstexpr hxattr_flatten
 bool hxany_of(range_t_&& range_, callable_t_&& callable_) {
 	hxrestrict_t<decltype(range_.begin())> it_(range_.begin());
 	for(const auto end_ = range_.end(); it_ != end_; ++it_) {
-		if(hxforward<callable_t_>(callable_)(*it_)) {
+		if(hxforward<callable_t_>(callable_)(hxforward_like<range_t_>(*it_))) {
 			return true;
 		}
 	}
@@ -218,7 +218,7 @@ hxsize_t hxcount_if(range_t_&& range_, callable_t_&& callable_) {
 	hxrestrict_t<decltype(range_.begin())> it_(range_.begin());
 	hxsize_t count_ = hxsize_t{0};
 	for(const auto end_ = range_.end(); it_ != end_; ++it_) {
-		if(hxforward<callable_t_>(callable_)(*it_)) {
+		if(hxforward<callable_t_>(callable_)(hxforward_like<range_t_>(*it_))) {
 			++count_;
 		}
 	}
@@ -286,7 +286,7 @@ auto hxfind_if(range_t_&& range_, callable_t_&& callable_) -> decltype(range_.be
 	hxrestrict_t<decltype(range_.begin())> it_(range_.begin());
 	const auto end_ = range_.end();
 	for(; it_ != end_; ++it_) {
-		if(hxforward<callable_t_>(callable_)(*it_)) {
+		if(hxforward<callable_t_>(callable_)(hxforward_like<range_t_>(*it_))) {
 			return it_;
 		}
 	}
@@ -301,7 +301,7 @@ hxinline hxconstexpr hxattr_flatten
 callable_t_ hxfor_each(range_t_&& range_, callable_t_&& callable_) {
 	hxrestrict_t<decltype(range_.begin())> it_(range_.begin());
 	for(const auto end_ = range_.end(); it_ != end_; ++it_) {
-		hxforward<callable_t_>(callable_)(*it_);
+		hxforward<callable_t_>(callable_)(hxforward_like<range_t_>(*it_));
 	}
 	return hxforward<callable_t_>(callable_);
 }

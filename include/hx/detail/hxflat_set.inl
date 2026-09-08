@@ -136,19 +136,10 @@ hxinline hxattr_flatten bool hxflat_set<key_t_, compare_t_, multi_t_, capacity_>
 
 template<hxflat_set_concept_ key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
 template<hxrange_concept_ range_t_>
-hxinline hxattr_flatten void hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::add_range(range_t_& range_) noexcept {
-	hxrestrict_t<decltype(range_.begin())> it_(range_.begin());
-	for(const auto end_ = range_.end(); it_ != end_; ++it_) {
-		this->insert(*it_);
-	}
-}
-
-template<hxflat_set_concept_ key_t_, typename compare_t_, bool multi_t_, hxsize_t capacity_>
-template<hxrange_concept_ range_t_, hxenable_if_t<!hxis_lvalue_reference<range_t_>(), int> >
 hxinline hxattr_flatten void hxflat_set<key_t_, compare_t_, multi_t_, capacity_>::add_range(range_t_&& range_) noexcept {
 	hxrestrict_t<decltype(range_.begin())> it_(range_.begin());
 	for(const auto end_ = range_.end(); it_ != end_; ++it_) {
-		this->insert(hxmove(*it_));
+		this->insert(hxforward_like<range_t_>(*it_));
 	}
 }
 
