@@ -89,7 +89,7 @@ using hxradix_sort_key_void = hxradix_sort_key<uint32_t, void*>;
 /// - `allocator` : The allocator used for the temporary working buffers.
 hxattr_nonnull(1,2) hxattr_hot
 void hxradix_sort_void(hxradix_sort_key_void* begin_, hxradix_sort_key_void* end_,
-	hxsystem_allocator_t allocator_);
+	hxslab_allocator_t allocator_);
 
 /// `hxradix_sort_void11` - Internal. The shared implementation used with all
 /// pointer types when sorting using 11-bit digits.
@@ -100,7 +100,7 @@ void hxradix_sort_void(hxradix_sort_key_void* begin_, hxradix_sort_key_void* end
 /// - `allocator` : The allocator used for the temporary working buffers.
 hxattr_nonnull(1,2) hxattr_hot
 void hxradix_sort_void11(hxradix_sort_key_void* begin_, hxradix_sort_key_void* end_,
-	hxsystem_allocator_t allocator_);
+	hxslab_allocator_t allocator_);
 
 /// `hxradix_sort` - Sorts an array of `hxradix_sort_key<key_t, value_t>` by
 /// `key_t` using 8-bit digits. `key_t` is the sort key and `value_t` the value
@@ -118,7 +118,7 @@ void hxradix_sort_void11(hxradix_sort_key_void* begin_, hxradix_sort_key_void* e
 ///   for(uint32_t i = size; i--;) {
 ///     rs.push_back(hxradix_sort_key<key_t, example_t*>(x[i].id, &x[i]));
 ///   }
-///   hxradix_sort(rs.begin(), rs.end(), hxsystem_allocator_heap);
+///   hxradix_sort(rs.begin(), rs.end(), hxslab_allocator_heap);
 /// ```
 ///
 /// - `begin` : Non-null pointer to the first element in the range being
@@ -128,7 +128,7 @@ void hxradix_sort_void11(hxradix_sort_key_void* begin_, hxradix_sort_key_void* e
 /// - `allocator` : The allocator used for the temporary working buffers.
 template<typename key_t_, typename value_t_> hxattr_nonnull(1,2) hxattr_hot
 void hxradix_sort(hxradix_sort_key<key_t_, value_t_>* begin_, hxradix_sort_key<key_t_,
-		value_t_>* end_, hxsystem_allocator_t allocator_) {
+		value_t_>* end_, hxslab_allocator_t allocator_) {
 	hxradix_sort_void(reinterpret_cast<hxradix_sort_key_void*>(begin_),
 		reinterpret_cast<hxradix_sort_key_void*>(end_), allocator_);
 }
@@ -145,7 +145,7 @@ void hxradix_sort(hxradix_sort_key<key_t_, value_t_>* begin_, hxradix_sort_key<k
 /// - `allocator` : The allocator used for the temporary working buffers.
 template<typename key_t_, typename value_t_> hxattr_nonnull(1,2) hxattr_hot
 void hxradix_sort11(hxradix_sort_key<key_t_, value_t_>* begin_,
-		hxradix_sort_key<key_t_, value_t_>* end_, hxsystem_allocator_t allocator_) {
+		hxradix_sort_key<key_t_, value_t_>* end_, hxslab_allocator_t allocator_) {
 	hxradix_sort_void11(reinterpret_cast<hxradix_sort_key_void*>(begin_),
 		reinterpret_cast<hxradix_sort_key_void*>(end_), allocator_);
 }

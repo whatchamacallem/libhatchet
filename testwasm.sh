@@ -27,7 +27,7 @@ emcc -I"$HX_DIR_/include" -O2 -pthread -fdiagnostics-absolute-paths -c \
 # requires SharedArrayBuffer which needs COOP/COEP headers from the server.
 for HX_FILE_ in "$HX_DIR_"/src/*.cpp "$HX_DIR_"/test/*.cpp; do
 	emcc -O2 -fno-exceptions -fno-rtti -fdiagnostics-absolute-paths          \
-		-Werror -Wfatal-errors -DHX_USE_FILE_IO=0 -DHX_USE_MEMORY_MANAGER=0  \
+		-Werror -Wfatal-errors -DHX_USE_FILE_IO=0 -DHX_USE_SLAB_ALLOCATOR=0  \
 		-DHX_USE_THREADS=1 -DHX_USE_CONSOLE=1 -Wno-c2y-extensions -pthread   \
 		-std=c++23 -flto=auto -I"$HX_DIR_/include" -c "$HX_FILE_"            \
 		-o "$(basename "$HX_FILE_" .cpp).o" & HX_PIDS_="$HX_PIDS_ $!"

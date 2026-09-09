@@ -224,7 +224,7 @@ int hxtest_::run_all_tests_(void) {
 		});
 
 	// Starting point. Expected to reset to zero after each test.
-	hxassert_always(hxmemory_manager_utilization(true, false).allocations_outstanding == 0u,
+	hxassert_always(hxslab_allocator_utilization(true, false).allocations_outstanding == 0u,
 		"test_leak temp stacks not empty");
 
 	for(hxtest_case_** it = m_test_cases_.begin(); it != m_test_cases_.end(); ++it) {
@@ -240,11 +240,11 @@ int hxtest_::run_all_tests_(void) {
 			// Tests default onto stack 0. A test that opens another scope
 			// is expected to reset it before returning.
 			{
-				const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
+				const hxslab_allocator_scope temporary_stack_scope(hxslab_allocator_stack_0);
 				(*it)->m_run_();
 			}
 
-			hxmemory_manager_stats stats = hxmemory_manager_utilization(true, false);
+			hxslab_allocator_stats stats = hxslab_allocator_utilization(true, false);
 			// GCOVR_EXCL_START
 			if(stats.allocations_outstanding != 0u || stats.bytes_outstanding != 0u) {
 				this->condition_check_(false, (*it)->m_file_, (*it)->m_line_,
@@ -271,7 +271,7 @@ int hxtest_::run_all_tests_(void) {
 	}
 	m_current_test_ = hxnull;
 
-	hxmemory_manager_utilization(false, true);
+	hxslab_allocator_utilization(false, true);
 
 	hxlog_console("[==========] skipped %d tests. failed %d assertions.\n",
 		(int)m_test_cases_.size() - m_pass_count_ - m_fail_count_, m_total_assert_count_);

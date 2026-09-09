@@ -535,10 +535,10 @@ public:
 	/// Reserves storage for at least the specified number of elements.
 	/// - `size` : The number of elements to reserve storage for.
 	/// - `allocator` : The memory manager ID to use for allocation (default:
-	///   `hxsystem_allocator_current`)
+	///   `hxslab_allocator_current`)
 	/// - `alignment` : The alignment for the allocation. (default: `hxalignment`)
 	void reserve(hxsize_t size_,
-			hxsystem_allocator_t allocator_=hxsystem_allocator_current,
+			hxslab_allocator_t allocator_=hxslab_allocator_current,
 			hxalignment_t alignment_=hxalignment);
 
 	/// Resizes the array to the specified size, constructing or destroying

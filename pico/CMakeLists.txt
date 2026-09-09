@@ -37,7 +37,7 @@ target_compile_definitions(hatchet PUBLIC
     HX_USE_LIBCXX=0
     HX_USE_PROFILER=0
     HX_USE_CONSOLE=0
-    HX_MEMORY_BUDGET_TEMPORARY_STACK=200000
+    HX_SLAB_BUDGET_TEMPORARY_STACK=200000
     # Suppress pico-sdk's own operator new/delete; hatchet provides them.
     PICO_CXX_DISABLE_ALLOCATION_OVERRIDES=1
 )

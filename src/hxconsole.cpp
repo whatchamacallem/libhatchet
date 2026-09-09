@@ -203,7 +203,7 @@ hxattr_cold bool hxconsole_exec_line(const char* command) {
 // Lists variables and commands in order.
 hxattr_cold bool hxconsole_help(void) {
 	hxinit(); // GCOVR_EXCL_LINE
-	const hxsystem_allocator_scope temp_mem(hxsystem_allocator_heap);
+	const hxslab_allocator_scope temp_mem(hxslab_allocator_heap);
 	const hxconsole_command_table& commands = hxconsole_commands_();
 	hxvector<const hxdetail_::hxconsole_hash_table_node_*> cmds;
 	cmds.reserve(commands.size());

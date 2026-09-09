@@ -650,7 +650,7 @@ TEST(hxconsole_test, null_test) {
 	hxg_settings.log_level = hxlog_level_warning;
 	hxlog_handler(hxlog_level_console, "test_hidden\n");
 	hxg_settings.log_level = prev;
-	hxlog("");
+	hxlog_verbose("");
 	SUCCEED();
 }
 #if defined __GNUC__

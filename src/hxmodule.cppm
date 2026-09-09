@@ -67,7 +67,7 @@ module;
 #define HX_INL_END_ export {
 #endif
 
-// hxmemory_manager.h and hxsettings.h are not meant to be included directly.
+// hxslab_allocator.h and hxsettings.h are not meant to be included directly.
 export module hx;
 export {
 #include "../include/hx/libhatchet.h"
@@ -91,7 +91,7 @@ export {
 #include "../include/hx/hxset_algorithms.hpp"
 #include "../include/hx/hxkey.hpp"
 #include "../include/hx/hxlist.hpp"
-//#include "../include/hx/hxmemory_manager.h"
+//#include "../include/hx/hxslab_allocator.h"
 #if HX_CPLUSPLUS >= 202302L
 #include "../include/hx/hxexpected.hpp"
 #endif // HX_CPLUSPLUS >= 202302L
@@ -117,7 +117,7 @@ export {
 #include "./hxfile_posix.cpp"
 #include "./hxhash_table.cpp"
 #include "./hxlist.cpp"
-#include "./hxmemory_manager.cpp"
+#include "./hxslab_allocator.cpp"
 #include "./hxprofiler.cpp"
 #include "./hxradix_sort.cpp"
 #include "./hxsettings.cpp"

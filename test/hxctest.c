@@ -7,14 +7,14 @@
 #include <stdio.h>
 
 bool hxctest_libhatchet_h(void) {
-	hxlog("Smoke testing from C: hxlog %d, ", 1);
-	hxlog_release("hxlog_release %d, ", 2);
+	hxlog_verbose("Smoke testing from C: hxlog_verbose %d, ", 1);
+	hxlog("hxlog_always %d, ", 2);
 	hxlog_console("hxlog_console %d, ", 3);
 	hxlog_warning("hxlog_warning %d", 4);
+	hxwarn(1, "not true");
 	hxassertf(1, "hxassertf val %d", 5);
 	hxassert(1 == 1);
 	hxassert_always(1.0, "hxassert_always val %f", 1.0f);
-	hxwarn(1, "not true");
 	return true;
 }
 
@@ -46,8 +46,8 @@ bool hxctest_swap(void) {
 }
 
 bool hxctest_memory(void) {
-	void* b33 = hxmalloc_ext(33, hxsystem_allocator_stack_0, sizeof(size_t));
-	char* t = hxstring_duplicate("_est", hxsystem_allocator_stack_0);
+	void* b33 = hxmalloc_ext(33, hxslab_allocator_stack_0, sizeof(size_t));
+	char* t = hxstring_duplicate("_est", hxslab_allocator_stack_0);
 	t[0] = 't';
 	void* b32 = hxmalloc(32);
 	memset(b33, 0x33, 33);

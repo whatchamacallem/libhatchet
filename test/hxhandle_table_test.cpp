@@ -3,7 +3,7 @@
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
 #include <hx/hxhandle_table.hpp>
-#include <hx/hxmemory_manager.h>
+#include <hx/hxslab_allocator.h>
 #include "./hxtest_util.hpp"
 
 HX_NS_USE

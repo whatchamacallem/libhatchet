@@ -74,7 +74,7 @@ public:
 /// key is stored as a pointer to `const` to keep the hash table code
 /// const-correct. Copying and assignment are unimplemented and the key must be
 /// immutable in any assignment operation in a subclass.
-template <hxsystem_allocator_t allocator_=hxsystem_allocator_heap>
+template <hxslab_allocator_t allocator_=hxslab_allocator_heap>
 class hxhash_table_node_string : public hxhash_table_set_node<const char*> {
 public:
 	/// Constructor allocates and duplicates the string key, then initializes

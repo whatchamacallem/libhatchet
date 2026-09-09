@@ -214,7 +214,7 @@ hxinline hxattr_flatten hxsize_t hxhash_table<node_t_, deleter_t_, table_size_bi
 }
 
 template<hxhash_table_concept_ node_t_, typename deleter_t_, uint32_t table_size_bits_, int traits_>
-template<hxsystem_allocator_t allocator_, hxalignment_t alignment_, bool multi_, class... args_t_>
+template<hxslab_allocator_t allocator_, hxalignment_t alignment_, bool multi_, class... args_t_>
 hxinline hxattr_flatten auto hxhash_table<node_t_, deleter_t_, table_size_bits_, traits_>::emplace(args_t_&&... args_) noexcept
 		-> hxenable_if_t<multi_, iterator> {
 	node_t_* const ptr_ = hxnew<node_t_, allocator_, alignment_>(hxforward<args_t_>(args_)...);
@@ -493,7 +493,7 @@ hxinline hxattr_flatten void hxhash_table<node_t_, deleter_t_, table_size_bits_,
 }
 
 template<hxhash_table_concept_ node_t_, typename deleter_t_, uint32_t table_size_bits_, int traits_>
-template<hxsystem_allocator_t allocator_, hxalignment_t alignment_, bool multi_, class... args_t_>
+template<hxslab_allocator_t allocator_, hxalignment_t alignment_, bool multi_, class... args_t_>
 hxinline hxattr_flatten auto hxhash_table<node_t_, deleter_t_, table_size_bits_, traits_>::try_emplace(
 		const typename node_t_::key_t& key_, args_t_&&... args_) noexcept -> hxenable_if_t<!multi_, iterator> {
 	const iterator existing_ = this->find(key_);

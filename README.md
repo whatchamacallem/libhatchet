@@ -93,7 +93,7 @@ unused except when initializing system allocators.
   memory and 30% performance improvements overall from adding just a few RAII
   scopes. Complex applications can use an array of variable sized stacks. To use
   tools like heaptrack, disable the memory manager with
-  `-DHX_USE_MEMORY_MANAGER=0`. Leak tracking is provided.
+  `-DHX_USE_SLAB_ALLOCATOR=0`. Leak tracking is provided.
 
 - **Testing Framework**: A non-allocating, lighter, debuggable reimplementation
   of the core Google Test functionality.
@@ -211,20 +211,20 @@ are also available.
 
 - `libhatchet.h` is the entry point. It is also the header to use from C code.
   It provides the core macros, the assert family, memory management and feature
-  detection, and it pulls in `hxsettings.h` and `hxmemory_manager.h`, which
+  detection, and it pulls in `hxsettings.h` and `hxslab_allocator.h`, which
   cannot be included directly.
 - Choose an `HX_HARDENING_MODE` on the compile line. `hxassert` and
   `hxassertf` are active only at `DEBUG`, `hxassert_hard` at `STANDARD` and
   above, and `hxassert_always` in every mode. Null pointer checks only happen in
   `DEBUG`.
-- Log through `hxlog`, `hxlog_warning`, `hxlog_release` and `hxlog_console`.
+- Log through `hxlog_verbose`, `hxlog_warning`, `hxlog_console` and `hxlog_always`.
   They all route through `hxlog_handler`, which can be replaced.
 - `hxsettings.h` handles compiler detection and polyfills and documents the
   default for every compile-line option.
-- `hxmemory_manager.h` allocates by allocator ID. `hxsystem_allocator_heap` is
-  the normal heap, `hxsystem_allocator_permanent` is only freed at shutdown, and
-  `hxsystem_allocator_stack_0 + n` selects a temporary stack that resets when
-  the enclosing RAII `hxsystem_allocator_scope` closes. `hxmalloc_ext` takes an
+- `hxslab_allocator.h` allocates by allocator ID. `hxslab_allocator_heap` is
+  the normal heap, `hxslab_allocator_permanent` is only freed at shutdown, and
+  `hxslab_allocator_stack_0 + n` selects a temporary stack that resets when
+  the enclosing RAII `hxslab_allocator_scope` closes. `hxmalloc_ext` takes an
   explicit ID, while plain `hxmalloc` uses the current scope.
 - `hxutility.h` provides the metaprogramming basics: `hxmove`, `hxforward` and
   the type traits.

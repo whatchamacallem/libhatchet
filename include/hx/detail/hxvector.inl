@@ -643,7 +643,7 @@ inline hxattr_flatten T_& hxvector<T_, capacity_>::push_heap(ref_t_&& arg_) noex
 
 template<hxvector_concept_ T_, hxsize_t capacity_>
 hxinline hxattr_flatten void hxvector<T_, capacity_>::reserve(hxsize_t size_,
-		hxsystem_allocator_t allocator_, hxalignment_t alignment_) {
+		hxslab_allocator_t allocator_, hxalignment_t alignment_) {
 	if(size_ > this->capacity()) {
 		// reserve_storage asserts unallocated or size is equivalent.
 		this->reserve_storage(size_, allocator_, alignment_);

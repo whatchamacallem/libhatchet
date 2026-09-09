@@ -53,7 +53,7 @@ public:
 	/// - `allocator` : Ignored.
 	/// - `alignment` : Ignored.
 	hxinline void reserve_storage(hxsize_t size_,
-			hxsystem_allocator_t allocator_=hxsystem_allocator_current,
+			hxslab_allocator_t allocator_=hxslab_allocator_current,
 			hxalignment_t alignment_=hxalignment) {
 		(void)allocator_; (void)alignment_;
 		hxassert_always(size_ == fixed_capacity_, "bad_reserve already sized");
@@ -102,11 +102,11 @@ public:
 	/// modified.
 	/// - `size` : The number of elements of type `T` to allocate space for.
 	/// - `allocator` : The memory manager ID to use for allocation. (default:
-	///   `hxsystem_allocator_current`)
+	///   `hxslab_allocator_current`)
 	/// - `alignment` : The alignment to use for the allocation. (default:
 	///   `hxalignment`)
 	hxinline void reserve_storage(hxsize_t size_,
-			hxsystem_allocator_t allocator_=hxsystem_allocator_current,
+			hxslab_allocator_t allocator_=hxslab_allocator_current,
 			hxalignment_t alignment_=hxalignment) {
 		if(size_ == m_capacity_) {
 			return;

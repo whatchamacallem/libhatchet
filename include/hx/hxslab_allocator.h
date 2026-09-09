@@ -7,8 +7,8 @@
 /// Memory Manager C/C++ API. Memory allocators are selected using an ID. These
 /// are the large system-wide allocators, not the per-container `hxallocator`
 /// which allocates from here. Temporary stacks are allocated at runtime with
-/// `hxmemory_manager_allocate_stacks` and a sophisticated streaming design can
-/// select between them using `hxsystem_allocator_stack_0` + index.
+/// `hxslab_allocator_allocate_stacks` and a sophisticated streaming design can
+/// select between them using `hxslab_allocator_stack_0` + index.
 ///
 /// General purpose memory allocators are inefficient and unsafe to use. The
 /// problem is that long running code requires a lot of extra space to make sure
@@ -17,15 +17,15 @@
 /// that requires processor support and even more expensive system call
 /// overhead.) For code that uses a lot of temporary intermediate allocations
 /// 1/3 of your memory and 1/3 of your processor time could get eaten by the
-/// heap allocator. The `hxsystem_allocator_stack_0` is provided as a
+/// heap allocator. The `hxslab_allocator_stack_0` is provided as a
 /// replacement for that use case.
 ///
 /// There are also a category of allocations that are expected to last for the
 /// lifetime of the application. They can be allocated with 0 overhead using
-/// `hxsystem_allocator_permanent`.
+/// `hxslab_allocator_permanent`.
 ///
 /// WARNING: The current allocator ID is a thread local attribute that is
-/// managed by the `hxsystem_allocator_scope` RAII class. This provides a non-
+/// managed by the `hxslab_allocator_scope` RAII class. This provides a non-
 /// intrusive way to move swaths of code to different allocators.
 ///
 /// Alignment must be a power of two. (It always is.)
@@ -46,7 +46,7 @@
 ///
 /// It should be possible to implement a triple buffered streaming strategy
 /// for DMA by allocating three temp stacks and selecting between them with
-/// `hxsystem_allocator_stack_0 + index`.
+/// `hxslab_allocator_stack_0 + index`.
 
 #if !LIBHATCHET_VER
 #error #include <hx/libhatchet.h> instead.
@@ -71,21 +71,21 @@ inline constexpr hxalignment_t hxalignment = static_cast<hxalignment_t>(alignof(
 #define hxalignment (hxalignment_t)_Alignof(max_align_t )
 #endif
 
-/// `hxsystem_allocator_t` - This is extendable by the application.
-typedef int hxsystem_allocator_t;
+/// `hxslab_allocator_t` - This is extendable by the application.
+typedef int hxslab_allocator_t;
 
 enum {
-	/// `hxsystem_allocator_current` - Use current allocation scope. Not a real
+	/// `hxslab_allocator_current` - Use current allocation scope. Not a real
 	/// allocator slot.
-	hxsystem_allocator_current = -1,
-	/// `hxsystem_allocator_heap` - OS heap with alignment.
-	hxsystem_allocator_heap,
-	/// `hxsystem_allocator_permanent` - Contiguous allocations that must not be
+	hxslab_allocator_current = -1,
+	/// `hxslab_allocator_heap` - OS heap with alignment.
+	hxslab_allocator_heap,
+	/// `hxslab_allocator_permanent` - Contiguous allocations that must not be
 	/// freed.
-	hxsystem_allocator_permanent,
-	/// `hxsystem_allocator_stack_0` - Temporary stacks. Reset to previous depth
-	/// at scope closure. Stack index n is `hxsystem_allocator_stack_0 + n`.
-	hxsystem_allocator_stack_0
+	hxslab_allocator_permanent,
+	/// `hxslab_allocator_stack_0` - Temporary stacks. Reset to previous depth
+	/// at scope closure. Stack index n is `hxslab_allocator_stack_0 + n`.
+	hxslab_allocator_stack_0
 };
 
 /// `hxfree` - Frees memory previously allocated with `hxmalloc` or
@@ -102,7 +102,7 @@ void hxfree(void* ptr_) hxattr_noexcept hxattr_hot;
 /// with `hxfree`.
 /// - `size` : The size of the memory to allocate.
 /// - `allocator`(C++ only): The memory manager ID to use for allocation.
-///   (Default is `hxsystem_allocator_current`.)
+///   (Default is `hxslab_allocator_current`.)
 /// - `alignment`(C++ only): The alignment for the allocation. (Default
 ///   is `hxalignment`.)
 hxattr_allocator(hxfree) hxattr_noexcept hxattr_hot
@@ -113,11 +113,11 @@ void* hxmalloc(size_t size_);
 /// Returns a pointer that must be released with `hxfree`.
 /// - `size` : The size of the memory to allocate.
 /// - `allocator` : The memory manager ID to use for allocation. (Default is
-///   `hxsystem_allocator_current`.)
+///   `hxslab_allocator_current`.)
 /// - `alignment` : The alignment for the allocation. (Default is
 ///   `hxalignment`.)
 hxattr_noexcept hxattr_allocator(hxfree) hxattr_hot
-void* hxmalloc_ext(size_t size_, hxsystem_allocator_t allocator_,
+void* hxmalloc_ext(size_t size_, hxslab_allocator_t allocator_,
 	hxalignment_t alignment_/*=hxalignment*/);
 
 /// `hxstring_duplicate` - Allocates a copy of a string using the specified
@@ -125,10 +125,10 @@ void* hxmalloc_ext(size_t size_, hxsystem_allocator_t allocator_,
 /// Returns a pointer that must be released with `hxfree`.
 /// - `string` : Non-null string to duplicate.
 /// - `allocator` : The memory manager ID to use for allocation. Defaults to
-///   `hxsystem_allocator_current` in C++.
+///   `hxslab_allocator_current` in C++.
 hxattr_noexcept hxattr_allocator(hxfree) hxattr_nonnull(1) hxattr_hot
 char* hxstring_duplicate(const char* string_,
-	hxsystem_allocator_t allocator_ /*=hxsystem_allocator_current*/);
+	hxslab_allocator_t allocator_ /*=hxslab_allocator_current*/);
 
 HX_C_END_
 #if HX_CPLUSPLUS
@@ -136,16 +136,16 @@ HX_C_END_
 /// `hxmalloc` - Add `hxmalloc_ext` args to `hxmalloc` C interface. Allocates
 /// memory with a specific memory manager and alignment. NOTE: This is not in
 /// the libhatchet namespace.
-hxinline void* hxmalloc(size_t size_, hxsystem_allocator_t allocator_,
+hxinline void* hxmalloc(size_t size_, hxslab_allocator_t allocator_,
 		hxalignment_t alignment_=hxalignment) {
 	return hxmalloc_ext(size_, allocator_, alignment_);
 }
 
 /// `hxstring_duplicate` - Add default args to C interface. The allocator is
-/// `hxsystem_allocator_current`. Duplicates a string using the default memory
+/// `hxslab_allocator_current`. Duplicates a string using the default memory
 /// manager. NOTE: This is not in the libhatchet namespace.
 hxinline char* hxstring_duplicate(const char* s_) {
-	return hxstring_duplicate(s_, hxsystem_allocator_current);
+	return hxstring_duplicate(s_, hxslab_allocator_current);
 }
 
 // Memory Manager C++ API
@@ -173,7 +173,7 @@ void operator delete[](void* ptr_) noexcept;
 
 HX_NS_BEGIN_
 
-/// `hxsystem_allocator_scope` - An RAII class to set the current memory manager
+/// `hxslab_allocator_scope` - An RAII class to set the current memory manager
 /// allocator for the current scope. It automatically restores the previous
 /// allocator when the scope ends. It also resets stack allocators to their
 /// initial offsets thereby freeing any allocations made during the lifetime of
@@ -181,22 +181,22 @@ HX_NS_BEGIN_
 /// this mechanism without due caution. Wait for worker tasks to complete before
 /// freeing their temporary allocations. The closest thing in the standard is
 /// `std::scoped_allocator_adaptor` and it is a template nightmare.
-class hxsystem_allocator_scope
+class hxslab_allocator_scope
 {
 public:
 	/// Constructor: Sets the current memory allocator to the specified ID.
 	/// - `allocator` : The memory manager ID to set for this scope. May modify
 	///   new allocator in a way that cannot be shared between threads.
-	hxsystem_allocator_scope(hxsystem_allocator_t allocator_) hxattr_noexcept;
+	hxslab_allocator_scope(hxslab_allocator_t allocator_) hxattr_noexcept;
 
 	/// Destructor restores the stored previous memory manager allocator ID. May
 	/// modify current allocator in a way that cannot be shared between threads.
-	~hxsystem_allocator_scope(void) hxattr_noexcept;
+	~hxslab_allocator_scope(void) hxattr_noexcept;
 
 	/// Gets the total number of allocations outstanding for this memory
 	/// allocator. There should be no system overhead. Allocations made directly
 	/// to `new`, `delete`, `malloc` and `free` are not tracked by
-	/// hxsystem_allocator_heap.
+	/// hxslab_allocator_heap.
 	hxattr_nodiscard size_t get_current_allocation_count(void) const;
 
 	/// Gets the total number of bytes allocated outstanding for this memory
@@ -215,20 +215,20 @@ public:
 	}
 
 private:
-	// The hxsystem_allocator_* classes are responsible for setting
+	// The hxslab_allocator_* classes are responsible for setting
 	// m_initial_allocation_count_ and m_initial_bytes_allocated_.
 	// This avoids a number of potential cache misses.
-	friend hxinline void hxsystem_allocator_scope_init_(hxsystem_allocator_scope* scope_,
+	friend hxinline void hxslab_allocator_scope_init_(hxslab_allocator_scope* scope_,
 		size_t allocation_count_, size_t bytes_allocated_);
 
 	// Deleted copy constructor to prevent copying.
-	hxsystem_allocator_scope(const hxsystem_allocator_scope&) = delete;
+	hxslab_allocator_scope(const hxslab_allocator_scope&) = delete;
 
 	// Deleted assignment operator to prevent copying.
-	void operator=(const hxsystem_allocator_scope&) = delete;
+	void operator=(const hxslab_allocator_scope&) = delete;
 
-	hxsystem_allocator_t m_this_allocator_;
-	hxsystem_allocator_t m_initial_allocator_;
+	hxslab_allocator_t m_this_allocator_;
+	hxslab_allocator_t m_initial_allocator_;
 	size_t m_initial_allocation_count_;
 	size_t m_initial_bytes_allocated_;
 };
@@ -237,10 +237,10 @@ private:
 /// type `T` using an optional memory allocator and alignment. Returns a pointer
 /// to the newly constructed object. Will not return on failure.
 /// - `allocator` : The memory manager ID to use for allocation. Defaults to
-///   `hxsystem_allocator_current`.
+///   `hxslab_allocator_current`.
 /// - `align` : Alignment to use when allocating new pointers. Defaults to
 ///   `hxalignment`.
-template <typename T_, hxsystem_allocator_t allocator_=hxsystem_allocator_current,
+template <typename T_, hxslab_allocator_t allocator_=hxslab_allocator_current,
 	hxalignment_t align_=hxalignment, typename... Args_>
 T_* hxnew(Args_&&... args_) noexcept {
 	// Implements hxforward.
@@ -303,44 +303,44 @@ public:
 #endif
 /// \cond HIDDEN
 
-// `hxmemory_manager_init_` - WARNING: Not intended for direct use. This is
+// `hxslab_allocator_init_` - WARNING: Not intended for direct use. This is
 // called by hxinit(). Initializes the memory manager. Must be called before
 // using any memory manager functions.
-void hxmemory_manager_init_(void) hxattr_cold;
+void hxslab_allocator_init_(void) hxattr_cold;
 
-// `hxmemory_manager_shut_down_` - WARNING: Not intended for direct use. Shuts
+// `hxslab_allocator_shut_down_` - WARNING: Not intended for direct use. Shuts
 // down the memory manager. Frees any remaining resources.
-void hxmemory_manager_shut_down_(void) hxattr_cold;
+void hxslab_allocator_shut_down_(void) hxattr_cold;
 /// \endcond
 
-/// `hxmemory_manager_allocate_stacks` - Allocates the runtime temporary stacks.
-/// Stack n is addressed as `hxsystem_allocator_stack_0 + n`. The memory
+/// `hxslab_allocator_allocate_stacks` - Allocates the runtime temporary stacks.
+/// Stack n is addressed as `hxslab_allocator_stack_0 + n`. The memory
 /// manager does not allocate any temporary stacks at init. Do not call twice.
 /// - `stack_count` : The number of temporary stacks to allocate. Must not
-///   exceed `HX_MEMORY_MAX_STACKS`.
+///   exceed `HX_SLAB_MAX_STACKS`.
 /// - `sizes` : An array of `stack_count` byte budgets, one per stack.
-void hxmemory_manager_allocate_stacks(const size_t* sizes_, size_t stack_count_) hxattr_cold;
+void hxslab_allocator_allocate_stacks(const size_t* sizes_, size_t stack_count_) hxattr_cold;
 
-/// A safer `hxmemory_manager_allocate_stacks`.
+/// A safer `hxslab_allocator_allocate_stacks`.
 template<size_t stack_count_>
-void hxmemory_manager_allocate_stacks(const size_t(&list_)[stack_count_]) {
-	hxmemory_manager_allocate_stacks(list_, stack_count_);
+void hxslab_allocator_allocate_stacks(const size_t(&list_)[stack_count_]) {
+	hxslab_allocator_allocate_stacks(list_, stack_count_);
 }
 
-/// `hxmemory_manager_stats` - The utilization statistics reported by
-/// `hxmemory_manager_utilization`.
-class hxmemory_manager_stats {
+/// `hxslab_allocator_stats` - The utilization statistics reported by
+/// `hxslab_allocator_utilization`.
+class hxslab_allocator_stats {
 public:
 	size_t allocations_outstanding;
 	size_t bytes_outstanding;
 	size_t allocator_overflows;
 };
 
-/// `hxmemory_manager_utilization` - Returns the utilization statistics of the
+/// `hxslab_allocator_utilization` - Returns the utilization statistics of the
 /// memory manager.
 /// - `stacks_only` : Only report temporary stack utilization.
 /// - `log` : Log stats when logging is enabled.
-hxmemory_manager_stats hxmemory_manager_utilization(bool stacks_only_, bool log_) hxattr_cold;
+hxslab_allocator_stats hxslab_allocator_utilization(bool stacks_only_, bool log_) hxattr_cold;
 
 HX_NS_END_
 #endif // HX_CPLUSPLUS

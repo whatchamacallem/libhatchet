@@ -3,7 +3,7 @@
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
 #include <hx/hxflat_set.hpp>
-#include <hx/hxmemory_manager.h>
+#include <hx/hxslab_allocator.h>
 #include <hx/hxarray.hpp>
 #include <hx/hxvector.hpp>
 #if HX_CPLUSPLUS >= 202302L

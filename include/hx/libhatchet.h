@@ -9,7 +9,7 @@
 /// Inclusion on the compiler search path is not required. However, the headers
 /// are intended to be included as follows: `#include <hx/libhatchet.h>`
 ///
-/// Defines logging macros `hxlog`, `hxlog_release`, `hxlog_console`,
+/// Defines logging macros `hxlog_verbose`, `hxlog`, `hxlog_console`,
 /// `hxlog_warning` which vary by `HX_USE_LOGGING` and defines log verbosity
 /// { log, console, warning, assert }.
 ///
@@ -70,7 +70,7 @@
 
 #include "hxsettings.h"
 #if !(HX_USE_MACROS_WITH_MODULE)
-#include "hxmemory_manager.h"
+#include "hxslab_allocator.h"
 #endif
 
 /// `hxinit` - Initializes the platform if needed. Does a quick version check to
@@ -131,19 +131,19 @@
 #endif // HX_HARDENING_MODE != HX_HARDENING_MODE_DEBUG
 
 #if (HX_USE_LOGGING) > 1
-/// `hxlog(...)` - Enters formatted messages in the system log. Does not add a
-/// newline. Only evaluated if `HX_USE_LOGGING` is `2` or above.
+/// `hxlog_verbose(...)` - Enters formatted messages in the system log. Does not
+/// add a newline. Only evaluated if `HX_USE_LOGGING` is `2` or above.
 /// - `...` Printf-style formatted log message.
-#define hxlog(...) hxlog_handler(hxlog_level_log, __VA_ARGS__)
+#define hxlog_verbose(...) hxlog_handler(hxlog_level_log, __VA_ARGS__)
 #else
-#define hxlog(...) ((void)0)
+#define hxlog_verbose(...) ((void)0)
 #endif
 
 #if HX_USE_LOGGING
-/// `hxlog_release(...)` - Enters formatted messages in the system log up to
-/// release level 1.
+/// `hxlog(...)` - Enters formatted messages in the system log if
+/// `HX_USE_LOGGING` is `1` or above.
 /// - `...` Printf-style formatted log message.
-#define hxlog_release(...) hxlog_handler(hxlog_level_log, __VA_ARGS__)
+#define hxlog(...) hxlog_handler(hxlog_level_log, __VA_ARGS__)
 
 /// `hxlog_console(...)` - Enters formatted messages in the console system log.
 /// - `...` Variadic arguments for the formatted console log message.
@@ -161,7 +161,7 @@
 	|| (hxlog_handler(hxlog_level_warning, __VA_ARGS__), 0))
 
 #else // !HX_USE_LOGGING
-#define hxlog_release(...) ((void)0)
+#define hxlog(...) ((void)0)
 #define hxlog_console(...) ((void)0)
 #define hxlog_warning(...) ((void)0)
 #define hxwarn(x_, ...) ((void)0)

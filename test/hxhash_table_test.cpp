@@ -33,7 +33,7 @@ public:
 	hxtest_object value;
 };
 
-class hxtest_string : public hxhash_table_node_string<hxsystem_allocator_stack_0> {
+class hxtest_string : public hxhash_table_node_string<hxslab_allocator_stack_0> {
 public:
 	hxtest_string(const char* k, int32_t v) :
 		hxhash_table_node_string(k), value(v) { }
@@ -427,7 +427,7 @@ TEST_F(hxhash_table_test_f, strings) {
 		"Indigo","Violet" };
 	const hxsize_t sz = hxsize(colors);
 	{
-		const hxsystem_allocator_scope stack_scope(hxsystem_allocator_stack_0);
+		const hxslab_allocator_scope stack_scope(hxslab_allocator_stack_0);
 		using table_t = hxhash_table<hxtest_string, hxdefault_delete, 4, 0>;
 		table_t table;
 		for(hxsize_t i = sz; i-- != 0;) {

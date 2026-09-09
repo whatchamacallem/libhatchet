@@ -310,7 +310,7 @@ hxinline hxattr_flatten auto hxflat_set<key_t_, compare_t_, capacity_, traits_>:
 
 template<hxflat_set_concept_ key_t_, typename compare_t_, hxsize_t capacity_, int traits_>
 hxinline hxattr_flatten void hxflat_set<key_t_, compare_t_, capacity_, traits_>::reserve(hxsize_t cap_,
-		hxsystem_allocator_t allocator_, hxalignment_t alignment_) {
+		hxslab_allocator_t allocator_, hxalignment_t alignment_) {
 	this->reserve_storage(cap_, allocator_, alignment_);
 	if(m_end_ == hxnull) {
 		m_end_ = this->data();

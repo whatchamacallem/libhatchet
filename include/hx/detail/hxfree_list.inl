@@ -89,7 +89,7 @@ hxinline hxattr_flatten void
 
 template<hxfree_list_concept_ T_, hxsize_t capacity_>
 hxinline hxattr_flatten void hxfree_list<T_, capacity_>::reserve(hxsize_t size_,
-		hxsystem_allocator_t allocator_, hxalignment_t alignment_) noexcept {
+		hxslab_allocator_t allocator_, hxalignment_t alignment_) noexcept {
 	hxassert_hard(this->capacity() == 0, "bad_reserve already sized %zd", this->capacity());
 	this->reserve_storage(size_, allocator_, alignment_);
 	this->enqueue_all_(size_);

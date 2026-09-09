@@ -511,11 +511,11 @@ public:
 	/// `cap` must equal `capacity`. Reallocation is not allowed.
 	/// - `cap` : The number of elements to allocate storage for.
 	/// - `allocator` : The memory manager ID to use for allocation (default:
-	///   `hxsystem_allocator_current`)
+	///   `hxslab_allocator_current`)
 	/// - `alignment` : The alignment for the allocation. (default:
 	///   `hxalignment`)
 	void reserve(hxsize_t cap_,
-			hxsystem_allocator_t allocator_=hxsystem_allocator_current,
+			hxslab_allocator_t allocator_=hxslab_allocator_current,
 			hxalignment_t alignment_=hxalignment) noexcept;
 
 	/// Returns the number of elements in the map.

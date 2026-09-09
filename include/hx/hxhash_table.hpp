@@ -368,11 +368,11 @@ public:
 	/// `emplace` - Returns an iterator to the node constructed with `hxnew`.
 	/// The table must have `hxtrait_multi` set in `traits`.
 	/// - `allocator` : The memory manager ID to use for allocation. Defaults to
-	///   `hxsystem_allocator_current`.
+	///   `hxslab_allocator_current`.
 	/// - `align` : Alignment to use when allocating new pointers. Defaults to
 	///   `hxalignment`.
 	/// - `args` : Arguments forwarded to the node constructor.
-	template<hxsystem_allocator_t allocator_=hxsystem_allocator_current,
+	template<hxslab_allocator_t allocator_=hxslab_allocator_current,
 		hxalignment_t align_=hxalignment, bool multi_=(traits_ & hxtrait_multi) != 0, class... args_t_>
 	hxenable_if_t<multi_, iterator> emplace(args_t_&&... args_) noexcept;
 
@@ -500,12 +500,12 @@ public:
 	/// an iterator to the existing node if a node with an equal key already
 	/// exists. The table must have `hxtrait_multi` unset in `traits`.
 	/// - `allocator` : The memory manager ID to use for allocation. Defaults to
-	///   `hxsystem_allocator_current`.
+	///   `hxslab_allocator_current`.
 	/// - `align` : Alignment to use when allocating new pointers. Defaults to
 	///   `hxalignment`.
 	/// - `key` : The key the node will have once constructed.
 	/// - `args` : Arguments forwarded to the node constructor.
-	template<hxsystem_allocator_t allocator_=hxsystem_allocator_current,
+	template<hxslab_allocator_t allocator_=hxslab_allocator_current,
 		hxalignment_t align_=hxalignment, bool multi_=(traits_ & hxtrait_multi) != 0, class... args_t_>
 	hxenable_if_t<!multi_, iterator> try_emplace(
 		const typename node_t_::key_t& key_, args_t_&&... args_) noexcept;

@@ -453,7 +453,7 @@ hxinline hxattr_flatten auto hxflat_map<key_t_, mapped_t_, compare_t_, capacity_
 
 template<hxflat_map_concept_ key_t_, hxflat_map_concept_ mapped_t_, typename compare_t_, hxsize_t capacity_, int traits_>
 hxinline hxattr_flatten void hxflat_map<key_t_, mapped_t_, compare_t_, capacity_, traits_>::reserve(hxsize_t cap_,
-		hxsystem_allocator_t allocator_, hxalignment_t alignment_) noexcept {
+		hxslab_allocator_t allocator_, hxalignment_t alignment_) noexcept {
 	m_keys_.reserve_storage(cap_, allocator_, alignment_);
 	m_values_.reserve_storage(cap_, allocator_, alignment_);
 }

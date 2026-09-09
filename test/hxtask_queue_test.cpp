@@ -297,13 +297,13 @@ TEST(hxtask_queue_test, for_each_reschedules_queue) {
 TEST(hxtask_queue_test, two_threads_two_stacks_stress) {
 	class hxtask_queue_test_stack_stress_task_t : public hxtask {
 	public:
-		void configure(hxsystem_allocator_t a, int32_t r) {
+		void configure(hxslab_allocator_t a, int32_t r) {
 			allocator = a;
 			reenqueue_count = r;
 		}
 		bool execute(hxtask_queue* q) override {
 			{
-				const hxsystem_allocator_scope stack_scope(allocator);
+				const hxslab_allocator_scope stack_scope(allocator);
 				const int32_t allocation_count = 8;
 				const size_t bytes = 16u;
 				hxarray<void*> allocations;
@@ -327,7 +327,7 @@ TEST(hxtask_queue_test, two_threads_two_stacks_stress) {
 		}
 		int32_t get_total_exec_count(void) const { return total_exec_count; }
 	private:
-		hxsystem_allocator_t allocator = hxsystem_allocator_stack_0;
+		hxslab_allocator_t allocator = hxslab_allocator_stack_0;
 		int32_t reenqueue_count = 0;
 		int32_t total_exec_count = 0;
 	};
@@ -336,8 +336,8 @@ TEST(hxtask_queue_test, two_threads_two_stacks_stress) {
 	hxtask_queue_test_stack_stress_task_t tasks[thread_count];
 	hxtask_queue q(thread_count, thread_count);
 	for(int32_t i = 0; i < thread_count; ++i) {
-		tasks[i].configure(static_cast<hxsystem_allocator_t>(
-			hxsystem_allocator_stack_0 + 1 + i), reenqueue_count);
+		tasks[i].configure(static_cast<hxslab_allocator_t>(
+			hxslab_allocator_stack_0 + 1 + i), reenqueue_count);
 		q.enqueue(&tasks[i]);
 	}
 	q.wait_for_all();

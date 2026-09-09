@@ -308,7 +308,7 @@ public:
 	/// - `allocator` : The memory manager ID to use for allocation.
 	/// - `alignment` : The alignment to use for the allocation.
 	void reserve(hxsize_t size_,
-			hxsystem_allocator_t allocator_=hxsystem_allocator_current,
+			hxslab_allocator_t allocator_=hxslab_allocator_current,
 			hxalignment_t alignment_=hxalignment) noexcept;
 
 	/// Returns the number of elements in the array.

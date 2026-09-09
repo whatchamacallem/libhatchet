@@ -52,7 +52,7 @@ public:
 	}
 	template<typename key_t>
 	void test_range_and_type(uint32_t size, uint32_t mask, key_t offset) {
-		const hxsystem_allocator_scope temporary_stack_scope_2(hxsystem_allocator_stack_0);
+		const hxslab_allocator_scope temporary_stack_scope_2(hxslab_allocator_stack_0);
 		hxvector<hxradix_sort_test_object<key_t> > a;
 		generate<key_t>(a, size, mask, offset);
 		hxvector<hxradix_sort_test_object<key_t> > b(a);
@@ -63,7 +63,7 @@ public:
 		for(uint32_t i = size; i--;) {
 			rs.emplace_back(a[static_cast<hxsize_t>(i)].id, &a[static_cast<hxsize_t>(i)]);
 		}
-		hxradix_sort(rs.begin(), rs.end(), hxsystem_allocator_stack_0);
+		hxradix_sort(rs.begin(), rs.end(), hxslab_allocator_stack_0);
 		EXPECT_EQ(b.size(), static_cast<hxsize_t>(size));
 		EXPECT_EQ(rs.size(), static_cast<hxsize_t>(size));
 		for(uint32_t i=0u; i < size; ++i) {
@@ -74,7 +74,7 @@ public:
 			rs.push_back(hxradix_sort_key<key_t, hxradix_sort_test_object<key_t>*>(
 				a[static_cast<hxsize_t>(i)].id, &a[static_cast<hxsize_t>(i)]));
 		}
-		hxradix_sort11(rs.begin(), rs.end(), hxsystem_allocator_stack_0);
+		hxradix_sort11(rs.begin(), rs.end(), hxslab_allocator_stack_0);
 		EXPECT_EQ(b.size(), static_cast<hxsize_t>(size));
 		EXPECT_EQ(rs.size(), static_cast<hxsize_t>(size));
 		for(uint32_t i=0u; i < size; ++i) {
@@ -88,11 +88,11 @@ public:
 TEST_F(hxradix_sort_test_f, null) {
 	hxvector<hxradix_sort_key<uint32_t, const char*>> rs;
 	rs.reserve(1);
-	hxradix_sort(rs.begin(), rs.end(), hxsystem_allocator_stack_0);
+	hxradix_sort(rs.begin(), rs.end(), hxslab_allocator_stack_0);
 	EXPECT_EQ(rs.size(), 0u);
 	EXPECT_TRUE(rs.empty());
 	rs.push_back(hxradix_sort_key<uint32_t, const char*>(123u, "s"));
-	hxradix_sort(rs.begin(), rs.end(), hxsystem_allocator_stack_0);
+	hxradix_sort(rs.begin(), rs.end(), hxslab_allocator_stack_0);
 	EXPECT_EQ(rs.size(), 1);
 	EXPECT_EQ(rs[0].get_value()[0], 's');
 	EXPECT_FALSE(rs.empty());
@@ -101,11 +101,11 @@ TEST_F(hxradix_sort_test_f, null) {
 TEST_F(hxradix_sort_test_f, null11) {
 	hxvector<hxradix_sort_key<uint32_t, const char*>> rs;
 	rs.reserve(1);
-	hxradix_sort11(rs.begin(), rs.end(), hxsystem_allocator_stack_0);
+	hxradix_sort11(rs.begin(), rs.end(), hxslab_allocator_stack_0);
 	EXPECT_EQ(rs.size(), 0u);
 	EXPECT_TRUE(rs.empty());
 	rs.push_back(hxradix_sort_key<uint32_t, const char*>(123u, "s"));
-	hxradix_sort11(rs.begin(), rs.end(), hxsystem_allocator_stack_0);
+	hxradix_sort11(rs.begin(), rs.end(), hxslab_allocator_stack_0);
 	EXPECT_EQ(rs.size(), 1);
 	EXPECT_EQ(rs[0].get_value()[0], 's');
 	EXPECT_FALSE(rs.empty());
@@ -177,7 +177,7 @@ TEST_F(hxradix_sort_test_f, two_elements_sorted) {
 	rs.reserve(2);
 	rs.push_back(hxradix_sort_key<uint32_t, uint32_t>(2u, 2u));
 	rs.push_back(hxradix_sort_key<uint32_t, uint32_t>(1u, 1u));
-	hxradix_sort(rs.begin(), rs.end(), hxsystem_allocator_stack_0);
+	hxradix_sort(rs.begin(), rs.end(), hxslab_allocator_stack_0);
 	EXPECT_EQ(rs[0].get_value(), 1u);
 	EXPECT_EQ(rs[1].get_value(), 2u);
 }
@@ -187,7 +187,7 @@ TEST_F(hxradix_sort_test_f, two_elements_sorted11) {
 	rs.reserve(2);
 	rs.push_back(hxradix_sort_key<uint32_t, uint32_t>(2u, 2u));
 	rs.push_back(hxradix_sort_key<uint32_t, uint32_t>(1u, 1u));
-	hxradix_sort11(rs.begin(), rs.end(), hxsystem_allocator_stack_0);
+	hxradix_sort11(rs.begin(), rs.end(), hxslab_allocator_stack_0);
 	EXPECT_EQ(rs[0].get_value(), 1u);
 	EXPECT_EQ(rs[1].get_value(), 2u);
 }
@@ -198,7 +198,7 @@ TEST_F(hxradix_sort_test_f, all_256_low_byte_values) {
 	for(uint32_t i = 0u; i < 256u; ++i) {
 		rs.push_back(hxradix_sort_key<uint32_t, uint32_t>(255u - i, 255u - i));
 	}
-	hxradix_sort(rs.begin(), rs.end(), hxsystem_allocator_stack_0);
+	hxradix_sort(rs.begin(), rs.end(), hxslab_allocator_stack_0);
 	for(uint32_t i = 0u; i < 256u; ++i) {
 		EXPECT_EQ(rs[static_cast<hxsize_t>(i)].get_value(), i);
 	}
@@ -210,7 +210,7 @@ TEST_F(hxradix_sort_test_f, all_256_low_byte_values11) {
 	for(uint32_t i = 0u; i < 256u; ++i) {
 		rs.push_back(hxradix_sort_key<uint32_t, uint32_t>(255u - i, 255u - i));
 	}
-	hxradix_sort11(rs.begin(), rs.end(), hxsystem_allocator_stack_0);
+	hxradix_sort11(rs.begin(), rs.end(), hxslab_allocator_stack_0);
 	for(uint32_t i = 0u; i < 256u; ++i) {
 		EXPECT_EQ(rs[static_cast<hxsize_t>(i)].get_value(), i);
 	}
@@ -223,7 +223,7 @@ TEST_F(hxradix_sort_test_f, four_pass_upper_bytes_differ) {
 		const uint32_t key = ((i & 1u) != 0u) ? 0xff000000u + i : i;
 		rs.push_back(hxradix_sort_key<uint32_t, uint32_t>(key, key));
 	}
-	hxradix_sort(rs.begin(), rs.end(), hxsystem_allocator_stack_0);
+	hxradix_sort(rs.begin(), rs.end(), hxslab_allocator_stack_0);
 	for(hxsize_t i = 1; i < rs.size(); ++i) {
 		EXPECT_LE(rs[i - 1].get_value(), rs[i].get_value());
 	}
@@ -236,7 +236,7 @@ TEST_F(hxradix_sort_test_f, skip_pass0_byte0_constant) {
 		const uint32_t key = ((31u - i) << 8) | 0x7fu;
 		rs.push_back(hxradix_sort_key<uint32_t, uint32_t>(key, key));
 	}
-	hxradix_sort(rs.begin(), rs.end(), hxsystem_allocator_stack_0);
+	hxradix_sort(rs.begin(), rs.end(), hxslab_allocator_stack_0);
 	for(hxsize_t i = 1; i < rs.size(); ++i) {
 		EXPECT_LE(rs[i - 1].get_value(), rs[i].get_value());
 	}
@@ -249,7 +249,7 @@ TEST_F(hxradix_sort_test_f, skip_pass1_byte1_constant) {
 		const uint32_t key = (31u - i) | (0x7fu << 8);
 		rs.push_back(hxradix_sort_key<uint32_t, uint32_t>(key, key));
 	}
-	hxradix_sort(rs.begin(), rs.end(), hxsystem_allocator_stack_0);
+	hxradix_sort(rs.begin(), rs.end(), hxslab_allocator_stack_0);
 	for(hxsize_t i = 1; i < rs.size(); ++i) {
 		EXPECT_LE(rs[i - 1].get_value(), rs[i].get_value());
 	}
@@ -262,7 +262,7 @@ TEST_F(hxradix_sort_test_f, skip_pass2_byte2_constant) {
 		const uint32_t key = (31u - i) | (0x7fu << 16);
 		rs.push_back(hxradix_sort_key<uint32_t, uint32_t>(key, key));
 	}
-	hxradix_sort(rs.begin(), rs.end(), hxsystem_allocator_stack_0);
+	hxradix_sort(rs.begin(), rs.end(), hxslab_allocator_stack_0);
 	for(hxsize_t i = 1; i < rs.size(); ++i) {
 		EXPECT_LE(rs[i - 1].get_value(), rs[i].get_value());
 	}
@@ -275,7 +275,7 @@ TEST_F(hxradix_sort_test_f, skip_pass3_byte3_constant) {
 		const uint32_t key = (31u - i) | (0x7fu << 24);
 		rs.push_back(hxradix_sort_key<uint32_t, uint32_t>(key, key));
 	}
-	hxradix_sort(rs.begin(), rs.end(), hxsystem_allocator_stack_0);
+	hxradix_sort(rs.begin(), rs.end(), hxslab_allocator_stack_0);
 	for(hxsize_t i = 1; i < rs.size(); ++i) {
 		EXPECT_LE(rs[i - 1].get_value(), rs[i].get_value());
 	}
@@ -288,7 +288,7 @@ TEST_F(hxradix_sort_test_f, skip11_pass0_low11_constant) {
 		const uint32_t key = ((31u - i) << 11) | 0x3ffu;
 		rs.push_back(hxradix_sort_key<uint32_t, uint32_t>(key, key));
 	}
-	hxradix_sort11(rs.begin(), rs.end(), hxsystem_allocator_stack_0);
+	hxradix_sort11(rs.begin(), rs.end(), hxslab_allocator_stack_0);
 	for(hxsize_t i = 1; i < rs.size(); ++i) {
 		EXPECT_LE(rs[i - 1].get_value(), rs[i].get_value());
 	}
@@ -301,7 +301,7 @@ TEST_F(hxradix_sort_test_f, skip11_pass1_mid11_constant) {
 		const uint32_t key = (31u - i) | (0x3ffu << 11);
 		rs.push_back(hxradix_sort_key<uint32_t, uint32_t>(key, key));
 	}
-	hxradix_sort11(rs.begin(), rs.end(), hxsystem_allocator_stack_0);
+	hxradix_sort11(rs.begin(), rs.end(), hxslab_allocator_stack_0);
 	for(hxsize_t i = 1; i < rs.size(); ++i) {
 		EXPECT_LE(rs[i - 1].get_value(), rs[i].get_value());
 	}
@@ -314,7 +314,7 @@ TEST_F(hxradix_sort_test_f, skip_pass1_only_ternary_false_at_pass2) {
 		const uint32_t key = ((31u - i) << 16) | (31u - i) | (0x7fu << 8);
 		rs.push_back(hxradix_sort_key<uint32_t, uint32_t>(key, key));
 	}
-	hxradix_sort(rs.begin(), rs.end(), hxsystem_allocator_stack_0);
+	hxradix_sort(rs.begin(), rs.end(), hxslab_allocator_stack_0);
 	for(hxsize_t i = 1; i < rs.size(); ++i) {
 		EXPECT_LE(rs[i - 1].get_value(), rs[i].get_value());
 	}
@@ -327,7 +327,7 @@ TEST_F(hxradix_sort_test_f, skip_pass0_and_pass1_ternary_true_at_pass2) {
 		const uint32_t key = ((31u - i) << 16) | 0x7fu | (0x7fu << 8);
 		rs.push_back(hxradix_sort_key<uint32_t, uint32_t>(key, key));
 	}
-	hxradix_sort(rs.begin(), rs.end(), hxsystem_allocator_stack_0);
+	hxradix_sort(rs.begin(), rs.end(), hxslab_allocator_stack_0);
 	for(hxsize_t i = 1; i < rs.size(); ++i) {
 		EXPECT_LE(rs[i - 1].get_value(), rs[i].get_value());
 	}
@@ -340,7 +340,7 @@ TEST_F(hxradix_sort_test_f, skip_pass0_pass1_pass2_ternary_true_at_pass3) {
 		const uint32_t key = ((31u - i) << 24) | 0x7fu | (0x7fu << 8) | (0x7fu << 16);
 		rs.push_back(hxradix_sort_key<uint32_t, uint32_t>(key, key));
 	}
-	hxradix_sort(rs.begin(), rs.end(), hxsystem_allocator_stack_0);
+	hxradix_sort(rs.begin(), rs.end(), hxslab_allocator_stack_0);
 	for(hxsize_t i = 1; i < rs.size(); ++i) {
 		EXPECT_LE(rs[i - 1].get_value(), rs[i].get_value());
 	}
@@ -353,7 +353,7 @@ TEST_F(hxradix_sort_test_f, skip11_pass0_and_pass1_ternary_true_at_pass2) {
 		const uint32_t key = ((31u - i) << 22) | 0x3ffu | (0x3ffu << 11);
 		rs.push_back(hxradix_sort_key<uint32_t, uint32_t>(key, key));
 	}
-	hxradix_sort11(rs.begin(), rs.end(), hxsystem_allocator_stack_0);
+	hxradix_sort11(rs.begin(), rs.end(), hxslab_allocator_stack_0);
 	for(hxsize_t i = 1; i < rs.size(); ++i) {
 		EXPECT_LE(rs[i - 1].get_value(), rs[i].get_value());
 	}
@@ -366,7 +366,7 @@ TEST_F(hxradix_sort_test_f, skip11_pass2_high10_constant) {
 		const uint32_t key = (31u - i) | (0x3ffu << 22);
 		rs.push_back(hxradix_sort_key<uint32_t, uint32_t>(key, key));
 	}
-	hxradix_sort11(rs.begin(), rs.end(), hxsystem_allocator_stack_0);
+	hxradix_sort11(rs.begin(), rs.end(), hxslab_allocator_stack_0);
 	for(hxsize_t i = 1; i < rs.size(); ++i) {
 		EXPECT_LE(rs[i - 1].get_value(), rs[i].get_value());
 	}

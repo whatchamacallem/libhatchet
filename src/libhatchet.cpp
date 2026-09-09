@@ -115,14 +115,14 @@ hxattr_weak void hxinit_internal(int version) {
 		::feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 #endif
 
-		hxmemory_manager_init_();
+		hxslab_allocator_init_();
 		hxg_init_ver_ = LIBHATCHET_VER;
 	}
 }
 
 hxattr_weak void hxshutdown(void) {
 	if(hxg_init_ver_ == LIBHATCHET_VER) {
-		hxmemory_manager_shut_down_();
+		hxslab_allocator_shut_down_();
 
 #if HX_USE_FLOATING_POINT_TRAPS
 		::feenableexcept(0);

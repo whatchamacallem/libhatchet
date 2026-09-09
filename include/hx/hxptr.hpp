@@ -106,7 +106,7 @@ public:
 	/// Replaces the owned object with one constructed from `args` and returns a
 	/// reference to it.
 	/// - `args` : Arguments forwarded to the object constructor.
-	template<hxsystem_allocator_t allocator_=hxsystem_allocator_current,
+	template<hxslab_allocator_t allocator_=hxslab_allocator_current,
 		hxalignment_t alignment_=hxalignment, typename... args_t_>
 	T_& emplace(args_t_&&... args_) noexcept;
 
@@ -172,7 +172,7 @@ private:
 /// `hxptr`. Will not return on failure.
 /// - `value` : The value used to construct `T`.
 template<typename T_, typename deleter_t_=hxdefault_delete,
-	hxsystem_allocator_t allocator_=hxsystem_allocator_current,
+	hxslab_allocator_t allocator_=hxslab_allocator_current,
 	hxalignment_t align_=hxalignment, typename U_=T_>
 hxattr_nodiscard hxptr<T_, deleter_t_> hxmake_ptr(const U_& value_) noexcept {
 	return hxptr<T_, deleter_t_>(::new(hxmalloc_ext(sizeof(T_), allocator_, align_)) T_(value_));
@@ -183,7 +183,7 @@ hxattr_nodiscard hxptr<T_, deleter_t_> hxmake_ptr(const U_& value_) noexcept {
 /// in an `hxptr`.
 /// - `args` : Arguments forwarded to the constructor of `T`.
 template<typename T_, typename deleter_t_=hxdefault_delete,
-	hxsystem_allocator_t allocator_=hxsystem_allocator_current,
+	hxslab_allocator_t allocator_=hxslab_allocator_current,
 	hxalignment_t align_=hxalignment, typename... args_t_>
 hxattr_nodiscard hxptr<T_, deleter_t_> hxemplace_ptr(args_t_&&... args_) noexcept {
 	return hxptr<T_, deleter_t_>(::new(hxmalloc_ext(sizeof(T_), allocator_, align_))

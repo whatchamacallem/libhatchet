@@ -9,8 +9,8 @@ set -eu
 # Test disabling a few other things as well.
 echo "WARNING: These tests will spew errors and still return successfully."
 ./testmatrix.sh -DHX_TEST_ERROR_HANDLING=1 -DHX_USE_CONSOLE=0 \
-	-DHX_USE_LOGGING=0 -DHX_MEMORY_BUDGET_PERMANENT=0         \
-	'-DHX_USE_MEMORY_MANAGER=(HX_HARDENING_MODE!=HX_HARDENING_MODE_STANDARD)'
+	-DHX_USE_LOGGING=0 -DHX_SLAB_BUDGET_PERMANENT=0         \
+	'-DHX_USE_SLAB_ALLOCATOR=(HX_HARDENING_MODE!=HX_HARDENING_MODE_STANDARD)'
 
 if ./debugbuild.sh --run --gtest_filter=hxtest_no_such_suite.no_such_case \
 		>/dev/null 2>&1; then

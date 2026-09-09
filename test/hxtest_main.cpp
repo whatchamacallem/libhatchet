@@ -259,9 +259,9 @@ int test_main(int argc, char**argv) {
 	hxinit();
 
 	// Allocate the temporary stacks used by the tests. That 335u is actually
-	// very precise. See TEST(hxmemory_manager_test, temp_overflow);
+	// very precise. See TEST(hxslab_allocator_test, temp_overflow);
 	const size_t stack_sizes[] = { 335u * HX_KIB, 2u * HX_KIB, 1u * HX_KIB };
-	hxmemory_manager_allocate_stacks(stack_sizes);
+	hxslab_allocator_allocate_stacks(stack_sizes);
 
 	bool is_ok = true;
 #if HX_USE_CONSOLE
@@ -280,10 +280,10 @@ int test_main(int argc, char**argv) {
 	is_ok = run_all_tests();
 #endif
 
-#if HX_USE_MEMORY_MANAGER
+#if HX_USE_SLAB_ALLOCATOR
 	// Two tests are designed to test allocator overflow. Anything else is a
-	// bug. See: TEST(hxmemory_manager_test, temp_overflow).
-	const hxmemory_manager_stats stats = hxmemory_manager_utilization(true, false);
+	// bug. See: TEST(hxslab_allocator_test, temp_overflow).
+	const hxslab_allocator_stats stats = hxslab_allocator_utilization(true, false);
 	hxassert_always(hxg_settings.test_filter != hxnull || stats.allocator_overflows == 2,
 		"allocator_overflow count %zu", stats.allocator_overflows);
 #endif

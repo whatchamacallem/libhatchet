@@ -96,7 +96,7 @@ hxinline hxconstexpr deleter_t_& hxptr<T_, deleter_t_>::deleter(void) {
 }
 
 template<typename T_, typename deleter_t_>
-template<hxsystem_allocator_t allocator_, hxalignment_t alignment_, typename... args_t_>
+template<hxslab_allocator_t allocator_, hxalignment_t alignment_, typename... args_t_>
 hxinline hxattr_flatten T_& hxptr<T_, deleter_t_>::emplace(args_t_&&... args_) noexcept {
 	this->reset(hxnew<T_, allocator_, alignment_>(hxforward<args_t_>(args_)...));
 	return *m_ptr_;

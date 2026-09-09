@@ -12,7 +12,7 @@ HX_NS_BEGIN_
 using hxhistogram_t = uint32_t;
 
 hxattr_hot void hxradix_sort_void(hxradix_sort_key_void* begin, hxradix_sort_key_void* end,
-		hxsystem_allocator_t allocator) {
+		hxslab_allocator_t allocator) {
 	hxassertf(end >= begin, "radix_sort end < begin %zd", end - begin);
 	// Check for size overflowing hxhistogram_t.
 	hxassertf(static_cast<size_t>(end - begin) < ~static_cast<hxhistogram_t>(0),
@@ -24,7 +24,7 @@ hxattr_hot void hxradix_sort_void(hxradix_sort_key_void* begin, hxradix_sort_key
 		return;
 	}
 
-	const hxsystem_allocator_scope allocator_scope(allocator);
+	const hxslab_allocator_scope allocator_scope(allocator);
 
 	// A single allocation holds the second working buffer and the histograms.
 	const size_t buffer_bytes = static_cast<size_t>(size) * sizeof(hxradix_sort_key_void);
@@ -106,7 +106,7 @@ hxattr_hot void hxradix_sort_void(hxradix_sort_key_void* begin, hxradix_sort_key
 }
 
 hxattr_hot void hxradix_sort_void11(hxradix_sort_key_void* begin, hxradix_sort_key_void* end,
-		hxsystem_allocator_t allocator) {
+		hxslab_allocator_t allocator) {
 	hxassertf(end >= begin, "radix_sort end < begin %zd", end - begin);
 	// Check for size overflowing hxhistogram_t.
 	hxassertf(static_cast<size_t>(end - begin) < ~static_cast<hxhistogram_t>(0),
@@ -118,7 +118,7 @@ hxattr_hot void hxradix_sort_void11(hxradix_sort_key_void* begin, hxradix_sort_k
 		return;
 	}
 
-	const hxsystem_allocator_scope allocator_scope(allocator);
+	const hxslab_allocator_scope allocator_scope(allocator);
 
 	// A single allocation holds two working buffers for extremely large data
 	// sets and the histograms.

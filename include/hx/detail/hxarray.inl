@@ -436,7 +436,7 @@ hxinline hxattr_flatten auto hxarray<T_, capacity_>::or_else(
 
 template<hxarray_concept_ T_, hxsize_t capacity_>
 hxinline hxattr_flatten void hxarray<T_, capacity_>::reserve(hxsize_t size_,
-		hxsystem_allocator_t allocator_, hxalignment_t alignment_) noexcept {
+		hxslab_allocator_t allocator_, hxalignment_t alignment_) noexcept {
 	const hxsize_t c_ = this->capacity();
 	this->reserve_storage(size_, allocator_, alignment_);
 	hxif_constexpr(capacity_ == hxallocator_dynamic_capacity) {

@@ -37,7 +37,7 @@ cat > quickstart/hello_world/main.cpp << 'EOF'
 #include <hx/libhatchet.h>
 int main(void) {
     hxinit();
-    hxlog("hello world\n");
+    hxlog_verbose("hello world\n");
     hxexit(0);
 }
 EOF

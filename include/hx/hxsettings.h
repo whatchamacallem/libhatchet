@@ -306,8 +306,8 @@
 #if !defined HX_USE_LOGGING
 /// `HX_USE_LOGGING` - Control whether logging statements are included in the
 /// build. Note: `hxlog_handler` is always available and is used by the asserts.
-/// `0` - Disables the logging macros. `1` - All logging except `hxlog`. `2` -
-/// All logging including `hxlog`. This is the default.
+/// `0` - Disables the logging macros. `1` - All logging except `hxlog_verbose`. `2` -
+/// All logging including `hxlog_verbose`. This is the default.
 #define HX_USE_LOGGING 2
 #endif
 
@@ -336,12 +336,12 @@
 #define HX_PROFILER_MAX_RECORDS 4096
 #endif
 
-#if !defined HX_USE_MEMORY_MANAGER
-/// `HX_USE_MEMORY_MANAGER` - Used to disable memory management for debugging
+#if !defined HX_USE_SLAB_ALLOCATOR
+/// `HX_USE_SLAB_ALLOCATOR` - Used to disable memory management for debugging
 /// and for platforms like wasm where extra system allocations are probably
 /// cheaper than code size. - `0` : normal target operation - `1` : remove code
 /// entirely
-#define HX_USE_MEMORY_MANAGER 1
+#define HX_USE_SLAB_ALLOCATOR 1
 #endif
 
 #if !defined HX_PROVIDE_NEW_DELETE
@@ -360,17 +360,17 @@
 /// `HX_GIB` - A GiB, 2^30.
 #define HX_GIB (1 << 30)
 
-#if !defined HX_MEMORY_BUDGET_PERMANENT
-/// `HX_MEMORY_BUDGET_PERMANENT` - Pool sizes. Defaults to 4 KiB if not defined.
+#if !defined HX_SLAB_BUDGET_PERMANENT
+/// `HX_SLAB_BUDGET_PERMANENT` - Pool sizes. Defaults to 4 KiB if not defined.
 /// Set to 0 to disable.
-#define HX_MEMORY_BUDGET_PERMANENT		(4u * HX_KIB)
+#define HX_SLAB_BUDGET_PERMANENT		(4u * HX_KIB)
 #endif
 
-#if !defined HX_MEMORY_MAX_STACKS
-/// `HX_MEMORY_MAX_STACKS` - The maximum number of temporary stacks that
-/// `hxmemory_manager_allocate_stacks` may allocate. Set to 3 for triple
+#if !defined HX_SLAB_MAX_STACKS
+/// `HX_SLAB_MAX_STACKS` - The maximum number of temporary stacks that
+/// `hxslab_allocator_allocate_stacks` may allocate. Set to 3 for triple
 /// buffering if not defined.
-#define HX_MEMORY_MAX_STACKS 3u
+#define HX_SLAB_MAX_STACKS 3u
 #endif
 
 #if !defined HX_RADIX_SORT_MIN_SIZE
@@ -426,7 +426,7 @@ HX_CHECK_USE_(HX_USE_GOOGLE_TEST)
 HX_CHECK_USE_(HX_USE_INLINING_ATTR)
 HX_CHECK_USE_(HX_USE_LIBCXX)
 HX_CHECK_USE_(HX_USE_LOGGING)
-HX_CHECK_USE_(HX_USE_MEMORY_MANAGER)
+HX_CHECK_USE_(HX_USE_SLAB_ALLOCATOR)
 HX_CHECK_USE_(HX_USE_MACROS_WITH_MODULE)
 HX_CHECK_USE_(HX_USE_PROFILER)
 HX_CHECK_USE_(HX_USE_THREADS)
