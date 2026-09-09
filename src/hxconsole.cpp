@@ -116,6 +116,7 @@ hxattr_cold void hxconsole_command_::usage_(const char* id) const {
 	for(const char* const* label = m_labels_; *label != hxnull; ++label) {
 		hxlog_console(" %s", *label);
 	}
+	hxlog_console("\n");
 }
 
 } // hxdetail_
@@ -151,7 +152,7 @@ hxattr_cold void hxdetail_::hxconsole_register_(hxconsole_hash_table_node_* node
 	hxconsole_command_table& commands = hxconsole_commands_();
 	hxassertf(node->hash_key().str_, "bad_arg");
 	if(commands.replace(node)) {
-		hxlog_warning("command_reregistered %s\n", node->hash_key().str_);
+		hxlog_warning("command_reregistered %s", node->hash_key().str_);
 	}
 }
 
