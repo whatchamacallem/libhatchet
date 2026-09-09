@@ -438,7 +438,7 @@ public:
 
 #if HX_CPLUSPLUS < 202002L
 	/// Returns false if `a` and `b` are equal to `x.a` and `x.b`.
-	hxconstexpr bool operator!=(const const_iterator& x_) const { return !(*this == x_); }
+	hxconstexpr bool operator!=(const hxpair& x_) const { return !(*this == x_); }
 #endif
 
 	/// The first value.
