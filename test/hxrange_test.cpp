@@ -12,104 +12,104 @@
 
 HX_NS_USE
 
-using hxbinary_search_test_f = hxtest_object_fixture;
 using hxcount_if_test_f = hxtest_object_fixture;
 using hxequal_range_test_f = hxtest_object_fixture;
 using hxexchange_test_f = hxtest_object_fixture;
 using hxfind_if_test_f = hxtest_object_fixture;
 using hxquantifier_test_f = hxtest_object_fixture;
+using hxsearch_test_f = hxtest_object_fixture;
 using hxtest_test_f = hxtest_object_fixture;
 
-TEST_F(hxbinary_search_test_f, iterator_support) {
+TEST_F(hxsearch_test_f, iterator_support) {
 	hxvector<hxtest_object, 7> values{ -5, -1, 0, 3, 5, 8, 12 };
 	const hxtest_rand_iterator_api_t begin(values.data());
 	const hxtest_rand_iterator_api_t end(values.data() + 7);
 	const hxtest_object key_three(3);
-	hxtest_rand_iterator_api_t result = hxbinary_search(begin, end, key_three, hxtest_value_less);
+	hxtest_rand_iterator_api_t result = hxsearch(begin, end, key_three, hxtest_value_less);
 	EXPECT_NE(result, end);
 	EXPECT_EQ((*result).value(), 3);
 	const hxtest_object key_high(12);
-	result = hxbinary_search(begin, end, key_high, hxtest_value_less);
+	result = hxsearch(begin, end, key_high, hxtest_value_less);
 	EXPECT_NE(result, end);
 	EXPECT_EQ((*result).value(), 12);
 	const hxtest_object missing(7);
-	result = hxbinary_search(begin, end, missing, hxtest_value_less);
+	result = hxsearch(begin, end, missing, hxtest_value_less);
 	EXPECT_EQ(result, end);
-	result = hxbinary_search(begin, begin, key_three, hxtest_value_less);
+	result = hxsearch(begin, begin, key_three, hxtest_value_less);
 	EXPECT_EQ(result, begin);
 	EXPECT_TRUE(check_stats(10, 0, 0, 10, 0, 0, 0, 0, 0, 12, 0));
 }
 
-TEST(hxbinary_search_test, two_element_boundary) {
+TEST(hxsearch_test, two_element_boundary) {
 	const int values[2] = { 3, 7 };
-	const int* found = hxbinary_search(+values, values + 2, 3, hxkey_less_t<int>{});
+	const int* found = hxsearch(+values, values + 2, 3, hxkey_less_t<int>{});
 	EXPECT_NE(found, values + 2);
 	EXPECT_EQ(*found, 3);
-	found = hxbinary_search(+values, values + 2, 7, hxkey_less_t<int>{});
+	found = hxsearch(+values, values + 2, 7, hxkey_less_t<int>{});
 	EXPECT_NE(found, values + 2);
 	EXPECT_EQ(*found, 7);
-	found = hxbinary_search(+values, values + 2, 5, hxkey_less_t<int>{});
+	found = hxsearch(+values, values + 2, 5, hxkey_less_t<int>{});
 	EXPECT_EQ(found, values + 2);
 }
 
-TEST(hxbinary_search_test, range_overload_with_less) {
+TEST(hxsearch_test, range_overload_with_less) {
 	const int values[3] = { 1, 3, 5 };
-	const int* found = hxbinary_search(hxmake_range(+values, values + 3), 3, hxkey_less_t<int>{});
+	const int* found = hxsearch(hxmake_range(+values, values + 3), 3, hxkey_less_t<int>{});
 	EXPECT_NE(found, values + 3);
 	EXPECT_EQ(*found, 3);
-	found = hxbinary_search(hxmake_range(+values, values + 3), 4, hxkey_less_t<int>{});
+	found = hxsearch(hxmake_range(+values, values + 3), 4, hxkey_less_t<int>{});
 	EXPECT_EQ(found, values + 3);
 }
 
-TEST(hxbinary_search_test, simple_case) {
+TEST(hxsearch_test, simple_case) {
 	int ints[5] = { 2, 5, 6, 88, 99 };
 	const int* const ints_end = ints+5;
-	const int* result = hxbinary_search(hxmake_range(ints, ints+5), 88, hxkey_less_t<int>{});
+	const int* result = hxsearch(hxmake_range(ints, ints+5), 88, hxkey_less_t<int>{});
 	EXPECT_TRUE(result != ints_end && *result == 88);
 	const int* const_ints = ints;
-	const int* cresult = hxbinary_search(hxmake_range(const_ints, const_ints + 5), 2, hxkey_less_t<int>{});
+	const int* cresult = hxsearch(hxmake_range(const_ints, const_ints + 5), 2, hxkey_less_t<int>{});
 	EXPECT_TRUE(cresult != ints_end && *cresult == 2);
-	cresult = hxbinary_search(hxmake_range(const_ints, const_ints + 5), 99);
+	cresult = hxsearch(hxmake_range(const_ints, const_ints + 5), 99);
 	EXPECT_TRUE(cresult != ints_end && *cresult == 99);
-	result = hxbinary_search(hxmake_range(ints, ints+5), 0);
+	result = hxsearch(hxmake_range(ints, ints+5), 0);
 	EXPECT_EQ(result, ints_end);
-	result = hxbinary_search(hxmake_range(ints, ints+5), 100);
+	result = hxsearch(hxmake_range(ints, ints+5), 100);
 	EXPECT_EQ(result, ints_end);
-	result = hxbinary_search(hxmake_range(ints, ints+5), 7);
+	result = hxsearch(hxmake_range(ints, ints+5), 7);
 	EXPECT_EQ(result, ints_end);
-	result = hxbinary_search(hxmake_range(ints, ints), 11, hxkey_less_t<int>{});
+	result = hxsearch(hxmake_range(ints, ints), 11, hxkey_less_t<int>{});
 	EXPECT_EQ(result, ints);
 }
 
-TEST(hxbinary_search_test, single_element_hit_and_miss) {
+TEST(hxsearch_test, single_element_hit_and_miss) {
 	const int arr[1] = { 34 };
-	const int* result = hxbinary_search(hxmake_range(arr, arr + 1), 34);
+	const int* result = hxsearch(hxmake_range(arr, arr + 1), 34);
 	EXPECT_EQ(result, arr);
-	result = hxbinary_search(hxmake_range(arr, arr + 1), 40);
+	result = hxsearch(hxmake_range(arr, arr + 1), 40);
 	EXPECT_EQ(result, arr + 1);
-	result = hxbinary_search(hxmake_range(arr, arr + 1), 50);
+	result = hxsearch(hxmake_range(arr, arr + 1), 50);
 	EXPECT_EQ(result, arr + 1);
 }
 
-TEST(hxbinary_search_test, two_element_boundaries) {
+TEST(hxsearch_test, two_element_boundaries) {
 	const int arr[2] = { 10, 20 };
-	const int* result = hxbinary_search(hxmake_range(arr, arr + 2), 10);
+	const int* result = hxsearch(hxmake_range(arr, arr + 2), 10);
 	EXPECT_EQ(result, arr);
-	result = hxbinary_search(hxmake_range(arr, arr + 2), 20);
+	result = hxsearch(hxmake_range(arr, arr + 2), 20);
 	EXPECT_EQ(result, arr + 1);
-	result = hxbinary_search(hxmake_range(arr, arr + 2), 15);
+	result = hxsearch(hxmake_range(arr, arr + 2), 15);
 	EXPECT_EQ(result, arr + 2);
 }
 
-TEST(hxbinary_search_test, last_element_in_five_element_array) {
+TEST(hxsearch_test, last_element_in_five_element_array) {
 	const int arr[5] = { 1, 3, 5, 7, 9 };
-	const int* result = hxbinary_search(hxmake_range(arr, arr + 5), 9);
+	const int* result = hxsearch(hxmake_range(arr, arr + 5), 9);
 	EXPECT_EQ(result, arr + 4);
-	result = hxbinary_search(hxmake_range(arr, arr + 5), 1);
+	result = hxsearch(hxmake_range(arr, arr + 5), 1);
 	EXPECT_EQ(result, arr);
 }
 
-TEST_F(hxbinary_search_test_f, binary_search_grinder) {
+TEST_F(hxsearch_test_f, search_grinder) {
 	{
 		hxrandom rng(4);
 		hxvector<hxtest_object> sorted; sorted.reserve(100);
@@ -120,7 +120,7 @@ TEST_F(hxbinary_search_test_f, binary_search_grinder) {
 		hxsort(sorted.begin(), sorted.end());
 			for(hxsize_t i=100; i-- != 0; ) {
 			const hxtest_object t = sorted[i];
-			const hxtest_object* const ptr = hxbinary_search(sorted, t);
+			const hxtest_object* const ptr = hxsearch(sorted, t);
 			EXPECT_TRUE(!(*ptr < t) && !(t < *ptr));
 		}
 	}

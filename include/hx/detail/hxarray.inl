@@ -282,16 +282,6 @@ hxinline hxattr_flatten bool hxarray<T_, capacity_>::any_of(callable_t_&& callab
 }
 
 template<hxarray_concept_ T_, hxsize_t capacity_>
-hxinline hxattr_flatten const T_* hxarray<T_, capacity_>::binary_search(const T_& value_) const {
-	return hxbinary_search(*this, value_, hxkey_less_t<const T_&>{});
-}
-
-template<hxarray_concept_ T_, hxsize_t capacity_>
-hxinline hxattr_flatten T_* hxarray<T_, capacity_>::binary_search(const T_& value_) {
-	return hxbinary_search(*this, value_, hxkey_less_t<const T_&>{});
-}
-
-template<hxarray_concept_ T_, hxsize_t capacity_>
 hxinline hxattr_flatten hxsize_t hxarray<T_, capacity_>::capacity(void) const {
 	return hxallocator<T_, capacity_>::capacity();
 }
@@ -448,6 +438,16 @@ hxinline hxattr_flatten void hxarray<T_, capacity_>::reserve(hxsize_t size_,
 			}
 		}
 	}
+}
+
+template<hxarray_concept_ T_, hxsize_t capacity_>
+hxinline hxattr_flatten const T_* hxarray<T_, capacity_>::search(const T_& value_) const {
+	return hxsearch(*this, value_, hxkey_less_t<const T_&>{});
+}
+
+template<hxarray_concept_ T_, hxsize_t capacity_>
+hxinline hxattr_flatten T_* hxarray<T_, capacity_>::search(const T_& value_) {
+	return hxsearch(*this, value_, hxkey_less_t<const T_&>{});
 }
 
 template<hxarray_concept_ T_, hxsize_t capacity_>

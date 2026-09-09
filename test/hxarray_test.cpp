@@ -259,24 +259,24 @@ TEST_F(hxarray_test_f, range_constructor_from_const_lvalue) {
 }
 #endif
 
-TEST(hxarray_test, binary_search) {
+TEST(hxarray_test, search) {
 	hxarray<int, 5> a{ 1, 3, 5, 7, 9 };
 	const hxarray<int, 5>& ca = a;
-	const int* found = ca.binary_search(7);
+	const int* found = ca.search(7);
 	EXPECT_EQ(found, a.begin() + 3);
-	const int* missing = ca.binary_search(4);
+	const int* missing = ca.search(4);
 	EXPECT_EQ(missing, a.end());
-	const int* mfound = a.binary_search(5);
+	const int* mfound = a.search(5);
 	EXPECT_EQ(mfound, a.begin() + 2);
 }
 
-TEST(hxarray_test, binary_search_first_and_last) {
+TEST(hxarray_test, search_first_and_last) {
 	hxarray<int, 4> a{ 10, 20, 30, 40 };
 	const hxarray<int, 4>& ca = a;
-	EXPECT_EQ(ca.binary_search(10), a.begin());
-	EXPECT_EQ(ca.binary_search(40), a.begin() + 3);
-	EXPECT_EQ(ca.binary_search(9), a.end());
-	EXPECT_EQ(ca.binary_search(41), a.end());
+	EXPECT_EQ(ca.search(10), a.begin());
+	EXPECT_EQ(ca.search(40), a.begin() + 3);
+	EXPECT_EQ(ca.search(9), a.end());
+	EXPECT_EQ(ca.search(41), a.end());
 }
 
 TEST(hxarray_test, sort) {

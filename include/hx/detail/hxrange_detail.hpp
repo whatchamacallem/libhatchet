@@ -6,50 +6,41 @@
 HX_NS_BEGIN_
 
 /// \cond HIDDEN
-// Tag dispatch on traits_ & hxtrait_three_way so that a plain bool-returning
-// less callable is never type-checked against `< 0`, and a three-way callable
-// is never used as a bool. hxif_constexpr alone cannot discard the other
-// branch before C++17. Used by hxflat_map and hxflat_set to share one binary
-// search implementation between a strict weak order and a three-way
-// compare_t.
-template<bool three_way_> struct hxcompare_before_ { };
-template<> struct hxcompare_before_<false> {
+// hxcompare_ - C++11 compatibility wrapper that avoids calling unused three way
+// calls. Required because hxif_constexpr is only a fallback in C++11.
+template<bool three_way_> struct hxcompare_ { };
+template<> struct hxcompare_<false> {
 	template<typename compare_t_, typename A_, typename B_>
 	hxattr_nodiscard static hxinline hxconstexpr hxattr_flatten
-	bool compare(const compare_t_& compare_, const A_& a_, const B_& b_) { return compare_(a_, b_); }
+	bool before(const compare_t_& compare_, const A_& a_, const B_& b_) { return compare_(a_, b_); }
+	template<typename compare_t_, typename A_, typename B_>
+	hxattr_nodiscard static hxinline hxconstexpr hxattr_flatten
+	bool after(const compare_t_& compare_, const A_& a_, const B_& b_) { return !compare_(a_, b_); }
+	template<typename compare_t_, typename A_, typename B_>
+	hxattr_nodiscard static hxinline hxconstexpr hxattr_flatten
+	bool equal(const compare_t_& compare_, const A_& a_, const B_& b_) { return !compare_(a_, b_); }
+	template<typename compare_t_, typename A_, typename B_>
+	hxattr_nodiscard static hxinline hxconstexpr hxattr_flatten
+	hxpair<bool, bool> step(const compare_t_& compare_, const A_& a_, const B_& b_) {
+		return { before(compare_, a_, b_), false };
+	}
 };
-template<> struct hxcompare_before_<true> {
+template<> struct hxcompare_<true> {
 	template<typename compare_t_, typename A_, typename B_>
 	hxattr_nodiscard static hxinline hxconstexpr hxattr_flatten
-	bool compare(const compare_t_& compare_, const A_& a_, const B_& b_) { return compare_(a_, b_) < 0; }
-};
-template<bool three_way_> struct hxcompare_after_ { };
-template<> struct hxcompare_after_<false> {
+	bool before(const compare_t_& compare_, const A_& a_, const B_& b_) { return compare_(a_, b_) < 0; }
 	template<typename compare_t_, typename A_, typename B_>
 	hxattr_nodiscard static hxinline hxconstexpr hxattr_flatten
-	bool compare(const compare_t_& compare_, const A_& a_, const B_& b_) { return !compare_(a_, b_); }
-};
-template<> struct hxcompare_after_<true> {
+	bool after(const compare_t_& compare_, const A_& a_, const B_& b_) { return compare_(a_, b_) >= 0; }
 	template<typename compare_t_, typename A_, typename B_>
 	hxattr_nodiscard static hxinline hxconstexpr hxattr_flatten
-	bool compare(const compare_t_& compare_, const A_& a_, const B_& b_) { return compare_(a_, b_) >= 0; }
-};
-
-// Tag dispatch on traits_ & hxtrait_three_way for the equality recheck after a
-// hxlower_bound_search_ call, for the same reason as hxcompare_before_ above.
-// Only three_way can report equality at zero extra cost as part of the
-// search itself (see hxlower_bound_search_ above), the false case always
-// needs this call.
-template<bool three_way_> struct hxcompare_equal_ { };
-template<> struct hxcompare_equal_<false> {
+	bool equal(const compare_t_& compare_, const A_& a_, const B_& b_) { return compare_(a_, b_) == 0; }
 	template<typename compare_t_, typename A_, typename B_>
 	hxattr_nodiscard static hxinline hxconstexpr hxattr_flatten
-	bool compare(const compare_t_& compare_, const A_& a_, const B_& b_) { return !compare_(a_, b_); }
-};
-template<> struct hxcompare_equal_<true> {
-	template<typename compare_t_, typename A_, typename B_>
-	hxattr_nodiscard static hxinline hxconstexpr hxattr_flatten
-	bool compare(const compare_t_& compare_, const A_& a_, const B_& b_) { return compare_(a_, b_) == 0; }
+	hxpair<bool, bool> step(const compare_t_& compare_, const A_& a_, const B_& b_) {
+		const auto cmp_ = compare_(a_, b_);
+		return { cmp_ < 0, cmp_ == 0 };
+	}
 };
 
 // One binary search loop shared by every hxlower_bound_ call site in
@@ -84,7 +75,7 @@ auto hxlower_bound_search_(range_t_&& range_, const value_t_& value_, const comp
 			if(!before_) { found_ = cmp_ == 0; }
 		}
 		else {
-			before_ = hxcompare_before_<false>::compare(compare_, *mid_, value_);
+			before_ = hxcompare_<false>::before(compare_, *mid_, value_);
 		}
 		if(before_) {
 			begin_ = mid_ + hxsize_t{1};
@@ -95,7 +86,7 @@ auto hxlower_bound_search_(range_t_&& range_, const value_t_& value_, const comp
 		}
 	}
 	hxif_constexpr((traits_ & hxtrait_three_way) == 0) {
-		found_ = begin_ != end_ && hxcompare_equal_<(traits_ & hxtrait_three_way) != 0>::compare(compare_, value_, *begin_);
+		found_ = begin_ != end_ && hxcompare_<(traits_ & hxtrait_three_way) != 0>::equal(compare_, value_, *begin_);
 	}
 	else {
 		found_ = found_ && begin_ != end_;
@@ -117,7 +108,7 @@ auto hxupper_bound_(range_t_&& range_, const value_t_& value_, const compare_t_&
 	while(count_ > hxsize_t{0}) {
 		const hxsize_t step_ = count_ >> 1;
 		const iterator_t_ mid_ = begin_ + step_;
-		if(hxcompare_after_<(traits_ & hxtrait_three_way) != 0>::compare(compare_, value_, *mid_)) {
+		if(hxcompare_<(traits_ & hxtrait_three_way) != 0>::after(compare_, value_, *mid_)) {
 			begin_ = mid_ + hxsize_t{1};
 			count_ -= step_ + hxsize_t{1};
 		}

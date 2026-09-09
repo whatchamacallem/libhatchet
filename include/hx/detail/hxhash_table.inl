@@ -533,7 +533,7 @@ template<hxhash_table_concept_ node_t_, typename deleter_t_, uint32_t table_size
 hxinline hxattr_flatten hxhash_node_base** hxhash_table<node_t_, deleter_t_, table_size_bits_, traits_>::get_bucket_head_(hxhash_t hash_) {
 	const uint32_t shift_ = m_table_.get_hash_shift_();
 	const hxhash_t index_ = hash_ >> shift_;
-	hxassertf(static_cast<hxsize_t>(index_) < m_table_.capacity(), "sys_err");
+	hxassertf(index_ < static_cast<hxhash_t>(m_table_.capacity()), "sys_err");
 	return m_table_.data() + index_;
 }
 
@@ -541,7 +541,7 @@ template<hxhash_table_concept_ node_t_, typename deleter_t_, uint32_t table_size
 hxinline hxattr_flatten const hxhash_node_base*const* hxhash_table<node_t_, deleter_t_, table_size_bits_, traits_>::get_bucket_head_(hxhash_t hash_) const {
 	const uint32_t shift_ = m_table_.get_hash_shift_();
 	const hxhash_t index_ = hash_ >> shift_;
-	hxassertf(static_cast<hxsize_t>(index_) < m_table_.capacity(), "sys_err");
+	hxassertf(index_ < static_cast<hxhash_t>(m_table_.capacity()), "sys_err");
 	return m_table_.data() + index_;
 }
 

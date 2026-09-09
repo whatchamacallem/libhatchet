@@ -145,7 +145,7 @@ TEST_F(hxmonadic_test_f, hxflat_map_value_or) {
 
 TEST_F(hxmonadic_test_f, hxhash_table_and_then) {
 	using node_t = hxhash_table_map_node<hxtest_object, hxtest_object>;
-	hxhash_table<node_t, hxdefault_delete, 0, 4> table;
+	hxhash_table<node_t, hxdefault_delete, 4> table;
 	table.try_emplace(hxtest_object(1), hxtest_object(1), hxtest_object(31));
 	const node_t missing(hxtest_object(2), hxtest_object(32));
 	EXPECT_TRUE((bool)table.and_then(hxtest_object(1), hxmake_ref<node_t>));
@@ -157,7 +157,7 @@ TEST_F(hxmonadic_test_f, hxhash_table_and_then) {
 
 TEST_F(hxmonadic_test_f, hxhash_table_or_else) {
 	using node_t = hxhash_table_map_node<hxtest_object, hxtest_object>;
-	hxhash_table<node_t, hxdefault_delete, 0, 4> table;
+	hxhash_table<node_t, hxdefault_delete, 4> table;
 	table.try_emplace(hxtest_object(1), hxtest_object(1), hxtest_object(31));
 	EXPECT_EQ(table.or_else(hxtest_object(1), [&]{ return table.end(); })->value(), 31);
 	EXPECT_EQ(table.or_else(hxtest_object(2), [&]{ return table.begin(); })->value(), 31);
@@ -166,7 +166,7 @@ TEST_F(hxmonadic_test_f, hxhash_table_or_else) {
 
 TEST_F(hxmonadic_test_f, hxhash_table_value_or) {
 	using node_t = hxhash_table_map_node<hxtest_object, hxtest_object>;
-	hxhash_table<node_t, hxdefault_delete, 0, 4> table;
+	hxhash_table<node_t, hxdefault_delete, 4> table;
 	table.try_emplace(hxtest_object(1), hxtest_object(1), hxtest_object(31));
 	const node_t missing(hxtest_object(2), hxtest_object(32));
 	EXPECT_EQ(table.value_or(hxtest_object(1), &missing)->value(), 31);

@@ -545,29 +545,29 @@ TEST(hxvector_test, any_of_single_false_element) {
 	EXPECT_FALSE(v.any_of([](const int& x) { return x > 0; }));
 }
 
-TEST(hxvector_test, binary_search) {
+TEST(hxvector_test, search) {
 	hxvector<int, 5> values{ 1, 3, 5, 7, 9 };
 	const hxvector<int, 5>& const_values = values;
-	const int* const_missing = const_values.binary_search(4);
+	const int* const_missing = const_values.search(4);
 	EXPECT_EQ(const_missing, values.end());
-	const int* mutable_found = values.binary_search(7);
+	const int* mutable_found = values.search(7);
 	EXPECT_EQ(mutable_found, values.begin() + 3);
-	EXPECT_EQ(values.binary_search(2), values.end());
+	EXPECT_EQ(values.search(2), values.end());
 }
 
-TEST(hxvector_test, binary_search_first_and_last_element) {
+TEST(hxvector_test, search_first_and_last_element) {
 	hxvector<int, 5> v{ 2, 4, 6, 8, 10 };
-	EXPECT_EQ(v.binary_search(2), v.begin());
-	EXPECT_EQ(v.binary_search(10), v.begin() + 4);
-	EXPECT_EQ(v.binary_search(1), v.end());
-	EXPECT_EQ(v.binary_search(11), v.end());
+	EXPECT_EQ(v.search(2), v.begin());
+	EXPECT_EQ(v.search(10), v.begin() + 4);
+	EXPECT_EQ(v.search(1), v.end());
+	EXPECT_EQ(v.search(11), v.end());
 }
 
-TEST(hxvector_test, binary_search_single_element) {
+TEST(hxvector_test, search_single_element) {
 	const hxvector<int, 1> v{7};
-	EXPECT_EQ(v.binary_search(7), v.begin());
-	EXPECT_EQ(v.binary_search(6), v.end());
-	EXPECT_EQ(v.binary_search(8), v.end());
+	EXPECT_EQ(v.search(7), v.begin());
+	EXPECT_EQ(v.search(6), v.end());
+	EXPECT_EQ(v.search(8), v.end());
 }
 
 TEST(hxvector_test, find_returns_first_match) {

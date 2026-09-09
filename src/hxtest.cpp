@@ -150,51 +150,56 @@ void hxtest_::condition_check_(bool condition, const char* file, int line,
 	}
 }
 
-// hxtest_pattern_match_ - Internal. Matches "Suite.*" against a test case's
-// suite name, otherwise matches "Suite.Case" exactly. pattern_end is one past
-// the last character of the pattern, which is not null terminated.
+// hxtest_pattern_match_ - Internal. See hxtest::run_all_tests_ usage message.
+// A bare "*" pattern with nothing before it is not supported.
 static bool hxtest_pattern_match_(const char* pattern, const char* pattern_end,
 		const hxtest_case_* test_case) {
-	const hxsize_t pattern_length = static_cast<hxsize_t>(pattern_end - pattern);
-	const hxsize_t suite_length = static_cast<hxsize_t>(::strlen(test_case->m_suite_));
-	if(pattern_length == suite_length + 2
-			&& pattern[suite_length] == '.' && pattern[suite_length + 1] == '*') {
-		return ::strncmp(pattern, test_case->m_suite_, static_cast<size_t>(suite_length)) == 0;
-	}
-	const hxsize_t case_length = static_cast<hxsize_t>(::strlen(test_case->m_case_));
-	if(pattern_length != suite_length + 1 + case_length || pattern[suite_length] != '.') {
+	if(pattern == pattern_end || *pattern == '*') {
 		return false;
 	}
-	return ::strncmp(pattern, test_case->m_suite_, static_cast<size_t>(suite_length)) == 0
-		&& ::strncmp(pattern + suite_length + 1, test_case->m_case_, static_cast<size_t>(case_length)) == 0;
-}
-
-// hxtest_pattern_list_match_ - Internal. Matches any ':'-separated pattern in
-// pattern_list against a test case.
-static bool hxtest_pattern_list_match_(const char* pattern_list, const hxtest_case_* test_case) {
-	for(const char* pattern = pattern_list; *pattern != 0; ) {
-		const char* pattern_end = ::strchr(pattern, ':');
-		pattern_end = pattern_end ? pattern_end : (pattern + ::strlen(pattern));
-		if(hxtest_pattern_match_(pattern, pattern_end, test_case)) {
+	const char* target = test_case->m_suite_;
+	bool in_case = false;
+	for(; pattern != pattern_end; ++pattern) {
+		if(*pattern == '*' && pattern + 1 == pattern_end) {
 			return true;
 		}
-		pattern = pattern_end + (*pattern_end == ':' ? 1 : 0);
+		if(!in_case && *target == 0) {
+			in_case = true;
+			target = test_case->m_case_;
+			if(*pattern != '.') {
+				return false;
+			}
+			continue;
+		}
+		if(*pattern != *target) {
+			return false;
+		}
+		++target;
 	}
-	return false;
+	return in_case && *target == 0;
 }
 
 bool hxtest_::filter_(const char* filter, test_cases_t_& test_cases) {
-	if(filter[0] == '-') {
-		const char* const pattern_list = filter + 1;
-		test_cases.erase_if_unordered([&](hxtest_case_* test_case) -> bool {
-			return hxtest_pattern_list_match_(pattern_list, test_case);
-		});
-	}
-	else {
-		test_cases.erase_if_unordered([&](hxtest_case_* test_case) -> bool {
-			return !hxtest_pattern_list_match_(filter, test_case);
-		});
-	}
+	test_cases.erase_if_unordered([&](hxtest_case_* test_case) -> bool {
+		bool selected = true;
+		for(const char* pattern = filter; *pattern != 0; ) {
+			const bool is_negative = *pattern == '-';
+			const char* const pattern_begin = pattern + (is_negative ? 1 : 0);
+			const char* pattern_end = ::strchr(pattern_begin, ':');
+			pattern_end = pattern_end ? pattern_end : (pattern_begin + ::strlen(pattern_begin));
+			const bool matches = hxtest_pattern_match_(pattern_begin, pattern_end, test_case);
+			if(is_negative) {
+				if(matches) {
+					selected = false;
+				}
+			}
+			else {
+				selected = matches;
+			}
+			pattern = pattern_end + (*pattern_end == ':' ? 1 : 0);
+		}
+		return !selected;
+	});
 	return !test_cases.empty();
 }
 
@@ -202,8 +207,16 @@ int hxtest_::run_all_tests_(void) {
 	hxinit(); // GCOVR_EXCL_LINE. RUN_ALL_TESTS could be called first.
 
 	if(hxg_settings.test_filter != hxnull) { // GCOVR_EXCL_LINE
-		hxassert_hard(hxtest_::filter_(hxg_settings.test_filter, m_test_cases_),
-			"gtest_filter no matches %s", hxg_settings.test_filter);
+		if(!hxtest_::filter_(hxg_settings.test_filter, m_test_cases_)) {
+			// GCOVR_EXCL_START
+			hxlog_warning(
+				"gtest_filter error: Expressions can be chained together with ':'.\n"
+				"\tExamples: suite*, suite.*, suite.case*, suite.case\n"
+				"\t-suite*, -suite.*, -suite.case*, -suite.case\n");
+			hxassert_always(false, "gtest_filter no matches %s", hxg_settings.test_filter);
+			return 1;
+			// GCOVR_EXCL_STOP
+		}
 	}
 
 	hxlog_console("[==========] Running tests: %s\n", // GCOVR_EXCL_LINE

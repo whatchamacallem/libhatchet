@@ -196,13 +196,6 @@ public:
 
 	T_* begin(void) { return this->data(); }
 
-	/// Performs a binary search using `hxkey_less`. Returns `end()` when not
-	/// found.
-	/// - `value` : The value to locate.
-	hxattr_nodiscard const T_* binary_search(const T_& value_) const;
-
-	hxattr_nodiscard T_* binary_search(const T_& value_);
-
 	/// Returns the capacity of the array.
 	hxattr_nodiscard hxsize_t capacity(void) const;
 
@@ -310,6 +303,13 @@ public:
 	void reserve(hxsize_t size_,
 			hxslab_allocator_t allocator_=hxslab_allocator_current,
 			hxalignment_t alignment_=hxalignment) noexcept;
+
+	/// Performs a binary search using `hxkey_less`. Returns `end()` when not
+	/// found.
+	/// - `value` : The value to locate.
+	hxattr_nodiscard const T_* search(const T_& value_) const;
+
+	hxattr_nodiscard T_* search(const T_& value_);
 
 	/// Returns the number of elements in the array.
 	hxinline hxattr_nodiscard hxsize_t size(void) const { return this->capacity(); }
