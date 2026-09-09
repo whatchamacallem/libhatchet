@@ -47,8 +47,8 @@ concept hxhash_table_concept_ =
 class hxhash_node_base {
 protected:
 	friend class hxhash_table_base_;
-	template<hxhash_table_concept_ node_t_, typename deleter_t_, bool multi_t_,
-		uint32_t table_size_bits_> friend class hxhash_table;
+	template<hxhash_table_concept_ node_t_, typename deleter_t_,
+		uint32_t table_size_bits_, int traits_> friend class hxhash_table;
 
 	/// Constructs an unlinked node with the given cached hash.
 	/// - `hash` : The hash value to cache.
@@ -149,7 +149,7 @@ private:
 // Internal. Type erased shared code.
 class hxhash_table_base_ {
 private:
-	template<hxhash_table_concept_ node_t_, typename deleter_t_, bool multi_t_, uint32_t table_size_bits_>
+	template<hxhash_table_concept_ node_t_, typename deleter_t_, uint32_t table_size_bits_, int traits_>
 	friend class hxhash_table;
 	using hxhash_equal_fn_ = bool(*)(const hxhash_node_base* node_, const void* key_);
 	using hxhash_deleter_fn_ = void(*)(hxhash_node_base* node_, void* context_);
@@ -201,7 +201,7 @@ private:
 /// // A fixed-size unordered map of material identifiers to material
 /// // properties. Missing materials can be safely resolved.
 /// using material_db_t = hxhash_table<hxhash_table_map_node<material_id_t,
-///                                  material_t>, hxdefault_delete, true, 1024>;
+///                    material_t>, hxdefault_delete, 1024, hxtrait_multi>;
 /// ```
 ///
 /// `hx/hxhash_table_nodes.hpp` also provides specializations of the
@@ -210,16 +210,18 @@ private:
 /// - `node_t` : Must implement the interface/concept described above.
 /// - `deleter_t` : A class type invoked as `deleter(T*)` to free the owned
 ///    pointer. See also `hxdo_not_delete`.
-/// - `multi_t` : When `false`and a node with an equal key already exists,
-///   insertion into the list will fail when a node with the same key already
-///   exists.
 /// - `table_size_bits` : If non-zero, `table_size_bits` configures the hash
 ///   table size to `2^table_size_bits`. Otherwise use `set_size_bits` to
 ///   configure hash bits dynamically.
+/// - `traits` : A bitmask of `hxtrait_multi` and `hxtrait_three_way`. When
+///   `hxtrait_multi` is unset and a node with an equal key already exists,
+///   insertion into the list will fail when a node with the same key already
+///   exists. When `hxtrait_three_way` is set, key equality is tested with
+///   `hxthree_way(a, b) == 0` instead of `hxkey_equal`.
 template<hxhash_table_concept_ node_t_,
 	typename deleter_t_=hxdefault_delete,
-	bool multi_t_ = false,
-	uint32_t table_size_bits_=hxallocator_dynamic_capacity>
+	uint32_t table_size_bits_=hxallocator_dynamic_capacity,
+	int traits_=0>
 class hxhash_table : private deleter_t_, private hxhash_table_base_ {
 public:
 	using node_t = node_t_;
@@ -364,14 +366,14 @@ public:
 	hxattr_nodiscard deleter_t_& deleter(void);
 
 	/// `emplace` - Returns an iterator to the node constructed with `hxnew`.
-	/// The table must have `multi_t` set to `true`.
+	/// The table must have `hxtrait_multi` set in `traits`.
 	/// - `allocator` : The memory manager ID to use for allocation. Defaults to
 	///   `hxsystem_allocator_current`.
 	/// - `align` : Alignment to use when allocating new pointers. Defaults to
 	///   `hxalignment`.
 	/// - `args` : Arguments forwarded to the node constructor.
 	template<hxsystem_allocator_t allocator_=hxsystem_allocator_current,
-		hxalignment_t align_=hxalignment, bool multi_=multi_t_, class... args_t_>
+		hxalignment_t align_=hxalignment, bool multi_=(traits_ & hxtrait_multi) != 0, class... args_t_>
 	hxenable_if_t<multi_, iterator> emplace(args_t_&&... args_) noexcept;
 
 	/// Checks if the hash table is empty.
@@ -429,16 +431,17 @@ public:
 	/// - `key` : The key to search for.
 	hxattr_nodiscard bool has_value(const key_t& key_) const;
 
-	/// `insert` - Returns an iterator to the inserted node. When `multi_t` is
-	/// `false` and a node with an equal key already exists, invokes `deleter_t`
-	/// on `ptr` and returns an iterator to the existing node. `ptr` must not be
-	/// null.
+	/// `insert` - Returns an iterator to the inserted node. When `hxtrait_multi`
+	/// is unset in `traits` and a node with an equal key already exists, invokes
+	/// `deleter_t` on `ptr` and returns an iterator to the existing node. `ptr`
+	/// must not be null.
 	/// - `ptr` : The node to insert.
 	iterator insert(node_t_* ptr_) noexcept;
 
-	/// `insert` - Returns an iterator to the inserted node. When `multi_t` is
-	/// `false` and a node with an equal key already exists, returns an iterator
-	/// to the existing node and `ptr` is destroyed, invoking its deleter.
+	/// `insert` - Returns an iterator to the inserted node. When `hxtrait_multi`
+	/// is unset in `traits` and a node with an equal key already exists, returns
+	/// an iterator to the existing node and `ptr` is destroyed, invoking its
+	/// deleter.
 	/// - `ptr` : The `hxptr` owning the node to insert.
 	template<typename deleter_u_>
 	iterator insert(hxptr<node_t_, deleter_u_>&& ptr_) noexcept;
@@ -495,7 +498,7 @@ public:
 
 	/// `try_emplace` - Returns an iterator to the node if it was inserted, or
 	/// an iterator to the existing node if a node with an equal key already
-	/// exists. The table must have `multi_t` set to `false`.
+	/// exists. The table must have `hxtrait_multi` unset in `traits`.
 	/// - `allocator` : The memory manager ID to use for allocation. Defaults to
 	///   `hxsystem_allocator_current`.
 	/// - `align` : Alignment to use when allocating new pointers. Defaults to
@@ -503,7 +506,7 @@ public:
 	/// - `key` : The key the node will have once constructed.
 	/// - `args` : Arguments forwarded to the node constructor.
 	template<hxsystem_allocator_t allocator_=hxsystem_allocator_current,
-		hxalignment_t align_=hxalignment, bool multi_=multi_t_, class... args_t_>
+		hxalignment_t align_=hxalignment, bool multi_=(traits_ & hxtrait_multi) != 0, class... args_t_>
 	hxenable_if_t<!multi_, iterator> try_emplace(
 		const typename node_t_::key_t& key_, args_t_&&... args_) noexcept;
 

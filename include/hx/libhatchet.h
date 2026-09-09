@@ -290,6 +290,13 @@ hxinline_constexpr hxhash_t hxnull_hash = 31u;
 /// `hxnull_handle` - A handle that will never refer to a valid object.
 hxinline_constexpr hxhandle_t hxnull_handle = 0u;
 
+/// `hxtrait_multi` - A trait for containers allowing multiple instances of the
+/// same key.
+hxinline_constexpr int hxtrait_multi = 1;
+
+/// `hxtrait_three_way` - A trait for algorithms using a three-way comparison.
+hxinline_constexpr int hxtrait_three_way = 2;
+
 /// `hxsizeof` - Returns the size of a type or expression as `hxsize_t`.
 template<typename T_> constexpr hxsize_t hxsizeof(void) {
 	return static_cast<hxsize_t>(sizeof(T_));

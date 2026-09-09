@@ -40,7 +40,7 @@ public:
 };
 
 using hxtest_hash_pool_t = hxfree_list<hxtest_hash_node, 8>;
-using hxtest_hash_table_t = hxhash_table<hxtest_hash_node, hxtest_hash_pool_t::deleter_t, false, 2>;
+using hxtest_hash_table_t = hxhash_table<hxtest_hash_node, hxtest_hash_pool_t::deleter_t, 2, 0>;
 
 } // namespace
 
@@ -326,7 +326,7 @@ TEST_F(hxfree_list_test_f, hxhash_table_with_hxdo_not_delete_does_not_release_sl
 	hxtest_hash_pool_t pool;
 	hxtest_hash_node* raws[2] = { hxnull, hxnull };
 	{
-		hxhash_table<hxtest_hash_node, hxdo_not_delete, false, 2> table;
+		hxhash_table<hxtest_hash_node, hxdo_not_delete, 2, 0> table;
 		hxtest_hash_pool_t::ptr_t a = pool.allocate(1);
 		hxtest_hash_pool_t::ptr_t b = pool.allocate(2);
 		raws[0] = a.get();

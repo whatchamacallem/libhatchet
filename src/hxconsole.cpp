@@ -134,7 +134,7 @@ public:
 };
 
 class hxconsole_command_table
-	: public hxhash_table<hxdetail_::hxconsole_hash_table_node_, hxdo_not_delete, false, 3> {
+	: public hxhash_table<hxdetail_::hxconsole_hash_table_node_, hxdo_not_delete, 3, 0> {
 };
 
 // Local static to enforce construction-order. Destruction is no-op.

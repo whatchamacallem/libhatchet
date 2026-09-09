@@ -16,14 +16,14 @@ hxattr_noinline static void hxtest_gdb_break_hxflat_map_dynamic(void) { }
 
 #if !defined _MSC_VER && !defined __wasm__
 static_assert(sizeof(size_t) != 4 || (
-		sizeof(hxflat_map<int32_t, int32_t, hxkey_less_t<int32_t>, false, 4>) == 36u
-		&& sizeof(hxflat_map<int32_t, int32_t, hxkey_less_t<int32_t>, false>) == 20u),
+		sizeof(hxflat_map<int32_t, int32_t, hxkey_less_t<int32_t>, 4, 0>) == 36u
+		&& sizeof(hxflat_map<int32_t, int32_t, hxkey_less_t<int32_t>, hxallocator_dynamic_capacity, 0>) == 20u),
 	"hxflat_map must pack fixed storage as a hxsize_t size plus two capacity *"
 	" sizeof(T) key and value arrays and dynamic storage as a hxsize_t size"
 	" plus two hxsize_t/T* allocator pairs with no padding");
 static_assert(sizeof(size_t) != 8 || (
-		sizeof(hxflat_map<int32_t, int32_t, hxkey_less_t<int32_t>, false, 4>) == 40u
-		&& sizeof(hxflat_map<int32_t, int32_t, hxkey_less_t<int32_t>, false>) == 40u),
+		sizeof(hxflat_map<int32_t, int32_t, hxkey_less_t<int32_t>, 4, 0>) == 40u
+		&& sizeof(hxflat_map<int32_t, int32_t, hxkey_less_t<int32_t>, hxallocator_dynamic_capacity, 0>) == 40u),
 	"hxflat_map must pack fixed storage as a hxsize_t size plus two capacity *"
 	" sizeof(T) key and value arrays and dynamic storage as a hxsize_t size"
 	" plus two hxsize_t/T* allocator pairs with no padding");
@@ -32,7 +32,7 @@ static_assert(sizeof(size_t) != 8 || (
 using hxflat_map_test_f = hxtest_object_fixture;
 
 TEST(hxflat_map_test, static_initializer_list_ctor_sorts_and_rejects_duplicates) {
-	const hxflat_map<int, int, hxkey_less_t<int>, false, 4> m{
+	const hxflat_map<int, int, hxkey_less_t<int>, 4, 0> m{
 		{3, 30}, {1, 10}, {2, 20}, {1, 11}};
 	EXPECT_EQ(m.size(), 3);
 	EXPECT_EQ(m.find(1).value(), 10);
@@ -41,7 +41,7 @@ TEST(hxflat_map_test, static_initializer_list_ctor_sorts_and_rejects_duplicates)
 }
 
 TEST(hxflat_map_test, dynamic_initializer_list_ctor_allows_duplicates) {
-	const hxflat_map<int, int> m{
+	const hxflat_map<int, int, hxkey_less_t<int>, hxallocator_dynamic_capacity, hxtrait_multi> m{
 		{3, 30}, {1, 10}, {2, 20}, {1, 11}};
 	EXPECT_EQ(m.size(), 4);
 	EXPECT_EQ(m[0].key(), 1);
@@ -53,25 +53,25 @@ TEST(hxflat_map_test, dynamic_initializer_list_ctor_allows_duplicates) {
 }
 
 TEST(hxflat_map_test, operator_equal_int_mapped_type_detects_key_and_value_mismatch) {
-	const hxflat_map<int, int, hxkey_less_t<int>, false, 2> a{ {1, 10} };
-	const hxflat_map<int, int, hxkey_less_t<int>, false, 2> b{ {1, 10} };
+	const hxflat_map<int, int, hxkey_less_t<int>, 2, 0> a{ {1, 10} };
+	const hxflat_map<int, int, hxkey_less_t<int>, 2, 0> b{ {1, 10} };
 	EXPECT_TRUE(a == b);
-	const hxflat_map<int, int, hxkey_less_t<int>, false, 2> c{ {1, 99} };
+	const hxflat_map<int, int, hxkey_less_t<int>, 2, 0> c{ {1, 99} };
 	EXPECT_FALSE(a == c);
-	const hxflat_map<int, int, hxkey_less_t<int>, false, 2> d{ {2, 10} };
+	const hxflat_map<int, int, hxkey_less_t<int>, 2, 0> d{ {2, 10} };
 	EXPECT_FALSE(a == d);
-	const hxflat_map<int, int, hxkey_less_t<int>, false, 2> e{ {1, 10}, {2, 20} };
+	const hxflat_map<int, int, hxkey_less_t<int>, 2, 0> e{ {1, 10}, {2, 20} };
 	EXPECT_FALSE(a == e);
 	EXPECT_FALSE(e == a);
-	const hxflat_map<int, int, hxkey_less_t<int>, false, 2> f{ {1, 10}, {2, 99} };
+	const hxflat_map<int, int, hxkey_less_t<int>, 2, 0> f{ {1, 10}, {2, 99} };
 	EXPECT_FALSE(e == f);
 }
 
 TEST(hxflat_map_test, mutable_value_proxy_operator_equal_detects_key_and_value_mismatch) {
-	hxflat_map<int, int, hxkey_less_t<int>, false, 2> a{ {1, 10} };
-	hxflat_map<int, int, hxkey_less_t<int>, false, 2> b{ {1, 10} };
-	hxflat_map<int, int, hxkey_less_t<int>, false, 2> c{ {1, 99} };
-	hxflat_map<int, int, hxkey_less_t<int>, false, 2> d{ {2, 10} };
+	hxflat_map<int, int, hxkey_less_t<int>, 2, 0> a{ {1, 10} };
+	hxflat_map<int, int, hxkey_less_t<int>, 2, 0> b{ {1, 10} };
+	hxflat_map<int, int, hxkey_less_t<int>, 2, 0> c{ {1, 99} };
+	hxflat_map<int, int, hxkey_less_t<int>, 2, 0> d{ {2, 10} };
 	EXPECT_TRUE(*a.begin() == *b.begin());
 	EXPECT_FALSE(*a.begin() == *c.begin());
 	EXPECT_FALSE(*a.begin() == *d.begin());
@@ -79,7 +79,7 @@ TEST(hxflat_map_test, mutable_value_proxy_operator_equal_detects_key_and_value_m
 
 #if HX_CPLUSPLUS >= 202302L
 TEST(hxflat_map_test, expected_lookup_and_emplace) {
-	hxflat_map<int, int, hxkey_less_t<int>, false, 3> m;
+	hxflat_map<int, int, hxkey_less_t<int>, 3, 0> m;
 	EXPECT_EQ(m.emplace(2, 20).value(), 20);
 	EXPECT_EQ(m.emplace(1, 10).value(), 10);
 	EXPECT_EQ(m.emplace(2, 99).value(), 20);
@@ -113,7 +113,7 @@ TEST(hxflat_map_test, expected_lookup_and_emplace) {
 		return m.find(1);
 	}).value(), 10);
 	EXPECT_TRUE(called);
-	const hxflat_map<int, int, hxkey_less_t<int>, false, 3>& cm = m;
+	const hxflat_map<int, int, hxkey_less_t<int>, 3, 0>& cm = m;
 	called = false;
 	EXPECT_EQ(cm.and_then(2, [&called](const int& value) {
 		called = true;
@@ -178,7 +178,7 @@ TEST(hxflat_map_test, expected_lookup_and_emplace) {
 }
 
 TEST_F(hxflat_map_test_f, value_or_emplaces_fallback) {
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 1> m;
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 1, 0> m;
 	m.emplace(1, 10);
 	EXPECT_EQ(m.value_or(1, 14, 17).value(), 10);
 	EXPECT_EQ(m.value_or(2, 14, 17).value(), 31);
@@ -190,14 +190,14 @@ TEST_F(hxflat_map_test_f, value_or_emplaces_fallback) {
 TEST_F(hxflat_map_test_f, gdb_break) {
 	const hxtest_object k1(1), k2(2), k3(3);
 	const hxtest_object v1(10), v2(20), v3(30);
-	const hxflat_map<hxtest_object, hxtest_object, hxkey_less_t<hxtest_object>, false, 4> a{
+	const hxflat_map<hxtest_object, hxtest_object, hxkey_less_t<hxtest_object>, 4, 0> a{
 		{k1, v1}, {k2, v2}, {k3, v3}};
 	hxtest_gdb_break_hxflat_map_static();
 	EXPECT_EQ(a.size(), 3);
-	const hxflat_map<hxtest_object, hxtest_object, hxkey_less_t<hxtest_object>> b{
+	const hxflat_map<hxtest_object, hxtest_object, hxkey_less_t<hxtest_object>, hxallocator_dynamic_capacity, hxtrait_multi> b{
 		{k1, v1}, {k2, v2}, {k3, v3}};
-	const hxflat_map<hxtest_object, hxtest_object, hxkey_less_t<hxtest_object>> c;
-	hxflat_map<hxtest_object, hxtest_object, hxkey_less_t<hxtest_object>> d;
+	const hxflat_map<hxtest_object, hxtest_object, hxkey_less_t<hxtest_object>, hxallocator_dynamic_capacity, hxtrait_multi> c;
+	hxflat_map<hxtest_object, hxtest_object, hxkey_less_t<hxtest_object>, hxallocator_dynamic_capacity, hxtrait_multi> d;
 	d.reserve(4);
 	hxtest_gdb_break_hxflat_map_dynamic();
 	EXPECT_EQ(b.size(), 3);
@@ -207,13 +207,13 @@ TEST_F(hxflat_map_test_f, gdb_break) {
 }
 
 TEST_F(hxflat_map_test_f, construct) {
-	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 1> ms;
+	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, 1, 0> ms;
 	EXPECT_TRUE(ms.empty());
 	EXPECT_EQ(ms.size(), 0);
 	EXPECT_EQ(ms.capacity(), 1);
 	EXPECT_EQ(ms.max_size(), 1);
 	EXPECT_FALSE(ms.full());
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, false> md;
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, hxallocator_dynamic_capacity, 0> md;
 	EXPECT_TRUE(md.empty());
 	EXPECT_EQ(md.capacity(), 0);
 	EXPECT_EQ(md.max_size(), 0);
@@ -224,20 +224,20 @@ TEST_F(hxflat_map_test_f, construct) {
 }
 
 TEST_F(hxflat_map_test_f, reserve_static_exact) {
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 1> m;
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 1, 0> m;
 	m.reserve(1);
 	EXPECT_EQ(m.capacity(), 1);
 	EXPECT_TRUE(check_no_stats());
 }
 
 TEST_F(hxflat_map_test_f, insert_unique_basic) {
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 2> m;
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 2, 0> m;
 	const hxtest_object v1(10), v2(20);
-	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 2>::iterator it1 = m.insert(1, v1);
+	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, 2, 0>::iterator it1 = m.insert(1, v1);
 	EXPECT_EQ(it1.key(), 1);
 	EXPECT_EQ(it1.value().value(), 10);
 	EXPECT_EQ(m.size(), 1);
-	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 2>::iterator it2 = m.insert(1, v2);
+	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, 2, 0>::iterator it2 = m.insert(1, v2);
 	EXPECT_EQ(it2.key(), 1);
 	EXPECT_EQ(it2.value().value(), 10);
 	EXPECT_EQ(m.size(), 1);
@@ -246,10 +246,10 @@ TEST_F(hxflat_map_test_f, insert_unique_basic) {
 
 TEST_F(hxflat_map_test_f, insert_unique_sorted_order) {
 	const hxtest_object v3(3), v1(1), v2(2);
-	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 3> m{
+	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, 3, 0> m{
 		{30, v3}, {10, v1}, {20, v2}};
 	EXPECT_EQ(m.size(), 3);
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 3>::const_iterator it = m.begin();
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 3, 0>::const_iterator it = m.begin();
 	EXPECT_EQ(it.key(), 10); ++it;
 	EXPECT_EQ(it.key(), 20); ++it;
 	EXPECT_EQ(it.key(), 30);
@@ -257,9 +257,9 @@ TEST_F(hxflat_map_test_f, insert_unique_sorted_order) {
 }
 
 TEST_F(hxflat_map_test_f, insert_unique_move) {
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 3> m;
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 3, 0> m;
 	hxtest_object v(34);
-	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 3>::iterator it =
+	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, 3, 0>::iterator it =
 		m.insert(5, hxmove(v));
 	EXPECT_EQ(it.key(), 5);
 	EXPECT_EQ(it.value().value(), 34);
@@ -267,12 +267,12 @@ TEST_F(hxflat_map_test_f, insert_unique_move) {
 	const hxtest_object v1(10);
 	m.insert(1, v1);
 	hxtest_object v2(20);
-	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 3>::iterator it2 =
+	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, 3, 0>::iterator it2 =
 		m.insert(1, hxmove(v2));
 	EXPECT_EQ(it2.value().value(), 10);
 	EXPECT_EQ(m.size(), 2);
 	hxtest_object v3(15);
-	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 3>::iterator it3 =
+	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, 3, 0>::iterator it3 =
 		m.insert(3, hxmove(v3));
 	EXPECT_EQ(it3.key(), 3);
 	EXPECT_EQ(it3.value().value(), 15);
@@ -281,7 +281,7 @@ TEST_F(hxflat_map_test_f, insert_unique_move) {
 }
 
 TEST_F(hxflat_map_test_f, insert_multi) {
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, true, 2> m;
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 2, hxtrait_multi> m;
 	const hxtest_object v1(10);
 	hxtest_object v2(20);
 	m.insert(1, v1);
@@ -294,10 +294,10 @@ TEST_F(hxflat_map_test_f, insert_multi) {
 
 TEST_F(hxflat_map_test_f, insert_shifts_elements) {
 	const hxtest_object va(1), vb(2), vc(3);
-	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 3> m{
+	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, 3, 0> m{
 		{10, va}, {30, vb}, {20, vc}};
 	EXPECT_EQ(m.size(), 3);
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 3>::const_iterator it = m.begin();
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 3, 0>::const_iterator it = m.begin();
 	EXPECT_EQ(it.key(), 10); ++it;
 	EXPECT_EQ(it.key(), 20); ++it;
 	EXPECT_EQ(it.key(), 30);
@@ -306,12 +306,12 @@ TEST_F(hxflat_map_test_f, insert_shifts_elements) {
 
 TEST_F(hxflat_map_test_f, insert_at_front_shifts_single_element) {
 	const hxtest_object va(1), vb(2);
-	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 2> m{
+	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, 2, 0> m{
 		{20, va}, {10, vb}};
 	EXPECT_EQ(m.size(), 2);
 	EXPECT_EQ(m.begin().key(), 10);
 	EXPECT_EQ(m.begin().value().value(), 2);
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 2>::const_iterator it = m.begin();
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 2, 0>::const_iterator it = m.begin();
 	++it;
 	EXPECT_EQ(it.key(), 20);
 	EXPECT_EQ(it.value().value(), 1);
@@ -319,7 +319,7 @@ TEST_F(hxflat_map_test_f, insert_at_front_shifts_single_element) {
 }
 
 TEST_F(hxflat_map_test_f, insert_dynamic) {
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, false> m;
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, hxallocator_dynamic_capacity, 0> m;
 	m.reserve(1);
 	const hxtest_object v(7);
 	m.insert(3, v);
@@ -330,7 +330,7 @@ TEST_F(hxflat_map_test_f, insert_dynamic) {
 
 TEST_F(hxflat_map_test_f, clear) {
 	const hxtest_object v1(1), v2(2);
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 2> m{
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 2, 0> m{
 		{1, v1}, {2, v2}};
 	EXPECT_EQ(m.size(), 2);
 	m.clear();
@@ -342,25 +342,25 @@ TEST_F(hxflat_map_test_f, clear) {
 }
 
 TEST_F(hxflat_map_test_f, find) {
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 2> m;
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 2, 0> m;
 	const hxtest_object v(99);
 	m.insert(7, v);
-	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 2>::iterator p = m.find(7);
+	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, 2, 0>::iterator p = m.find(7);
 	EXPECT_NE(p, m.end());
 	EXPECT_EQ(p.value().value(), 99);
 	p.value().value() = 55;
 	EXPECT_EQ(m.find(7).value().value(), 55);
 	EXPECT_EQ(m.find(99), m.end());
-	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 2>& cm = m;
+	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, 2, 0>& cm = m;
 	EXPECT_EQ(cm.find(7).value().value(), 55);
 	EXPECT_EQ(cm.find(99), cm.end());
-	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 2> empty;
+	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, 2, 0> empty;
 	EXPECT_EQ(empty.find(1), empty.end());
 	EXPECT_TRUE(check_stats(2, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxflat_map_test_f, count) {
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, true, 3> m;
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 3, hxtrait_multi> m;
 	const hxtest_object v1(1), v2(2), v3(3);
 	m.insert(4, v1);
 	EXPECT_EQ(m.count(4), 1);
@@ -372,7 +372,7 @@ TEST_F(hxflat_map_test_f, count) {
 }
 
 TEST_F(hxflat_map_test_f, lower_bound) {
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 3> m;
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 3, 0> m;
 	const hxtest_object v1(1), v2(2), v3(3);
 	m.insert(10, v1);
 	m.insert(30, v2);
@@ -381,18 +381,18 @@ TEST_F(hxflat_map_test_f, lower_bound) {
 	EXPECT_TRUE(m.lower_bound(99) == m.end());
 	m.insert(20, v3);
 	EXPECT_EQ(m.lower_bound(20).key(), 20);
-	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 3>::iterator it = m.lower_bound(20);
+	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, 3, 0>::iterator it = m.lower_bound(20);
 	it.value().value() = 99;
 	EXPECT_EQ(m.find(20).value().value(), 99);
 	EXPECT_TRUE(check_stats(6, 0, 0, 3, 2, 1, 1, 0, 0, 0, 0));
 }
 
 TEST_F(hxflat_map_test_f, upper_bound) {
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, true, 3> m;
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 3, hxtrait_multi> m;
 	const hxtest_object v1(1), v2(2), v3(3);
 	m.insert(10, v1);
 	m.insert(20, v2);
-	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, true, 3>& cm = m;
+	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, 3, hxtrait_multi>& cm = m;
 	EXPECT_EQ(cm.upper_bound(10).key(), 20);
 	EXPECT_EQ(m.upper_bound(15).key(), 20);
 	EXPECT_TRUE(m.upper_bound(20) == m.end());
@@ -403,7 +403,7 @@ TEST_F(hxflat_map_test_f, upper_bound) {
 }
 
 TEST_F(hxflat_map_test_f, erase_key_unique) {
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 1> m;
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 1, 0> m;
 	const hxtest_object v(1);
 	m.insert(5, v);
 	EXPECT_EQ(m.erase(9), 0);
@@ -417,7 +417,7 @@ TEST_F(hxflat_map_test_f, erase_key_unique) {
 }
 
 TEST_F(hxflat_map_test_f, erase_key_multi) {
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, true, 4> m;
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 4, hxtrait_multi> m;
 	const hxtest_object v1(1), v2(2), v3(3), v4(4);
 	m.insert(5, v1);
 	EXPECT_EQ(m.erase(9), 0);
@@ -434,7 +434,7 @@ TEST_F(hxflat_map_test_f, erase_key_multi) {
 }
 
 TEST_F(hxflat_map_test_f, erase_key_multi_tail_relative_to_count) {
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, true, 4> ma;
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 4, hxtrait_multi> ma;
 	const hxtest_object v1(1), v2(2), v3(3), v4(4);
 	ma.insert(5, v1);
 	ma.insert(5, v2);
@@ -443,7 +443,7 @@ TEST_F(hxflat_map_test_f, erase_key_multi_tail_relative_to_count) {
 	EXPECT_EQ(ma.erase(5), 3);
 	EXPECT_EQ(ma.size(), 1);
 	EXPECT_EQ(ma.find(10).value().value(), 4);
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, true, 4> mb;
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 4, hxtrait_multi> mb;
 	mb.insert(5, v1);
 	mb.insert(10, v2);
 	mb.insert(10, v3);
@@ -455,38 +455,38 @@ TEST_F(hxflat_map_test_f, erase_key_multi_tail_relative_to_count) {
 }
 
 TEST_F(hxflat_map_test_f, erase_iterator_only_and_pair) {
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 2> m;
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 2, 0> m;
 	const hxtest_object v1(1), v2(2);
 	m.insert(7, v1);
-	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 2>::iterator next1 =
+	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, 2, 0>::iterator next1 =
 		m.erase(m.begin());
 	EXPECT_TRUE(next1 == m.end());
 	EXPECT_TRUE(m.empty());
 	m.insert(10, v1);
 	m.insert(20, v2);
-	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 2>::iterator next2 =
+	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, 2, 0>::iterator next2 =
 		m.erase(m.begin());
 	EXPECT_EQ(next2.key(), 20);
 	EXPECT_EQ(m.size(), 1);
-	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 2>::iterator last = m.begin();
-	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 2>::iterator next3 = m.erase(last);
+	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, 2, 0>::iterator last = m.begin();
+	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, 2, 0>::iterator next3 = m.erase(last);
 	EXPECT_TRUE(next3 == m.end());
 	EXPECT_EQ(m.size(), 0);
 	EXPECT_TRUE(check_stats(5, 3, 0, 2, 3, 0, 0, 1, 0, 0, 0));
 }
 
 TEST_F(hxflat_map_test_f, erase_iterator_first_and_middle_of_three) {
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 3> m;
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 3, 0> m;
 	const hxtest_object v1(1), v2(2), v3(3);
 	m.insert(10, v1);
 	m.insert(20, v2);
 	m.insert(30, v3);
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 3>::iterator mid = m.begin();
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 3, 0>::iterator mid = m.begin();
 	++mid;
-	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 3>::iterator next1 = m.erase(mid);
+	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, 3, 0>::iterator next1 = m.erase(mid);
 	EXPECT_EQ(next1.key(), 30);
 	EXPECT_EQ(m.size(), 2);
-	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 3>::iterator next2 =
+	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, 3, 0>::iterator next2 =
 		m.erase(m.begin());
 	EXPECT_EQ(next2.key(), 30);
 	EXPECT_EQ(m.size(), 1);
@@ -497,16 +497,16 @@ TEST_F(hxflat_map_test_f, erase_iterator_first_and_middle_of_three) {
 
 TEST_F(hxflat_map_test_f, const_iterator_arithmetic) {
 	const hxtest_object v1(1), v2(2), v3(3);
-	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 3> m{
+	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, 3, 0> m{
 		{10, v1}, {20, v2}, {30, v3}};
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 3>::const_iterator it = m.begin();
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 3, 0>::const_iterator it = m.begin();
 	it += 2;
 	EXPECT_EQ(it.key(), 30);
 	it -= 1;
 	EXPECT_EQ(it.key(), 20);
-	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 3>::const_iterator it2 = it + 1;
+	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, 3, 0>::const_iterator it2 = it + 1;
 	EXPECT_EQ(it2.key(), 30);
-	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 3>::const_iterator it3 = it2 - 1;
+	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, 3, 0>::const_iterator it3 = it2 - 1;
 	EXPECT_EQ(it3.key(), 20);
 	EXPECT_EQ(m.begin()[1].key, 20);
 	EXPECT_EQ(m.end() - m.begin(), ptrdiff_t{3});
@@ -515,18 +515,18 @@ TEST_F(hxflat_map_test_f, const_iterator_arithmetic) {
 
 TEST_F(hxflat_map_test_f, const_iterator_pre_post_increment_decrement) {
 	const hxtest_object v1(1), v2(2);
-	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 2> m{
+	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, 2, 0> m{
 		{10, v1}, {20, v2}};
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 2>::const_iterator it = m.begin();
-	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 2>::const_iterator it2 = ++it;
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 2, 0>::const_iterator it = m.begin();
+	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, 2, 0>::const_iterator it2 = ++it;
 	EXPECT_EQ(it.key(), 20);
 	EXPECT_EQ(it2.key(), 20);
 	--it;
 	EXPECT_EQ(it.key(), 10);
-	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 2>::const_iterator it3 = it++;
+	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, 2, 0>::const_iterator it3 = it++;
 	EXPECT_EQ(it3.key(), 10);
 	EXPECT_EQ(it.key(), 20);
-	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 2>::const_iterator it4 = it--;
+	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, 2, 0>::const_iterator it4 = it--;
 	EXPECT_EQ(it4.key(), 20);
 	EXPECT_EQ(it.key(), 10);
 	EXPECT_TRUE(check_stats(6, 2, 0, 2, 4, 0, 0, 0, 0, 0, 0));
@@ -534,10 +534,10 @@ TEST_F(hxflat_map_test_f, const_iterator_pre_post_increment_decrement) {
 
 TEST_F(hxflat_map_test_f, const_iterator_equality_and_order) {
 	const hxtest_object v1(1), v2(2);
-	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 2> m{
+	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, 2, 0> m{
 		{10, v1}, {20, v2}};
-	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 2>::const_iterator a = m.begin();
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 2>::const_iterator b = m.begin();
+	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, 2, 0>::const_iterator a = m.begin();
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 2, 0>::const_iterator b = m.begin();
 	++b;
 	EXPECT_TRUE(a == a);
 	EXPECT_FALSE(a == b);
@@ -554,20 +554,20 @@ TEST_F(hxflat_map_test_f, const_iterator_equality_and_order) {
 }
 
 TEST_F(hxflat_map_test_f, const_iterator_dereference_proxy) {
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 1> m;
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 1, 0> m;
 	const hxtest_object v(7);
 	m.insert(3, v);
-	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 1>::const_iterator it = m.begin();
+	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, 1, 0>::const_iterator it = m.begin();
 	EXPECT_EQ((*it).key, 3);
 	EXPECT_EQ((*it).value.value(), 7);
 	EXPECT_TRUE(check_stats(2, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxflat_map_test_f, iterator_dereference_and_mutation) {
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 1> m;
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 1, 0> m;
 	const hxtest_object v(7);
 	m.insert(3, v);
-	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 1>::iterator it = m.begin();
+	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, 1, 0>::iterator it = m.begin();
 	EXPECT_EQ((*it).key, 3);
 	(*it).value.value() = 99;
 	EXPECT_EQ(m.find(3).value().value(), 99);
@@ -576,16 +576,16 @@ TEST_F(hxflat_map_test_f, iterator_dereference_and_mutation) {
 
 TEST_F(hxflat_map_test_f, iterator_arithmetic) {
 	const hxtest_object v1(1), v2(2), v3(3);
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 3> m{
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 3, 0> m{
 		{10, v1}, {20, v2}, {30, v3}};
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 3>::iterator it = m.begin();
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 3, 0>::iterator it = m.begin();
 	it += 2;
 	EXPECT_EQ(it.key(), 30);
 	it -= 1;
 	EXPECT_EQ(it.key(), 20);
-	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 3>::iterator it2 = it + 1;
+	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, 3, 0>::iterator it2 = it + 1;
 	EXPECT_EQ(it2.key(), 30);
-	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 3>::iterator it3 = it2 - 1;
+	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, 3, 0>::iterator it3 = it2 - 1;
 	EXPECT_EQ(it3.key(), 20);
 	EXPECT_EQ(it[1].key, 30);
 	EXPECT_EQ(it2 - it3, hxsize_t{1});
@@ -594,13 +594,13 @@ TEST_F(hxflat_map_test_f, iterator_arithmetic) {
 
 TEST_F(hxflat_map_test_f, iterator_pre_post_increment_decrement) {
 	const hxtest_object v1(1), v2(2);
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 2> m{
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 2, 0> m{
 		{10, v1}, {20, v2}};
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 2>::iterator it = m.begin();
-	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 2>::iterator before = it++;
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 2, 0>::iterator it = m.begin();
+	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, 2, 0>::iterator before = it++;
 	EXPECT_EQ(before.key(), 10);
 	EXPECT_EQ(it.key(), 20);
-	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 2>::iterator after = it--;
+	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, 2, 0>::iterator after = it--;
 	EXPECT_EQ(after.key(), 20);
 	EXPECT_EQ(it.key(), 10);
 	++it;
@@ -611,7 +611,7 @@ TEST_F(hxflat_map_test_f, iterator_pre_post_increment_decrement) {
 }
 
 TEST_F(hxflat_map_test_f, begin_end) {
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 1> m;
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 1, 0> m;
 	EXPECT_TRUE(m.begin() == m.end());
 	EXPECT_TRUE(m.cbegin() == m.cend());
 	const hxtest_object v(1);
@@ -622,7 +622,7 @@ TEST_F(hxflat_map_test_f, begin_end) {
 }
 
 TEST_F(hxflat_map_test_f, full) {
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 2> m;
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 2, 0> m;
 	const hxtest_object v1(1), v2(2);
 	EXPECT_FALSE(m.full());
 	m.insert(1, v1);
@@ -633,7 +633,7 @@ TEST_F(hxflat_map_test_f, full) {
 }
 
 TEST_F(hxflat_map_test_f, dynamic_multimap_insert_erase) {
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, true> m;
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, hxallocator_dynamic_capacity, hxtrait_multi> m;
 	m.reserve(5);
 	const hxtest_object va(1), vb(2), vc(3), vd(4), ve(5);
 	m.insert(10, va);
@@ -654,7 +654,7 @@ TEST_F(hxflat_map_test_f, dynamic_multimap_insert_erase) {
 
 TEST_F(hxflat_map_test_f, destructor_destroys_elements) {
 	{
-		hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 2> m;
+		hxflat_map<int, hxtest_object, hxkey_less_t<int>, 2, 0> m;
 		{
 			const hxtest_object v1(10), v2(20);
 			m.insert(1, v1);
@@ -665,13 +665,13 @@ TEST_F(hxflat_map_test_f, destructor_destroys_elements) {
 }
 
 TEST_F(hxflat_map_test_f, default_constructed_iterator_assignable) {
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 1> m;
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 1, 0> m;
 	const hxtest_object v(7);
 	m.insert(3, v);
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 1>::const_iterator cit;
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 1, 0>::const_iterator cit;
 	cit = m.begin();
 	EXPECT_EQ(cit.key(), 3);
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 1>::iterator it;
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 1, 0>::iterator it;
 	it = m.begin();
 	EXPECT_EQ(it.key(), 3);
 	it.value().value() = 99;
@@ -680,8 +680,8 @@ TEST_F(hxflat_map_test_f, default_constructed_iterator_assignable) {
 }
 
 TEST_F(hxflat_map_test_f, operator_equal) {
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 3> a;
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 4> b;
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 3, 0> a;
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 4, 0> b;
 	const hxtest_object v1(10), v2(20), v3(10), v4(20);
 	EXPECT_TRUE(a == b);
 	a.insert(1, v1);
@@ -694,28 +694,28 @@ TEST_F(hxflat_map_test_f, operator_equal) {
 }
 
 TEST_F(hxflat_map_test_f, operator_equal_mismatched_keys_or_values) {
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 2> a;
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 2> b;
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 2, 0> a;
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 2, 0> b;
 	const hxtest_object v1(10), v2(99);
 	a.insert(1, v1);
 	b.insert(1, v2);
 	EXPECT_FALSE(a == b);
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 2> c;
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 2> d;
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 2, 0> c;
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 2, 0> d;
 	const hxtest_object v3(10), v4(10);
 	c.insert(1, v3);
 	d.insert(2, v4);
 	EXPECT_FALSE(c == d);
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 2> e;
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 2> f;
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 2, 0> e;
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 2, 0> f;
 	const hxtest_object v5(10), v6(10), v7(20), v8(99);
 	e.insert(1, v5);
 	e.insert(2, v7);
 	f.insert(1, v6);
 	f.insert(2, v8);
 	EXPECT_FALSE(e == f);
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 2> g;
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 2> h;
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 2, 0> g;
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 2, 0> h;
 	const hxtest_object v9(10), v10(10), v11(20), v12(20);
 	g.insert(1, v9);
 	g.insert(2, v11);
@@ -726,8 +726,8 @@ TEST_F(hxflat_map_test_f, operator_equal_mismatched_keys_or_values) {
 }
 
 TEST_F(hxflat_map_test_f, operator_less) {
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 3> a;
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 3> b;
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 3, 0> a;
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 3, 0> b;
 	EXPECT_FALSE(a < b);
 	const hxtest_object v(1);
 	b.insert(1, v);
@@ -743,15 +743,15 @@ TEST_F(hxflat_map_test_f, operator_less) {
 }
 
 TEST_F(hxflat_map_test_f, operator_less_smaller_key_or_value_is_less) {
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 2> a;
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 2> b;
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 2, 0> a;
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 2, 0> b;
 	const hxtest_object v1(10), v2(10);
 	a.insert(1, v1);
 	b.insert(2, v2);
 	EXPECT_TRUE(a < b);
 	EXPECT_FALSE(b < a);
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 2> c;
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 2> d;
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 2, 0> c;
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 2, 0> d;
 	const hxtest_object v3(5), v4(10);
 	c.insert(1, v3);
 	d.insert(1, v4);
@@ -762,9 +762,9 @@ TEST_F(hxflat_map_test_f, operator_less_smaller_key_or_value_is_less) {
 
 TEST_F(hxflat_map_test_f, subscript) {
 	const hxtest_object v1(10), v2(20), v3(30);
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 3> m{
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 3, 0> m{
 		{1, v1}, {2, v2}, {3, v3}};
-	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 3>& cm = m;
+	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, 3, 0>& cm = m;
 	EXPECT_EQ(cm[0].key(), 1);
 	EXPECT_EQ(cm[0].value().value(), 10);
 	EXPECT_EQ(cm[2].key(), 3);
@@ -775,8 +775,8 @@ TEST_F(hxflat_map_test_f, subscript) {
 }
 
 TEST_F(hxflat_map_test_f, copy_assign) {
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 3> a;
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 4> b;
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 3, 0> a;
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 4, 0> b;
 	const hxtest_object v1(10), v2(20), vb(99);
 	b.insert(7, vb);
 	a.insert(1, v1);
@@ -786,7 +786,7 @@ TEST_F(hxflat_map_test_f, copy_assign) {
 	EXPECT_EQ(b.find(1).value().value(), 10);
 	EXPECT_EQ(b.find(2).value().value(), 20);
 	EXPECT_EQ(b.find(7), b.end());
-	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 3> empty;
+	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, 3, 0> empty;
 	b = empty;
 	EXPECT_TRUE(b.empty());
 	EXPECT_TRUE(check_stats(8, 3, 0, 3, 5, 0, 0, 0, 0, 0, 0));
@@ -795,8 +795,8 @@ TEST_F(hxflat_map_test_f, copy_assign) {
 TEST_F(hxflat_map_test_f, move_assign_transfers_elements) {
 	{
 		const hxtest_object v1(10), v2(20), v3(30);
-		hxflat_map<int, hxtest_object> a{{1, v1}, {2, v2}, {3, v3}};
-		hxflat_map<int, hxtest_object> b;
+		hxflat_map<int, hxtest_object, hxkey_less_t<int>, hxallocator_dynamic_capacity, hxtrait_multi> a{{1, v1}, {2, v2}, {3, v3}};
+		hxflat_map<int, hxtest_object, hxkey_less_t<int>, hxallocator_dynamic_capacity, hxtrait_multi> b;
 		b.reserve(1);
 		b = hxmove(a);
 		EXPECT_EQ(b.size(), 3);
@@ -812,8 +812,8 @@ TEST_F(hxflat_map_test_f, move_assign_transfers_elements) {
 TEST_F(hxflat_map_test_f, move_constructor_transfers_elements) {
 	{
 		const hxtest_object v1(10), v2(20), v3(30);
-		hxflat_map<int, hxtest_object> src{{1, v1}, {2, v2}, {3, v3}};
-		hxflat_map<int, hxtest_object> dst(hxmove(src));
+		hxflat_map<int, hxtest_object, hxkey_less_t<int>, hxallocator_dynamic_capacity, hxtrait_multi> src{{1, v1}, {2, v2}, {3, v3}};
+		hxflat_map<int, hxtest_object, hxkey_less_t<int>, hxallocator_dynamic_capacity, hxtrait_multi> dst(hxmove(src));
 		EXPECT_EQ(dst.size(), 3);
 		EXPECT_EQ(dst.find(1).value().value(), 10);
 		EXPECT_EQ(dst.find(2).value().value(), 20);
@@ -826,9 +826,9 @@ TEST_F(hxflat_map_test_f, move_constructor_transfers_elements) {
 
 TEST_F(hxflat_map_test_f, copy_constructor) {
 	const hxtest_object v1(10), v2(20), v3(30);
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 3> src{
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 3, 0> src{
 		{1, v1}, {2, v2}, {3, v3}};
-	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 3> dst(src);
+	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, 3, 0> dst(src);
 	EXPECT_EQ(dst.size(), 3);
 	EXPECT_EQ(dst.find(1).value().value(), 10);
 	EXPECT_EQ(dst.find(2).value().value(), 20);
@@ -840,8 +840,8 @@ TEST_F(hxflat_map_test_f, copy_constructor) {
 }
 
 TEST_F(hxflat_map_test_f, copy_constructor_empty) {
-	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 4> src;
-	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 4> dst(src); // NOLINT(performance-unnecessary-copy-initialization)
+	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, 4, 0> src;
+	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, 4, 0> dst(src); // NOLINT(performance-unnecessary-copy-initialization)
 	EXPECT_TRUE(dst.empty());
 	EXPECT_EQ(dst.size(), 0);
 	EXPECT_TRUE(check_no_stats());
@@ -850,10 +850,10 @@ TEST_F(hxflat_map_test_f, copy_constructor_empty) {
 TEST_F(hxflat_map_test_f, copy_constructor_lifecycle) {
 	{
 		const hxtest_object v1(10), v2(20);
-		const hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 3> src{
+		const hxflat_map<int, hxtest_object, hxkey_less_t<int>, 3, 0> src{
 			{1, v1}, {2, v2}};
 		{
-			const hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 3> dst(src); // NOLINT(performance-unnecessary-copy-initialization)
+			const hxflat_map<int, hxtest_object, hxkey_less_t<int>, 3, 0> dst(src); // NOLINT(performance-unnecessary-copy-initialization)
 			EXPECT_EQ(dst.size(), 2);
 		}
 	}
@@ -861,18 +861,18 @@ TEST_F(hxflat_map_test_f, copy_constructor_lifecycle) {
 }
 
 TEST(hxflat_map_test, implements_rand_iterator_api) {
-	hxflat_map<int, int, hxkey_less_t<int>, false, 4> m{
+	hxflat_map<int, int, hxkey_less_t<int>, 4, 0> m{
 		{1, 10}, {2, 20}, {3, 30}};
-	const hxflat_map<int, int, hxkey_less_t<int>, false, 4>& cm = m;
+	const hxflat_map<int, int, hxkey_less_t<int>, 4, 0>& cm = m;
 	EXPECT_TRUE(hxtest_check_rand_iterator_api(m.begin(), m.end()));
 	EXPECT_TRUE(hxtest_check_rand_iterator_api(cm.begin(), cm.end()));
 }
 
 #if HX_CPLUSPLUS >= 202002L
 TEST_F(hxflat_map_test_f, hxkey_equal) {
-	typedef hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 2> map_t;
+	typedef hxflat_map<int, hxtest_object, hxkey_less_t<int>, 2, 0> map_t;
 	map_t a;
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 4> b;
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 4, 0> b;
 	const hxtest_object v1(10), v2(20), v3(10);
 	a.insert(1, v1);
 	b.insert(1, v3);
@@ -887,15 +887,15 @@ TEST_F(hxflat_map_test_f, hxkey_equal) {
 }
 
 TEST_F(hxflat_map_test_f, hxkey_less) {
-	typedef hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 4> map_t;
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 2> a;
+	typedef hxflat_map<int, hxtest_object, hxkey_less_t<int>, 4, 0> map_t;
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 2, 0> a;
 	map_t b;
 	const hxtest_object v1(10), v2(10);
 	a.insert(1, v1);
 	b.insert(2, v2);
 	EXPECT_TRUE(a < b);
 	EXPECT_FALSE(b < a);
-	hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 2> c;
+	hxflat_map<int, hxtest_object, hxkey_less_t<int>, 2, 0> c;
 	c.insert(2, v2);
 	EXPECT_FALSE(b < c);
 	EXPECT_FALSE(c < b);
@@ -904,9 +904,9 @@ TEST_F(hxflat_map_test_f, hxkey_less) {
 
 TEST_F(hxflat_map_test_f, hxswap_exchanges_contents) {
 	{
-		hxflat_map<int, hxtest_object> a;
+		hxflat_map<int, hxtest_object, hxkey_less_t<int>, hxallocator_dynamic_capacity, hxtrait_multi> a;
 		a.reserve(2);
-		hxflat_map<int, hxtest_object> b;
+		hxflat_map<int, hxtest_object, hxkey_less_t<int>, hxallocator_dynamic_capacity, hxtrait_multi> b;
 		b.reserve(2);
 		const hxtest_object v1(10), v2(20);
 		a.insert(1, v1);
@@ -922,9 +922,9 @@ TEST_F(hxflat_map_test_f, hxswap_exchanges_contents) {
 
 TEST_F(hxflat_map_test_f, hxswap_empty_and_nonempty) {
 	{
-		hxflat_map<int, hxtest_object> a;
+		hxflat_map<int, hxtest_object, hxkey_less_t<int>, hxallocator_dynamic_capacity, hxtrait_multi> a;
 		a.reserve(2);
-		hxflat_map<int, hxtest_object> b;
+		hxflat_map<int, hxtest_object, hxkey_less_t<int>, hxallocator_dynamic_capacity, hxtrait_multi> b;
 		b.reserve(1);
 		const hxtest_object v1(10), v2(20);
 		a.insert(1, v1);
@@ -940,7 +940,7 @@ TEST_F(hxflat_map_test_f, hxswap_empty_and_nonempty) {
 #endif // HX_CPLUSPLUS >= 202002L
 
 TEST_F(hxflat_map_test_f, three_way_find_hit_costs_one_comparison) {
-	hxflat_map<hxtest_object, int, hxthree_way_t<hxtest_object>, false, hxallocator_dynamic_capacity, true> m;
+	hxflat_map<hxtest_object, int, hxthree_way_t<hxtest_object>, hxallocator_dynamic_capacity, hxtrait_three_way> m;
 	m.reserve(4);
 	const hxtest_object k10(10), k20(20), k30(30);
 	m.insert(k10, 100);
@@ -954,7 +954,7 @@ TEST_F(hxflat_map_test_f, three_way_find_hit_costs_one_comparison) {
 }
 
 TEST_F(hxflat_map_test_f, three_way_count_insert_erase_unique) {
-	hxflat_map<hxtest_object, int, hxthree_way_t<hxtest_object>, false, hxallocator_dynamic_capacity, true> m;
+	hxflat_map<hxtest_object, int, hxthree_way_t<hxtest_object>, hxallocator_dynamic_capacity, hxtrait_three_way> m;
 	m.reserve(4);
 	const hxtest_object k5(5);
 	m.insert(k5, 50);
@@ -971,7 +971,7 @@ TEST_F(hxflat_map_test_f, three_way_count_insert_erase_unique) {
 }
 
 TEST_F(hxflat_map_test_f, three_way_multi_count_and_erase) {
-	hxflat_map<hxtest_object, int, hxthree_way_t<hxtest_object>, true, hxallocator_dynamic_capacity, true> m;
+	hxflat_map<hxtest_object, int, hxthree_way_t<hxtest_object>, hxallocator_dynamic_capacity, hxtrait_multi | hxtrait_three_way> m;
 	m.reserve(4);
 	const hxtest_object k7a(7), k7b(7), k3(3);
 	m.insert(k7a, 70);
@@ -984,7 +984,7 @@ TEST_F(hxflat_map_test_f, three_way_multi_count_and_erase) {
 }
 
 TEST(hxflat_map_test, three_way_int_key_uses_subtraction_fallback) {
-	hxflat_map<int, int, hxthree_way_t<int>, false, hxallocator_dynamic_capacity, true> m;
+	hxflat_map<int, int, hxthree_way_t<int>, hxallocator_dynamic_capacity, hxtrait_three_way> m;
 	m.reserve(4);
 	m.insert(31, 310);
 	m.insert(32, 320);
