@@ -43,14 +43,28 @@ template<> struct hxcompare_<true> {
 	}
 };
 
-// One binary search loop shared by every hxlower_bound_ call site in
-// hxflat_map.inl/hxflat_set.inl, in the form of an hxpair of the converged
-// position and whether that position holds an element equivalent to value_.
-// When traits_ & hxtrait_three_way is set the found flag comes from the last
-// "not before" step at zero extra cost, reusing the comparison the search
-// already made against the position it converges on. Otherwise a strict weak
-// order cannot report equality from a single compare_ call, so one extra
-// hxcompare_equal_ call is made once the search converges.
+template<typename range_t_, typename value_t_, typename compare_t_, int traits_>
+hxattr_nodiscard hxinline hxconstexpr hxattr_flatten
+auto hxlower_bound_position_(range_t_&& range_, const value_t_& value_, const compare_t_& compare_)
+		-> hxrestrict_t<decltype(range_.begin())> {
+	using iterator_t_ = hxrestrict_t<decltype(range_.begin())>;
+	iterator_t_ begin_ = range_.begin();
+	// Does not dereference null pointer args.
+	hxsize_t count_ = range_.end() - begin_;
+	while(count_ > hxsize_t{0}) {
+		const hxsize_t step_ = count_ >> 1;
+		const iterator_t_ mid_ = begin_ + step_;
+		if(hxcompare_<(traits_ & hxtrait_three_way) != 0>::before(compare_, *mid_, value_)) {
+			begin_ = mid_ + hxsize_t{1};
+			count_ -= step_ + hxsize_t{1};
+		}
+		else {
+			count_ = step_;
+		}
+	}
+	return begin_;
+}
+
 template<typename range_t_, typename value_t_, typename compare_t_, int traits_>
 hxattr_nodiscard hxinline hxconstexpr hxattr_flatten
 auto hxlower_bound_search_(range_t_&& range_, const value_t_& value_, const compare_t_& compare_)

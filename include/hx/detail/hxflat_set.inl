@@ -166,8 +166,8 @@ hxinline hxattr_flatten hxsize_t hxflat_set<key_t_, compare_t_, capacity_, trait
 		return hxlower_bound_search_<const hxflat_set&, key_t_, compare_t, traits_>(*this, key_, comp_).b ? 1 : 0;
 	}
 	else {
-		const key_t_* const it_ = hxlower_bound_search_<const hxflat_set&, key_t_, compare_t, traits_>(
-			*this, key_, comp_).a;
+		const key_t_* const it_ = hxlower_bound_position_<const hxflat_set&, key_t_, compare_t, traits_>(
+			*this, key_, comp_);
 		return hxupper_bound_<hxrange<const key_t_*>, key_t_, compare_t, traits_>(
 			hxmake_range(it_, end_), key_, comp_) - it_;
 	}
@@ -193,8 +193,8 @@ hxattr_flatten hxsize_t hxflat_set<key_t_, compare_t_, capacity_, traits_>::eras
 		return 1;
 	}
 	else {
-		key_t_* const it_ = hxlower_bound_search_<hxrange<key_t_*>, key_t_, compare_t, traits_>(
-			hxmake_range(this->data(), end_), key_, comp_).a;
+		key_t_* const it_ = hxlower_bound_position_<hxrange<key_t_*>, key_t_, compare_t, traits_>(
+			hxmake_range(this->data(), end_), key_, comp_);
 		key_t_* const hi_ptr_ = hxupper_bound_<hxrange<key_t_*>, key_t_, compare_t, traits_>(
 			hxmake_range(it_, end_), key_, comp_);
 		const hxsize_t count_ = static_cast<hxsize_t>(hi_ptr_ - it_);
@@ -251,8 +251,8 @@ hxinline hxattr_flatten auto hxflat_set<key_t_, compare_t_, capacity_, traits_>:
 		return this->insert_at_(lo_.a, key_);
 	}
 	else {
-		key_t_* const it_ = hxlower_bound_search_<hxrange<key_t_*>, key_t_, compare_t, traits_>(
-			hxmake_range(this->data(), m_end_), key_, comp_).a;
+		key_t_* const it_ = hxlower_bound_position_<hxrange<key_t_*>, key_t_, compare_t, traits_>(
+			hxmake_range(this->data(), m_end_), key_, comp_);
 		return this->insert_at_(it_, key_);
 	}
 }
@@ -267,8 +267,8 @@ hxinline hxattr_flatten auto hxflat_set<key_t_, compare_t_, capacity_, traits_>:
 		return this->insert_at_(lo_.a, hxmove(key_));
 	}
 	else {
-		key_t_* const it_ = hxlower_bound_search_<hxrange<key_t_*>, key_t_, compare_t, traits_>(
-			hxmake_range(this->data(), m_end_), key_, comp_).a;
+		key_t_* const it_ = hxlower_bound_position_<hxrange<key_t_*>, key_t_, compare_t, traits_>(
+			hxmake_range(this->data(), m_end_), key_, comp_);
 		return this->insert_at_(it_, hxmove(key_));
 	}
 }
@@ -283,7 +283,7 @@ template<hxflat_set_concept_ key_t_, typename compare_t_, hxsize_t capacity_, in
 hxinline hxattr_flatten auto hxflat_set<key_t_, compare_t_, capacity_, traits_>::lower_bound(const key_t_& key_) const
 		-> const key_t_* {
 	const compare_t comp_;
-	return hxlower_bound_search_<const hxflat_set&, key_t_, compare_t, traits_>(*this, key_, comp_).a;
+	return hxlower_bound_position_<const hxflat_set&, key_t_, compare_t, traits_>(*this, key_, comp_);
 }
 
 #if HX_CPLUSPLUS >= 202302L
