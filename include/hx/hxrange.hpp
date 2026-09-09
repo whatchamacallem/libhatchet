@@ -40,13 +40,13 @@ concept hxforward_iterator_concept_ = requires(T_& x_, const T_& y_) {
 };
 template<typename T_>
 concept hxbidirectional_iterator_concept_ = hxforward_iterator_concept_<T_>
-		&& requires(T_& x_) {
+&& requires(T_& x_) {
 	{ --x_ } -> hxsame_as<T_&>;
 	{ x_-- } -> hxsame_as<T_>;
 };
 template<typename T_>
 concept hxrandom_iterator_concept_ = hxbidirectional_iterator_concept_<T_>
-		&& requires(const T_& x_, ptrdiff_t n_) {
+&& requires(const T_& x_, ptrdiff_t n_) {
 	{ x_ + n_ } -> hxsame_as<T_>;
 	{ x_ - n_ } -> hxsame_as<T_>;
 	{ x_ - x_ } -> hxsame_as<ptrdiff_t>;
@@ -54,10 +54,13 @@ concept hxrandom_iterator_concept_ = hxbidirectional_iterator_concept_<T_>
 };
 template<typename T_>
 concept hxsorted_iterator_concept_ = hxrandom_iterator_concept_<T_>
-		&& requires(const T_& x_) {
-	{ x_ < x_ } -> hxconvertible_to<bool>;
-	{ x_ == x_ } -> hxconvertible_to<bool>;
-};
+&& (requires(const T_& x_) {
+		{ hxkey_less(x_, x_) } -> hxconvertible_to<bool>;
+		{ hxkey_equal(x_, x_) } -> hxconvertible_to<bool>;
+	} || requires(const T_& x_) {
+		hxthree_way(x_, x_);
+	}
+);
 template<typename T_>
 concept hxrange_concept_ = requires(T_& x_) {
 	{ x_.begin() } -> hxforward_iterator_concept_;
@@ -78,9 +81,9 @@ concept hxsorted_range_concept_ = requires(T_& x_) {
 #define hxforward_iterator_concept_ typename
 #define hxbidirectional_iterator_concept_ typename
 #define hxrandom_iterator_concept_ typename
+#define hxsorted_iterator_concept_ typename
 #define hxrange_concept_ typename
 #define hxrandom_range_concept_ typename
-#define hxsorted_iterator_concept_ typename
 #define hxsorted_range_concept_ typename
 #endif
 

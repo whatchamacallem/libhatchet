@@ -75,6 +75,9 @@ public:
 /// - `a` : The first value to compare.
 /// - `b` : The second value to compare.
 template<typename A_, typename B_>
+#if HX_CPLUSPLUS >= 202002L
+	requires requires(const A_& a_, const B_& b_) { { hxkey_equal_t<A_>{}(a_, b_) } -> hxconvertible_to<bool>; }
+#endif
 hxattr_nodiscard hxinline hxconstexpr hxattr_flatten
 bool hxkey_equal(const A_& a_, const B_& b_) {
 	return hxkey_equal_t<A_>{}(a_, b_);
@@ -110,6 +113,9 @@ public:
 /// - `a` : The first value to compare.
 /// - `b` : The second value to compare.
 template<typename A_, typename B_>
+#if HX_CPLUSPLUS >= 202002L
+	requires requires(const A_& a_, const B_& b_) { { hxkey_less_t<A_>{}(a_, b_) } -> hxconvertible_to<bool>; }
+#endif
 hxattr_nodiscard hxinline hxconstexpr hxattr_flatten
 bool hxkey_less(const A_& a_, const B_& b_) {
 	return hxkey_less_t<A_>{}(a_, b_);
@@ -206,6 +212,9 @@ public:
 /// - `a` : The first value to compare.
 /// - `b` : The second value to compare.
 template<typename A_, typename B_>
+#if HX_CPLUSPLUS >= 202002L
+	requires requires(const A_& a_, const B_& b_) { hxthree_way_t<A_>{}(a_, b_); }
+#endif
 hxattr_nodiscard hxinline hxconstexpr hxattr_flatten
 auto hxthree_way(const A_& a_, const B_& b_) -> decltype(hxthree_way_t<A_>{}(a_, b_)) {
 	return hxthree_way_t<A_>{}(a_, b_);
