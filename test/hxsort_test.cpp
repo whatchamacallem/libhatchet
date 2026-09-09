@@ -73,7 +73,7 @@ TEST_F(hxsort_test_f, sort_grinder) {
 		heap_sorted.clear();
 		generic_sorted.clear();
 	}
-	EXPECT_TRUE(check_stats(1814, 1814, 0, 675, 0, 1139, 0, 5068, 270, 5019));
+	EXPECT_TRUE(check_stats(1814, 1814, 0, 675, 0, 1139, 0, 5068, 270, 5019, 0));
 }
 
 TEST_F(hxsort_test_f, sort_grinder_values_match_with_duplicate_keys) {
@@ -102,7 +102,7 @@ TEST_F(hxsort_test_f, sort_grinder_values_match_with_duplicate_keys) {
 		heap_sorted.clear();
 		generic_sorted.clear();
 	}
-	EXPECT_TRUE(check_stats(1544, 1544, 0, 405, 0, 1139, 0, 4798, 0, 5019));
+	EXPECT_TRUE(check_stats(1544, 1544, 0, 405, 0, 1139, 0, 4798, 0, 5019, 0));
 }
 
 TEST(hxsort_test, intro_sort_depth_limit_falls_back_to_heapsort) {
@@ -140,7 +140,7 @@ TEST_F(hxsort_test_f, sort_grinder_generic) {
 		}
 		sorted.clear();
 	}
-	EXPECT_TRUE(check_stats(17283, 17283, 0, 3208, 0, 14075, 0, 32596, 0, 42055));
+	EXPECT_TRUE(check_stats(17283, 17283, 0, 3208, 0, 14075, 0, 32596, 0, 42055, 0));
 }
 
 TEST(hxsort_test, partition_sort_network_all_ascending_takes_no_swaps) {
@@ -243,7 +243,7 @@ TEST_F(hxsort_test_f, partition_sort_all_equal_ref_tracker_takes_no_pivot_swaps)
 			EXPECT_EQ(values[i].value(), 7);
 		}
 	}
-	EXPECT_TRUE(check_stats(68, 68, 0, 33, 0, 35, 0, 4, 0, 101));
+	EXPECT_TRUE(check_stats(68, 68, 0, 33, 0, 35, 0, 4, 0, 101, 0));
 }
 
 TEST(hxsort_test, intro_sort_cutoff_boundary_thirty_two_uses_insertion_sort) {
@@ -301,7 +301,7 @@ TEST_F(hxsort_test_f, insertion_sort_preserves_stable_ordering_of_equal_keys) {
 		EXPECT_EQ(values[i].value(), expected_value[i]);
 		EXPECT_EQ(values[i].ticket(), expected_ticket[i]);
 	}
-	EXPECT_TRUE(check_stats(9, 3, 0, 6, 0, 3, 0, 11, 0, 11));
+	EXPECT_TRUE(check_stats(9, 3, 0, 6, 0, 3, 0, 11, 0, 11, 0));
 }
 
 TEST(hxsort_test, heapsort_two_elements) {
@@ -374,7 +374,7 @@ TEST_F(hxsort_test_f, iterator_support) {
 			const auto& less) {
 		hxsort(begin, end, less);
 	});
-	EXPECT_TRUE(check_stats(141, 141, 0, 90, 0, 51, 0, 195, 0, 84));
+	EXPECT_TRUE(check_stats(141, 141, 0, 90, 0, 51, 0, 195, 0, 84, 0));
 }
 
 static void do_sort_iterator_partition_case(const int (&initial_values)[33],
@@ -399,7 +399,7 @@ TEST_F(hxsort_test_f, iterator_support_partition_sort_network_all_ascending_take
 		1022, 1023, 1024, 1025, 1027, 1028, 1029, 1030, 1031, 1032
 	};
 	do_sort_iterator_partition_case(initial_values, expected_sorted);
-	EXPECT_TRUE(check_stats(81, 81, 0, 33, 0, 48, 0, 176, 0, 190));
+	EXPECT_TRUE(check_stats(81, 81, 0, 33, 0, 48, 0, 176, 0, 190, 0));
 }
 
 TEST_F(hxsort_test_f, iterator_support_partition_sort_network_p3_p0_p4_p1_p2_p1_p4_p3_swap) {
@@ -414,7 +414,7 @@ TEST_F(hxsort_test_f, iterator_support_partition_sort_network_p3_p0_p4_p1_p2_p1_
 		1022, 1023, 1024, 1025, 1027, 1028, 1029, 1030, 1031, 1032
 	};
 	do_sort_iterator_partition_case(initial_values, expected_sorted);
-	EXPECT_TRUE(check_stats(80, 80, 0, 33, 0, 47, 0, 170, 0, 188));
+	EXPECT_TRUE(check_stats(80, 80, 0, 33, 0, 47, 0, 170, 0, 188, 0));
 }
 
 TEST_F(hxsort_test_f, iterator_support_partition_sort_network_p3_p1_and_p3_p2_swap) {
@@ -429,7 +429,7 @@ TEST_F(hxsort_test_f, iterator_support_partition_sort_network_p3_p1_and_p3_p2_sw
 		1022, 1023, 1024, 1025, 1027, 1028, 1029, 1030, 1031, 1032
 	};
 	do_sort_iterator_partition_case(initial_values, expected_sorted);
-	EXPECT_TRUE(check_stats(85, 85, 0, 33, 0, 52, 0, 190, 0, 199));
+	EXPECT_TRUE(check_stats(85, 85, 0, 33, 0, 52, 0, 190, 0, 199, 0));
 }
 
 TEST_F(hxsort_test_f, iterator_support_partition_sort_all_equal_takes_no_pivot_swaps) {
@@ -438,7 +438,7 @@ TEST_F(hxsort_test_f, iterator_support_partition_sort_all_equal_takes_no_pivot_s
 		7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7
 	};
 	do_sort_iterator_partition_case(all_equal, all_equal);
-	EXPECT_TRUE(check_stats(35, 35, 0, 33, 0, 2, 0, 4, 0, 101));
+	EXPECT_TRUE(check_stats(35, 35, 0, 33, 0, 2, 0, 4, 0, 101, 0));
 }
 
 TEST_F(hxsort_test_f, iterator_api_types) {
@@ -449,7 +449,7 @@ TEST_F(hxsort_test_f, iterator_api_types) {
 		EXPECT_TRUE(hxtest_check_rand_iterator_api(
 			hxtest_rand_iterator_api_t(values.data()), hxtest_rand_iterator_api_t(values.data() + 2)));
 	}
-	EXPECT_TRUE(check_stats(2, 2, 0, 2, 0, 0, 0, 0, 2, 0));
+	EXPECT_TRUE(check_stats(2, 2, 0, 2, 0, 0, 0, 0, 2, 0, 0));
 }
 #endif // HX_CPLUSPLUS >= 201402L
 #if HX_CPLUSPLUS >= 202302L

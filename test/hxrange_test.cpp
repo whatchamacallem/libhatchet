@@ -37,7 +37,7 @@ TEST_F(hxbinary_search_test_f, iterator_support) {
 	EXPECT_EQ(result, end);
 	result = hxbinary_search(begin, begin, key_three, hxtest_value_less);
 	EXPECT_EQ(result, begin);
-	EXPECT_TRUE(check_stats(10, 0, 0, 10, 0, 0, 0, 0, 0, 12));
+	EXPECT_TRUE(check_stats(10, 0, 0, 10, 0, 0, 0, 0, 0, 12, 0));
 }
 
 TEST(hxbinary_search_test, two_element_boundary) {
@@ -124,7 +124,7 @@ TEST_F(hxbinary_search_test_f, binary_search_grinder) {
 			EXPECT_TRUE(!(*ptr < t) && !(t < *ptr));
 		}
 	}
-	EXPECT_TRUE(check_stats(485, 485, 0, 100, 100, 285, 0, 627, 0, 1729));
+	EXPECT_TRUE(check_stats(485, 485, 0, 100, 100, 285, 0, 627, 0, 1729, 0));
 }
 
 TEST_F(hxcount_if_test_f, simple_case) {
@@ -140,7 +140,7 @@ TEST_F(hxcount_if_test_f, simple_case) {
 		[](const hxtest_object& x) { return x.value() > 10; }), hxsize_t{0});
 	EXPECT_EQ(hxcount_if(hxmake_range(begin, begin),
 		[](const hxtest_object& x) { return x.value() == 1; }), hxsize_t{0});
-	EXPECT_TRUE(check_stats(6, 0, 0, 6, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(6, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST(hxcount_if_test, boundary_matches) {
@@ -170,7 +170,7 @@ TEST_F(hxequal_range_test_f, forward_iterator_equal_and_unequal) {
 	const hxtest_forward_iterator_api_t begin3(values3.data());
 	const hxtest_forward_iterator_api_t end3(values3.data() + 3);
 	EXPECT_FALSE(hxequal_range(hxmake_range(begin0, end0), hxmake_range(begin3, end3), hxtest_value_equal));
-	EXPECT_TRUE(check_stats(15, 0, 0, 15, 0, 0, 0, 0, 10, 0));
+	EXPECT_TRUE(check_stats(15, 0, 0, 15, 0, 0, 0, 0, 10, 0, 0));
 }
 
 TEST_F(hxexchange_test_f, move_only_type) {
@@ -178,7 +178,7 @@ TEST_F(hxexchange_test_f, move_only_type) {
 	const hxtest_object old = hxexchange(a, hxtest_object(99));
 	EXPECT_EQ(old.value(), 34);
 	EXPECT_EQ(a.value(), 99);
-	EXPECT_TRUE(check_stats(4, 2, 0, 2, 0, 2, 0, 1, 0, 0));
+	EXPECT_TRUE(check_stats(4, 2, 0, 2, 0, 2, 0, 1, 0, 0, 0));
 }
 
 TEST(hxfind_if_test, simple_case) {
@@ -215,7 +215,7 @@ TEST_F(hxfind_if_test_f, iterator_support) {
 		hxfind_if(hxmake_range(begin, begin),
 			[](const hxtest_object& x) { return x.value() == 10; });
 	EXPECT_EQ(empty_result, begin);
-	EXPECT_TRUE(check_stats(4, 0, 0, 4, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(4, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST(hxfind_if_test, flat_map_iterator) {
@@ -263,7 +263,7 @@ TEST_F(hxquantifier_test_f, all_of_any_of_and_for_each) {
 	const hxfor_each_test_accumulator_t empty_result =
 		hxfor_each(hxmake_range(begin, begin), hxfor_each_test_accumulator_t{7});
 	EXPECT_EQ(empty_result.total, 7);
-	EXPECT_TRUE(check_stats(3, 0, 0, 3, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(3, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxtest_test_f, iter_api_types) {
@@ -280,7 +280,7 @@ TEST_F(hxtest_test_f, iter_api_types) {
 		hxtest_rand_iterator_api_t(values.data()), hxtest_rand_iterator_api_t(values.data() + 2)));
 	EXPECT_TRUE(hxtest_check_rand_iterator_api(
 		hxtest_rand_iterator_api_t(values.data()), hxtest_rand_iterator_api_t(values.data() + 2)));
-	EXPECT_TRUE(check_stats(2, 0, 0, 2, 0, 0, 0, 0, 2, 0));
+	EXPECT_TRUE(check_stats(2, 0, 0, 2, 0, 0, 0, 0, 2, 0, 0));
 }
 
 TEST(hxrange_test, constructors) {

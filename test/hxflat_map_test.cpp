@@ -183,7 +183,7 @@ TEST_F(hxflat_map_test_f, value_or_emplaces_fallback) {
 	EXPECT_EQ(m.value_or(1, 14, 17).value(), 10);
 	EXPECT_EQ(m.value_or(2, 14, 17).value(), 31);
 	EXPECT_EQ(m.value_or(m.end(), 20, 23).value(), 43);
-	EXPECT_TRUE(check_stats(5, 4, 0, 3, 1, 1, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(5, 4, 0, 3, 1, 1, 0, 0, 0, 0, 0));
 }
 #endif // HX_CPLUSPLUS >= 202302L
 
@@ -203,7 +203,7 @@ TEST_F(hxflat_map_test_f, gdb_break) {
 	EXPECT_EQ(b.size(), 3);
 	EXPECT_TRUE(c.empty());
 	EXPECT_TRUE(d.empty());
-	EXPECT_TRUE(check_stats(30, 12, 0, 6, 24, 0, 0, 0, 0, 4));
+	EXPECT_TRUE(check_stats(30, 12, 0, 6, 24, 0, 0, 0, 0, 4, 0));
 }
 
 TEST_F(hxflat_map_test_f, construct) {
@@ -241,7 +241,7 @@ TEST_F(hxflat_map_test_f, insert_unique_basic) {
 	EXPECT_EQ(it2.key(), 1);
 	EXPECT_EQ(it2.value().value(), 10);
 	EXPECT_EQ(m.size(), 1);
-	EXPECT_TRUE(check_stats(3, 0, 0, 2, 1, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(3, 0, 0, 2, 1, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxflat_map_test_f, insert_unique_sorted_order) {
@@ -253,7 +253,7 @@ TEST_F(hxflat_map_test_f, insert_unique_sorted_order) {
 	EXPECT_EQ(it.key(), 10); ++it;
 	EXPECT_EQ(it.key(), 20); ++it;
 	EXPECT_EQ(it.key(), 30);
-	EXPECT_TRUE(check_stats(9, 3, 0, 3, 4, 2, 2, 0, 0, 0));
+	EXPECT_TRUE(check_stats(9, 3, 0, 3, 4, 2, 2, 0, 0, 0, 0));
 }
 
 TEST_F(hxflat_map_test_f, insert_unique_move) {
@@ -277,7 +277,7 @@ TEST_F(hxflat_map_test_f, insert_unique_move) {
 	EXPECT_EQ(it3.key(), 3);
 	EXPECT_EQ(it3.value().value(), 15);
 	EXPECT_EQ(m.size(), 3);
-	EXPECT_TRUE(check_stats(7, 0, 0, 4, 0, 3, 1, 1, 0, 0));
+	EXPECT_TRUE(check_stats(7, 0, 0, 4, 0, 3, 1, 1, 0, 0, 0));
 }
 
 TEST_F(hxflat_map_test_f, insert_multi) {
@@ -289,7 +289,7 @@ TEST_F(hxflat_map_test_f, insert_multi) {
 	EXPECT_EQ(m.size(), 2);
 	EXPECT_EQ(m.count(1), 2);
 	EXPECT_EQ(v2.state(), hxtest_object_state::moved);
-	EXPECT_TRUE(check_stats(4, 0, 0, 2, 1, 1, 0, 1, 0, 0));
+	EXPECT_TRUE(check_stats(4, 0, 0, 2, 1, 1, 0, 1, 0, 0, 0));
 }
 
 TEST_F(hxflat_map_test_f, insert_shifts_elements) {
@@ -301,7 +301,7 @@ TEST_F(hxflat_map_test_f, insert_shifts_elements) {
 	EXPECT_EQ(it.key(), 10); ++it;
 	EXPECT_EQ(it.key(), 20); ++it;
 	EXPECT_EQ(it.key(), 30);
-	EXPECT_TRUE(check_stats(9, 3, 0, 3, 5, 1, 1, 0, 0, 0));
+	EXPECT_TRUE(check_stats(9, 3, 0, 3, 5, 1, 1, 0, 0, 0, 0));
 }
 
 TEST_F(hxflat_map_test_f, insert_at_front_shifts_single_element) {
@@ -315,7 +315,7 @@ TEST_F(hxflat_map_test_f, insert_at_front_shifts_single_element) {
 	++it;
 	EXPECT_EQ(it.key(), 20);
 	EXPECT_EQ(it.value().value(), 1);
-	EXPECT_TRUE(check_stats(6, 2, 0, 2, 3, 1, 1, 0, 0, 0));
+	EXPECT_TRUE(check_stats(6, 2, 0, 2, 3, 1, 1, 0, 0, 0, 0));
 }
 
 TEST_F(hxflat_map_test_f, insert_dynamic) {
@@ -325,7 +325,7 @@ TEST_F(hxflat_map_test_f, insert_dynamic) {
 	m.insert(3, v);
 	EXPECT_EQ(m.size(), 1);
 	EXPECT_EQ(m.find(3).value().value(), 7);
-	EXPECT_TRUE(check_stats(2, 0, 0, 1, 1, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(2, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxflat_map_test_f, clear) {
@@ -338,7 +338,7 @@ TEST_F(hxflat_map_test_f, clear) {
 	EXPECT_TRUE(m.empty());
 	m.clear();
 	EXPECT_EQ(m.size(), 0);
-	EXPECT_TRUE(check_stats(6, 4, 0, 2, 4, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(6, 4, 0, 2, 4, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxflat_map_test_f, find) {
@@ -356,7 +356,7 @@ TEST_F(hxflat_map_test_f, find) {
 	EXPECT_EQ(cm.find(99), cm.end());
 	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 2> empty;
 	EXPECT_EQ(empty.find(1), empty.end());
-	EXPECT_TRUE(check_stats(2, 0, 0, 1, 1, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(2, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxflat_map_test_f, count) {
@@ -368,7 +368,7 @@ TEST_F(hxflat_map_test_f, count) {
 	m.insert(4, v2);
 	m.insert(4, v3);
 	EXPECT_EQ(m.count(4), 3);
-	EXPECT_TRUE(check_stats(6, 0, 0, 3, 1, 2, 2, 1, 0, 0));
+	EXPECT_TRUE(check_stats(6, 0, 0, 3, 1, 2, 2, 1, 0, 0, 0));
 }
 
 TEST_F(hxflat_map_test_f, lower_bound) {
@@ -384,7 +384,7 @@ TEST_F(hxflat_map_test_f, lower_bound) {
 	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 3>::iterator it = m.lower_bound(20);
 	it.value().value() = 99;
 	EXPECT_EQ(m.find(20).value().value(), 99);
-	EXPECT_TRUE(check_stats(6, 0, 0, 3, 2, 1, 1, 0, 0, 0));
+	EXPECT_TRUE(check_stats(6, 0, 0, 3, 2, 1, 1, 0, 0, 0, 0));
 }
 
 TEST_F(hxflat_map_test_f, upper_bound) {
@@ -399,7 +399,7 @@ TEST_F(hxflat_map_test_f, upper_bound) {
 	m.insert(10, v3);
 	EXPECT_EQ(m.upper_bound(10).key(), 20);
 	EXPECT_TRUE(m.upper_bound(9999) == m.end());
-	EXPECT_TRUE(check_stats(6, 0, 0, 3, 2, 1, 1, 1, 0, 0));
+	EXPECT_TRUE(check_stats(6, 0, 0, 3, 2, 1, 1, 1, 0, 0, 0));
 }
 
 TEST_F(hxflat_map_test_f, erase_key_unique) {
@@ -413,7 +413,7 @@ TEST_F(hxflat_map_test_f, erase_key_unique) {
 	EXPECT_EQ(m.size(), 1);
 	EXPECT_EQ(m.erase(5), 1);
 	EXPECT_TRUE(m.empty());
-	EXPECT_TRUE(check_stats(2, 1, 0, 1, 1, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(2, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxflat_map_test_f, erase_key_multi) {
@@ -430,7 +430,7 @@ TEST_F(hxflat_map_test_f, erase_key_multi) {
 	m.insert(10, v1);
 	EXPECT_EQ(m.erase(10), 3);
 	EXPECT_EQ(m.size(), 0);
-	EXPECT_TRUE(check_stats(9, 5, 0, 4, 2, 3, 3, 2, 0, 0));
+	EXPECT_TRUE(check_stats(9, 5, 0, 4, 2, 3, 3, 2, 0, 0, 0));
 }
 
 TEST_F(hxflat_map_test_f, erase_key_multi_tail_relative_to_count) {
@@ -451,7 +451,7 @@ TEST_F(hxflat_map_test_f, erase_key_multi_tail_relative_to_count) {
 	EXPECT_EQ(mb.erase(5), 1);
 	EXPECT_EQ(mb.size(), 3);
 	EXPECT_EQ(mb.count(10), 3);
-	EXPECT_TRUE(check_stats(12, 4, 0, 4, 4, 4, 4, 6, 0, 0));
+	EXPECT_TRUE(check_stats(12, 4, 0, 4, 4, 4, 4, 6, 0, 0, 0));
 }
 
 TEST_F(hxflat_map_test_f, erase_iterator_only_and_pair) {
@@ -472,7 +472,7 @@ TEST_F(hxflat_map_test_f, erase_iterator_only_and_pair) {
 	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 2>::iterator next3 = m.erase(last);
 	EXPECT_TRUE(next3 == m.end());
 	EXPECT_EQ(m.size(), 0);
-	EXPECT_TRUE(check_stats(5, 3, 0, 2, 3, 0, 0, 1, 0, 0));
+	EXPECT_TRUE(check_stats(5, 3, 0, 2, 3, 0, 0, 1, 0, 0, 0));
 }
 
 TEST_F(hxflat_map_test_f, erase_iterator_first_and_middle_of_three) {
@@ -492,7 +492,7 @@ TEST_F(hxflat_map_test_f, erase_iterator_first_and_middle_of_three) {
 	EXPECT_EQ(m.size(), 1);
 	EXPECT_EQ(m.find(10), m.end());
 	EXPECT_EQ(m.find(30).value().value(), 3);
-	EXPECT_TRUE(check_stats(6, 2, 0, 3, 3, 0, 0, 2, 0, 0));
+	EXPECT_TRUE(check_stats(6, 2, 0, 3, 3, 0, 0, 2, 0, 0, 0));
 }
 
 TEST_F(hxflat_map_test_f, const_iterator_arithmetic) {
@@ -510,7 +510,7 @@ TEST_F(hxflat_map_test_f, const_iterator_arithmetic) {
 	EXPECT_EQ(it3.key(), 20);
 	EXPECT_EQ(m.begin()[1].key, 20);
 	EXPECT_EQ(m.end() - m.begin(), ptrdiff_t{3});
-	EXPECT_TRUE(check_stats(9, 3, 0, 3, 6, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(9, 3, 0, 3, 6, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxflat_map_test_f, const_iterator_pre_post_increment_decrement) {
@@ -529,7 +529,7 @@ TEST_F(hxflat_map_test_f, const_iterator_pre_post_increment_decrement) {
 	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 2>::const_iterator it4 = it--;
 	EXPECT_EQ(it4.key(), 20);
 	EXPECT_EQ(it.key(), 10);
-	EXPECT_TRUE(check_stats(6, 2, 0, 2, 4, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(6, 2, 0, 2, 4, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxflat_map_test_f, const_iterator_equality_and_order) {
@@ -550,7 +550,7 @@ TEST_F(hxflat_map_test_f, const_iterator_equality_and_order) {
 	EXPECT_TRUE(b >= b);
 	EXPECT_TRUE(a != b);
 	EXPECT_FALSE(a != a);
-	EXPECT_TRUE(check_stats(6, 2, 0, 2, 4, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(6, 2, 0, 2, 4, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxflat_map_test_f, const_iterator_dereference_proxy) {
@@ -560,7 +560,7 @@ TEST_F(hxflat_map_test_f, const_iterator_dereference_proxy) {
 	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 1>::const_iterator it = m.begin();
 	EXPECT_EQ((*it).key, 3);
 	EXPECT_EQ((*it).value.value(), 7);
-	EXPECT_TRUE(check_stats(2, 0, 0, 1, 1, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(2, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxflat_map_test_f, iterator_dereference_and_mutation) {
@@ -571,7 +571,7 @@ TEST_F(hxflat_map_test_f, iterator_dereference_and_mutation) {
 	EXPECT_EQ((*it).key, 3);
 	(*it).value.value() = 99;
 	EXPECT_EQ(m.find(3).value().value(), 99);
-	EXPECT_TRUE(check_stats(2, 0, 0, 1, 1, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(2, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxflat_map_test_f, iterator_arithmetic) {
@@ -589,7 +589,7 @@ TEST_F(hxflat_map_test_f, iterator_arithmetic) {
 	EXPECT_EQ(it3.key(), 20);
 	EXPECT_EQ(it[1].key, 30);
 	EXPECT_EQ(it2 - it3, hxsize_t{1});
-	EXPECT_TRUE(check_stats(9, 3, 0, 3, 6, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(9, 3, 0, 3, 6, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxflat_map_test_f, iterator_pre_post_increment_decrement) {
@@ -607,7 +607,7 @@ TEST_F(hxflat_map_test_f, iterator_pre_post_increment_decrement) {
 	EXPECT_EQ(it.key(), 20);
 	--it;
 	EXPECT_EQ(it.key(), 10);
-	EXPECT_TRUE(check_stats(6, 2, 0, 2, 4, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(6, 2, 0, 2, 4, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxflat_map_test_f, begin_end) {
@@ -618,7 +618,7 @@ TEST_F(hxflat_map_test_f, begin_end) {
 	m.insert(5, v);
 	EXPECT_FALSE(m.begin() == m.end());
 	EXPECT_EQ(m.begin().key(), 5);
-	EXPECT_TRUE(check_stats(2, 0, 0, 1, 1, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(2, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxflat_map_test_f, full) {
@@ -629,7 +629,7 @@ TEST_F(hxflat_map_test_f, full) {
 	EXPECT_FALSE(m.full());
 	m.insert(2, v2);
 	EXPECT_TRUE(m.full());
-	EXPECT_TRUE(check_stats(4, 0, 0, 2, 2, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(4, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxflat_map_test_f, dynamic_multimap_insert_erase) {
@@ -649,7 +649,7 @@ TEST_F(hxflat_map_test_f, dynamic_multimap_insert_erase) {
 	EXPECT_EQ(m.size(), 3);
 	EXPECT_EQ(m.erase(30), 2);
 	EXPECT_EQ(m.size(), 1);
-	EXPECT_TRUE(check_stats(10, 4, 0, 5, 3, 2, 2, 3, 0, 0));
+	EXPECT_TRUE(check_stats(10, 4, 0, 5, 3, 2, 2, 3, 0, 0, 0));
 }
 
 TEST_F(hxflat_map_test_f, destructor_destroys_elements) {
@@ -661,7 +661,7 @@ TEST_F(hxflat_map_test_f, destructor_destroys_elements) {
 			m.insert(2, v2);
 		}
 	}
-	EXPECT_TRUE(check_stats(4, 4, 0, 2, 2, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(4, 4, 0, 2, 2, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxflat_map_test_f, default_constructed_iterator_assignable) {
@@ -676,7 +676,7 @@ TEST_F(hxflat_map_test_f, default_constructed_iterator_assignable) {
 	EXPECT_EQ(it.key(), 3);
 	it.value().value() = 99;
 	EXPECT_EQ(m.find(3).value().value(), 99);
-	EXPECT_TRUE(check_stats(2, 0, 0, 1, 1, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(2, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxflat_map_test_f, operator_equal) {
@@ -690,7 +690,7 @@ TEST_F(hxflat_map_test_f, operator_equal) {
 	EXPECT_FALSE(a == b);
 	b.insert(2, v4);
 	EXPECT_TRUE(a == b);
-	EXPECT_TRUE(check_stats(8, 0, 0, 4, 4, 0, 0, 0, 2, 0));
+	EXPECT_TRUE(check_stats(8, 0, 0, 4, 4, 0, 0, 0, 2, 0, 0));
 }
 
 TEST_F(hxflat_map_test_f, operator_equal_mismatched_keys_or_values) {
@@ -722,7 +722,7 @@ TEST_F(hxflat_map_test_f, operator_equal_mismatched_keys_or_values) {
 	h.insert(1, v10);
 	h.insert(2, v12);
 	EXPECT_TRUE(g == h);
-	EXPECT_TRUE(check_stats(24, 0, 0, 12, 12, 0, 0, 0, 5, 0));
+	EXPECT_TRUE(check_stats(24, 0, 0, 12, 12, 0, 0, 0, 5, 0, 0));
 }
 
 TEST_F(hxflat_map_test_f, operator_less) {
@@ -739,7 +739,7 @@ TEST_F(hxflat_map_test_f, operator_less) {
 	b.insert(2, v);
 	EXPECT_TRUE(a < b);
 	EXPECT_FALSE(b < a);
-	EXPECT_TRUE(check_stats(4, 0, 0, 1, 3, 0, 0, 0, 4, 0));
+	EXPECT_TRUE(check_stats(4, 0, 0, 1, 3, 0, 0, 0, 4, 0, 0));
 }
 
 TEST_F(hxflat_map_test_f, operator_less_smaller_key_or_value_is_less) {
@@ -757,7 +757,7 @@ TEST_F(hxflat_map_test_f, operator_less_smaller_key_or_value_is_less) {
 	d.insert(1, v4);
 	EXPECT_TRUE(c < d);
 	EXPECT_FALSE(d < c);
-	EXPECT_TRUE(check_stats(8, 0, 0, 4, 4, 0, 0, 0, 2, 2));
+	EXPECT_TRUE(check_stats(8, 0, 0, 4, 4, 0, 0, 0, 2, 2, 0));
 }
 
 TEST_F(hxflat_map_test_f, subscript) {
@@ -771,7 +771,7 @@ TEST_F(hxflat_map_test_f, subscript) {
 	m[0].value().value() = 99;
 	EXPECT_EQ(m.find(1).value().value(), 99);
 	EXPECT_EQ(m[m.size() - 1].key(), 3);
-	EXPECT_TRUE(check_stats(9, 3, 0, 3, 6, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(9, 3, 0, 3, 6, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxflat_map_test_f, copy_assign) {
@@ -789,7 +789,7 @@ TEST_F(hxflat_map_test_f, copy_assign) {
 	const hxflat_map<int, hxtest_object, hxkey_less_t<int>, false, 3> empty;
 	b = empty;
 	EXPECT_TRUE(b.empty());
-	EXPECT_TRUE(check_stats(8, 3, 0, 3, 5, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(8, 3, 0, 3, 5, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxflat_map_test_f, move_assign_transfers_elements) {
@@ -806,7 +806,7 @@ TEST_F(hxflat_map_test_f, move_assign_transfers_elements) {
 		EXPECT_EQ(a.size(), 0);
 		EXPECT_EQ(a.capacity(), 1);
 	}
-	EXPECT_TRUE(check_stats(9, 9, 0, 3, 6, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(9, 9, 0, 3, 6, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxflat_map_test_f, move_constructor_transfers_elements) {
@@ -821,7 +821,7 @@ TEST_F(hxflat_map_test_f, move_constructor_transfers_elements) {
 		EXPECT_EQ(src.size(), 0);
 		EXPECT_EQ(src.capacity(), 0);
 	}
-	EXPECT_TRUE(check_stats(9, 9, 0, 3, 6, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(9, 9, 0, 3, 6, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxflat_map_test_f, copy_constructor) {
@@ -836,7 +836,7 @@ TEST_F(hxflat_map_test_f, copy_constructor) {
 	EXPECT_EQ(src.size(), 3);
 	src.find(1).value().value() = 99;
 	EXPECT_EQ(dst.find(1).value().value(), 10);
-	EXPECT_TRUE(check_stats(12, 3, 0, 3, 9, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(12, 3, 0, 3, 9, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxflat_map_test_f, copy_constructor_empty) {
@@ -857,7 +857,7 @@ TEST_F(hxflat_map_test_f, copy_constructor_lifecycle) {
 			EXPECT_EQ(dst.size(), 2);
 		}
 	}
-	EXPECT_TRUE(check_stats(8, 8, 0, 2, 6, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(8, 8, 0, 2, 6, 0, 0, 0, 0, 0, 0));
 }
 
 TEST(hxflat_map_test, implements_rand_iterator_api) {
@@ -883,7 +883,7 @@ TEST_F(hxflat_map_test_f, hxkey_equal) {
 	map_t c;
 	c.insert(1, v2);
 	EXPECT_FALSE(a == c);
-	EXPECT_TRUE(check_stats(8, 0, 0, 3, 5, 0, 0, 0, 3, 0));
+	EXPECT_TRUE(check_stats(8, 0, 0, 3, 5, 0, 0, 0, 3, 0, 0));
 }
 
 TEST_F(hxflat_map_test_f, hxkey_less) {
@@ -899,7 +899,7 @@ TEST_F(hxflat_map_test_f, hxkey_less) {
 	c.insert(2, v2);
 	EXPECT_FALSE(b < c);
 	EXPECT_FALSE(c < b);
-	EXPECT_TRUE(check_stats(5, 0, 0, 2, 3, 0, 0, 0, 2, 0));
+	EXPECT_TRUE(check_stats(5, 0, 0, 2, 3, 0, 0, 0, 2, 0, 0));
 }
 
 TEST_F(hxflat_map_test_f, hxswap_exchanges_contents) {
@@ -917,7 +917,7 @@ TEST_F(hxflat_map_test_f, hxswap_exchanges_contents) {
 		EXPECT_EQ(b.size(), 1);
 		EXPECT_EQ(b.find(1).value().value(), 10);
 	}
-	EXPECT_TRUE(check_stats(4, 4, 0, 2, 2, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(4, 4, 0, 2, 2, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxflat_map_test_f, hxswap_empty_and_nonempty) {
@@ -935,6 +935,66 @@ TEST_F(hxflat_map_test_f, hxswap_empty_and_nonempty) {
 		EXPECT_EQ(b.find(1).value().value(), 10);
 		EXPECT_EQ(b.find(2).value().value(), 20);
 	}
-	EXPECT_TRUE(check_stats(4, 4, 0, 2, 2, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(4, 4, 0, 2, 2, 0, 0, 0, 0, 0, 0));
 }
 #endif // HX_CPLUSPLUS >= 202002L
+
+TEST_F(hxflat_map_test_f, three_way_find_hit_costs_one_comparison) {
+	hxflat_map<hxtest_object, int, hxthree_way_t<hxtest_object>, false, hxallocator_dynamic_capacity, true> m;
+	m.reserve(4);
+	const hxtest_object k10(10), k20(20), k30(30);
+	m.insert(k10, 100);
+	m.insert(k20, 200);
+	m.insert(k30, 300);
+	const auto p = m.find(hxtest_object(20));
+	EXPECT_NE(p, m.end());
+	EXPECT_EQ(p.value(), 200);
+	EXPECT_EQ(m.find(hxtest_object(1)), m.end());
+	EXPECT_TRUE(check_stats(8, 2, 0, 5, 3, 0, 0, 0, 0, 0, 6));
+}
+
+TEST_F(hxflat_map_test_f, three_way_count_insert_erase_unique) {
+	hxflat_map<hxtest_object, int, hxthree_way_t<hxtest_object>, false, hxallocator_dynamic_capacity, true> m;
+	m.reserve(4);
+	const hxtest_object k5(5);
+	m.insert(k5, 50);
+	const hxtest_object k5b(5);
+	const auto dup = m.insert(k5b, 51);
+	EXPECT_EQ(dup.value(), 50);
+	EXPECT_EQ(m.size(), 1);
+	EXPECT_EQ(m.count(hxtest_object(5)), 1);
+	EXPECT_EQ(m.count(hxtest_object(9)), 0);
+	EXPECT_EQ(m.count(hxtest_object(1)), 0);
+	EXPECT_EQ(m.erase(hxtest_object(5)), 1);
+	EXPECT_EQ(m.erase(hxtest_object(5)), 0);
+	EXPECT_TRUE(check_stats(8, 6, 0, 7, 1, 0, 0, 0, 0, 0, 5));
+}
+
+TEST_F(hxflat_map_test_f, three_way_multi_count_and_erase) {
+	hxflat_map<hxtest_object, int, hxthree_way_t<hxtest_object>, true, hxallocator_dynamic_capacity, true> m;
+	m.reserve(4);
+	const hxtest_object k7a(7), k7b(7), k3(3);
+	m.insert(k7a, 70);
+	m.insert(k7b, 71);
+	m.insert(k3, 30);
+	EXPECT_EQ(m.count(hxtest_object(7)), 2);
+	EXPECT_EQ(m.erase(hxtest_object(7)), 2);
+	EXPECT_EQ(m.size(), 1);
+	EXPECT_TRUE(check_stats(8, 4, 0, 5, 1, 2, 2, 1, 0, 0, 9));
+}
+
+TEST(hxflat_map_test, three_way_int_key_uses_subtraction_fallback) {
+	hxflat_map<int, int, hxthree_way_t<int>, false, hxallocator_dynamic_capacity, true> m;
+	m.reserve(4);
+	m.insert(31, 310);
+	m.insert(32, 320);
+	m.insert(33, 330);
+	EXPECT_EQ(m.size(), 3);
+	EXPECT_NE(m.find(32), m.end());
+	EXPECT_EQ(m.find(32).value(), 320);
+	EXPECT_EQ(m.find(1), m.end());
+	EXPECT_EQ(m.count(32), 1);
+	EXPECT_EQ(m.erase(32), 1);
+	EXPECT_EQ(m.erase(32), 0);
+	EXPECT_EQ(m.size(), 2);
+}

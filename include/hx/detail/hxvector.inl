@@ -471,10 +471,10 @@ hxinline hxattr_flatten void hxvector<T_, capacity_>::generate_n(hxsize_t size_,
 
 template<hxvector_concept_ T_, hxsize_t capacity_>
 hxinline hxattr_flatten hxhash_t hxvector<T_, capacity_>::hash(void) const {
-	hxhash_t h_ = hxhash_prime5_;
+	hxhash_t h_ = hxhash_k5_;
 	for(const T_& element_ : *this) {
-		h_ += hxkey_hash(element_) * hxhash_prime5_;
-		h_ = ((h_ << 11u) | (h_ >> 21u)) * hxhash_prime1_;
+		h_ += hxkey_hash(element_) * hxhash_k5_;
+		h_ = ((h_ << 11u) | (h_ >> 21u)) * hxhash_k1_;
 	}
 	return hxhash_avalanche_(h_);
 }

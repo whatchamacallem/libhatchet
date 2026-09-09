@@ -51,7 +51,7 @@ TEST_F(hxref_test_f, construction_engaged) {
 	EXPECT_EQ(&a->value(), &s.value());
 	const hxref<hxtest_object> b;
 	hxtest_gdb_break_hxref();
-	EXPECT_TRUE(check_stats(1, 0, 0, 1, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxref_test_f, shallow_const_writes_through) {
@@ -65,7 +65,7 @@ TEST_F(hxref_test_f, shallow_const_writes_through) {
 	const hxref<hxtest_object> engaged_struct = s;
 	engaged_struct->value() = 9;
 	EXPECT_EQ(s.value(), 9);
-	EXPECT_TRUE(check_stats(1, 0, 0, 1, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST(hxref_test, copy_construction_copies_binding) {
@@ -189,7 +189,7 @@ TEST_F(hxref_test_f, hxkey_hash) {
 	EXPECT_EQ(hxkey_hash(empty), hxhash_t{31u});
 	EXPECT_EQ(hxkey_hash(o_a), hxkey_hash(o_b));
 	EXPECT_NE(hxkey_hash(o_a), hxkey_hash(o_c));
-	EXPECT_TRUE(check_stats(3, 0, 0, 3, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(3, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST(hxref_test, swap_rebinds) {
@@ -220,7 +220,7 @@ TEST_F(hxref_test_f, value_or_returns_value) {
 	EXPECT_EQ(o_zero.value_or(31), 0);
 	const hxref<hxtest_object> emplace_empty;
 	EXPECT_EQ(emplace_empty.value_or(4, 5).value(), 9);
-	EXPECT_TRUE(check_stats(1, 1, 0, 1, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST(hxref_test, and_then_engaged_and_disengaged) {

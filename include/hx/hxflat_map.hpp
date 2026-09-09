@@ -17,6 +17,8 @@
 #include "hxallocator.hpp"
 #include "hxrange.hpp"
 #include "hxinitializer_list.hpp"
+#include "hxkey.hpp"
+#include "detail/hxrange_detail.hpp"
 
 HX_NS_BEGIN_
 
@@ -61,7 +63,7 @@ public:
 
 protected:
 	/// \cond HIDDEN
-	template<hxflat_map_concept_, hxflat_map_concept_, typename, bool, hxsize_t> friend class hxflat_map;
+	template<hxflat_map_concept_, hxflat_map_concept_, typename, bool, hxsize_t, bool> friend class hxflat_map;
 	hxflat_map_const_value_t(const key_t_& key_, const mapped_t_& mapped_)
 		: key(key_), value(mapped_) { }
 	/// \endcond
@@ -95,7 +97,7 @@ public:
 
 protected:
 	/// \cond HIDDEN
-	template<hxflat_map_concept_, hxflat_map_concept_, typename, bool, hxsize_t> friend class hxflat_map;
+	template<hxflat_map_concept_, hxflat_map_concept_, typename, bool, hxsize_t, bool> friend class hxflat_map;
 	hxflat_map_value_t(const key_t_& key_, mapped_t_& mapped_)
 		: key(key_), value(mapped_) { }
 	/// \endcond
@@ -109,9 +111,11 @@ protected:
 ///
 /// When `multi_t` is `false` duplicate keys are rejected and `insert` returns
 /// an iterator to the existing element. When `multi_t` is `true` duplicate keys
-/// are always inserted. `compare_t` must be a callable with signature
-/// `bool(const key_t_&, const key_t_&)` returning true when the first argument
-/// is ordered before the second. It defaults to `hxkey_less_t`.
+/// are always inserted. `compare_t` defaults to `hxkey_less_t`, a callable with
+/// signature `bool(const key_t_&, const key_t_&)` returning true when the first
+/// argument is ordered before the second. Passing `hxthree_way_t` and setting
+/// `three_way` to `true` selects a three-way `compare_t` instead, returning a
+/// value less than, equal to, or greater than zero.
 ///
 /// When `capacity` is `hxallocator_dynamic_capacity` storage must be allocated
 /// by calling `reserve` before inserting elements. Otherwise the arrays are
@@ -125,14 +129,17 @@ protected:
 /// ```
 /// - `key_t` : Key type.
 /// - `T` : Mapped value type.
-/// - `compare_t` : Callable implementing a strict weak order on `key_t`.
+/// - `compare_t` : Callable implementing a strict weak order or a three-way
+///   comparison on `key_t`, depending on `three_way`.
 /// - `multi_t` : When `true` duplicate keys are allowed.
 /// - `capacity` : Fixed element count or `hxallocator_dynamic_capacity`.
+/// - `three_way` : When `true`, `compare_t` is a three-way comparison callable.
 template<hxflat_map_concept_ key_t_,
 	hxflat_map_concept_ mapped_t_,
 	typename compare_t_=hxkey_less_t<key_t_>,
 	bool multi_t_=true,
-	hxsize_t capacity_=hxallocator_dynamic_capacity>
+	hxsize_t capacity_=hxallocator_dynamic_capacity,
+	bool three_way_=false>
 class hxflat_map {
 public:
 	using key_t = key_t_;
@@ -362,7 +369,7 @@ public:
 	/// - `x` : The map to copy from.
 	template<hxsize_t capacity_x_>
 	void operator=(const hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_,
-		capacity_x_>& x_) noexcept;
+		capacity_x_, three_way_>& x_) noexcept;
 
 	/// Move assigns from a temporary map using `swap`. Requires
 	/// `hxallocator_dynamic_capacity`.
@@ -381,14 +388,14 @@ public:
 	/// - `x` : The map to compare against.
 	template<hxsize_t capacity_x_>
 	hxattr_nodiscard bool operator==(const hxflat_map<key_t_, mapped_t_, compare_t_,
-		multi_t_, capacity_x_>& x_) const;
+		multi_t_, capacity_x_, three_way_>& x_) const;
 
 	/// Returns `true` if this map compares less than `x` lexicographically,
 	/// using `hxkey_equal` and `hxkey_less` on keys and values.
 	/// - `x` : The map to compare against.
 	template<hxsize_t capacity_x_>
 	hxattr_nodiscard bool operator<(const hxflat_map<key_t_, mapped_t_, compare_t_,
-		multi_t_, capacity_x_>& x_) const;
+		multi_t_, capacity_x_, three_way_>& x_) const;
 
 	/// Returns a const iterator pointing to the first element.
 	const_iterator begin(void) const { return const_iterator(this, 0); }
@@ -551,7 +558,7 @@ public:
 
 private:
 	/// \cond HIDDEN
-	template<hxflat_map_concept_, hxflat_map_concept_, typename, bool, hxsize_t>
+	template<hxflat_map_concept_, hxflat_map_concept_, typename, bool, hxsize_t, bool>
 	friend class hxflat_map;
 
 	template<typename mapped_u_>

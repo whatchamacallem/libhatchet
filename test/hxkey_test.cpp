@@ -28,7 +28,7 @@ static_assert(hxis_same<
 		hxdeclval<const char&>())), bool>(),
 	"hxkey_less_t must handle non-const volatile references.");
 
-TEST(hxkey_function, hxis_string_detects_char_pointers) {
+TEST(hxthree_way_test, hxis_string_detects_char_pointers) {
 	EXPECT_TRUE(hxis_string<char*>());
 	EXPECT_TRUE(hxis_string<const char*>());
 	EXPECT_FALSE(hxis_string<int>());
@@ -55,7 +55,7 @@ TEST(hxkey_function, hxis_string_detects_char_pointers) {
 	EXPECT_FALSE(hxis_string<const void*>());
 }
 
-TEST(hxkey_function, equal_char_and_const_char_overloads) {
+TEST(hxthree_way_test, equal_char_and_const_char_overloads) {
 	char mutable_equal_storage[] = "match"; // NOLINT(misc-const-correctness)
 	char mutable_differ_storage[] = "matci"; // NOLINT(misc-const-correctness)
 	char* mutable_equal = mutable_equal_storage;
@@ -67,7 +67,7 @@ TEST(hxkey_function, equal_char_and_const_char_overloads) {
 	EXPECT_FALSE(hxkey_equal(mutable_differ, mutable_equal));
 }
 
-TEST(hxkey_function, less_char_and_const_char_overloads) {
+TEST(hxthree_way_test, less_char_and_const_char_overloads) {
 	char mutable_a_storage[] = "a"; // NOLINT(misc-const-correctness)
 	char mutable_b_storage[] = "b"; // NOLINT(misc-const-correctness)
 	char* mutable_a = mutable_a_storage;
@@ -84,6 +84,28 @@ TEST(hxkey_hash, char_pointer_matches_const_char_pointer) {
 	char mutable_hello[] = "hello";
 	EXPECT_EQ(hxkey_hash_t<char*>{}(mutable_hello), hxkey_hash_t<const char*>{}("hello"));
 }
+
+TEST(hxthree_way_test, hxthree_way_scalar) {
+	EXPECT_TRUE(hxthree_way(3, 4) < 0);
+	EXPECT_TRUE(hxthree_way(3, 3) == 0);
+	EXPECT_TRUE(hxthree_way(4, 3) > 0);
+}
+
+#if HX_CPLUSPLUS >= 202002L
+TEST(hxthree_way_test, hxthree_way_spaceship) {
+	class hxthree_way_test_t {
+	public:
+		explicit hxthree_way_test_t(int32_t value) : m_value(value) { }
+		int32_t operator<=>(const hxthree_way_test_t& x) const { return m_value - x.m_value; }
+	private:
+		int32_t m_value;
+	};
+	const hxthree_way_test_t a(31), b(32);
+	EXPECT_TRUE(hxthree_way(a, b) < 0);
+	EXPECT_TRUE(hxthree_way(a, a) == 0);
+	EXPECT_TRUE(hxthree_way(b, a) > 0);
+}
+#endif // HX_CPLUSPLUS >= 202002L
 
 TEST(hxkey_hash, compare_avalanches) {
 	char original[] = "avalanche-test-string-31";

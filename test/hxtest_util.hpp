@@ -21,7 +21,7 @@ public:
 		int default_construct, int value_construct,
 		int copy_construct, int move_construct,
 		int copy_assign, int move_assign,
-		int equal_to, int less_than);
+		int equal_to, int less_than, int three_way);
 
 	bool check_no_stats(void);
 
@@ -39,6 +39,7 @@ public:
 	int m_equal_to;
 	int m_less_than;
 	int m_value_construct;
+	int m_three_way;
 	bool m_check_stats_called;
 	uint16_t m_next_ticket;
 };
@@ -63,6 +64,11 @@ public:
 	bool operator==(int32_t x) const;
 	bool operator==(const hxtest_object& x) const;
 	bool operator<(const hxtest_object& x) const;
+#if HX_CPLUSPLUS >= 202002L
+	int32_t operator<=>(const hxtest_object& x) const;
+#else
+	int32_t operator-(const hxtest_object& x) const;
+#endif
 	hxtest_object_state state(void) const;
 	uint16_t ticket(void) const;
 	int32_t& value(void);

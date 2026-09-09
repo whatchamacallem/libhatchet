@@ -93,7 +93,7 @@ TEST_F(hxlist_test_f, push_back) {
 	}
 	EXPECT_EQ(expected, 4);
 	list.release_all();
-	EXPECT_TRUE(check_stats(6, 3, 0, 3, 3, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(6, 3, 0, 3, 3, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxlist_test_f, operator_equal) {
@@ -111,7 +111,7 @@ TEST_F(hxlist_test_f, operator_equal) {
 	EXPECT_TRUE(a == b);
 	a.release_all();
 	b.release_all();
-	EXPECT_TRUE(check_stats(8, 4, 0, 4, 4, 0, 0, 0, 3, 0));
+	EXPECT_TRUE(check_stats(8, 4, 0, 4, 4, 0, 0, 0, 3, 0, 0));
 }
 
 TEST_F(hxlist_test_f, operator_equal_detects_shared_prefix_length_mismatch) {
@@ -126,7 +126,7 @@ TEST_F(hxlist_test_f, operator_equal_detects_shared_prefix_length_mismatch) {
 	EXPECT_FALSE(b == a);
 	a.release_all();
 	b.release_all();
-	EXPECT_TRUE(check_stats(6, 3, 0, 3, 3, 0, 0, 0, 2, 0));
+	EXPECT_TRUE(check_stats(6, 3, 0, 3, 3, 0, 0, 0, 2, 0, 0));
 }
 
 TEST_F(hxlist_test_f, operator_less) {
@@ -147,7 +147,7 @@ TEST_F(hxlist_test_f, operator_less) {
 	EXPECT_FALSE(b < a);
 	a.release_all();
 	b.release_all();
-	EXPECT_TRUE(check_stats(6, 3, 0, 3, 3, 0, 0, 0, 4, 0));
+	EXPECT_TRUE(check_stats(6, 3, 0, 3, 3, 0, 0, 0, 4, 0, 0));
 }
 
 TEST_F(hxlist_test_f, operator_less_smaller_element_is_less) {
@@ -161,7 +161,7 @@ TEST_F(hxlist_test_f, operator_less_smaller_element_is_less) {
 	EXPECT_FALSE(b < a);
 	a.release_all();
 	b.release_all();
-	EXPECT_TRUE(check_stats(4, 2, 0, 2, 2, 0, 0, 0, 2, 2));
+	EXPECT_TRUE(check_stats(4, 2, 0, 2, 2, 0, 0, 0, 2, 2, 0));
 }
 
 TEST(hxlist_test, front_and_back_const) {

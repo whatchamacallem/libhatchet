@@ -69,7 +69,7 @@ TEST_F(hxdeque_test_f, add_range_from_rvalue_moves) {
 	EXPECT_EQ(d[1].value(), 32);
 	EXPECT_EQ(d[2].value(), 33);
 	EXPECT_EQ(source[0].state(), hxtest_object_state::moved);
-	EXPECT_TRUE(check_stats(9, 3, 0, 3, 3, 3, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(9, 3, 0, 3, 3, 3, 0, 0, 0, 0, 0));
 }
 #endif
 
@@ -131,9 +131,9 @@ TEST_F(hxdeque_test_f, destructor_calls_clear) {
 		hxdeque<hxtest_object, 4> d;
 		d.emplace_back(7);
 		d.emplace_back(8);
-		EXPECT_TRUE(check_stats(2, 0, 0, 2, 0, 0, 0, 0, 0, 0));
+		EXPECT_TRUE(check_stats(2, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0));
 	}
-	EXPECT_TRUE(check_stats(2, 2, 0, 2, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(2, 2, 0, 2, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST(hxdeque_test, capacity) {
@@ -152,11 +152,11 @@ TEST_F(hxdeque_test_f, clear) {
 	d.emplace_back(1);
 	d.emplace_back(2);
 	d.emplace_back(3);
-	EXPECT_TRUE(check_stats(3, 0, 0, 3, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(3, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0));
 	d.clear();
 	EXPECT_EQ(d.size(), 0);
 	EXPECT_TRUE(d.empty());
-	EXPECT_TRUE(check_stats(3, 3, 0, 3, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(3, 3, 0, 3, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxdeque_test_f, clear_after_ring_wraparound) {
@@ -169,7 +169,7 @@ TEST_F(hxdeque_test_f, clear_after_ring_wraparound) {
 	EXPECT_EQ(d.size(), 4);
 	d.clear();
 	EXPECT_TRUE(d.empty());
-	EXPECT_TRUE(check_stats(6, 6, 0, 6, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(6, 6, 0, 6, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxdeque_test_f, emplace_back) {
@@ -186,7 +186,7 @@ TEST_F(hxdeque_test_f, emplace_back) {
 	pd.emplace_back(3, 7);
 	EXPECT_EQ(pd.back().x, 3);
 	EXPECT_EQ(pd.back().y, 7);
-	EXPECT_TRUE(check_stats(1, 0, 0, 1, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxdeque_test_f, emplace_front) {
@@ -196,7 +196,7 @@ TEST_F(hxdeque_test_f, emplace_front) {
 	EXPECT_EQ(d.size(), 2);
 	EXPECT_EQ(d.front().value(), 99);
 	EXPECT_EQ(d.back().value(), 10);
-	EXPECT_TRUE(check_stats(2, 0, 0, 2, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(2, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST(hxdeque_test, empty) {
@@ -239,16 +239,16 @@ TEST_F(hxdeque_test_f, pop_back) {
 	d.emplace_back(77);
 	d.pop_back();
 	EXPECT_TRUE(d.empty());
-	EXPECT_TRUE(check_stats(1, 1, 0, 1, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxdeque_test_f, pop_front) {
 	hxdeque<hxtest_object, 4> d;
 	d.emplace_back(55);
-	EXPECT_TRUE(check_stats(1, 0, 0, 1, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0));
 	d.pop_front();
 	EXPECT_TRUE(d.empty());
-	EXPECT_TRUE(check_stats(1, 1, 0, 1, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxdeque_test_f, push_back_fifo_and_wraparound) {
@@ -272,7 +272,7 @@ TEST_F(hxdeque_test_f, push_back_fifo_and_wraparound) {
 	EXPECT_EQ(c.size(), 0);
 	EXPECT_EQ(c.capacity(), 4);
 	hxtest_gdb_break_hxdeque_static();
-	EXPECT_TRUE(check_stats(6, 2, 0, 6, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(6, 2, 0, 6, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST(hxdeque_test, push_front_lifo_and_wraparound) {
@@ -352,7 +352,7 @@ TEST_F(hxdeque_test_f, size) {
 		EXPECT_EQ(a[static_cast<hxsize_t>(i)].value(), i + 4);
 	}
 	hxtest_gdb_break_hxdeque_dynamic();
-	EXPECT_TRUE(check_stats(12, 4, 0, 12, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(12, 4, 0, 12, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST(hxdeque_test, begin_end) {
@@ -403,7 +403,7 @@ TEST_F(hxdeque_test_f, operator_equal) {
 	a.emplace_back(32);
 	b.emplace_back(32);
 	EXPECT_TRUE(a == b);
-	EXPECT_TRUE(check_stats(4, 0, 0, 4, 0, 0, 0, 0, 3, 0));
+	EXPECT_TRUE(check_stats(4, 0, 0, 4, 0, 0, 0, 0, 3, 0, 0));
 }
 
 TEST_F(hxdeque_test_f, operator_equal_detects_differing_element) {
@@ -412,7 +412,7 @@ TEST_F(hxdeque_test_f, operator_equal_detects_differing_element) {
 	a.emplace_back(31);
 	b.emplace_back(32);
 	EXPECT_FALSE(a == b);
-	EXPECT_TRUE(check_stats(2, 0, 0, 2, 0, 0, 0, 0, 1, 0));
+	EXPECT_TRUE(check_stats(2, 0, 0, 2, 0, 0, 0, 0, 1, 0, 0));
 }
 
 TEST_F(hxdeque_test_f, operator_less) {
@@ -428,7 +428,7 @@ TEST_F(hxdeque_test_f, operator_less) {
 	b.emplace_back(32);
 	EXPECT_TRUE(a < b);
 	EXPECT_FALSE(b < a);
-	EXPECT_TRUE(check_stats(3, 0, 0, 3, 0, 0, 0, 0, 4, 0));
+	EXPECT_TRUE(check_stats(3, 0, 0, 3, 0, 0, 0, 0, 4, 0, 0));
 }
 
 TEST_F(hxdeque_test_f, operator_less_smaller_element_is_less) {
@@ -438,5 +438,5 @@ TEST_F(hxdeque_test_f, operator_less_smaller_element_is_less) {
 	b.emplace_back(32);
 	EXPECT_TRUE(a < b);
 	EXPECT_FALSE(b < a);
-	EXPECT_TRUE(check_stats(2, 0, 0, 2, 0, 0, 0, 0, 2, 2));
+	EXPECT_TRUE(check_stats(2, 0, 0, 2, 0, 0, 0, 0, 2, 2, 0));
 }

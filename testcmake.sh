@@ -10,9 +10,24 @@ set -eu
 
 export POSIXLY_CORRECT=1
 
+HX_OPT_NO_TIDY_=0
+HX_OPT_VERBOSE_=0
+for HX_ARG_ in "$@"; do
+	case "$HX_ARG_" in
+		"")          ;;
+		--no-tidy)   HX_OPT_NO_TIDY_=1 ;;
+		--verbose)   HX_OPT_VERBOSE_=1 ;;
+		*)
+			echo "usage: $0 [--no-tidy] [--verbose]"
+			echo "  --no-tidy   Skip clang-tidy."
+			echo "  --verbose   Full output."
+			exit 1 ;;
+	esac
+done
+
 if [ ! -f build/CMakeCache.txt ]; then
 	rm -rf "$(readlink -f build)" build; mkdir build
-	if [ "${1:-}" = "--verbose" ]; then
+	if [ "$HX_OPT_VERBOSE_" = "1" ]; then
 		cmake -S . -B build -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 	else
 		cmake -S . -B build -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON >build/testcmake.sh.log 2>&1 \
@@ -22,7 +37,7 @@ else
 	echo "Found build/CMakeCache.txt..."
 fi
 
-if [ "${1:-}" = "--verbose" ]; then
+if [ "$HX_OPT_VERBOSE_" = "1" ]; then
 	ninja -C build
 else
 	ninja -C build >build/testcmake.sh.log 2>&1 \
@@ -44,7 +59,7 @@ if ! grep -qE '\[  PASSED  \]' testcmake.sh.txt; then
 fi
 
 echo "Check GDB pretty printer output..."
-if [ "${1:-}" = "--verbose" ]; then
+if [ "$HX_OPT_VERBOSE_" = "1" ]; then
 	cat gdb_printer_output.txt
 fi
 
@@ -68,14 +83,14 @@ $16 = [8/8] hxdeque<hxtest_object, 0> = {[64B dynamic], { state=valid, value=4 }
 $17 = [1] const hxexpected<int, bool> = {hxallocator = [4B static], value = 34, error = false}
 $18 = [0] const hxexpected<int, bool> = {hxallocator = [4B static], error = true}
 $19 = [0] const hxexpected<int, int> = {hxallocator = [4B static], error = 31}
-$20 = [3/4] const hxflat_map<hxtest_object, hxtest_object, hxkey_less_t<hxtest_object, void>, false, 4> = {[32B static], [32B static], { state=valid, value=10 }, { state=valid, value=20 }, { state=valid, value=30 }}
-$21 = [3/3] const hxflat_map<hxtest_object, hxtest_object, hxkey_less_t<hxtest_object, void>, true, 0> = {[24B dynamic], [24B dynamic], { state=valid, value=10 }, { state=valid, value=20 }, { state=valid, value=30 }}
-$22 = [0/0] const hxflat_map<hxtest_object, hxtest_object, hxkey_less_t<hxtest_object, void>, true, 0>
-$23 = [0/4] hxflat_map<hxtest_object, hxtest_object, hxkey_less_t<hxtest_object, void>, true, 0> = {[32B dynamic], [32B dynamic]}
-$24 = [3/4] const hxflat_set<hxtest_object, hxkey_less_t<hxtest_object, void>, false, 4> = {[32B static], { state=valid, value=10 }, { state=valid, value=20 }, { state=valid, value=30 }}
-$25 = [3/3] const hxflat_set<hxtest_object, hxkey_less_t<hxtest_object, void>, true, 0> = {[24B dynamic], { state=valid, value=10 }, { state=valid, value=20 }, { state=valid, value=30 }}
-$26 = [0/0] const hxflat_set<hxtest_object, hxkey_less_t<hxtest_object, void>, true, 0>
-$27 = [0/8] hxflat_set<hxtest_object, hxkey_less_t<hxtest_object, void>, true, 0> = {[64B dynamic]}
+$20 = [3/4] const hxflat_map<hxtest_object, hxtest_object, hxkey_less_t<hxtest_object, void>, false, 4, false> = {[32B static], [32B static], { state=valid, value=10 }, { state=valid, value=20 }, { state=valid, value=30 }}
+$21 = [3/3] const hxflat_map<hxtest_object, hxtest_object, hxkey_less_t<hxtest_object, void>, true, 0, false> = {[24B dynamic], [24B dynamic], { state=valid, value=10 }, { state=valid, value=20 }, { state=valid, value=30 }}
+$22 = [0/0] const hxflat_map<hxtest_object, hxtest_object, hxkey_less_t<hxtest_object, void>, true, 0, false>
+$23 = [0/4] hxflat_map<hxtest_object, hxtest_object, hxkey_less_t<hxtest_object, void>, true, 0, false> = {[32B dynamic], [32B dynamic]}
+$24 = [3/4] const hxflat_set<hxtest_object, hxkey_less_t<hxtest_object, void>, false, 4, false> = {[32B static], { state=valid, value=10 }, { state=valid, value=20 }, { state=valid, value=30 }}
+$25 = [3/3] const hxflat_set<hxtest_object, hxkey_less_t<hxtest_object, void>, true, 0, false> = {[24B dynamic], { state=valid, value=10 }, { state=valid, value=20 }, { state=valid, value=30 }}
+$26 = [0/0] const hxflat_set<hxtest_object, hxkey_less_t<hxtest_object, void>, true, 0, false>
+$27 = [0/8] hxflat_set<hxtest_object, hxkey_less_t<hxtest_object, void>, true, 0, false> = {[64B dynamic]}
 $28 = [2/3] hxhandle_table<hxtest_object, hxdefault_delete, 2> = {[1] = { state=valid, value=0 }, [3] = { state=valid, value=2 }}
 $29 = [0/0] const hxhandle_table<hxtest_object, hxdefault_delete, 0>
 $30 = [39/32 buckets] hxhash_table<hxtest_object_node, hxdefault_delete, true, 0> = {[256B dynamic], { state=valid, value=57 }, { state=valid, value=39 }, { state=valid, value=61 }, { state=valid, value=67 }, { state=valid, value=55 }, { state=valid, value=48 }, { state=valid, value=45 }, { state=valid, value=75 }, { state=valid, value=60 }, { state=valid, value=64 }, { state=valid, value=72 }, { state=valid, value=56 }, { state=valid, value=59 }, { state=valid, value=66 }, { state=valid, value=42 }, { state=valid, value=63 }, { state=valid, value=44 }, { state=valid, value=62 }, { state=valid, value=53 }, { state=valid, value=58 }, { state=valid, value=73 }, { state=valid, value=71 }, { state=valid, value=40 }, { state=valid, value=52 }, { state=valid, value=46 }, { state=valid, value=68 }, { state=valid, value=41 }, { state=valid, value=65 }, { state=valid, value=51 }, { state=valid, value=70 }, { state=valid, value=76 }, { state=valid, value=77 }, { state=valid, value=49 }, { state=valid, value=69 }, { state=valid, value=43 }, { state=valid, value=54 }, { state=valid, value=47 }, { state=valid, value=50 }, { state=valid, value=74 }}
@@ -105,11 +120,15 @@ fi
 
 cd ..
 
-# Depends on -DCMAKE_EXPORT_COMPILE_COMMANDS=ON above. These two have to happen
-# together.
-echo "Run clang-tidy..."
-run-clang-tidy -quiet -j 0 -p build src/*.cpp test/*.c test/*.cpp 2>&1   \
-	| grep -vE '^Running clang-tidy for|^[0-9]+ warnings generated\.$|^\[|^$' \
-	&& { echo "clang-tidy errors."; exit 1; }
+if [ "$HX_OPT_NO_TIDY_" = "1" ]; then
+	echo "Skipping clang-tidy..."
+else
+	# Depends on -DCMAKE_EXPORT_COMPILE_COMMANDS=ON above. These two have to
+	# happen together.
+	echo "Run clang-tidy..."
+	run-clang-tidy -quiet -j 0 -p build src/*.cpp test/*.c test/*.cpp 2>&1   \
+		| grep -vE '^Running clang-tidy for|^[0-9]+ warnings generated\.$|^\[|^$' \
+		&& { echo "clang-tidy errors."; exit 1; }
+fi
 
 echo "🪓🪓🪓"

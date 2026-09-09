@@ -180,7 +180,7 @@ hxinline hxconstexpr bool hxbitset<bit_count_>::operator==(const hxbitset& x_) c
 	return difference_ == 0u;
 }
 
-#if HX_CPLUSPLUS < 202002L // C++20 defaults != from ==.
+#if HX_CPLUSPLUS < 202002L
 template<size_t bit_count_>
 hxinline hxconstexpr bool hxbitset<bit_count_>::operator!=(const hxbitset& x_) const {
 	return !(*this == x_);

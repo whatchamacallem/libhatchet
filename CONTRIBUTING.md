@@ -54,7 +54,7 @@ found.
 debugbuild.sh --run
 testcoverage.sh
 teststrip.sh
-testcmake.sh
+testcmake.sh --no-tidy
 ```
 
 When asked to "build all" then use `testall.sh` instead.

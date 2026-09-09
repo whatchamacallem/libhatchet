@@ -20,7 +20,7 @@ TEST_F(hxslot_map_f, value_or_emplaces_fallback) {
 	const hxhandle_t handle = m.emplace(10);
 	EXPECT_EQ(m.value_or(handle, 14, 17).value(), 10);
 	EXPECT_EQ(m.value_or(handle + static_cast<hxhandle_t>(4), 14, 17).value(), 31);
-	EXPECT_TRUE(check_stats(3, 2, 0, 2, 1, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(3, 2, 0, 2, 1, 0, 0, 0, 0, 0, 0));
 }
 #endif // HX_CPLUSPLUS >= 202302L
 
@@ -46,7 +46,7 @@ TEST_F(hxslot_map_f, hxslot_map_full) {
 	EXPECT_TRUE(m.full());
 	EXPECT_TRUE(m.reset(h2));
 	EXPECT_FALSE(m.full());
-	EXPECT_TRUE(check_stats(3, 1, 0, 3, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(3, 1, 0, 3, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxslot_map_f, hxslot_map_construction_dynamic) {
@@ -86,7 +86,7 @@ TEST_F(hxslot_map_f, hxslot_map_insert_and_get) {
 	EXPECT_EQ(cv1->value(), (int32_t)1);
 	const hxslot_map<hxtest_object> b;
 	hxtest_gdb_break_hxslot_map();
-	EXPECT_TRUE(check_stats(3, 0, 0, 3, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(3, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxslot_map_f, hxslot_map_value_wrong_handle_returns_end) {
@@ -96,7 +96,7 @@ TEST_F(hxslot_map_f, hxslot_map_value_wrong_handle_returns_end) {
 	EXPECT_EQ(m.value(stale), m.end());
 	const hxslot_map<hxtest_object, 2>& cm = m;
 	EXPECT_EQ(cm.value(stale), cm.end());
-	EXPECT_TRUE(check_stats(1, 0, 0, 1, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxslot_map_f, hxslot_map_reset_stale_handle_returns_false) {
@@ -106,7 +106,7 @@ TEST_F(hxslot_map_f, hxslot_map_reset_stale_handle_returns_false) {
 	EXPECT_EQ(m.size(), hxsize_t{0});
 	EXPECT_FALSE(m.reset(h0));
 	EXPECT_EQ(m.value(h0), m.end());
-	EXPECT_TRUE(check_stats(1, 1, 0, 1, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxslot_map_f, hxslot_map_reset_last_value_skips_move) {
@@ -119,7 +119,7 @@ TEST_F(hxslot_map_f, hxslot_map_reset_last_value_skips_move) {
 	EXPECT_EQ(m.size(), hxsize_t{2});
 	EXPECT_EQ(*m.data(), 0);
 	EXPECT_EQ(*(m.data() + 1), 1);
-	EXPECT_TRUE(check_stats(3, 1, 0, 3, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(3, 1, 0, 3, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxslot_map_f, hxslot_map_reset_non_last_value_moves_last_into_hole) {
@@ -144,7 +144,7 @@ TEST_F(hxslot_map_f, hxslot_map_reset_non_last_value_moves_last_into_hole) {
 	EXPECT_EQ(*m.data(), 1);
 	EXPECT_TRUE(m.reset(h1));
 	EXPECT_EQ(m.size(), hxsize_t{0});
-	EXPECT_TRUE(check_stats(3, 3, 0, 3, 0, 0, 0, 2, 0, 0));
+	EXPECT_TRUE(check_stats(3, 3, 0, 3, 0, 0, 0, 2, 0, 0, 0));
 }
 
 TEST_F(hxslot_map_f, hxslot_map_insert_after_erase_reuses_slot_with_new_generation) {
@@ -160,7 +160,7 @@ TEST_F(hxslot_map_f, hxslot_map_insert_after_erase_reuses_slot_with_new_generati
 	EXPECT_NE(m.value(h0), m.end());
 	EXPECT_NE(m.value(h2), m.end());
 	EXPECT_EQ(m.size(), hxsize_t{3});
-	EXPECT_TRUE(check_stats(4, 1, 0, 4, 0, 0, 0, 1, 0, 0));
+	EXPECT_TRUE(check_stats(4, 1, 0, 4, 0, 0, 0, 1, 0, 0, 0));
 }
 
 TEST_F(hxslot_map_f, hxslot_map_full_cycle_reuse_across_all_slots) {
@@ -180,7 +180,7 @@ TEST_F(hxslot_map_f, hxslot_map_full_cycle_reuse_across_all_slots) {
 	EXPECT_EQ(m.value(r0)->value(), (int32_t)10);
 	EXPECT_EQ(m.value(r1)->value(), (int32_t)11);
 	EXPECT_EQ(m.value(r2)->value(), (int32_t)12);
-	EXPECT_TRUE(check_stats(6, 3, 0, 6, 0, 0, 0, 1, 0, 0));
+	EXPECT_TRUE(check_stats(6, 3, 0, 6, 0, 0, 0, 1, 0, 0, 0));
 }
 
 TEST_F(hxslot_map_f, hxslot_map_clear_on_empty_map_is_noop) {
@@ -198,7 +198,7 @@ TEST_F(hxslot_map_f, hxslot_map_clear_single_value) {
 	EXPECT_EQ(m.size(), hxsize_t{0});
 	EXPECT_TRUE(m.empty());
 	EXPECT_EQ(m.value(h0), m.end());
-	EXPECT_TRUE(check_stats(1, 1, 0, 1, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxslot_map_f, hxslot_map_clear_multiple_values_then_reinsert) {
@@ -219,7 +219,7 @@ TEST_F(hxslot_map_f, hxslot_map_clear_multiple_values_then_reinsert) {
 	EXPECT_EQ(m.value(r0)->value(), (int32_t)20);
 	EXPECT_EQ(m.value(r1)->value(), (int32_t)21);
 	EXPECT_EQ(m.value(r2)->value(), (int32_t)22);
-	EXPECT_TRUE(check_stats(6, 3, 0, 6, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(6, 3, 0, 6, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxslot_map_f, hxslot_map_destructor_destroys_all_values) {
@@ -232,7 +232,7 @@ TEST_F(hxslot_map_f, hxslot_map_destructor_destroys_all_values) {
 		m2.insert(33);
 		m2.insert(34);
 	}
-	EXPECT_TRUE(check_stats(4, 4, 0, 4, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(4, 4, 0, 4, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxslot_map_f, hxslot_map_set_size_bits_allocates) {
@@ -249,7 +249,7 @@ TEST_F(hxslot_map_f, hxslot_map_set_size_bits_allocates) {
 	EXPECT_EQ(m.size(), hxsize_t{2});
 	EXPECT_NE(m.value(h0), m.end());
 	EXPECT_NE(m.value(h2), m.end());
-	EXPECT_TRUE(check_stats(3, 1, 0, 3, 0, 0, 0, 1, 0, 0));
+	EXPECT_TRUE(check_stats(3, 1, 0, 3, 0, 0, 0, 1, 0, 0, 0));
 }
 
 TEST_F(hxslot_map_f, hxslot_map_handle_at_returns_matching_handle) {
@@ -260,7 +260,7 @@ TEST_F(hxslot_map_f, hxslot_map_handle_at_returns_matching_handle) {
 	EXPECT_EQ(m.handle_at(hxsize_t{0}), h0);
 	EXPECT_EQ(m.handle_at(hxsize_t{1}), h1);
 	EXPECT_EQ(m.handle_at(hxsize_t{2}), h2);
-	EXPECT_TRUE(check_stats(3, 0, 0, 3, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(3, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxslot_map_f, hxslot_map_handle_at_tracks_erase_hole_fill) {
@@ -272,7 +272,7 @@ TEST_F(hxslot_map_f, hxslot_map_handle_at_tracks_erase_hole_fill) {
 	// The last value (2) is moved into the hole left by h0.
 	EXPECT_EQ(m.handle_at(hxsize_t{0}), h2);
 	EXPECT_EQ(m.handle_at(hxsize_t{1}), h1);
-	EXPECT_TRUE(check_stats(3, 1, 0, 3, 0, 0, 0, 1, 0, 0));
+	EXPECT_TRUE(check_stats(3, 1, 0, 3, 0, 0, 0, 1, 0, 0, 0));
 }
 
 TEST_F(hxslot_map_f, hxslot_map_erase_if_removes_matching_values) {
@@ -303,7 +303,7 @@ TEST_F(hxslot_map_f, hxslot_map_erase_if_removes_matching_values) {
 	EXPECT_NE(r4, h4);
 	EXPECT_EQ(m.value(r4)->value(), (int32_t)14);
 	EXPECT_EQ(m.size(), hxsize_t{3});
-	EXPECT_TRUE(check_stats(6, 3, 0, 6, 0, 0, 0, 2, 0, 0));
+	EXPECT_TRUE(check_stats(6, 3, 0, 6, 0, 0, 0, 2, 0, 0, 0));
 }
 
 TEST_F(hxslot_map_f, hxslot_map_erase_if_none_removed_returns_zero) {
@@ -313,7 +313,7 @@ TEST_F(hxslot_map_f, hxslot_map_erase_if_none_removed_returns_zero) {
 	const hxsize_t removed = m.erase_if([](const hxtest_object&) -> bool { return false; });
 	EXPECT_EQ(removed, hxsize_t{0});
 	EXPECT_EQ(m.size(), hxsize_t{2});
-	EXPECT_TRUE(check_stats(2, 0, 0, 2, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(2, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxslot_map_f, hxslot_map_erase_if_all_removed_returns_size) {
@@ -325,7 +325,7 @@ TEST_F(hxslot_map_f, hxslot_map_erase_if_all_removed_returns_size) {
 	EXPECT_EQ(removed, hxsize_t{3});
 	EXPECT_EQ(m.size(), hxsize_t{0});
 	EXPECT_TRUE(m.empty());
-	EXPECT_TRUE(check_stats(3, 3, 0, 3, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(3, 3, 0, 3, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxslot_map_f, hxslot_map_erase_if_on_empty_map_is_noop) {
@@ -349,7 +349,7 @@ TEST_F(hxslot_map_f, hxslot_map_erase_if_removes_last_value_only) {
 	EXPECT_EQ(*m.data(), 0);
 	EXPECT_EQ(*(m.data() + 1), 1);
 	EXPECT_EQ(m.value(h2), m.end());
-	EXPECT_TRUE(check_stats(3, 1, 0, 3, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(3, 1, 0, 3, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxslot_map_f, hxslot_map_erase_if_matches_histogram_of_random_sequence) {
@@ -403,7 +403,7 @@ TEST_F(hxslot_map_f, hxslot_map_erase_if_matches_histogram_of_random_sequence) {
 			EXPECT_EQ(remaining[bucket], histogram[bucket]);
 		}
 	}
-	EXPECT_TRUE(check_stats(200, 58, 0, 200, 0, 0, 0, 58, 0, 0));
+	EXPECT_TRUE(check_stats(200, 58, 0, 200, 0, 0, 0, 58, 0, 0, 0));
 }
 
 TEST_F(hxslot_map_f, hxslot_map_random_mutation_stays_valid) {
@@ -464,5 +464,5 @@ TEST_F(hxslot_map_f, hxslot_map_random_mutation_stays_valid) {
 	live.clear();
 	EXPECT_TRUE(m.empty());
 	EXPECT_EQ(m.size(), hxsize_t{0});
-	EXPECT_TRUE(check_stats(10002, 10002, 0, 10002, 0, 0, 0, 7744, 0, 0));
+	EXPECT_TRUE(check_stats(10002, 10002, 0, 10002, 0, 0, 0, 7744, 0, 0, 0));
 }

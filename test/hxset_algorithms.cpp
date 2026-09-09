@@ -89,7 +89,7 @@ TEST_F(hxmerge_test_f, iterator_support) {
 	for(hxsize_t i = 0; i < 6; ++i) {
 		EXPECT_EQ(dest_desc[i].value(), expected_desc[i]);
 	}
-	EXPECT_TRUE(check_stats(24, 0, 0, 24, 0, 0, 0, 12, 0, 10));
+	EXPECT_TRUE(check_stats(24, 0, 0, 24, 0, 0, 0, 12, 0, 10, 0));
 }
 
 TEST_F(hxmerge_test_f, forwards_by_value_category) {
@@ -109,7 +109,7 @@ TEST_F(hxmerge_test_f, forwards_by_value_category) {
 	EXPECT_EQ(left[0].value(), 1);
 	EXPECT_EQ(left[1].value(), 3);
 	EXPECT_EQ(left[2].value(), 5);
-	EXPECT_TRUE(check_stats(12, 0, 0, 12, 0, 0, 3, 3, 0, 5));
+	EXPECT_TRUE(check_stats(12, 0, 0, 12, 0, 0, 3, 3, 0, 5, 0));
 }
 
 TEST_F(hxset_algorithms_test_f, hxset_union_forwards_by_value_category) {
@@ -129,7 +129,7 @@ TEST_F(hxset_algorithms_test_f, hxset_union_forwards_by_value_category) {
 	EXPECT_EQ(left[0].value(), 1);
 	EXPECT_EQ(left[1].value(), 2);
 	EXPECT_EQ(left[2].value(), 4);
-	EXPECT_TRUE(check_stats(11, 0, 0, 11, 0, 0, 3, 1, 0, 6));
+	EXPECT_TRUE(check_stats(11, 0, 0, 11, 0, 0, 3, 1, 0, 6, 0));
 }
 
 TEST(hxminmax_test, small_ranges) {
@@ -184,7 +184,7 @@ TEST_F(hxminmax_test_f, iterator_support) {
 		hxminmax(hxmake_range(begin, begin), hxtest_value_less);
 	EXPECT_EQ(empty_result.min, begin);
 	EXPECT_EQ(empty_result.max, begin);
-	EXPECT_TRUE(check_stats(4, 0, 0, 4, 0, 0, 0, 0, 0, 5));
+	EXPECT_TRUE(check_stats(4, 0, 0, 4, 0, 0, 0, 0, 0, 5, 0));
 }
 
 #if HX_CPLUSPLUS >= 201402L
@@ -294,7 +294,7 @@ TEST_F(hxset_algorithms_test_f, preserves_left_provenance_on_ties) {
 		EXPECT_EQ(dest_difference[i].value(), expected_difference_value[i]);
 		EXPECT_EQ(dest_difference[i].ticket(), expected_difference_ticket[i]);
 	}
-	EXPECT_TRUE(check_stats(18, 0, 0, 18, 0, 0, 10, 0, 0, 30));
+	EXPECT_TRUE(check_stats(18, 0, 0, 18, 0, 0, 10, 0, 0, 30, 0));
 }
 
 TEST_F(hxset_algorithms_test_f, hxarray_output_iterator_merge) {
@@ -322,7 +322,7 @@ TEST_F(hxset_algorithms_test_f, hxarray_output_iterator_merge) {
 	for(hxsize_t i = 0; i < hxsize(expected_ticket); ++i) {
 		EXPECT_EQ(merge_output[i].ticket(), expected_ticket[i]);
 	}
-	EXPECT_TRUE(check_stats(14, 1, 0, 7, 0, 7, 0, 0, 0, 4));
+	EXPECT_TRUE(check_stats(14, 1, 0, 7, 0, 7, 0, 0, 0, 4, 0));
 }
 
 TEST_F(hxset_algorithms_test_f, hxarray_output_iterator_union) {
@@ -350,7 +350,7 @@ TEST_F(hxset_algorithms_test_f, hxarray_output_iterator_union) {
 	for(hxsize_t i = 0; i < hxsize(expected_ticket); ++i) {
 		EXPECT_EQ(union_output[i].ticket(), expected_ticket[i]);
 	}
-	EXPECT_TRUE(check_stats(12, 1, 0, 7, 0, 5, 0, 0, 0, 6));
+	EXPECT_TRUE(check_stats(12, 1, 0, 7, 0, 5, 0, 0, 0, 6, 0));
 }
 
 TEST_F(hxset_algorithms_test_f, hxarray_output_iterator_intersection) {
@@ -378,7 +378,7 @@ TEST_F(hxset_algorithms_test_f, hxarray_output_iterator_intersection) {
 	for(hxsize_t i = 0; i < hxsize(expected_ticket); ++i) {
 		EXPECT_EQ(intersection_output[i].ticket(), expected_ticket[i]);
 	}
-	EXPECT_TRUE(check_stats(10, 1, 0, 7, 0, 3, 0, 0, 0, 6));
+	EXPECT_TRUE(check_stats(10, 1, 0, 7, 0, 3, 0, 0, 0, 6, 0));
 }
 
 TEST_F(hxset_algorithms_test_f, hxarray_output_iterator_difference) {
@@ -406,7 +406,7 @@ TEST_F(hxset_algorithms_test_f, hxarray_output_iterator_difference) {
 	for(hxsize_t i = 0; i < hxsize(expected_ticket); ++i) {
 		EXPECT_EQ(difference_output[i].ticket(), expected_ticket[i]);
 	}
-	EXPECT_TRUE(check_stats(9, 1, 0, 7, 0, 2, 0, 0, 0, 6));
+	EXPECT_TRUE(check_stats(9, 1, 0, 7, 0, 2, 0, 0, 0, 6, 0));
 }
 
 TEST_F(hxset_algorithms_test_f, hxarray_output_iterator_right_exhausted_first_union) {
@@ -429,7 +429,7 @@ TEST_F(hxset_algorithms_test_f, hxarray_output_iterator_right_exhausted_first_un
 	}
 	const int expected_union[] = { 1, 2, 3, 4 };
 	expect_hxarray(union_output, expected_union, hxsize(expected_union));
-	EXPECT_TRUE(check_stats(8, 0, 0, 4, 0, 4, 0, 0, 0, 6));
+	EXPECT_TRUE(check_stats(8, 0, 0, 4, 0, 4, 0, 0, 0, 6, 0));
 }
 
 TEST_F(hxset_algorithms_test_f, hxarray_output_iterator_right_exhausted_first_intersection) {
@@ -445,7 +445,7 @@ TEST_F(hxset_algorithms_test_f, hxarray_output_iterator_right_exhausted_first_in
 		EXPECT_EQ(&intersection_ret, &intersection_output);
 	}
 	EXPECT_EQ(intersection_output.size(), hxsize_t{0});
-	EXPECT_TRUE(check_stats(4, 0, 0, 4, 0, 0, 0, 0, 0, 6));
+	EXPECT_TRUE(check_stats(4, 0, 0, 4, 0, 0, 0, 0, 0, 6, 0));
 }
 
 TEST_F(hxset_algorithms_test_f, hxarray_output_iterator_right_exhausted_first_difference) {
@@ -468,7 +468,7 @@ TEST_F(hxset_algorithms_test_f, hxarray_output_iterator_right_exhausted_first_di
 	}
 	const int expected_difference[] = { 1, 2, 4 };
 	expect_hxarray(difference_output, expected_difference, hxsize(expected_difference));
-	EXPECT_TRUE(check_stats(7, 0, 0, 4, 0, 3, 0, 0, 0, 6));
+	EXPECT_TRUE(check_stats(7, 0, 0, 4, 0, 3, 0, 0, 0, 6, 0));
 }
 #endif // HX_CPLUSPLUS >= 201402L
 
@@ -489,7 +489,7 @@ TEST_F(hxunique_test_f, simple_case) {
 	const hxtest_rand_iterator_api_t no_dup_new_end =
 		hxunique(no_dup_begin, no_dup_end, hxtest_value_equal);
 	EXPECT_EQ(no_dup_new_end, no_dup_end);
-	EXPECT_TRUE(check_stats(10, 0, 0, 10, 0, 0, 0, 3, 8, 0));
+	EXPECT_TRUE(check_stats(10, 0, 0, 10, 0, 0, 0, 3, 8, 0, 0));
 }
 
 TEST(hxunique_test, boundary_counts) {
@@ -527,5 +527,5 @@ TEST_F(hxunique_test_f, empty_range_explicit_equal) {
 	const hxtest_rand_iterator_api_t empty_end =
 		hxunique(begin, begin, hxtest_value_equal);
 	EXPECT_EQ(empty_end, begin);
-	EXPECT_TRUE(check_stats(1, 0, 0, 1, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0));
 }

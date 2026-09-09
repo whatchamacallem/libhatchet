@@ -113,7 +113,7 @@ TEST_F(hxhash_table_test_f, single) {
 		EXPECT_EQ(table.size(), 1);
 		hxdelete(node);
 	}
-	EXPECT_TRUE(check_stats(3, 3, 0, 3, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(3, 3, 0, 3, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhash_table_test_f, raw_pointer_insert_duplicate_invokes_deleter) {
@@ -133,7 +133,7 @@ TEST_F(hxhash_table_test_f, raw_pointer_insert_duplicate_invokes_deleter) {
 		EXPECT_EQ(table.size(), 2);
 		EXPECT_EQ(&*table.find(55), node);
 	}
-	EXPECT_TRUE(check_stats(3, 3, 0, 3, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(3, 3, 0, 3, 0, 0, 0, 0, 0, 0, 0));
 	{
 		using no_delete_table_t = hxhash_table<hxtest_integer, hxdo_not_delete, false, 4>;
 		no_delete_table_t table;
@@ -166,7 +166,7 @@ TEST_F(hxhash_table_test_f, raw_pointer_insert_duplicate_invokes_deleter) {
 		hxdelete(original);
 		hxdelete(nonmatching);
 	}
-	EXPECT_TRUE(check_stats(9, 9, 0, 9, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(9, 9, 0, 9, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhash_table_test_f, map_node_usage) {
@@ -198,7 +198,7 @@ TEST_F(hxhash_table_test_f, map_node_usage) {
 		}
 		EXPECT_EQ(table.size(), 2);
 	}
-	EXPECT_TRUE(check_stats(2, 2, 2, 0, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0));
 }
 
 #if HX_CPLUSPLUS >= 202302L
@@ -414,9 +414,9 @@ TEST_F(hxhash_table_test_f, multiple) {
 		hxtest_gdb_break_hxhash_table();
 	}
 #if (HX_HARDENING_MODE) == HX_HARDENING_MODE_NONE
-	EXPECT_TRUE(check_stats(1365, 1365, 0, 1053, 312, 0, 0, 0, 1801, 0));
+	EXPECT_TRUE(check_stats(1365, 1365, 0, 1053, 312, 0, 0, 0, 1801, 0, 0));
 #else
-	EXPECT_TRUE(check_stats(1365, 1365, 0, 1053, 312, 0, 0, 0, 2419, 0));
+	EXPECT_TRUE(check_stats(1365, 1365, 0, 1053, 312, 0, 0, 0, 2419, 0, 0));
 #endif
 }
 
@@ -439,7 +439,7 @@ TEST_F(hxhash_table_test_f, strings) {
 		EXPECT_EQ(table.find("Pink"), table.end());
 	}
 	EXPECT_TRUE(check_stats(static_cast<int>(sz), static_cast<int>(sz),
-		0, static_cast<int>(sz), 0, 0, 0, 0, 0, 0));
+		0, static_cast<int>(sz), 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST(hxhash_table_test, string_literal_nodes) {
@@ -570,7 +570,7 @@ TEST_F(hxhash_table_test_f, iterator_traverses_all_nodes_exactly_once) {
 		++visited;
 	}
 	EXPECT_EQ(visited, n);
-	EXPECT_TRUE(check_stats(n, 0, 0, n, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(n, 0, 0, n, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST(hxhash_table_test, iterator_begin_equals_end_on_empty_table) {
@@ -590,7 +590,7 @@ TEST_F(hxhash_table_test_f, default_constructed_iterators_equal_end) {
 	const table_t::iterator d;
 	EXPECT_EQ(d, table.end());
 	EXPECT_FALSE(d == table.begin());
-	EXPECT_TRUE(check_stats(1, 0, 0, 1, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST(hxhash_table_test, bucket_count_matches_table_size_bits) {
@@ -611,7 +611,7 @@ TEST_F(hxhash_table_test_f, const_iterator_post_increment_returns_prior) {
 	const table_t::const_iterator prior = it++;
 	EXPECT_EQ(prior, table.cbegin());
 	EXPECT_EQ(it, table.cend());
-	EXPECT_TRUE(check_stats(1, 0, 0, 1, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhash_table_test_f, emplace_constructs_and_inserts_node) {
@@ -625,7 +625,7 @@ TEST_F(hxhash_table_test_f, emplace_constructs_and_inserts_node) {
 	EXPECT_EQ(b->hash_key(), 7);
 	EXPECT_EQ(table.size(), 2);
 	EXPECT_EQ(table.count(7), 2);
-	EXPECT_TRUE(check_stats(2, 0, 0, 2, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(2, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhash_table_test_f, try_emplace_inserts_then_returns_existing) {
@@ -637,7 +637,7 @@ TEST_F(hxhash_table_test_f, try_emplace_inserts_then_returns_existing) {
 	const table_t::iterator b = table.try_emplace(7, 7, 7);
 	EXPECT_EQ(a, b);
 	EXPECT_EQ(table.size(), 1);
-	EXPECT_TRUE(check_stats(1, 0, 0, 1, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhash_table_test_f, count_returns_zero_for_absent_key) {
@@ -646,7 +646,7 @@ TEST_F(hxhash_table_test_f, count_returns_zero_for_absent_key) {
 	table.insert(hxptr<hxtest_integer>(hxnew<hxtest_integer>(10, 10)));
 	EXPECT_EQ(table.count(10), 1);
 	EXPECT_EQ(table.count(99), 0);
-	EXPECT_TRUE(check_stats(1, 0, 0, 1, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhash_table_test_f, count_multi_two_same_key) {
@@ -655,7 +655,7 @@ TEST_F(hxhash_table_test_f, count_multi_two_same_key) {
 	table.insert(hxptr<hxtest_integer>(hxnew<hxtest_integer>(7, 7)));
 	table.insert(hxptr<hxtest_integer>(hxnew<hxtest_integer>(7, 7)));
 	EXPECT_EQ(table.count(7), 2);
-	EXPECT_TRUE(check_stats(2, 0, 0, 2, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(2, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhash_table_test_f, find_second_duplicate_via_previous) {
@@ -691,7 +691,7 @@ TEST_F(hxhash_table_test_f, find_second_duplicate_via_previous) {
 	EXPECT_EQ(single_bucket_table.find(0, found_tail), single_bucket_table.end());
 	const single_bucket_table_t::iterator found_middle = single_bucket_table.find(2);
 	EXPECT_EQ(single_bucket_table.find(2, found_middle), single_bucket_table.end());
-	EXPECT_TRUE(check_stats(6, 0, 0, 6, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(6, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhash_table_test_f, find_with_previous_skips_colliding_key_in_single_table) {
@@ -704,7 +704,7 @@ TEST_F(hxhash_table_test_f, find_with_previous_skips_colliding_key_in_single_tab
 	table.insert(hxptr<hxtest_integer>(node_77));
 	const table_t::iterator found = table.find(77);
 	EXPECT_EQ(table.find(77, found), table.end());
-	EXPECT_TRUE(check_stats(2, 0, 0, 2, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(2, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhash_table_test_f, find_absent_key_in_nonempty_bucket_chain) {
@@ -716,7 +716,7 @@ TEST_F(hxhash_table_test_f, find_absent_key_in_nonempty_bucket_chain) {
 	table.insert(hxptr<hxtest_integer>(hxnew<hxtest_integer>(5, 5)));
 	EXPECT_EQ(table.find(99), table.end());
 	EXPECT_NE(table.find(1), table.end());
-	EXPECT_TRUE(check_stats(3, 0, 0, 3, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(3, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhash_table_test_f, insert_two_keys_same_bucket_both_findable) {
@@ -728,7 +728,7 @@ TEST_F(hxhash_table_test_f, insert_two_keys_same_bucket_both_findable) {
 	EXPECT_NE(table.find(1), table.end());
 	EXPECT_NE(table.find(3), table.end());
 	EXPECT_EQ(table.size(), 2u);
-	EXPECT_TRUE(check_stats(2, 0, 0, 2, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(2, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhash_table_test_f, erase_head_node_updates_size) {
@@ -763,7 +763,7 @@ TEST_F(hxhash_table_test_f, erase_head_node_updates_size) {
 	EXPECT_EQ(fn_deleter_table.erase(9, &hxdelete<hxtest_integer>), 1u);
 	EXPECT_EQ(fn_deleter_table.size(), 0u);
 	EXPECT_EQ(fn_deleter_table.find(9), fn_deleter_table.end());
-	EXPECT_TRUE(check_stats(5, 4, 0, 5, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(5, 4, 0, 5, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhash_table_test_f, erase_interior_node_in_bucket_chain) {
@@ -845,7 +845,7 @@ TEST_F(hxhash_table_test_f, erase_interior_node_in_bucket_chain) {
 		hxdelete(interior_head);
 		hxdelete(interior_tail);
 	}
-	EXPECT_TRUE(check_stats(17, 15, 0, 17, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(17, 15, 0, 17, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhash_table_test_f, erase_returns_zero_for_absent_key) {
@@ -854,7 +854,7 @@ TEST_F(hxhash_table_test_f, erase_returns_zero_for_absent_key) {
 	table.insert(hxptr<hxtest_integer>(hxnew<hxtest_integer>(10, 10)));
 	EXPECT_EQ(table.erase(99), 0u);
 	EXPECT_EQ(table.size(), 1u);
-	EXPECT_TRUE(check_stats(1, 0, 0, 1, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhash_table_test_f, extract_head_node_removes_from_table) {
@@ -866,7 +866,7 @@ TEST_F(hxhash_table_test_f, extract_head_node_removes_from_table) {
 	EXPECT_EQ(extracted.get(), node);
 	EXPECT_EQ(table.find(55), table.end());
 	EXPECT_EQ(table.size(), 0u);
-	EXPECT_TRUE(check_stats(1, 0, 0, 1, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhash_table_test_f, extract_interior_node_keeps_others) {
@@ -883,7 +883,7 @@ TEST_F(hxhash_table_test_f, extract_interior_node_keeps_others) {
 	EXPECT_NE(table.find(1), table.end());
 	EXPECT_NE(table.find(5), table.end());
 	EXPECT_EQ(table.find(3), table.end());
-	EXPECT_TRUE(check_stats(3, 0, 0, 3, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(3, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhash_table_test_f, erase_iterator_head_node_returns_next) {
@@ -900,7 +900,7 @@ TEST_F(hxhash_table_test_f, erase_iterator_head_node_returns_next) {
 	EXPECT_EQ(table.size(), 1u);
 	EXPECT_EQ(table.find(0), table.end());
 	EXPECT_NE(table.find(2), table.end());
-	EXPECT_TRUE(check_stats(2, 1, 0, 2, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(2, 1, 0, 2, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhash_table_test_f, erase_iterator_interior_node_returns_next) {
@@ -922,7 +922,7 @@ TEST_F(hxhash_table_test_f, erase_iterator_interior_node_returns_next) {
 	EXPECT_EQ(&*next, node_10);
 	EXPECT_EQ(table.size(), 3u);
 	EXPECT_EQ(table.find(9), table.end());
-	EXPECT_TRUE(check_stats(4, 1, 0, 4, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(4, 1, 0, 4, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhash_table_test_f, erase_iterator_tail_node_returns_end) {
@@ -941,7 +941,7 @@ TEST_F(hxhash_table_test_f, erase_iterator_tail_node_returns_end) {
 	EXPECT_EQ(table.size(), 1u);
 	EXPECT_EQ(table.find(2), table.end());
 	EXPECT_NE(table.find(0), table.end());
-	EXPECT_TRUE(check_stats(2, 1, 0, 2, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(2, 1, 0, 2, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhash_table_test_f, erase_iterator_do_not_delete_skips_deleter) {
@@ -953,7 +953,7 @@ TEST_F(hxhash_table_test_f, erase_iterator_do_not_delete_skips_deleter) {
 	const table_t::iterator next = table.erase(it);
 	EXPECT_EQ(next, table.end());
 	EXPECT_EQ(table.size(), 0u);
-	EXPECT_TRUE(check_stats(1, 0, 0, 1, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhash_table_test_f, replace_no_match_inserts_new_node) {
@@ -965,7 +965,7 @@ TEST_F(hxhash_table_test_f, replace_no_match_inserts_new_node) {
 	EXPECT_EQ(table.size(), 1u);
 	EXPECT_EQ(&*table.find(1), node_1);
 	hxdelete(node_1);
-	EXPECT_TRUE(check_stats(1, 1, 0, 1, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhash_table_test_f, replace_head_match_keeps_size_and_swaps_node) {
@@ -984,7 +984,7 @@ TEST_F(hxhash_table_test_f, replace_head_match_keeps_size_and_swaps_node) {
 	hxdelete(node_0a);
 	hxdelete(node_0b);
 	hxdelete(node_2);
-	EXPECT_TRUE(check_stats(3, 3, 0, 3, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(3, 3, 0, 3, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhash_table_test_f, replace_interior_match_keeps_size_and_swaps_node) {
@@ -1007,7 +1007,7 @@ TEST_F(hxhash_table_test_f, replace_interior_match_keeps_size_and_swaps_node) {
 	hxdelete(node_0b);
 	hxdelete(node_2);
 	hxdelete(node_9);
-	EXPECT_TRUE(check_stats(4, 4, 0, 4, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(4, 4, 0, 4, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST(hxhash_table_test, gdb_printer_edge_cases) {

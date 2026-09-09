@@ -78,7 +78,7 @@ public:
 	/// Returns `true` if the owned pointer is null.
 	hxattr_nodiscard hxconstexpr bool operator==(hxnil_t) const;
 
-#if HX_CPLUSPLUS < 202002L // C++20 defaults != from ==.
+#if HX_CPLUSPLUS < 202002L
 	/// Returns `true` if this and `x` point to different objects.
 	/// - `x` : The `hxptr` to compare against.
 	hxattr_nodiscard hxconstexpr bool operator!=(const hxptr& x_) const;

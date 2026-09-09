@@ -39,7 +39,7 @@ TEST_F(hxarray_test_f, value_or_emplaces_fallback) {
 	EXPECT_EQ(a.value_or(hxsize_t{1}, 14, 17).value(), 31);
 	EXPECT_EQ(a.value_or(a.begin(), 20, 23).value(), 0);
 	EXPECT_EQ(a.value_or(a.end(), 20, 23).value(), 43);
-	EXPECT_TRUE(check_stats(5, 4, 1, 2, 2, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(5, 4, 1, 2, 2, 0, 0, 0, 0, 0, 0));
 }
 #endif // HX_CPLUSPLUS >= 202302L
 
@@ -53,7 +53,7 @@ TEST_F(hxarray_test_f, default_constructs_all_elements) {
 			EXPECT_EQ(a[i].state(), hxtest_object_state::valid);
 		}
 	}
-	EXPECT_TRUE(check_stats(3, 3, 3, 0, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxarray_test_f, fill_constructor) {
@@ -66,7 +66,7 @@ TEST_F(hxarray_test_f, fill_constructor) {
 			EXPECT_EQ(a[i].state(), hxtest_object_state::valid);
 		}
 	}
-	EXPECT_TRUE(check_stats(5, 5, 0, 1, 4, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(5, 5, 0, 1, 4, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxarray_test_f, copy_constructor) {
@@ -82,7 +82,7 @@ TEST_F(hxarray_test_f, copy_constructor) {
 			EXPECT_EQ(src[i].state(), hxtest_object_state::valid);
 		}
 	}
-	EXPECT_TRUE(check_stats(9, 9, 0, 3, 6, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(9, 9, 0, 3, 6, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxarray_test_f, copy_assignment) {
@@ -98,7 +98,7 @@ TEST_F(hxarray_test_f, copy_assignment) {
 			EXPECT_EQ(dst[i].state(), hxtest_object_state::valid);
 		}
 	}
-	EXPECT_TRUE(check_stats(9, 9, 3, 3, 3, 0, 3, 0, 0, 0));
+	EXPECT_TRUE(check_stats(9, 9, 3, 3, 3, 0, 3, 0, 0, 0, 0));
 }
 
 TEST_F(hxarray_test_f, static_c_array_constructor) {
@@ -110,7 +110,7 @@ TEST_F(hxarray_test_f, static_c_array_constructor) {
 	EXPECT_EQ(a[2].value(), 21);
 	EXPECT_EQ(a[3].value(), 28);
 	hxtest_gdb_break_hxarray_static();
-	EXPECT_TRUE(check_stats(8, 0, 0, 4, 4, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(8, 0, 0, 4, 4, 0, 0, 0, 0, 0, 0));
 }
 
 #if HX_CPLUSPLUS >= 202002L
@@ -243,7 +243,7 @@ TEST_F(hxarray_test_f, range_constructor_from_rvalue) {
 		EXPECT_EQ(elements[i].state(), hxtest_object_state::valid);
 		EXPECT_EQ(source_elements[i].state(), hxtest_object_state::moved);
 	}
-	EXPECT_TRUE(check_stats(6, 0, 0, 3, 0, 3, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(6, 0, 0, 3, 0, 3, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxarray_test_f, range_constructor_from_const_lvalue) {
@@ -255,7 +255,7 @@ TEST_F(hxarray_test_f, range_constructor_from_const_lvalue) {
 		EXPECT_EQ(elements[i].state(), hxtest_object_state::valid);
 		EXPECT_EQ(src[i].state(), hxtest_object_state::valid);
 	}
-	EXPECT_TRUE(check_stats(8, 0, 0, 4, 4, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(8, 0, 0, 4, 4, 0, 0, 0, 0, 0, 0));
 }
 #endif
 
@@ -360,7 +360,7 @@ TEST_F(hxarray_test_f, reserve_dynamic) {
 		a[2].value() = 73;
 		hxtest_gdb_break_hxarray_dynamic();
 	}
-	EXPECT_TRUE(check_stats(3, 3, 3, 0, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST(hxarray_test, unallocated_dynamic) {
@@ -389,7 +389,7 @@ TEST_F(hxarray_test_f, dynamic_copy_constructor) {
 			EXPECT_EQ(src[i].state(), hxtest_object_state::valid);
 		}
 	}
-	EXPECT_TRUE(check_stats(6, 6, 0, 2, 4, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(6, 6, 0, 2, 4, 0, 0, 0, 0, 0, 0));
 }
 
 #if HX_CPLUSPLUS >= 202002L
@@ -402,7 +402,7 @@ TEST_F(hxarray_test_f, dynamic_c_array_constructor) {
 		EXPECT_EQ(a[1].value(), 4);
 		EXPECT_EQ(a[2].value(), 6);
 	}
-	EXPECT_TRUE(check_stats(3, 3, 0, 3, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(3, 3, 0, 3, 0, 0, 0, 0, 0, 0, 0));
 }
 #endif
 
@@ -465,7 +465,7 @@ TEST_F(hxarray_test_f, dynamic_move_constructor) {
 		EXPECT_EQ(src.size(), 0);
 		EXPECT_EQ(src.capacity(), 0);
 	}
-	EXPECT_TRUE(check_stats(6, 6, 0, 3, 3, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(6, 6, 0, 3, 3, 0, 0, 0, 0, 0, 0));
 }
 
 #if HX_CPLUSPLUS >= 202002L
@@ -506,6 +506,6 @@ TEST_F(hxarray_test_f, hxswap_exchanges_dynamic_contents) {
 		EXPECT_EQ(b[0].value(), 1);
 		EXPECT_EQ(b[1].value(), 2);
 	}
-	EXPECT_TRUE(check_stats(10, 10, 0, 5, 5, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(10, 10, 0, 5, 5, 0, 0, 0, 0, 0, 0));
 }
 #endif // HX_CPLUSPLUS >= 202002L

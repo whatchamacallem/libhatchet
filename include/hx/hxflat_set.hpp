@@ -17,6 +17,7 @@
 #include "hxrange.hpp"
 #include "hxinitializer_list.hpp"
 #include "hxkey.hpp"
+#include "detail/hxrange_detail.hpp"
 
 HX_NS_BEGIN_
 
@@ -39,9 +40,11 @@ concept hxflat_set_concept_ = requires(T_& x_) {
 ///
 /// When `multi_t` is `false` duplicate keys are rejected and `insert` returns a
 /// pointer to the existing element. When `multi_t` is `true` duplicate keys are
-/// always inserted. `compare_t` must be a callable with signature `bool(const
-/// key_t_&, const key_t_&)` returning true when the first argument is ordered
-/// before the second. It defaults to `hxkey_less_t`.
+/// always inserted. `compare_t` defaults to `hxkey_less_t`, a callable with
+/// signature `bool(const key_t_&, const key_t_&)` returning true when the first
+/// argument is ordered before the second. Passing `hxthree_way_t` and setting
+/// `three_way` to `true` selects a three-way `compare_t` instead, returning a
+/// value less than, equal to, or greater than zero.
 ///
 /// When `capacity` is `hxallocator_dynamic_capacity` storage must be allocated
 /// by calling `reserve` before inserting elements. Otherwise the array is
@@ -54,13 +57,16 @@ concept hxflat_set_concept_ = requires(T_& x_) {
 /// hxflat_set<int, hxkey_less_t<int>, false, 64> lookup;
 /// ```
 /// - `key_t` : Key type.
-/// - `compare_t` : Callable implementing a strict weak order on `key_t`.
+/// - `compare_t` : Callable implementing a strict weak order or a three-way
+///   comparison on `key_t`, depending on `three_way`.
 /// - `multi_t` : When `true` duplicate keys are allowed.
 /// - `capacity` : Fixed element count or `hxallocator_dynamic_capacity`.
+/// - `three_way` : When `true`, `compare_t` is a three-way comparison callable.
 template<hxflat_set_concept_ key_t_,
 	typename compare_t_=hxkey_less_t<key_t_>,
 	bool multi_t_=true,
-	hxsize_t capacity_=hxallocator_dynamic_capacity>
+	hxsize_t capacity_=hxallocator_dynamic_capacity,
+	bool three_way_=false>
 class hxflat_set : private hxallocator<key_t_, capacity_> {
 public:
 	using key_t = key_t_;
@@ -129,7 +135,7 @@ public:
 	/// set. Requires `x.size()` ≤ `capacity()`.
 	/// - `x` : The set to copy from.
 	template<hxsize_t capacity_x_>
-	void operator=(const hxflat_set<key_t_, compare_t_, multi_t_, capacity_x_>& x_) noexcept;
+	void operator=(const hxflat_set<key_t_, compare_t_, multi_t_, capacity_x_, three_way_>& x_) noexcept;
 
 	/// Move assigns from a temporary set using `swap`. Requires
 	/// `hxallocator_dynamic_capacity`.
@@ -145,13 +151,13 @@ public:
 	/// order using `hxkey_equal`.
 	/// - `x` : The set to compare against.
 	template<hxsize_t capacity_x_>
-	hxattr_nodiscard bool operator==(const hxflat_set<key_t_, compare_t_, multi_t_, capacity_x_>& x_) const;
+	hxattr_nodiscard bool operator==(const hxflat_set<key_t_, compare_t_, multi_t_, capacity_x_, three_way_>& x_) const;
 
 	/// Returns `true` if this set compares less than `x` lexicographically,
 	/// using `hxkey_equal` and `hxkey_less` on keys.
 	/// - `x` : The set to compare against.
 	template<hxsize_t capacity_x_>
-	hxattr_nodiscard bool operator<(const hxflat_set<key_t_, compare_t_, multi_t_, capacity_x_>& x_) const;
+	hxattr_nodiscard bool operator<(const hxflat_set<key_t_, compare_t_, multi_t_, capacity_x_, three_way_>& x_) const;
 
 	/// Inserts every key from a temporary range by moving each key with
 	/// `insert`. This overload enables moving the range keys into the set
@@ -300,7 +306,7 @@ public:
 
 private:
 	/// \cond HIDDEN
-	template<hxflat_set_concept_, typename, bool, hxsize_t> friend class hxflat_set;
+	template<hxflat_set_concept_, typename, bool, hxsize_t, bool> friend class hxflat_set;
 
 	template<typename key_u_>
 	const key_t_* insert_at_(key_t_* it_, key_u_&& key_) noexcept;

@@ -32,6 +32,7 @@ hxtest_object_fixture::hxtest_object_fixture(void) :
 		m_equal_to(0),
 		m_less_than(0),
 		m_value_construct(0),
+		m_three_way(0),
 		m_check_stats_called(false),
 		m_next_ticket(100u) {
 	hxassertf(hxs_object_current == hxnull, "sys_err");
@@ -48,7 +49,7 @@ bool hxtest_object_fixture::check_stats(int constructed, int destructed,
 		int default_construct, int value_construct,
 		int copy_construct, int move_construct,
 		int copy_assign, int move_assign,
-		int equal_to, int less_than) {
+		int equal_to, int less_than, int three_way) {
 	m_check_stats_called = true;
 	bool ok = true;
 	if(!hxs_check_stats) {
@@ -97,12 +98,16 @@ bool hxtest_object_fixture::check_stats(int constructed, int destructed,
 			value_construct, m_value_construct);
 		ok = false;
 	}
+	if(m_three_way != three_way) {
+		hxlog_warning("three_way: expected %d found %d", three_way, m_three_way);
+		ok = false;
+	}
 	return ok;
 	// GCOVR_EXCL_STOP
 }
 
 bool hxtest_object_fixture::check_no_stats(void) {
-	return check_stats(0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+	return check_stats(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 }
 
 hxtest_object_fixture& hxtest_object_fixture::get(void) {
@@ -216,6 +221,22 @@ bool hxtest_object::operator<(const hxtest_object& x) const {
 	++hxtest_object_fixture::get().m_less_than;
 	return this->value() < x.value();
 }
+
+#if HX_CPLUSPLUS >= 202002L
+int32_t hxtest_object::operator<=>(const hxtest_object& x) const {
+	hxassert_always(this->m_state == hxtest_object_state::valid, "bad_compare");
+	hxassert_always(x.m_state == hxtest_object_state::valid, "bad_compare");
+	++hxtest_object_fixture::get().m_three_way;
+	return this->value() - x.value();
+}
+#else
+int32_t hxtest_object::operator-(const hxtest_object& x) const {
+	hxassert_always(this->m_state == hxtest_object_state::valid, "bad_compare");
+	hxassert_always(x.m_state == hxtest_object_state::valid, "bad_compare");
+	++hxtest_object_fixture::get().m_three_way;
+	return this->value() - x.value();
+}
+#endif
 
 hxtest_object_state hxtest_object::state(void) const {
 	hxassert_always(this->m_state == hxtest_object_state::valid

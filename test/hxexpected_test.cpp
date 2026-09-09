@@ -72,7 +72,7 @@ TEST_F(hxexpected_test_f, error_truth_controls_engagement) {
 	EXPECT_TRUE(lvalue_success.has_value());
 	EXPECT_EQ(lvalue_success.value(), 0);
 
-	EXPECT_TRUE(check_stats(4, 0, 0, 3, 1, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(4, 0, 0, 3, 1, 0, 0, 0, 0, 0, 0));
 }
 
 TEST(hxexpected_test, int_error_bool_conversions_do_not_warn) {
@@ -118,7 +118,7 @@ TEST_F(hxexpected_test_f, reset_with_class_type_error) {
 		EXPECT_FALSE(a.has_value());
 		EXPECT_EQ(a.error().value(), 3);
 	}
-	EXPECT_TRUE(check_stats(4, 4, 0, 4, 0, 0, 3, 0, 0, 0));
+	EXPECT_TRUE(check_stats(4, 4, 0, 4, 0, 0, 3, 0, 0, 0, 0));
 }
 
 TEST_F(hxexpected_test_f, copy_and_move_assign_class_type_error) {
@@ -134,7 +134,7 @@ TEST_F(hxexpected_test_f, copy_and_move_assign_class_type_error) {
 		EXPECT_EQ(b.error().value(), 5);
 		EXPECT_FALSE(d.has_value());
 	}
-	EXPECT_TRUE(check_stats(3, 3, 0, 3, 0, 0, 1, 1, 0, 0));
+	EXPECT_TRUE(check_stats(3, 3, 0, 3, 0, 0, 1, 1, 0, 0, 0));
 }
 
 TEST_F(hxexpected_test_f, swap_class_type_error) {
@@ -145,7 +145,7 @@ TEST_F(hxexpected_test_f, swap_class_type_error) {
 		EXPECT_EQ(e.error().value(), 7);
 		EXPECT_EQ(f.error().value(), 6);
 	}
-	EXPECT_TRUE(check_stats(3, 3, 0, 2, 0, 1, 0, 2, 0, 0));
+	EXPECT_TRUE(check_stats(3, 3, 0, 2, 0, 1, 0, 2, 0, 0, 0));
 }
 
 TEST_F(hxexpected_test_f, emplace_and_or_else_class_type_error) {
@@ -166,7 +166,7 @@ TEST_F(hxexpected_test_f, emplace_and_or_else_class_type_error) {
 		EXPECT_TRUE(h.has_value());
 		EXPECT_EQ(*h, 9);
 	}
-	EXPECT_TRUE(check_stats(5, 5, 0, 5, 0, 0, 0, 2, 0, 0));
+	EXPECT_TRUE(check_stats(5, 5, 0, 5, 0, 0, 0, 2, 0, 0, 0));
 }
 
 TEST(hxexpected_test, error_transitions_and_propagation) {
@@ -231,18 +231,18 @@ TEST_F(hxexpected_test_f, move_construction_reads_source_before_error_moved) {
 		EXPECT_TRUE((bool)b);
 		EXPECT_EQ(*b, 31);
 	}
-	EXPECT_TRUE(check_stats(4, 4, 0, 3, 0, 1, 0, 2, 0, 0));
+	EXPECT_TRUE(check_stats(4, 4, 0, 3, 0, 1, 0, 2, 0, 0, 0));
 }
 
 TEST_F(hxexpected_test_f, destructor_engaged_and_disengaged) {
 	{
 		const hxexpected<hxtest_object> o(false, hxtest_object(1));
 	}
-	EXPECT_TRUE(check_stats(2, 2, 0, 1, 0, 1, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(2, 2, 0, 1, 0, 1, 0, 0, 0, 0, 0));
 	{
 		const hxexpected<hxtest_object> o = hxnil;
 	}
-	EXPECT_TRUE(check_stats(2, 2, 0, 1, 0, 1, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(2, 2, 0, 1, 0, 1, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxexpected_test_f, deref_operator_returns_reference) {
@@ -253,7 +253,7 @@ TEST_F(hxexpected_test_f, deref_operator_returns_reference) {
 		const hxexpected<hxtest_object> co(false, 3);
 		EXPECT_EQ((*co).value(), 3);
 	}
-	EXPECT_TRUE(check_stats(2, 2, 0, 2, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(2, 2, 0, 2, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxexpected_test_f, arrow_operator_accesses_fields) {
@@ -266,7 +266,7 @@ TEST_F(hxexpected_test_f, arrow_operator_accesses_fields) {
 		EXPECT_EQ(co->value(), 31);
 		EXPECT_EQ(&co->value(), &(*co).value());
 	}
-	EXPECT_TRUE(check_stats(2, 2, 0, 2, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(2, 2, 0, 2, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST(hxexpected_test, copy_assign) {
@@ -364,7 +364,7 @@ TEST_F(hxexpected_test_f, eq_expected) {
 	const hxexpected<int, hxtest_object> error_three(hxtest_object(3));
 	EXPECT_TRUE(error_two == error_two_b);
 	EXPECT_FALSE(error_two == error_three);
-	EXPECT_TRUE(check_stats(6, 3, 0, 3, 0, 3, 0, 0, 2, 0));
+	EXPECT_TRUE(check_stats(6, 3, 0, 3, 0, 3, 0, 0, 2, 0, 0));
 }
 
 TEST(hxexpected_test, hxkey_equal) {
@@ -389,7 +389,7 @@ TEST_F(hxexpected_test_f, hxkey_hash) {
 	EXPECT_EQ(hxkey_hash(empty), hxhash_t{31u});
 	EXPECT_EQ(hxkey_hash(a), hxkey_hash(b));
 	EXPECT_NE(hxkey_hash(a), hxkey_hash(c));
-	EXPECT_TRUE(check_stats(3, 0, 0, 3, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(3, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST(hxexpected_test, eq_nullopt_and_value) {
@@ -420,7 +420,7 @@ TEST_F(hxexpected_test_f, reset_engaged_and_disengaged) {
 	disengaged.reset();
 	EXPECT_FALSE((bool)disengaged);
 
-	EXPECT_TRUE(check_stats(1, 1, 0, 1, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST(hxexpected_test, swap_both_engaged) {
@@ -488,7 +488,7 @@ TEST_F(hxexpected_test_f, value_or) {
 	const bool no_error = false;
 	const hxexpected<hxtest_object> emplace_engaged(no_error);
 	EXPECT_EQ(emplace_engaged.value_or(8, 9).value(), 0);
-	EXPECT_TRUE(check_stats(8, 4, 1, 4, 1, 2, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(8, 4, 1, 4, 1, 2, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxexpected_test_f, emplace) {
@@ -498,7 +498,7 @@ TEST_F(hxexpected_test_f, emplace) {
 	EXPECT_EQ(o->value(), 34);
 	o.emplace(2);
 	EXPECT_EQ(o->value(), 2);
-	EXPECT_TRUE(check_stats(2, 1, 0, 2, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(2, 1, 0, 2, 0, 0, 0, 0, 0, 0, 0));
 
 	hxexpected<int> n = hxnil;
 	int& ref = n.emplace(55);
@@ -509,14 +509,14 @@ TEST_F(hxexpected_test_f, emplace) {
 
 TEST_F(hxexpected_test_f, destructor_exactly_one_call) {
 	{ const hxexpected<hxtest_object> o(false, 1); }
-	EXPECT_TRUE(check_stats(1, 1, 0, 1, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxexpected_test_f, construction_forwards_two_args) {
 	const hxexpected<hxtest_object> o(false, 31, 32);
 	EXPECT_TRUE((bool)o);
 	EXPECT_EQ(o->value(), 63);
-	EXPECT_TRUE(check_stats(1, 0, 0, 1, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST(hxexpected_test, and_then_engaged) {
@@ -581,7 +581,7 @@ TEST_F(hxexpected_test_f, or_else_engaged_and_disengaged) {
 	});
 	EXPECT_TRUE((bool)moved);
 	EXPECT_EQ(moved->value(), 9);
-	EXPECT_TRUE(check_stats(2, 1, 0, 1, 0, 1, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(2, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0));
 }
 
 #endif // HX_CPLUSPLUS >= 202302L

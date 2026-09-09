@@ -59,7 +59,7 @@ hxinline hxconstexpr bool hxptr<T_, deleter_t_>::operator==(hxnil_t) const {
 	return m_ptr_ == hxnull;
 }
 
-#if HX_CPLUSPLUS < 202002L // C++20 defaults != from ==.
+#if HX_CPLUSPLUS < 202002L
 template<typename T_, typename deleter_t_>
 hxinline hxconstexpr bool hxptr<T_, deleter_t_>::operator!=(const hxptr& x_) const {
 	return !(*this == x_);

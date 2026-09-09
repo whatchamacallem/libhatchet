@@ -416,6 +416,37 @@ constexpr hxremove_reference_t<T_>&& hxmove(T_&& t_) {
 	return static_cast<hxremove_reference_t<T_>&&>(t_);
 }
 
+/// `hxpair` - A pair of public fields `a` and `b`.
+template<typename a_t_, typename b_t_> class hxpair {
+public:
+
+	/// The type of the first value.
+	using a_t = a_t_;
+	/// The type of the second value.
+	using b_t = b_t_;
+
+	/// Returns true if `a` is less than `x.a`, or if they are equal, if `b` is
+	/// less than `x.b`.
+	hxattr_nodiscard constexpr bool operator<(const hxpair& x_) const {
+		return a < x_.a || (!(x_.a < a) && b < x_.b);
+	}
+
+	/// Returns true if `a` and `b` are equal to `x.a` and `x.b`.
+	hxattr_nodiscard constexpr bool operator==(const hxpair& x_) const {
+		return a == x_.a && b == x_.b;
+	}
+
+#if HX_CPLUSPLUS < 202002L
+	/// Returns false if `a` and `b` are equal to `x.a` and `x.b`.
+	hxconstexpr bool operator!=(const const_iterator& x_) const { return !(*this == x_); }
+#endif
+
+	/// The first value.
+	a_t_ a;
+	/// The second value.
+	b_t_ b;
+};
+
 /// `hxswap` - Exchanges the contents of `x` and `y` using a temporary. If `T`
 /// has `T::T(T&&)` or `T::operator=(T&&)` then those will be used.
 template<typename T_>
