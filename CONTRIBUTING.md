@@ -214,10 +214,10 @@ Do not fix a failing test in a manner that defeats the intent of the test except
 by removing it entirely. Prompt the user with a list of failing tests when they
 are unrelated to your work or the intent preserving fix is unclear.
 
-100% line coverage is required by `testcoverage.sh`. Use `// GCOVR_EXCL_START`
-and `// GCOVR_EXCL_STOP` to exclude uncallable lines. Exclusions should only be
-required in test coverage. Deleting unused overloads is better than excluding
-them.
+100% line coverage is required by `testcoverage.sh`. Use `// GCOVR_EXCL_LINE`
+and `// GCOVR_EXCL_BR_LINE` to exclude uncallable lines and branches. Exclusions
+should only be required in test coverage. Deleting unused overloads is better
+than excluding them.
 
 Use `x_` for an arbitrary single parameter and `a_` and `b_` for arbitrary
 double parameters. Arbitrary iterator args are named `it_`. The arbitrary

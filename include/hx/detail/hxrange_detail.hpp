@@ -101,7 +101,7 @@ auto hxlower_bound_search_(range_t_&& range_, const value_t_& value_, const comp
 		// A "not before" step is the only kind that can leave begin_ at the
 		// converged position with found_ true, and it never leaves begin_ at
 		// end_.
-		found_ = found_ && begin_ != end_; // GCOVR_EXCL_BR_LINE
+		found_ = found_ && begin_ != end_;
 	}
 	return { begin_, found_ };
 }
