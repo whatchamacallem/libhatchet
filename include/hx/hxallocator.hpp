@@ -20,8 +20,9 @@ HX_NS_BEGIN_
 hxinline_constexpr hxsize_t hxallocator_dynamic_capacity = 0;
 
 /// `hxallocator<1+>` - Provides static allocation when capacity is greater than
-/// zero.
-template<typename T_, hxsize_t fixed_capacity_>
+/// zero. When `pow2_` is true, `fixed_capacity_` is interpreted as
+/// `1 << fixed_capacity_` along with all other references to capacity.
+template<typename T_, hxsize_t fixed_capacity_, bool pow2_=false>
 class hxallocator {
 public:
 	/// `value_t` - Publishes the value type.
@@ -38,7 +39,8 @@ public:
 #endif
 	}
 
-	/// Returns the number of elements of `T` allocated.
+	/// Returns the number of elements of `T` allocated. When `pow2` is true the
+	/// number of elements is `1 << capacity()`.
 	hxinline hxattr_nodiscard hxsize_t capacity(void) const { return fixed_capacity_; }
 
 	/// Returns a pointer to a const and potentially uninitialized array of `T`.
@@ -50,6 +52,7 @@ public:
 	/// Ensures capacity. Will not reallocate. Provided for interface
 	/// compatibility with the dynamic allocator.
 	/// - `size` : The number of elements of type `T` to ensure are available.
+	///   When `pow2` is true this is the exponent instead.
 	/// - `allocator` : Ignored.
 	/// - `alignment` : Ignored.
 	hxinline void reserve_storage(hxsize_t size_,
@@ -63,13 +66,14 @@ private:
 	hxallocator(const hxallocator&) = delete;
 	void operator=(const hxallocator&) = delete;
 
-	alignas(T_) unsigned char m_data_[fixed_capacity_ * hxsizeof<T_>()];
+	alignas(T_) unsigned char m_data_[(pow2_ ? (static_cast<hxsize_t>(1) << fixed_capacity_) : fixed_capacity_) * hxsizeof<T_>()];
 };
 
 /// `hxallocator<0>` - Capacity is set by first call to `reserve_storage` and
-/// may not be extended. May be moved using `hxswap_memcpy`.
-template<typename T_>
-class hxallocator<T_, hxallocator_dynamic_capacity> {
+/// may not be extended. May be moved using `hxswap_memcpy`. When `pow2` is
+/// true, capacity is interpreted as `1 << capacity`.
+template<typename T_, bool pow2_>
+class hxallocator<T_, hxallocator_dynamic_capacity, pow2_> {
 public:
 	/// `value_t` - Publishes the value type.
 	using value_t = T_;
@@ -89,7 +93,8 @@ public:
 		}
 	}
 
-	/// Returns the number of elements of `T` allocated.
+	/// Returns the number of elements of `T` allocated. When `pow2` is true the
+	/// number of elements is `1 << capacity()`.
 	hxinline hxattr_nodiscard hxsize_t capacity(void) const { return m_capacity_; }
 
 	/// Returns a pointer to a const and potentially uninitialized array of `T`.
@@ -101,6 +106,7 @@ public:
 	/// Capacity is set by first call to `reserve_storage` and may not be
 	/// modified.
 	/// - `size` : The number of elements of type `T` to allocate space for.
+	///   When `pow2` is true this is the exponent instead.
 	/// - `allocator` : The memory manager ID to use for allocation. (default:
 	///   `hxslab_allocator_current`)
 	/// - `alignment` : The alignment to use for the allocation. (default:
@@ -112,8 +118,9 @@ public:
 			return;
 		}
 		hxassert_always(m_capacity_ == 0, "bad_reserve already sized");
+		const hxsize_t element_count_ = pow2_ ? (static_cast<hxsize_t>(1) << size_) : size_;
 		m_data_ = static_cast<T_*>(
-			hxmalloc_ext(sizeof(T_) * static_cast<size_t>(size_), allocator_, alignment_));
+			hxmalloc_ext(sizeof(T_) * static_cast<size_t>(element_count_), allocator_, alignment_));
 		m_capacity_ = size_;
 	}
 

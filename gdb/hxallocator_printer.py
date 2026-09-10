@@ -41,6 +41,7 @@ class hxallocator_printer:
 	def _parse(self) -> Tuple[str, list[str], int]:
 		element_type: gdb.Type = self.val.type.template_argument(0)
 		fixed_capacity: gdb.Value = self.val.type.template_argument(1)
+		pow2: bool = bool(self.val.type.template_argument(2))
 		if fixed_capacity == 0:
 			capacity: int = int(self.val['m_capacity_'])
 			address: int = int(self.val['m_data_'])
@@ -50,8 +51,10 @@ class hxallocator_printer:
 			address = int(self.val['m_data_'].address)
 			storage = 'static'
 
-		byte_count: int = capacity * element_type.sizeof
-		summary: str = f'[{byte_count}B {storage}]'
+		element_count: int = (1 << capacity) if pow2 else capacity
+		byte_count: int = element_count * element_type.sizeof
+		pow2_tag: str = ' pow2' if pow2 else ''
+		summary: str = f'[{byte_count}B {storage}{pow2_tag}]'
 		rows: list[str] = []
 		column_count: int = hxallocator_columns.value
 		bytes_per_row: int = column_count * 4
