@@ -85,7 +85,7 @@ TEST(hxconsole_test, register_command_replaces_duplicate) {
 #endif // HX_USE_CONSOLE
 
 #if !(HX_USE_GOOGLE_TEST)
-TEST(hxtest_main, filter) {
+TEST(hxtest_main, gtest_filter) {
 	const hxsize_t total = hxdetail_::hxtest_::dispatcher_().test_cases_().size();
 
 	const hxpair<hxsize_t, const char*> cases[] = {
@@ -120,7 +120,7 @@ TEST(hxtest_main, filter) {
 	}
 }
 
-TEST(hxtest_main, hxtest_strip_g_args) {
+TEST(hxtest_main, strip_gtest_args) {
 	const bool break_on_failure = hxg_settings.test_break_on_failure;
 	const char* const filter = hxg_settings.test_filter;
 	hxg_settings.test_break_on_failure = false;
