@@ -13,7 +13,12 @@ echo "WARNING: These tests will spew errors and still return successfully."
 	'-DHX_USE_SLAB_ALLOCATOR=(HX_HARDENING_MODE!=HX_HARDENING_MODE_STANDARD)'
 
 if ./debugbuild.sh --run --gtest_filter=hxtest_no_such_suite.no_such_case \
-		>/dev/null 2>&1; then
+		>build/console_output.txt 2>&1; then
 	echo "error: debugbuild.sh --gtest_filter with a bad filter should fail."
+	exit 1
+fi
+
+if ! grep -q usage build/console_output.txt; then
+	echo "error: debugbuild.sh --gtest_filter with a bad filter should mention usage."
 	exit 1
 fi
