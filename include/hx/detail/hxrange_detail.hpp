@@ -25,6 +25,7 @@ template<> struct hxcompare_<false> {
 		return { before(compare_, a_, b_), false };
 	}
 };
+
 template<> struct hxcompare_<true> {
 	template<typename compare_t_, typename A_, typename B_>
 	hxattr_nodiscard static hxinline hxconstexpr hxattr_flatten
@@ -45,7 +46,7 @@ template<> struct hxcompare_<true> {
 
 template<typename range_t_, typename value_t_, typename compare_t_, int traits_>
 hxattr_nodiscard hxinline hxconstexpr hxattr_flatten
-auto hxlower_bound_position_(range_t_&& range_, const value_t_& value_, const compare_t_& compare_)
+auto hxlower_bound_iterator_(range_t_&& range_, const value_t_& value_, const compare_t_& compare_)
 		-> hxrestrict_t<decltype(range_.begin())> {
 	using iterator_t_ = hxrestrict_t<decltype(range_.begin())>;
 	iterator_t_ begin_ = range_.begin();
@@ -65,15 +66,9 @@ auto hxlower_bound_position_(range_t_&& range_, const value_t_& value_, const co
 	return begin_;
 }
 
-// Finds the lower bound and reports whether it holds an element equivalent to
-// value_. Mirrors hxlower_bound_position_'s loop, but takes the found bit from
-// hxcompare_::step at zero extra cost in the three way case, since a "not
-// before" step is the only kind that can converge on the final position and
-// its comparison is already being made. A later "before" step never moves
-// begin_ back to a position this step already ruled out.
 template<typename range_t_, typename value_t_, typename compare_t_, int traits_>
 hxattr_nodiscard hxinline hxconstexpr hxattr_flatten
-auto hxlower_bound_search_(range_t_&& range_, const value_t_& value_, const compare_t_& compare_)
+auto hxlower_bound_pair_(range_t_&& range_, const value_t_& value_, const compare_t_& compare_)
 		-> hxpair<hxrestrict_t<decltype(range_.begin())>, bool> {
 	using iterator_t_ = hxrestrict_t<decltype(range_.begin())>;
 	iterator_t_ begin_ = range_.begin();
@@ -101,23 +96,19 @@ auto hxlower_bound_search_(range_t_&& range_, const value_t_& value_, const comp
 		// A "not before" step is the only kind that can leave begin_ at the
 		// converged position with found_ true, and it never leaves begin_ at
 		// end_.
+		// TODO: Report to user why this has coverage issues.
 		found_ = found_ && begin_ != end_;
 	}
 	return { begin_, found_ };
 }
 
-// Reports whether the range holds an element equivalent to value_, without
-// reporting the position of the lower bound.
 template<typename range_t_, typename value_t_, typename compare_t_, int traits_>
 hxattr_nodiscard hxinline hxconstexpr hxattr_flatten
 bool hxbinary_search_(range_t_&& range_, const value_t_& value_, const compare_t_& compare_) {
-	return hxlower_bound_search_<range_t_, value_t_, compare_t_, traits_>(
+	return hxlower_bound_pair_<range_t_, value_t_, compare_t_, traits_>(
 		hxforward<range_t_>(range_), value_, compare_).b;
 }
 
-// hxupper_bound_ shares hxrange.hpp's public hxupper_bound algorithm, but
-// dispatches on traits_ & hxtrait_three_way instead of requiring a strict weak
-// order, for use by hxflat_map and hxflat_set.
 template<typename range_t_, typename value_t_, typename compare_t_, int traits_>
 hxattr_nodiscard hxinline hxconstexpr hxattr_flatten
 auto hxupper_bound_(range_t_&& range_, const value_t_& value_, const compare_t_& compare_)

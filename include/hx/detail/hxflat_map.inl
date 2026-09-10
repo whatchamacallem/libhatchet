@@ -223,7 +223,7 @@ hxinline hxattr_flatten hxsize_t hxflat_map<key_t_, mapped_t_, capacity_, compar
 			hxmake_range(keys_, end_), key_, comp_) ? 1 : 0;
 	}
 	else {
-		const key_t_* const it_ = hxlower_bound_position_<hxrange<const key_t_*>, key_t_, compare_t, traits_>(
+		const key_t_* const it_ = hxlower_bound_iterator_<hxrange<const key_t_*>, key_t_, compare_t, traits_>(
 			hxmake_range(keys_, end_), key_, comp_);
 		return hxupper_bound_<hxrange<const key_t_*>, key_t_, compare_t, traits_>(
 			hxmake_range(it_, end_), key_, comp_) - it_;
@@ -238,7 +238,7 @@ hxinline hxattr_flatten auto hxflat_map<key_t_, mapped_t_, capacity_, compare_t_
 	const key_t_* const keys_ = m_keys_.data();
 	const key_t_* const end_ = keys_ + m_size_;
 	hxif_constexpr((traits_ & hxtrait_multi) == 0) {
-		const auto lo_ = hxlower_bound_search_<hxrange<const key_t_*>, key_t_, compare_t, traits_>(
+		const auto lo_ = hxlower_bound_pair_<hxrange<const key_t_*>, key_t_, compare_t, traits_>(
 			hxmake_range(keys_, end_), key_, comp_);
 		const hxsize_t index_ = lo_.a - keys_;
 		if(lo_.b) {
@@ -248,7 +248,7 @@ hxinline hxattr_flatten auto hxflat_map<key_t_, mapped_t_, capacity_, compare_t_
 		return this->insert_at_(index_, key_, hxmove(mapped_));
 	}
 	else {
-		const hxsize_t index_ = hxlower_bound_position_<hxrange<const key_t_*>, key_t_, compare_t, traits_>(
+		const hxsize_t index_ = hxlower_bound_iterator_<hxrange<const key_t_*>, key_t_, compare_t, traits_>(
 			hxmake_range(keys_, end_), key_, comp_) - keys_;
 		mapped_t_ mapped_(hxforward<args_t_>(args_)...);
 		return this->insert_at_(index_, key_, hxmove(mapped_));
@@ -269,14 +269,14 @@ hxattr_flatten hxsize_t hxflat_map<key_t_, mapped_t_, capacity_, compare_t_, tra
 	key_t_* hxrestrict k_ = m_keys_.data();
 	key_t_* const end_ = k_ + size_;
 	hxif_constexpr((traits_ & hxtrait_multi) == 0) {
-		const auto lo_ = hxlower_bound_search_<hxrange<key_t_*>, key_t_, compare_t, traits_>(
+		const auto lo_ = hxlower_bound_pair_<hxrange<key_t_*>, key_t_, compare_t, traits_>(
 			hxmake_range(k_, end_), key_, comp_);
 		if(!lo_.b) { return 0; }
 		this->erase(iterator(this, lo_.a - k_));
 		return 1;
 	}
 	else {
-		const hxsize_t index_ = hxlower_bound_position_<hxrange<key_t_*>, key_t_, compare_t, traits_>(
+		const hxsize_t index_ = hxlower_bound_iterator_<hxrange<key_t_*>, key_t_, compare_t, traits_>(
 			hxmake_range(k_, end_), key_, comp_) - k_;
 		mapped_t_* hxrestrict v_ = m_values_.data();
 		const hxsize_t hi_ = hxupper_bound_<hxrange<key_t_*>, key_t_, compare_t, traits_>(
@@ -324,7 +324,7 @@ hxinline hxattr_flatten auto hxflat_map<key_t_, mapped_t_, capacity_, compare_t_
 	const compare_t comp_;
 	const key_t_* const keys_ = m_keys_.data();
 	const key_t_* const end_ = keys_ + m_size_;
-	const auto lo_ = hxlower_bound_search_<hxrange<const key_t_*>, key_t_, compare_t, traits_>(
+	const auto lo_ = hxlower_bound_pair_<hxrange<const key_t_*>, key_t_, compare_t, traits_>(
 		hxmake_range(keys_, end_), key_, comp_);
 	if(lo_.b) {
 		return const_iterator(this, static_cast<hxsize_t>(lo_.a - keys_));
@@ -357,7 +357,7 @@ hxinline hxattr_flatten auto hxflat_map<key_t_, mapped_t_, capacity_, compare_t_
 	const key_t_* const keys_ = m_keys_.data();
 	const key_t_* const end_ = keys_ + m_size_;
 	hxif_constexpr((traits_ & hxtrait_multi) == 0) {
-		const auto lo_ = hxlower_bound_search_<hxrange<const key_t_*>, key_t_, compare_t, traits_>(
+		const auto lo_ = hxlower_bound_pair_<hxrange<const key_t_*>, key_t_, compare_t, traits_>(
 			hxmake_range(keys_, end_), key_, comp_);
 		const hxsize_t index_ = lo_.a - keys_;
 		if(lo_.b) {
@@ -366,7 +366,7 @@ hxinline hxattr_flatten auto hxflat_map<key_t_, mapped_t_, capacity_, compare_t_
 		return this->insert_at_(index_, key_, mapped_);
 	}
 	else {
-		const hxsize_t index_ = hxlower_bound_position_<hxrange<const key_t_*>, key_t_, compare_t, traits_>(
+		const hxsize_t index_ = hxlower_bound_iterator_<hxrange<const key_t_*>, key_t_, compare_t, traits_>(
 			hxmake_range(keys_, end_), key_, comp_) - keys_;
 		return this->insert_at_(index_, key_, mapped_);
 	}
@@ -379,7 +379,7 @@ hxinline hxattr_flatten auto hxflat_map<key_t_, mapped_t_, capacity_, compare_t_
 	const key_t_* const keys_ = m_keys_.data();
 	const key_t_* const end_ = keys_ + m_size_;
 	hxif_constexpr((traits_ & hxtrait_multi) == 0) {
-		const auto lo_ = hxlower_bound_search_<hxrange<const key_t_*>, key_t_, compare_t, traits_>(
+		const auto lo_ = hxlower_bound_pair_<hxrange<const key_t_*>, key_t_, compare_t, traits_>(
 			hxmake_range(keys_, end_), key_, comp_);
 		const hxsize_t index_ = lo_.a - keys_;
 		if(lo_.b) {
@@ -388,7 +388,7 @@ hxinline hxattr_flatten auto hxflat_map<key_t_, mapped_t_, capacity_, compare_t_
 		return this->insert_at_(index_, key_, hxmove(mapped_));
 	}
 	else {
-		const hxsize_t index_ = hxlower_bound_position_<hxrange<const key_t_*>, key_t_, compare_t, traits_>(
+		const hxsize_t index_ = hxlower_bound_iterator_<hxrange<const key_t_*>, key_t_, compare_t, traits_>(
 			hxmake_range(keys_, end_), key_, comp_) - keys_;
 		return this->insert_at_(index_, key_, hxmove(mapped_));
 	}
@@ -416,7 +416,7 @@ hxinline hxattr_flatten auto hxflat_map<key_t_, mapped_t_, capacity_, compare_t_
 		-> const_iterator {
 	const compare_t comp_;
 	const key_t_* const keys_ = m_keys_.data();
-	return const_iterator(this, hxlower_bound_position_<hxrange<const key_t_*>, key_t_, compare_t, traits_>(
+	return const_iterator(this, hxlower_bound_iterator_<hxrange<const key_t_*>, key_t_, compare_t, traits_>(
 		hxmake_range(keys_, keys_ + m_size_), key_, comp_) - keys_);
 }
 

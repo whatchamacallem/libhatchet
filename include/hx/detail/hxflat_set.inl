@@ -166,7 +166,7 @@ hxinline hxattr_flatten hxsize_t hxflat_set<key_t_, capacity_, compare_t_, trait
 		return hxbinary_search_<const hxflat_set&, key_t_, compare_t, traits_>(*this, key_, comp_) ? 1 : 0;
 	}
 	else {
-		const key_t_* const it_ = hxlower_bound_position_<const hxflat_set&, key_t_, compare_t, traits_>(
+		const key_t_* const it_ = hxlower_bound_iterator_<const hxflat_set&, key_t_, compare_t, traits_>(
 			*this, key_, comp_);
 		return hxupper_bound_<hxrange<const key_t_*>, key_t_, compare_t, traits_>(
 			hxmake_range(it_, end_), key_, comp_) - it_;
@@ -186,14 +186,14 @@ hxattr_flatten hxsize_t hxflat_set<key_t_, capacity_, compare_t_, traits_>::eras
 	const compare_t comp_;
 	key_t_* end_ = m_end_;
 	hxif_constexpr((traits_ & hxtrait_multi) == 0) {
-		const auto lo_ = hxlower_bound_search_<hxrange<key_t_*>, key_t_, compare_t, traits_>(
+		const auto lo_ = hxlower_bound_pair_<hxrange<key_t_*>, key_t_, compare_t, traits_>(
 			hxmake_range(this->data(), end_), key_, comp_);
 		if(!lo_.b) { return 0; }
 		this->erase(lo_.a);
 		return 1;
 	}
 	else {
-		key_t_* const it_ = hxlower_bound_position_<hxrange<key_t_*>, key_t_, compare_t, traits_>(
+		key_t_* const it_ = hxlower_bound_iterator_<hxrange<key_t_*>, key_t_, compare_t, traits_>(
 			hxmake_range(this->data(), end_), key_, comp_);
 		key_t_* const hi_ptr_ = hxupper_bound_<hxrange<key_t_*>, key_t_, compare_t, traits_>(
 			hxmake_range(it_, end_), key_, comp_);
@@ -231,7 +231,7 @@ template<hxflat_set_concept_ key_t_, hxsize_t capacity_, typename compare_t_, in
 hxinline hxattr_flatten auto hxflat_set<key_t_, capacity_, compare_t_, traits_>::find(const key_t_& key_) const
 		-> const key_t_* {
 	const compare_t comp_;
-	const auto lo_ = hxlower_bound_search_<const hxflat_set&, key_t_, compare_t, traits_>(*this, key_, comp_);
+	const auto lo_ = hxlower_bound_pair_<const hxflat_set&, key_t_, compare_t, traits_>(*this, key_, comp_);
 	return lo_.b ? lo_.a : this->end();
 }
 
@@ -245,13 +245,13 @@ template<hxflat_set_concept_ key_t_, hxsize_t capacity_, typename compare_t_, in
 hxinline hxattr_flatten auto hxflat_set<key_t_, capacity_, compare_t_, traits_>::insert(const key_t_& key_) noexcept -> const key_t_* {
 	const compare_t comp_;
 	hxif_constexpr((traits_ & hxtrait_multi) == 0) {
-		const auto lo_ = hxlower_bound_search_<hxrange<key_t_*>, key_t_, compare_t, traits_>(
+		const auto lo_ = hxlower_bound_pair_<hxrange<key_t_*>, key_t_, compare_t, traits_>(
 			hxmake_range(this->data(), m_end_), key_, comp_);
 		if(lo_.b) { return lo_.a; }
 		return this->insert_at_(lo_.a, key_);
 	}
 	else {
-		key_t_* const it_ = hxlower_bound_position_<hxrange<key_t_*>, key_t_, compare_t, traits_>(
+		key_t_* const it_ = hxlower_bound_iterator_<hxrange<key_t_*>, key_t_, compare_t, traits_>(
 			hxmake_range(this->data(), m_end_), key_, comp_);
 		return this->insert_at_(it_, key_);
 	}
@@ -261,13 +261,13 @@ template<hxflat_set_concept_ key_t_, hxsize_t capacity_, typename compare_t_, in
 hxinline hxattr_flatten auto hxflat_set<key_t_, capacity_, compare_t_, traits_>::insert(key_t_&& key_) noexcept -> const key_t_* {
 	const compare_t comp_;
 	hxif_constexpr((traits_ & hxtrait_multi) == 0) {
-		const auto lo_ = hxlower_bound_search_<hxrange<key_t_*>, key_t_, compare_t, traits_>(
+		const auto lo_ = hxlower_bound_pair_<hxrange<key_t_*>, key_t_, compare_t, traits_>(
 			hxmake_range(this->data(), m_end_), key_, comp_);
 		if(lo_.b) { return lo_.a; }
 		return this->insert_at_(lo_.a, hxmove(key_));
 	}
 	else {
-		key_t_* const it_ = hxlower_bound_position_<hxrange<key_t_*>, key_t_, compare_t, traits_>(
+		key_t_* const it_ = hxlower_bound_iterator_<hxrange<key_t_*>, key_t_, compare_t, traits_>(
 			hxmake_range(this->data(), m_end_), key_, comp_);
 		return this->insert_at_(it_, hxmove(key_));
 	}
@@ -283,7 +283,7 @@ template<hxflat_set_concept_ key_t_, hxsize_t capacity_, typename compare_t_, in
 hxinline hxattr_flatten auto hxflat_set<key_t_, capacity_, compare_t_, traits_>::lower_bound(const key_t_& key_) const
 		-> const key_t_* {
 	const compare_t comp_;
-	return hxlower_bound_position_<const hxflat_set&, key_t_, compare_t, traits_>(*this, key_, comp_);
+	return hxlower_bound_iterator_<const hxflat_set&, key_t_, compare_t, traits_>(*this, key_, comp_);
 }
 
 #if HX_CPLUSPLUS >= 202302L
