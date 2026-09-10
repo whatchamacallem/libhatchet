@@ -86,41 +86,33 @@ TEST(hxconsole_test, register_command_replaces_duplicate) {
 
 #if !(HX_USE_GOOGLE_TEST)
 TEST(hxtest_main, filter) {
-	const hxdetail_::hxtest_::test_cases_t_& all_cases =
-		hxdetail_::hxtest_::dispatcher_().test_cases_();
-
-	hxdetail_::hxtest_case_* self_ = hxnull;
-	for(hxdetail_::hxtest_case_* const* it = all_cases.begin(); it != all_cases.end(); ++it) {
-		if(::strcmp((*it)->m_suite_, "hxtest_main") == 0 && ::strcmp((*it)->m_case_, "filter") == 0) {
-			self_ = *it;
-		}
-	}
-	ASSERT_TRUE(self_ != hxnull);
-
-	static const hxpair<bool, const char*> cases[] = {
-		{ true, "hxtest_main.filter" },
-		{ false, "hxtest_main.filte1" },
-		{ true, "hxtest_main.filter*" },
-		{ false, "hxtest_main.filterx*" },
-		{ true, "hxtest_main.f*r" },
-		{ false, "hxtest_main.f*x" },
-		{ true, "*" },
-		{ true, "suite47:hxtest_main.filter" },
-		{ false, "hxtest_main.filte1:suite47" },
-		{ true, "-suite47" },
-		{ true, "hxtest_main.filter*-suite47*" },
-		{ false, "hxtest_main.filter-*" },
-		{ false, "hxtest_main.filter::suite47" },
-		{ false, "hxtest_main.filter-suite47:" },
-		{ false, "hxtest_main.filter-" },
-		{ false, "x*:" },
-		{ false, ":x*" },
-		{ false, ":" },
+	static const hxpair<hxsize_t, const char*> cases[] = {
+		{ 1, "hxtest_main.filter" },
+		{ 0, "hxtest_main.filte1" },
+		{ 1, "hxtest_main.filter*" },
+		{ 0, "hxtest_main.filterx*" },
+		{ 1, "hxtest_main.f*r" },
+		{ 0, "hxtest_main.f*x" },
+		{ 1, "*" },
+		{ 1, "suite47:hxtest_main.filter" },
+		{ 0, "hxtest_main.filte1:suite47" },
+		{ 1, "-suite47" },
+		{ 1, "hxtest_main.filter*-suite47*" },
+		{ 0, "hxtest_main.filter-*" },
+		{ 0, "hxtest_main.filter::suite47" },
+		{ 0, "hxtest_main.filter-suite47:" },
+		{ 0, "hxtest_main.filter-" },
+		{ 0, "x*:" },
+		{ 0, ":x*" },
+		{ 0, ":" },
 	};
 
+	const hxslab_allocator_scope stack_0(hxslab_allocator_stack_0);
+	hxvector<hxdetail_::hxtest_case_*> copy; copy.reserve(HX_TEST_MAX_CASES);
+
 	for(hxsize_t i = 0; i < hxsize(cases); ++i) {
-		hxdetail_::hxtest_::test_cases_t_ copy(1, self_);
-		EXPECT_EQ(hxdetail_::hxtest_::filter_(cases[i].b, copy) != 0, cases[i].a);
+		copy = hxdetail_::hxtest_::dispatcher_().test_cases_();
+		EXPECT_EQ(hxdetail_::hxtest_::filter_(cases[i].b, copy), cases[i].a);
 	}
 }
 

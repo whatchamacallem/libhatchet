@@ -8,13 +8,14 @@
 #endif
 
 #ifndef HX_DOXYGEN_PARSER
-HX_NS_BEGIN_
-namespace hxdetail_ {
 
-// Use -DHX_TEST_MAX_CASES=N to raise the limit.
+// Use -DHX_TEST_MAX_CASES=N to raise the limit. Behaves like a macro.
 #if !defined HX_TEST_MAX_CASES
 hxinline_constexpr hxsize_t HX_TEST_MAX_CASES = 1024;
 #endif
+
+HX_NS_BEGIN_
+namespace hxdetail_ {
 
 // Internal. 4 ULPs float comparison.
 hxattr_nodiscard bool hxtest_float_eq_(float a_, float b_);
