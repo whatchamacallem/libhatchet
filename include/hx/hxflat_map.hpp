@@ -63,7 +63,7 @@ public:
 
 protected:
 	/// \cond HIDDEN
-	template<hxflat_map_concept_, hxflat_map_concept_, typename, hxsize_t, int> friend class hxflat_map;
+	template<hxflat_map_concept_, hxflat_map_concept_, hxsize_t, typename, int> friend class hxflat_map;
 	hxflat_map_const_value_t(const key_t_& key_, const mapped_t_& mapped_)
 		: key(key_), value(mapped_) { }
 	/// \endcond
@@ -97,7 +97,7 @@ public:
 
 protected:
 	/// \cond HIDDEN
-	template<hxflat_map_concept_, hxflat_map_concept_, typename, hxsize_t, int> friend class hxflat_map;
+	template<hxflat_map_concept_, hxflat_map_concept_, hxsize_t, typename, int> friend class hxflat_map;
 	hxflat_map_value_t(const key_t_& key_, mapped_t_& mapped_)
 		: key(key_), value(mapped_) { }
 	/// \endcond
@@ -126,18 +126,18 @@ protected:
 /// E.g.:
 /// ```
 /// // A static flat map of 64 integer keys to string pointers.
-/// hxflat_map<int, const char*, hxkey_less_t<int>, 64, 0> lookup;
+/// hxflat_map<int, const char*, 64> lookup;
 /// ```
 /// - `key_t` : Key type.
 /// - `T` : Mapped value type.
+/// - `capacity` : Fixed element count or `hxallocator_dynamic_capacity`.
 /// - `compare_t` : Callable implementing a strict weak order or a three-way
 ///   comparison on `key_t`, depending on `hxtrait_three_way` in `traits`.
-/// - `capacity` : Fixed element count or `hxallocator_dynamic_capacity`.
 /// - `traits` : A bitmask of `hxtrait_multi` and `hxtrait_three_way`.
 template<hxflat_map_concept_ key_t_,
 	hxflat_map_concept_ mapped_t_,
-	typename compare_t_=hxkey_less_t<key_t_>,
 	hxsize_t capacity_=hxallocator_dynamic_capacity,
+	typename compare_t_=hxkey_less_t<key_t_>,
 	int traits_=0>
 class hxflat_map {
 public:
@@ -315,14 +315,14 @@ public:
 
 	/// Copy constructs from another `hxflat_map`. Requires `x.size()` ≤
 	/// `capacity()`.
-	/// - `x` : A non-temporary `hxflat_map<key_t, mapped_t, compare_t, capacity,
-	///   traits>`.
+	/// - `x` : A non-temporary `hxflat_map<key_t, mapped_t, capacity,
+	///   compare_t, traits>`.
 	hxflat_map(const hxflat_map& x_) noexcept;
 
 	/// Move constructs from a temporary `hxflat_map`. Requires
 	/// `hxallocator_dynamic_capacity`.
-	/// - `x` : A temporary `hxflat_map<key_t, mapped_t, compare_t,
-	///   hxallocator_dynamic_capacity, traits>`.
+	/// - `x` : A temporary `hxflat_map<key_t, mapped_t,
+	///   hxallocator_dynamic_capacity, compare_t, traits>`.
 	hxflat_map(hxflat_map&& x_) noexcept;
 
 	/// Constructs a map by inserting every key-value pair from `x` in order
@@ -367,7 +367,7 @@ public:
 	/// Requires `x.size()` ≤ `capacity()`.
 	/// - `x` : The map to copy from.
 	template<hxsize_t capacity_x_>
-	void operator=(const hxflat_map<key_t_, mapped_t_, compare_t_, capacity_x_,
+	void operator=(const hxflat_map<key_t_, mapped_t_, capacity_x_, compare_t_,
 		traits_>& x_) noexcept;
 
 	/// Move assigns from a temporary map using `swap`. Requires
@@ -386,15 +386,15 @@ public:
 	/// the same order using `hxkey_equal` on both keys and values.
 	/// - `x` : The map to compare against.
 	template<hxsize_t capacity_x_>
-	hxattr_nodiscard bool operator==(const hxflat_map<key_t_, mapped_t_, compare_t_,
-		capacity_x_, traits_>& x_) const;
+	hxattr_nodiscard bool operator==(const hxflat_map<key_t_, mapped_t_, capacity_x_,
+		compare_t_, traits_>& x_) const;
 
 	/// Returns `true` if this map compares less than `x` lexicographically,
 	/// using `hxkey_equal` and `hxkey_less` on keys and values.
 	/// - `x` : The map to compare against.
 	template<hxsize_t capacity_x_>
-	hxattr_nodiscard bool operator<(const hxflat_map<key_t_, mapped_t_, compare_t_,
-		capacity_x_, traits_>& x_) const;
+	hxattr_nodiscard bool operator<(const hxflat_map<key_t_, mapped_t_, capacity_x_,
+		compare_t_, traits_>& x_) const;
 
 	/// Returns a const iterator pointing to the first element.
 	const_iterator begin(void) const { return const_iterator(this, 0); }
@@ -557,7 +557,7 @@ public:
 
 private:
 	/// \cond HIDDEN
-	template<hxflat_map_concept_, hxflat_map_concept_, typename, hxsize_t, int>
+	template<hxflat_map_concept_, hxflat_map_concept_, hxsize_t, typename, int>
 	friend class hxflat_map;
 
 	template<typename mapped_u_>
@@ -571,12 +571,10 @@ private:
 
 /// `hxflat_multimap` - A `hxflat_map` with `hxtrait_multi` set in `traits`,
 /// allowing multiple elements with equal keys.
-template<hxflat_map_concept_ key_t_,
-	hxflat_map_concept_ mapped_t_,
-	typename compare_t_=hxkey_less_t<key_t_>,
+template<hxflat_map_concept_ key_t_, hxflat_map_concept_ mapped_t_,
 	hxsize_t capacity_=hxallocator_dynamic_capacity,
-	int traits_=0>
-using hxflat_multimap = hxflat_map<key_t_, mapped_t_, compare_t_, capacity_,
+	typename compare_t_=hxkey_less_t<key_t_>, int traits_=0>
+using hxflat_multimap = hxflat_map<key_t_, mapped_t_, capacity_, compare_t_,
 	traits_ | hxtrait_multi>;
 
 #include "detail/hxflat_map.inl"

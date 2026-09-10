@@ -84,7 +84,7 @@ TEST_F(hxmonadic_test_f, hxvector_value_or) {
 }
 
 TEST_F(hxmonadic_test_f, hxflat_set_and_then) {
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 3, 0> s;
+	hxflat_set<hxtest_object, 3> s;
 	s.emplace(31);
 	const hxtest_object missing(32);
 	EXPECT_TRUE((bool)s.and_then(hxtest_object(31), hxmake_expected<hxtest_object>));
@@ -98,7 +98,7 @@ TEST_F(hxmonadic_test_f, hxflat_set_and_then) {
 }
 
 TEST_F(hxmonadic_test_f, hxflat_set_or_else) {
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 3, 0> s;
+	hxflat_set<hxtest_object, 3> s;
 	s.emplace(31);
 	EXPECT_EQ(*s.or_else(hxtest_object(31), [&]{ return s.end(); }), 31);
 	EXPECT_EQ(*s.or_else(hxtest_object(32), [&]{ return s.keys(); }), 31);
@@ -106,7 +106,7 @@ TEST_F(hxmonadic_test_f, hxflat_set_or_else) {
 }
 
 TEST_F(hxmonadic_test_f, hxflat_set_value_or) {
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 3, 0> s;
+	hxflat_set<hxtest_object, 3> s;
 	s.emplace(31);
 	const hxtest_object missing(32);
 	EXPECT_EQ(s.value_or(hxtest_object(31), missing), 31);
@@ -115,7 +115,7 @@ TEST_F(hxmonadic_test_f, hxflat_set_value_or) {
 }
 
 TEST_F(hxmonadic_test_f, hxflat_map_and_then) {
-	hxflat_map<hxtest_object, hxtest_object, hxkey_less_t<hxtest_object>, 3, 0> m;
+	hxflat_map<hxtest_object, hxtest_object, 3> m;
 	m.emplace(hxtest_object(1), hxtest_object(31));
 	EXPECT_TRUE((bool)m.and_then(hxtest_object(1), hxmake_expected<hxtest_object>));
 	EXPECT_EQ(m.and_then(hxtest_object(1), hxmake_expected<hxtest_object>), hxtest_object(31));
@@ -128,7 +128,7 @@ TEST_F(hxmonadic_test_f, hxflat_map_and_then) {
 }
 
 TEST_F(hxmonadic_test_f, hxflat_map_or_else) {
-	hxflat_map<hxtest_object, hxtest_object, hxkey_less_t<hxtest_object>, 3, 0> m;
+	hxflat_map<hxtest_object, hxtest_object, 3> m;
 	m.emplace(hxtest_object(1), hxtest_object(31));
 	EXPECT_EQ((*m.or_else(hxtest_object(1), [&]{ return m.end(); })).value, 31);
 	EXPECT_EQ((*m.or_else(hxtest_object(2), [&]{ return m.begin(); })).value, 31);
@@ -136,7 +136,7 @@ TEST_F(hxmonadic_test_f, hxflat_map_or_else) {
 }
 
 TEST_F(hxmonadic_test_f, hxflat_map_value_or) {
-	hxflat_map<hxtest_object, hxtest_object, hxkey_less_t<hxtest_object>, 3, 0> m;
+	hxflat_map<hxtest_object, hxtest_object, 3> m;
 	m.emplace(hxtest_object(1), hxtest_object(31));
 	EXPECT_EQ(m.value_or(hxtest_object(1), hxtest_object(32)), 31);
 	EXPECT_EQ(m.value_or(hxtest_object(2), hxtest_object(32)), 32);

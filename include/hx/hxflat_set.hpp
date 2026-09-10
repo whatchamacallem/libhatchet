@@ -55,16 +55,16 @@ concept hxflat_set_concept_ = requires(T_& x_) {
 /// E.g.:
 /// ```
 /// // A static flat set of 64 integers.
-/// hxflat_set<int, hxkey_less_t<int>, 64, 0> lookup;
+/// hxflat_set<int, 64> lookup;
 /// ```
 /// - `key_t` : Key type.
+/// - `capacity` : Fixed element count or `hxallocator_dynamic_capacity`.
 /// - `compare_t` : Callable implementing a strict weak order or a three-way
 ///   comparison on `key_t`, depending on `hxtrait_three_way` in `traits`.
-/// - `capacity` : Fixed element count or `hxallocator_dynamic_capacity`.
 /// - `traits` : A bitmask of `hxtrait_multi` and `hxtrait_three_way`.
 template<hxflat_set_concept_ key_t_,
-	typename compare_t_=hxkey_less_t<key_t_>,
 	hxsize_t capacity_=hxallocator_dynamic_capacity,
+	typename compare_t_=hxkey_less_t<key_t_>,
 	int traits_=0>
 class hxflat_set : private hxallocator<key_t_, capacity_> {
 public:
@@ -83,14 +83,14 @@ public:
 
 	/// Copy constructs from another `hxflat_set`. Requires `x.size()` ≤
 	/// `capacity()`.
-	/// - `x` : A non-temporary `hxflat_set<key_t, compare_t, capacity,
+	/// - `x` : A non-temporary `hxflat_set<key_t, capacity, compare_t,
 	///   traits>`.
 	hxflat_set(const hxflat_set& x_) noexcept;
 
 	/// Move constructs from a temporary `hxflat_set`. Requires
 	/// `hxallocator_dynamic_capacity`.
-	/// - `x` : A temporary `hxflat_set<key_t, compare_t,
-	///   hxallocator_dynamic_capacity, traits>`.
+	/// - `x` : A temporary `hxflat_set<key_t,
+	///   hxallocator_dynamic_capacity, compare_t, traits>`.
 	hxflat_set(hxflat_set&& x_) noexcept;
 
 	/// Constructs a set by inserting every key from `x` in order using
@@ -134,7 +134,7 @@ public:
 	/// set. Requires `x.size()` ≤ `capacity()`.
 	/// - `x` : The set to copy from.
 	template<hxsize_t capacity_x_>
-	void operator=(const hxflat_set<key_t_, compare_t_, capacity_x_, traits_>& x_) noexcept;
+	void operator=(const hxflat_set<key_t_, capacity_x_, compare_t_, traits_>& x_) noexcept;
 
 	/// Move assigns from a temporary set using `swap`. Requires
 	/// `hxallocator_dynamic_capacity`.
@@ -150,13 +150,13 @@ public:
 	/// order using `hxkey_equal`.
 	/// - `x` : The set to compare against.
 	template<hxsize_t capacity_x_>
-	hxattr_nodiscard bool operator==(const hxflat_set<key_t_, compare_t_, capacity_x_, traits_>& x_) const;
+	hxattr_nodiscard bool operator==(const hxflat_set<key_t_, capacity_x_, compare_t_, traits_>& x_) const;
 
 	/// Returns `true` if this set compares less than `x` lexicographically,
 	/// using `hxkey_equal` and `hxkey_less` on keys.
 	/// - `x` : The set to compare against.
 	template<hxsize_t capacity_x_>
-	hxattr_nodiscard bool operator<(const hxflat_set<key_t_, compare_t_, capacity_x_, traits_>& x_) const;
+	hxattr_nodiscard bool operator<(const hxflat_set<key_t_, capacity_x_, compare_t_, traits_>& x_) const;
 
 	/// Inserts every key from a temporary range by moving each key with
 	/// `insert`. This overload enables moving the range keys into the set
@@ -305,7 +305,7 @@ public:
 
 private:
 	/// \cond HIDDEN
-	template<hxflat_set_concept_, typename, hxsize_t, int> friend class hxflat_set;
+	template<hxflat_set_concept_, hxsize_t, typename, int> friend class hxflat_set;
 
 	template<typename key_u_>
 	const key_t_* insert_at_(key_t_* it_, key_u_&& key_) noexcept;
@@ -316,12 +316,9 @@ private:
 
 /// `hxflat_multiset` - A `hxflat_set` with `hxtrait_multi` set in `traits`,
 /// allowing multiple elements with equal keys.
-template<hxflat_set_concept_ key_t_,
-	typename compare_t_=hxkey_less_t<key_t_>,
-	hxsize_t capacity_=hxallocator_dynamic_capacity,
-	int traits_=0>
-using hxflat_multiset = hxflat_set<key_t_, compare_t_, capacity_,
-	traits_ | hxtrait_multi>;
+template<hxflat_set_concept_ key_t_, hxsize_t capacity_=hxallocator_dynamic_capacity,
+	typename compare_t_=hxkey_less_t<key_t_>, int traits_=0>
+using hxflat_multiset = hxflat_set<key_t_, capacity_, compare_t_, traits_ | hxtrait_multi>;
 
 #include "detail/hxflat_set.inl"
 HX_NS_END_

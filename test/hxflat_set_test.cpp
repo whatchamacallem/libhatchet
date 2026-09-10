@@ -18,14 +18,14 @@ hxattr_noinline static void hxtest_gdb_break_hxflat_set_dynamic(void) { }
 
 #if !defined _MSC_VER && !defined __wasm__
 static_assert(sizeof(size_t) != 4 || (
-		sizeof(hxflat_set<int32_t, hxkey_less_t<int32_t>, 4, 0>) == 20u
-		&& sizeof(hxflat_set<int32_t, hxkey_less_t<int32_t>, hxallocator_dynamic_capacity, 0>) == 12u),
+		sizeof(hxflat_set<int32_t, 4>) == 20u
+		&& sizeof(hxflat_set<int32_t>) == 12u),
 	"hxflat_set must pack fixed storage as capacity * sizeof(T) key array plus"
 	" a T* end pointer and dynamic storage as a hxsize_t/T* allocator pair"
 	" plus a T* end pointer with no padding");
 static_assert(sizeof(size_t) != 8 || (
-		sizeof(hxflat_set<int32_t, hxkey_less_t<int32_t>, 4, 0>) == 24u
-		&& sizeof(hxflat_set<int32_t, hxkey_less_t<int32_t>, hxallocator_dynamic_capacity, 0>) == 24u),
+		sizeof(hxflat_set<int32_t, 4>) == 24u
+		&& sizeof(hxflat_set<int32_t>) == 24u),
 	"hxflat_set must pack fixed storage as capacity * sizeof(T) key array plus"
 	" a T* end pointer and dynamic storage as a hxsize_t/T* allocator pair"
 	" plus a T* end pointer with no padding");
@@ -34,7 +34,7 @@ static_assert(sizeof(size_t) != 8 || (
 using hxflat_set_test_f = hxtest_object_fixture;
 
 TEST_F(hxflat_set_test_f, static_initializer_list_ctor_sorts_and_rejects_duplicates) {
-	const hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 4, 0> s{
+	const hxflat_set<hxtest_object, 4> s{
 		hxtest_object(3), hxtest_object(1), hxtest_object(2), hxtest_object(1)};
 	EXPECT_EQ(s.size(), 3);
 	EXPECT_EQ(s[0]->value(), 1);
@@ -44,7 +44,7 @@ TEST_F(hxflat_set_test_f, static_initializer_list_ctor_sorts_and_rejects_duplica
 }
 
 TEST_F(hxflat_set_test_f, dynamic_initializer_list_ctor_allows_duplicates) {
-	const hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, hxallocator_dynamic_capacity, hxtrait_multi> s{
+	const hxflat_multiset<hxtest_object> s{
 		hxtest_object(3), hxtest_object(1), hxtest_object(2), hxtest_object(1)};
 	EXPECT_EQ(s.size(), 4);
 	EXPECT_EQ(s[0]->value(), 1);
@@ -55,19 +55,19 @@ TEST_F(hxflat_set_test_f, dynamic_initializer_list_ctor_allows_duplicates) {
 }
 
 TEST(hxflat_set_test, operator_equal_int_key_type_detects_length_and_value_mismatch) {
-	const hxflat_set<int, hxkey_less_t<int>, 4, 0> a{1, 2};
-	const hxflat_set<int, hxkey_less_t<int>, 4, 0> b{1, 2};
+	const hxflat_set<int, 4> a{1, 2};
+	const hxflat_set<int, 4> b{1, 2};
 	EXPECT_TRUE(a == b);
-	const hxflat_set<int, hxkey_less_t<int>, 4, 0> c{1, 3};
+	const hxflat_set<int, 4> c{1, 3};
 	EXPECT_FALSE(a == c);
-	const hxflat_set<int, hxkey_less_t<int>, 4, 0> d{1, 2, 3};
+	const hxflat_set<int, 4> d{1, 2, 3};
 	EXPECT_FALSE(a == d);
 	EXPECT_FALSE(d == a);
 }
 
 #if HX_CPLUSPLUS >= 202302L
 TEST(hxflat_set_test, expected_lookup_and_emplace) {
-	hxflat_set<int, hxkey_less_t<int>, 3, 0> s;
+	hxflat_set<int, 3> s;
 	EXPECT_EQ(*s.emplace(2), 2);
 	EXPECT_EQ(*s.emplace(1), 1);
 	EXPECT_EQ(*s.emplace(2), 2);
@@ -121,7 +121,7 @@ TEST(hxflat_set_test, expected_lookup_and_emplace) {
 }
 
 TEST_F(hxflat_set_test_f, value_or_emplaces_fallback) {
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 1, 0> s;
+	hxflat_set<hxtest_object, 1> s;
 	s.emplace(10);
 	const hxtest_object found(10);
 	const hxtest_object missing(11);
@@ -133,7 +133,7 @@ TEST_F(hxflat_set_test_f, value_or_emplaces_fallback) {
 #endif // HX_CPLUSPLUS >= 202302L
 
 TEST_F(hxflat_set_test_f, gdb_static) {
-	const hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 4, 0> a{
+	const hxflat_set<hxtest_object, 4> a{
 		hxtest_object(10), hxtest_object(20), hxtest_object(30)};
 	hxtest_gdb_break_hxflat_set_static();
 	EXPECT_EQ(a.size(), 3);
@@ -141,10 +141,10 @@ TEST_F(hxflat_set_test_f, gdb_static) {
 }
 
 TEST_F(hxflat_set_test_f, gdb_dynamic) {
-	const hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, hxallocator_dynamic_capacity, hxtrait_multi> a{
+	const hxflat_multiset<hxtest_object> a{
 		hxtest_object(10), hxtest_object(20), hxtest_object(30)};
-	const hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, hxallocator_dynamic_capacity, hxtrait_multi> b;
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, hxallocator_dynamic_capacity, hxtrait_multi> c;
+	const hxflat_multiset<hxtest_object> b;
+	hxflat_multiset<hxtest_object> c;
 	c.reserve(8);
 	hxtest_gdb_break_hxflat_set_dynamic();
 	EXPECT_EQ(a.size(), 3);
@@ -152,13 +152,13 @@ TEST_F(hxflat_set_test_f, gdb_dynamic) {
 }
 
 TEST_F(hxflat_set_test_f, construct) {
-	const hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 1, 0> ss;
+	const hxflat_set<hxtest_object, 1> ss;
 	EXPECT_TRUE(ss.empty());
 	EXPECT_EQ(ss.size(), 0);
 	EXPECT_EQ(ss.capacity(), 1);
 	EXPECT_EQ(ss.max_size(), 1);
 	EXPECT_FALSE(ss.full());
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, hxallocator_dynamic_capacity, hxtrait_multi> sd;
+	hxflat_multiset<hxtest_object> sd;
 	EXPECT_TRUE(sd.empty());
 	EXPECT_EQ(sd.size(), 0);
 	EXPECT_EQ(sd.capacity(), 0);
@@ -170,14 +170,14 @@ TEST_F(hxflat_set_test_f, construct) {
 }
 
 TEST_F(hxflat_set_test_f, reserve_static_exact) {
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 1, 0> s;
+	hxflat_set<hxtest_object, 1> s;
 	s.reserve(1);
 	EXPECT_EQ(s.capacity(), 1);
 	EXPECT_TRUE(check_no_stats());
 }
 
 TEST_F(hxflat_set_test_f, insert_unique_basic) {
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 2, 0> s;
+	hxflat_set<hxtest_object, 2> s;
 	const hxtest_object v1(10);
 	const hxtest_object* it = s.insert(v1);
 	EXPECT_TRUE(it != hxnull);
@@ -191,7 +191,7 @@ TEST_F(hxflat_set_test_f, insert_unique_basic) {
 }
 
 TEST_F(hxflat_set_test_f, insert_unique_move) {
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 2, 0> s;
+	hxflat_set<hxtest_object, 2> s;
 	hxtest_object v(34);
 	const hxtest_object* it = s.insert(hxmove(v));
 	EXPECT_TRUE(it != hxnull);
@@ -209,7 +209,7 @@ TEST_F(hxflat_set_test_f, insert_unique_move) {
 }
 
 TEST_F(hxflat_set_test_f, insert_multi) {
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 2, hxtrait_multi> s;
+	hxflat_multiset<hxtest_object, 2> s;
 	const hxtest_object v1(5);
 	hxtest_object v2(5);
 	s.insert(v1);
@@ -222,7 +222,7 @@ TEST_F(hxflat_set_test_f, insert_multi) {
 
 TEST_F(hxflat_set_test_f, insert_maintains_sorted_order) {
 	const hxtest_object v30(30), v10(10), v20(20);
-	const hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 3, 0> s{
+	const hxflat_set<hxtest_object, 3> s{
 		v30, v10, v20};
 	EXPECT_EQ(s.size(), 3);
 	const hxtest_object* it = s.begin();
@@ -234,14 +234,14 @@ TEST_F(hxflat_set_test_f, insert_maintains_sorted_order) {
 
 TEST_F(hxflat_set_test_f, insert_shifts_elements) {
 	const hxtest_object v10(10), v20(20), v15(15);
-	const hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 3, 0> s{
+	const hxflat_set<hxtest_object, 3> s{
 		v10, v20, v15};
 	const hxtest_object* it = s.begin();
 	EXPECT_EQ(it->value(), 10); ++it;
 	EXPECT_EQ(it->value(), 15); ++it;
 	EXPECT_EQ(it->value(), 20);
 	const hxtest_object w10(10), w20(20), w5(5);
-	const hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 3, 0> s2{
+	const hxflat_set<hxtest_object, 3> s2{
 		w10, w20, w5};
 	const hxtest_object* it2 = s2.begin();
 	EXPECT_EQ(it2->value(), 5); ++it2;
@@ -251,7 +251,7 @@ TEST_F(hxflat_set_test_f, insert_shifts_elements) {
 }
 
 TEST_F(hxflat_set_test_f, insert_dynamic) {
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, hxallocator_dynamic_capacity, hxtrait_multi> s;
+	hxflat_multiset<hxtest_object> s;
 	s.reserve(1);
 	const hxtest_object v(7);
 	s.insert(v);
@@ -262,7 +262,7 @@ TEST_F(hxflat_set_test_f, insert_dynamic) {
 
 TEST_F(hxflat_set_test_f, clear) {
 	const hxtest_object v1(1), v2(2);
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 2, 0> s{v1, v2};
+	hxflat_set<hxtest_object, 2> s{v1, v2};
 	EXPECT_EQ(s.size(), 2);
 	s.clear();
 	EXPECT_EQ(s.size(), 0);
@@ -273,26 +273,26 @@ TEST_F(hxflat_set_test_f, clear) {
 }
 
 TEST_F(hxflat_set_test_f, find) {
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 2, 0> s;
+	hxflat_set<hxtest_object, 2> s;
 	const hxtest_object v(99);
 	s.insert(v);
 	const hxtest_object* p = s.find(hxtest_object(99));
 	EXPECT_NE(p, s.end());
 	EXPECT_EQ(p->value(), 99);
 	EXPECT_EQ(s.find(hxtest_object(1)), s.end());
-	const hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 1, 0> empty;
+	const hxflat_set<hxtest_object, 1> empty;
 	EXPECT_EQ(empty.find(hxtest_object(1)), empty.end());
 	EXPECT_TRUE(check_stats(5, 3, 0, 4, 1, 0, 0, 0, 0, 4, 0));
 }
 
 TEST_F(hxflat_set_test_f, count) {
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 1, 0> su;
+	hxflat_set<hxtest_object, 1> su;
 	const hxtest_object vu(4);
 	su.insert(vu);
 	EXPECT_EQ(su.count(hxtest_object(4)), 1);
 	EXPECT_EQ(su.count(hxtest_object(9)), 0);
 	EXPECT_EQ(su.count(hxtest_object(1)), 0);
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 4, hxtrait_multi> sm;
+	hxflat_multiset<hxtest_object, 4> sm;
 	const hxtest_object v5a(5), v5b(5), v10(10), v10b(10);
 	sm.insert(v5a); sm.insert(v5b);
 	sm.insert(v10); sm.insert(v10b);
@@ -303,10 +303,10 @@ TEST_F(hxflat_set_test_f, count) {
 }
 
 TEST_F(hxflat_set_test_f, lower_bound_basic) {
-	const hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 1, 0> se;
+	const hxflat_set<hxtest_object, 1> se;
 	EXPECT_EQ(se.lower_bound(hxtest_object(5)), se.begin());
 	EXPECT_EQ(se.lower_bound(hxtest_object(5)), se.end());
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 2, 0> s;
+	hxflat_set<hxtest_object, 2> s;
 	const hxtest_object v10(10), v30(30);
 	s.insert(v10);
 	s.insert(v30);
@@ -322,7 +322,7 @@ TEST_F(hxflat_set_test_f, lower_bound_basic) {
 
 TEST_F(hxflat_set_test_f, lower_bound_edge_cases) {
 	const hxtest_object v10(10), v20(20), v30(30);
-	const hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 3, 0> s{
+	const hxflat_set<hxtest_object, 3> s{
 		v10, v20, v30};
 	const hxtest_object* it = s.lower_bound(hxtest_object(5));
 	EXPECT_EQ(it, s.begin());
@@ -337,11 +337,11 @@ TEST_F(hxflat_set_test_f, lower_bound_edge_cases) {
 }
 
 TEST_F(hxflat_set_test_f, upper_bound_unique) {
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 2, 0> s;
+	hxflat_set<hxtest_object, 2> s;
 	const hxtest_object v10(10), v20(20);
 	s.insert(v10);
 	s.insert(v20);
-	const hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 2, 0>& cs = s;
+	const hxflat_set<hxtest_object, 2>& cs = s;
 	const hxtest_object* it = cs.upper_bound(hxtest_object(10));
 	EXPECT_TRUE(it != cs.end());
 	EXPECT_EQ(it->value(), 20);
@@ -352,7 +352,7 @@ TEST_F(hxflat_set_test_f, upper_bound_unique) {
 }
 
 TEST_F(hxflat_set_test_f, upper_bound_multi) {
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 3, hxtrait_multi> s;
+	hxflat_multiset<hxtest_object, 3> s;
 	const hxtest_object v5a(5), v5b(5), v10(10);
 	s.insert(v5a);
 	s.insert(v5b);
@@ -361,7 +361,7 @@ TEST_F(hxflat_set_test_f, upper_bound_multi) {
 	EXPECT_TRUE(it != s.end());
 	EXPECT_EQ(it->value(), 10);
 	EXPECT_TRUE(s.upper_bound(hxtest_object(10)) == s.end());
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 1, hxtrait_multi> s2;
+	hxflat_multiset<hxtest_object, 1> s2;
 	const hxtest_object v(5);
 	s2.insert(v);
 	EXPECT_TRUE(s2.upper_bound(hxtest_object(5)) == s2.end());
@@ -369,7 +369,7 @@ TEST_F(hxflat_set_test_f, upper_bound_multi) {
 }
 
 TEST_F(hxflat_set_test_f, erase_key_unique) {
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 1, 0> s;
+	hxflat_set<hxtest_object, 1> s;
 	const hxtest_object v(5);
 	s.insert(v);
 	EXPECT_EQ(s.erase(hxtest_object(9)), 0);
@@ -383,7 +383,7 @@ TEST_F(hxflat_set_test_f, erase_key_unique) {
 }
 
 TEST_F(hxflat_set_test_f, erase_key_multi_basic) {
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 3, hxtrait_multi> s;
+	hxflat_multiset<hxtest_object, 3> s;
 	const hxtest_object v5a(5), v5b(5), v10(10);
 	s.insert(v5a);
 	s.insert(v5b);
@@ -396,7 +396,7 @@ TEST_F(hxflat_set_test_f, erase_key_multi_basic) {
 }
 
 TEST_F(hxflat_set_test_f, erase_key_multi_tail_relative_to_count) {
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 4, hxtrait_multi> sa;
+	hxflat_multiset<hxtest_object, 4> sa;
 	const hxtest_object v5a(5), v5b(5), v5c(5), v10(10);
 	sa.insert(v5a);
 	sa.insert(v5b);
@@ -405,7 +405,7 @@ TEST_F(hxflat_set_test_f, erase_key_multi_tail_relative_to_count) {
 	EXPECT_EQ(sa.erase(hxtest_object(5)), 3);
 	EXPECT_EQ(sa.size(), 1);
 	EXPECT_EQ(sa.find(hxtest_object(10))->value(), 10);
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 4, hxtrait_multi> sb;
+	hxflat_multiset<hxtest_object, 4> sb;
 	const hxtest_object v5(5), v10a(10), v10b(10), v10c(10);
 	sb.insert(v5);
 	sb.insert(v10a);
@@ -418,7 +418,7 @@ TEST_F(hxflat_set_test_f, erase_key_multi_tail_relative_to_count) {
 }
 
 TEST_F(hxflat_set_test_f, erase_key_multi_count_equals_tail) {
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 4, hxtrait_multi> s;
+	hxflat_multiset<hxtest_object, 4> s;
 	const hxtest_object v5a(5), v5b(5), v10a(10), v10b(10);
 	s.insert(v5a);
 	s.insert(v5b);
@@ -431,7 +431,7 @@ TEST_F(hxflat_set_test_f, erase_key_multi_count_equals_tail) {
 }
 
 TEST_F(hxflat_set_test_f, erase_iterator_only_and_pair) {
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 2, 0> s;
+	hxflat_set<hxtest_object, 2> s;
 	const hxtest_object v10(10), v20(20);
 	s.insert(v10);
 	const hxtest_object* next1 = s.erase(s.begin());
@@ -449,7 +449,7 @@ TEST_F(hxflat_set_test_f, erase_iterator_only_and_pair) {
 }
 
 TEST_F(hxflat_set_test_f, erase_iterator_last_of_two) {
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 2, 0> s;
+	hxflat_set<hxtest_object, 2> s;
 	const hxtest_object v10(10), v20(20);
 	s.insert(v10);
 	s.insert(v20);
@@ -462,7 +462,7 @@ TEST_F(hxflat_set_test_f, erase_iterator_last_of_two) {
 
 TEST_F(hxflat_set_test_f, erase_iterator_middle_of_three) {
 	const hxtest_object v10(10), v20(20), v30(30);
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 3, 0> s{
+	hxflat_set<hxtest_object, 3> s{
 		v10, v20, v30};
 	const hxtest_object* next = s.erase(s.begin() + 1);
 	EXPECT_EQ(next->value(), 30);
@@ -474,7 +474,7 @@ TEST_F(hxflat_set_test_f, erase_iterator_middle_of_three) {
 
 TEST_F(hxflat_set_test_f, erase_iterator_first_of_three) {
 	const hxtest_object v10(10), v20(20), v30(30);
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 3, 0> s{
+	hxflat_set<hxtest_object, 3> s{
 		v10, v20, v30};
 	const hxtest_object* next = s.erase(s.begin());
 	EXPECT_EQ(next->value(), 20);
@@ -485,7 +485,7 @@ TEST_F(hxflat_set_test_f, erase_iterator_first_of_three) {
 }
 
 TEST_F(hxflat_set_test_f, begin_end) {
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 1, 0> s;
+	hxflat_set<hxtest_object, 1> s;
 	EXPECT_TRUE(s.begin() == s.end());
 	EXPECT_TRUE(s.cbegin() == s.cend());
 	const hxtest_object v(5);
@@ -496,7 +496,7 @@ TEST_F(hxflat_set_test_f, begin_end) {
 }
 
 TEST_F(hxflat_set_test_f, full) {
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 2, 0> s;
+	hxflat_set<hxtest_object, 2> s;
 	const hxtest_object v1(1), v2(2);
 	EXPECT_FALSE(s.full());
 	s.insert(v1);
@@ -507,7 +507,7 @@ TEST_F(hxflat_set_test_f, full) {
 }
 
 TEST_F(hxflat_set_test_f, dynamic_multiset_insert_erase) {
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, hxallocator_dynamic_capacity, hxtrait_multi> s;
+	hxflat_multiset<hxtest_object> s;
 	s.reserve(5);
 	const hxtest_object v10a(10), v10b(10), v20(20), v30a(30), v30b(30);
 	s.insert(v10a);
@@ -529,16 +529,16 @@ TEST_F(hxflat_set_test_f, dynamic_multiset_insert_erase) {
 TEST_F(hxflat_set_test_f, destructor_destroys_elements) {
 	{
 		const hxtest_object v1(10), v2(20);
-		const hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 2, 0> s{v1, v2};
+		const hxflat_set<hxtest_object, 2> s{v1, v2};
 	}
 	EXPECT_TRUE(check_stats(6, 6, 0, 2, 4, 0, 0, 0, 0, 1, 0));
 }
 
 TEST_F(hxflat_set_test_f, subscript) {
 	const hxtest_object v10(10), v20(20), v30(30);
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 3, 0> s{ // NOLINT(misc-const-correctness)
+	hxflat_set<hxtest_object, 3> s{ // NOLINT(misc-const-correctness)
 		v10, v20, v30};
-	const hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 3, 0>& cs = s;
+	const hxflat_set<hxtest_object, 3>& cs = s;
 	EXPECT_EQ(cs[0]->value(), 10);
 	EXPECT_EQ(cs[1]->value(), 20);
 	EXPECT_EQ(cs[2]->value(), 30);
@@ -547,8 +547,8 @@ TEST_F(hxflat_set_test_f, subscript) {
 }
 
 TEST_F(hxflat_set_test_f, copy_assign_basic) {
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 3, 0> a;
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 3, 0> b;
+	hxflat_set<hxtest_object, 3> a;
+	hxflat_set<hxtest_object, 3> b;
 	const hxtest_object v10(10), v20(20);
 	a.insert(v10);
 	a.insert(v20);
@@ -560,8 +560,8 @@ TEST_F(hxflat_set_test_f, copy_assign_basic) {
 }
 
 TEST_F(hxflat_set_test_f, copy_assign_edge_cases) {
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 3, 0> a;
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 3, 0> b;
+	hxflat_set<hxtest_object, 3> a;
+	hxflat_set<hxtest_object, 3> b;
 	const hxtest_object va(5), vb(7);
 	a.insert(va);
 	b.insert(vb);
@@ -569,15 +569,15 @@ TEST_F(hxflat_set_test_f, copy_assign_edge_cases) {
 	EXPECT_EQ(b.size(), 1);
 	EXPECT_NE(b.find(hxtest_object(5)), b.end());
 	EXPECT_EQ(b.find(hxtest_object(7)), b.end());
-	const hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 3, 0> empty;
+	const hxflat_set<hxtest_object, 3> empty;
 	b = empty;
 	EXPECT_TRUE(b.empty());
 	EXPECT_TRUE(check_stats(7, 4, 0, 4, 3, 0, 0, 0, 0, 3, 0));
 }
 
 TEST_F(hxflat_set_test_f, copy_assign_different_capacity) {
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 2, 0> a;
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 4, 0> b;
+	hxflat_set<hxtest_object, 2> a;
+	hxflat_set<hxtest_object, 4> b;
 	const hxtest_object v10(10), v20(20);
 	a.insert(v10);
 	a.insert(v20);
@@ -591,8 +591,8 @@ TEST_F(hxflat_set_test_f, copy_assign_different_capacity) {
 TEST_F(hxflat_set_test_f, move_assign_transfers_elements) {
 	{
 		const hxtest_object v10(10), v20(20), v30(30);
-		hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, hxallocator_dynamic_capacity, hxtrait_multi> a{v10, v20, v30};
-		hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, hxallocator_dynamic_capacity, hxtrait_multi> b;
+		hxflat_multiset<hxtest_object> a{v10, v20, v30};
+		hxflat_multiset<hxtest_object> b;
 		b.reserve(1);
 		b = hxmove(a);
 		EXPECT_EQ(b.size(), 3);
@@ -608,8 +608,8 @@ TEST_F(hxflat_set_test_f, move_assign_transfers_elements) {
 TEST_F(hxflat_set_test_f, move_constructor_transfers_elements) {
 	{
 		const hxtest_object v10(10), v20(20), v30(30);
-		hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, hxallocator_dynamic_capacity, hxtrait_multi> src{v10, v20, v30};
-		const hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, hxallocator_dynamic_capacity, hxtrait_multi> dst(hxmove(src));
+		hxflat_multiset<hxtest_object> src{v10, v20, v30};
+		const hxflat_multiset<hxtest_object> dst(hxmove(src));
 		EXPECT_EQ(dst.size(), 3);
 		EXPECT_EQ(dst.find(hxtest_object(10))->value(), 10);
 		EXPECT_EQ(dst.find(hxtest_object(20))->value(), 20);
@@ -622,9 +622,9 @@ TEST_F(hxflat_set_test_f, move_constructor_transfers_elements) {
 
 TEST_F(hxflat_set_test_f, copy_constructor_basic) {
 	const hxtest_object v10(10), v20(20), v30(30);
-	const hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 3, 0> src{
+	const hxflat_set<hxtest_object, 3> src{
 		v10, v20, v30};
-	const hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 3, 0> dst(src); // NOLINT(performance-unnecessary-copy-initialization)
+	const hxflat_set<hxtest_object, 3> dst(src); // NOLINT(performance-unnecessary-copy-initialization)
 	EXPECT_EQ(dst.size(), 3);
 	EXPECT_EQ(dst.find(hxtest_object(10))->value(), 10);
 	EXPECT_EQ(dst.find(hxtest_object(20))->value(), 20);
@@ -634,18 +634,18 @@ TEST_F(hxflat_set_test_f, copy_constructor_basic) {
 }
 
 TEST_F(hxflat_set_test_f, copy_constructor_empty) {
-	const hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 4, 0> src;
-	const hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 4, 0> dst(src); // NOLINT(performance-unnecessary-copy-initialization)
+	const hxflat_set<hxtest_object, 4> src;
+	const hxflat_set<hxtest_object, 4> dst(src); // NOLINT(performance-unnecessary-copy-initialization)
 	EXPECT_TRUE(dst.empty());
 	EXPECT_EQ(dst.size(), 0);
 	EXPECT_TRUE(check_no_stats());
 }
 
 TEST_F(hxflat_set_test_f, copy_constructor_is_independent) {
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 2, 0> src;
+	hxflat_set<hxtest_object, 2> src;
 	const hxtest_object v10(10), v20(20);
 	src.insert(v10);
-	const hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 2, 0> dst(src);
+	const hxflat_set<hxtest_object, 2> dst(src);
 	src.insert(v20);
 	EXPECT_EQ(dst.find(hxtest_object(10))->value(), 10);
 	EXPECT_EQ(dst.find(hxtest_object(20)), dst.end());
@@ -655,9 +655,9 @@ TEST_F(hxflat_set_test_f, copy_constructor_is_independent) {
 TEST_F(hxflat_set_test_f, copy_constructor_lifecycle) {
 	{
 		const hxtest_object v10(10), v20(20);
-		const hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 3, 0> src{v10, v20};
+		const hxflat_set<hxtest_object, 3> src{v10, v20};
 		{
-			const hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 3, 0> dst(src); // NOLINT(performance-unnecessary-copy-initialization)
+			const hxflat_set<hxtest_object, 3> dst(src); // NOLINT(performance-unnecessary-copy-initialization)
 			EXPECT_EQ(dst.size(), 2);
 		}
 	}
@@ -665,16 +665,16 @@ TEST_F(hxflat_set_test_f, copy_constructor_lifecycle) {
 }
 
 TEST(hxflat_set_test, implements_rand_iterator_api) {
-	hxflat_set<int, hxkey_less_t<int>, 4, 0> s{1, 2, 3}; // NOLINT(misc-const-correctness)
-	typedef hxflat_set<int, hxkey_less_t<int>, 4, 0> set_t;
+	hxflat_set<int, 4> s{1, 2, 3}; // NOLINT(misc-const-correctness)
+	typedef hxflat_set<int, 4> set_t;
 	const set_t& cs = s;
 	EXPECT_TRUE(hxtest_check_rand_iterator_api<set_t::iterator>(s.begin(), s.end()));
 	EXPECT_TRUE(hxtest_check_rand_iterator_api<set_t::const_iterator>(cs.begin(), cs.end()));
 }
 
 TEST_F(hxflat_set_test_f, operator_equal) {
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 2, 0> a;
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 2, 0> b;
+	hxflat_set<hxtest_object, 2> a;
+	hxflat_set<hxtest_object, 2> b;
 	const hxtest_object a1(10), a2(20), b1(10), b2(30);
 	a.insert(a1); a.insert(a2);
 	b.insert(b1); b.insert(b2);
@@ -689,8 +689,8 @@ TEST_F(hxflat_set_test_f, operator_equal) {
 }
 
 TEST_F(hxflat_set_test_f, operator_less) {
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 3, 0> a;
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 3, 0> b;
+	hxflat_set<hxtest_object, 3> a;
+	hxflat_set<hxtest_object, 3> b;
 	const hxtest_object a1(10), b1(10), b2(20);
 	a.insert(a1);
 	b.insert(b1); b.insert(b2);
@@ -704,14 +704,14 @@ TEST_F(hxflat_set_test_f, operator_less) {
 
 #if HX_CPLUSPLUS >= 202002L
 TEST_F(hxflat_set_test_f, hxkey_equal) {
-	typedef hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 2, 0> set_t;
+	typedef hxflat_set<hxtest_object, 2> set_t;
 	set_t a;
 	set_t b;
 	const hxtest_object v1(10), v2(10);
 	a.insert(v1);
 	b.insert(v2);
 	EXPECT_TRUE(a == b);
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 4, 0> c;
+	hxflat_set<hxtest_object, 4> c;
 	const hxtest_object v3(10);
 	c.insert(v3);
 	EXPECT_TRUE(a == c);
@@ -723,7 +723,7 @@ TEST_F(hxflat_set_test_f, hxkey_equal) {
 }
 
 TEST_F(hxflat_set_test_f, hxkey_less) {
-	typedef hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 2, 0> set_t;
+	typedef hxflat_set<hxtest_object, 2> set_t;
 	set_t a;
 	set_t b;
 	const hxtest_object v1(10), v2(20);
@@ -736,7 +736,7 @@ TEST_F(hxflat_set_test_f, hxkey_less) {
 	c.insert(v3);
 	EXPECT_FALSE(a < c);
 	EXPECT_FALSE(c < a);
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 4, 0> d;
+	hxflat_set<hxtest_object, 4> d;
 	const hxtest_object v4(20);
 	d.insert(v4);
 	EXPECT_TRUE(a < d);
@@ -746,9 +746,9 @@ TEST_F(hxflat_set_test_f, hxkey_less) {
 
 TEST_F(hxflat_set_test_f, hxswap_exchanges_contents) {
 	{
-		hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, hxallocator_dynamic_capacity, hxtrait_multi> a;
+		hxflat_multiset<hxtest_object> a;
 		a.reserve(2);
-		hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, hxallocator_dynamic_capacity, hxtrait_multi> b;
+		hxflat_multiset<hxtest_object> b;
 		b.reserve(2);
 		const hxtest_object v10(10), v20(20);
 		a.insert(v10);
@@ -764,9 +764,9 @@ TEST_F(hxflat_set_test_f, hxswap_exchanges_contents) {
 
 TEST_F(hxflat_set_test_f, hxswap_empty_and_nonempty) {
 	{
-		hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, hxallocator_dynamic_capacity, hxtrait_multi> a;
+		hxflat_multiset<hxtest_object> a;
 		a.reserve(2);
-		hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, hxallocator_dynamic_capacity, hxtrait_multi> b;
+		hxflat_multiset<hxtest_object> b;
 		b.reserve(1);
 		const hxtest_object v10(10), v20(20);
 		a.insert(v10);
@@ -781,7 +781,7 @@ TEST_F(hxflat_set_test_f, hxswap_empty_and_nonempty) {
 }
 
 TEST_F(hxflat_set_test_f, add_range_appends_to_nonempty_and_deduplicates) {
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 8, 0> s{
+	hxflat_set<hxtest_object, 8> s{
 		hxtest_object(31), hxtest_object(33)};
 	hxarray<hxtest_object, 3> range{33, 34, 32};
 	s.add_range(range);
@@ -794,7 +794,7 @@ TEST_F(hxflat_set_test_f, add_range_appends_to_nonempty_and_deduplicates) {
 }
 
 TEST_F(hxflat_set_test_f, add_range_unsorted_input_sorts) {
-	hxflat_set<hxtest_object, hxkey_less_t<hxtest_object>, 8, 0> s;
+	hxflat_set<hxtest_object, 8> s;
 	hxarray<hxtest_object, 5> range{34, 31, 35, 32, 33};
 	s.add_range(hxmove(range));
 	EXPECT_EQ(s.size(), 5);
@@ -808,7 +808,7 @@ TEST_F(hxflat_set_test_f, add_range_unsorted_input_sorts) {
 #endif // HX_CPLUSPLUS >= 202002L
 
 TEST_F(hxflat_set_test_f, three_way_find_hit_costs_one_comparison) {
-	hxflat_set<hxtest_object, hxthree_way_t<hxtest_object>, hxallocator_dynamic_capacity, hxtrait_three_way> s;
+	hxflat_set<hxtest_object, hxallocator_dynamic_capacity, hxthree_way_t<hxtest_object>, hxtrait_three_way> s;
 	s.reserve(4);
 	const hxtest_object v10(10), v20(20), v30(30);
 	s.insert(v10); s.insert(v20); s.insert(v30);
@@ -820,7 +820,7 @@ TEST_F(hxflat_set_test_f, three_way_find_hit_costs_one_comparison) {
 }
 
 TEST_F(hxflat_set_test_f, three_way_count_insert_erase_unique) {
-	hxflat_set<hxtest_object, hxthree_way_t<hxtest_object>, hxallocator_dynamic_capacity, hxtrait_three_way> s;
+	hxflat_set<hxtest_object, hxallocator_dynamic_capacity, hxthree_way_t<hxtest_object>, hxtrait_three_way> s;
 	s.reserve(4);
 	const hxtest_object v5(5);
 	s.insert(v5);
@@ -836,7 +836,7 @@ TEST_F(hxflat_set_test_f, three_way_count_insert_erase_unique) {
 }
 
 TEST_F(hxflat_set_test_f, three_way_multi_count_and_erase) {
-	hxflat_set<hxtest_object, hxthree_way_t<hxtest_object>, hxallocator_dynamic_capacity, hxtrait_multi | hxtrait_three_way> s;
+	hxflat_multiset<hxtest_object, hxallocator_dynamic_capacity, hxthree_way_t<hxtest_object>, hxtrait_three_way> s;
 	s.reserve(4);
 	const hxtest_object v7a(7), v7b(7), v3(3);
 	s.insert(v7a); s.insert(v7b); s.insert(v3);
@@ -847,7 +847,7 @@ TEST_F(hxflat_set_test_f, three_way_multi_count_and_erase) {
 }
 
 TEST(hxflat_set_test, three_way_int_key_uses_subtraction_fallback) {
-	hxflat_set<int, hxthree_way_t<int>, hxallocator_dynamic_capacity, hxtrait_three_way> s;
+	hxflat_set<int, hxallocator_dynamic_capacity, hxthree_way_t<int>, hxtrait_three_way> s;
 	s.reserve(4);
 	s.insert(31);
 	s.insert(32);

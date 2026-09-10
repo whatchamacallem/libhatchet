@@ -219,7 +219,7 @@ TEST_F(hxfind_if_test_f, iterator_support) {
 }
 
 TEST(hxfind_if_test, flat_map_iterator) {
-	using map_t = hxflat_map<int, int, hxkey_less_t<int>, 4, 0>;
+	using map_t = hxflat_map<int, int, 4>;
 	map_t m;
 	m.insert(1, 10);
 	m.insert(2, 20);
