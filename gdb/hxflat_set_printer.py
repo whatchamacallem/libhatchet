@@ -23,8 +23,8 @@ from typing import Iterator, Optional, Tuple
 #	};
 #	template<typename key_t_,
 #		typename compare_t_=hxkey_less_t<key_t_>,
-#		bool multi_t_=true,
-#		hxsize_t capacity_=hxallocator_dynamic_capacity>
+#		hxsize_t capacity_=hxallocator_dynamic_capacity,
+#		int traits_=0>
 #	class hxflat_set : private hxallocator<key_t_, capacity_> {
 #		// ...
 #		key_t_* m_end_;
@@ -52,7 +52,7 @@ class hxflat_set_printer:
 			return self._summary
 
 		elem_type: gdb.Type = self.val.type.template_argument(0)
-		cap_arg: gdb.Value = self.val.type.template_argument(3)
+		cap_arg: gdb.Value = self.val.type.template_argument(2)
 		type_name: str = re.sub(r'(\w+|\(anonymous namespace\))::', '', f'{self.val.type.strip_typedefs()}')
 
 		capacity: int

@@ -218,9 +218,9 @@ hxinline hxattr_flatten hxsize_t hxflat_map<key_t_, mapped_t_, compare_t_, capac
 	const compare_t comp_;
 	const key_t_* const keys_ = m_keys_.data();
 	const key_t_* const end_ = keys_ + m_size_;
-	hxif_constexpr(!(traits_ & hxtrait_multi)) {
-		return hxlower_bound_search_<hxrange<const key_t_*>, key_t_, compare_t, traits_>(
-			hxmake_range(keys_, end_), key_, comp_).b ? 1 : 0;
+	hxif_constexpr((traits_ & hxtrait_multi) == 0) {
+		return hxbinary_search_<hxrange<const key_t_*>, key_t_, compare_t, traits_>(
+			hxmake_range(keys_, end_), key_, comp_) ? 1 : 0;
 	}
 	else {
 		const key_t_* const it_ = hxlower_bound_position_<hxrange<const key_t_*>, key_t_, compare_t, traits_>(
@@ -237,7 +237,7 @@ hxinline hxattr_flatten auto hxflat_map<key_t_, mapped_t_, compare_t_, capacity_
 	const compare_t comp_;
 	const key_t_* const keys_ = m_keys_.data();
 	const key_t_* const end_ = keys_ + m_size_;
-	hxif_constexpr(!(traits_ & hxtrait_multi)) {
+	hxif_constexpr((traits_ & hxtrait_multi) == 0) {
 		const auto lo_ = hxlower_bound_search_<hxrange<const key_t_*>, key_t_, compare_t, traits_>(
 			hxmake_range(keys_, end_), key_, comp_);
 		const hxsize_t index_ = lo_.a - keys_;
@@ -268,7 +268,7 @@ hxattr_flatten hxsize_t hxflat_map<key_t_, mapped_t_, compare_t_, capacity_, tra
 	const hxsize_t size_ = m_size_;
 	key_t_* hxrestrict k_ = m_keys_.data();
 	key_t_* const end_ = k_ + size_;
-	hxif_constexpr(!(traits_ & hxtrait_multi)) {
+	hxif_constexpr((traits_ & hxtrait_multi) == 0) {
 		const auto lo_ = hxlower_bound_search_<hxrange<key_t_*>, key_t_, compare_t, traits_>(
 			hxmake_range(k_, end_), key_, comp_);
 		if(!lo_.b) { return 0; }
@@ -356,7 +356,7 @@ hxinline hxattr_flatten auto hxflat_map<key_t_, mapped_t_, compare_t_, capacity_
 	const compare_t comp_;
 	const key_t_* const keys_ = m_keys_.data();
 	const key_t_* const end_ = keys_ + m_size_;
-	hxif_constexpr(!(traits_ & hxtrait_multi)) {
+	hxif_constexpr((traits_ & hxtrait_multi) == 0) {
 		const auto lo_ = hxlower_bound_search_<hxrange<const key_t_*>, key_t_, compare_t, traits_>(
 			hxmake_range(keys_, end_), key_, comp_);
 		const hxsize_t index_ = lo_.a - keys_;
@@ -378,7 +378,7 @@ hxinline hxattr_flatten auto hxflat_map<key_t_, mapped_t_, compare_t_, capacity_
 	const compare_t comp_;
 	const key_t_* const keys_ = m_keys_.data();
 	const key_t_* const end_ = keys_ + m_size_;
-	hxif_constexpr(!(traits_ & hxtrait_multi)) {
+	hxif_constexpr((traits_ & hxtrait_multi) == 0) {
 		const auto lo_ = hxlower_bound_search_<hxrange<const key_t_*>, key_t_, compare_t, traits_>(
 			hxmake_range(keys_, end_), key_, comp_);
 		const hxsize_t index_ = lo_.a - keys_;
@@ -452,10 +452,10 @@ hxinline hxattr_flatten auto hxflat_map<key_t_, mapped_t_, compare_t_, capacity_
 #endif // HX_CPLUSPLUS >= 202302L
 
 template<hxflat_map_concept_ key_t_, hxflat_map_concept_ mapped_t_, typename compare_t_, hxsize_t capacity_, int traits_>
-hxinline hxattr_flatten void hxflat_map<key_t_, mapped_t_, compare_t_, capacity_, traits_>::reserve(hxsize_t cap_,
+hxinline hxattr_flatten void hxflat_map<key_t_, mapped_t_, compare_t_, capacity_, traits_>::reserve(hxsize_t size_,
 		hxslab_allocator_t allocator_, hxalignment_t alignment_) noexcept {
-	m_keys_.reserve_storage(cap_, allocator_, alignment_);
-	m_values_.reserve_storage(cap_, allocator_, alignment_);
+	m_keys_.reserve_storage(size_, allocator_, alignment_);
+	m_values_.reserve_storage(size_, allocator_, alignment_);
 }
 
 template<hxflat_map_concept_ key_t_, hxflat_map_concept_ mapped_t_, typename compare_t_, hxsize_t capacity_, int traits_>

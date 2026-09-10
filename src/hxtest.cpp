@@ -180,25 +180,24 @@ static bool hxtest_pattern_match_(const char* pattern, const char* pattern_end,
 }
 
 bool hxtest_::filter_(const char* filter, test_cases_t_& test_cases) {
+	const char* const dash = ::strchr(filter, '-');
+	const char* const positive_end = dash ? dash : (filter + ::strlen(filter));
 	test_cases.erase_if_unordered([&](hxtest_case_* test_case) -> bool {
-		bool selected = true;
-		for(const char* pattern = filter; *pattern != 0; ) {
-			const bool is_negative = *pattern == '-';
-			const char* const pattern_begin = pattern + (is_negative ? 1 : 0);
-			const char* pattern_end = ::strchr(pattern_begin, ':');
-			pattern_end = pattern_end ? pattern_end : (pattern_begin + ::strlen(pattern_begin));
-			const bool matches = hxtest_pattern_match_(pattern_begin, pattern_end, test_case);
-			if(is_negative) {
-				if(matches) {
-					selected = false;
-				}
-			}
-			else {
-				selected = matches;
-			}
+		bool positive_match = filter == positive_end;
+		for(const char* pattern = filter; pattern != positive_end && !positive_match; ) {
+			const char* pattern_end = ::strchr(pattern, ':');
+			pattern_end = (pattern_end && pattern_end < positive_end) ? pattern_end : positive_end;
+			positive_match = hxtest_pattern_match_(pattern, pattern_end, test_case);
 			pattern = pattern_end + (*pattern_end == ':' ? 1 : 0);
 		}
-		return !selected;
+		bool negative_match = false;
+		for(const char* pattern = dash ? dash + 1 : hxnull; pattern && *pattern != 0 && !negative_match; ) {
+			const char* pattern_end = ::strchr(pattern, ':');
+			pattern_end = pattern_end ? pattern_end : (pattern + ::strlen(pattern));
+			negative_match = hxtest_pattern_match_(pattern, pattern_end, test_case);
+			pattern = pattern_end + (*pattern_end == ':' ? 1 : 0);
+		}
+		return !(positive_match && !negative_match);
 	});
 	return !test_cases.empty();
 }
@@ -207,12 +206,14 @@ int hxtest_::run_all_tests_(void) {
 	hxinit(); // GCOVR_EXCL_LINE. RUN_ALL_TESTS could be called first.
 
 	if(hxg_settings.test_filter != hxnull) { // GCOVR_EXCL_LINE
+		// GCOVR_EXCL_START
 		if(!hxtest_::filter_(hxg_settings.test_filter, m_test_cases_)) {
-			// GCOVR_EXCL_START
 			hxlog_warning(
-				"gtest_filter error: Expressions can be chained together with ':'.\n"
-				"\tExamples: suite*, suite.*, suite.case*, suite.case\n"
-				"\t-suite*, -suite.*, -suite.case*, -suite.case\n");
+				"usage: --gtest_filter=\"\" A ':'-separated list of positive patterns optionally\n"
+				"followed by '-' and a ':'-separated list of negative patterns. A test matches\n"
+				"\tif it matches any positive pattern (or the positive list is empty) and no\n"
+				"\tnegative pattern. Examples: suite*, suite.*, suite.case*, suite.case -suite*,\n"
+				"\t-suite.*, suite.*:-suite.case\n");
 			hxassert_always(false, "gtest_filter no matches %s", hxg_settings.test_filter);
 			return 1;
 			// GCOVR_EXCL_STOP

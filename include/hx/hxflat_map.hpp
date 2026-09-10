@@ -514,7 +514,7 @@ public:
 	///   `hxslab_allocator_current`)
 	/// - `alignment` : The alignment for the allocation. (default:
 	///   `hxalignment`)
-	void reserve(hxsize_t cap_,
+	void reserve(hxsize_t size_,
 			hxslab_allocator_t allocator_=hxslab_allocator_current,
 			hxalignment_t alignment_=hxalignment) noexcept;
 
@@ -568,6 +568,16 @@ private:
 	hxallocator<mapped_t_, capacity_> m_values_;
 	/// \endcond
 };
+
+/// `hxflat_multimap` - A `hxflat_map` with `hxtrait_multi` set in `traits`,
+/// allowing multiple elements with equal keys.
+template<hxflat_map_concept_ key_t_,
+	hxflat_map_concept_ mapped_t_,
+	typename compare_t_=hxkey_less_t<key_t_>,
+	hxsize_t capacity_=hxallocator_dynamic_capacity,
+	int traits_=0>
+using hxflat_multimap = hxflat_map<key_t_, mapped_t_, compare_t_, capacity_,
+	traits_ | hxtrait_multi>;
 
 #include "detail/hxflat_map.inl"
 HX_NS_END_

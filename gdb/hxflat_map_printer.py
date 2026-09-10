@@ -24,8 +24,8 @@ from typing import Iterator, Optional, Tuple
 #	template<typename key_t_,
 #		typename mapped_t_,
 #		typename compare_t_=hxkey_less_t<key_t_>,
-#		bool multi_t_=true,
-#		hxsize_t capacity_=hxallocator_dynamic_capacity>
+#		hxsize_t capacity_=hxallocator_dynamic_capacity,
+#		int traits_=0>
 #	class hxflat_map {
 #		// ...
 #		hxsize_t m_size_;
@@ -59,7 +59,7 @@ class hxflat_map_printer:
 
 		key_type: gdb.Type = self.val.type.template_argument(0)
 		mapped_type: gdb.Type = self.val.type.template_argument(1)
-		cap_arg: gdb.Value = self.val.type.template_argument(4)
+		cap_arg: gdb.Value = self.val.type.template_argument(3)
 		type_name: str = re.sub(r'(\w+|\(anonymous namespace\))::', '', f'{self.val.type.strip_typedefs()}')
 
 		capacity: int

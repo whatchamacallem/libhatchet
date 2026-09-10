@@ -112,7 +112,7 @@ hxattr_cold bool hxconsole_command_::execute_(const char* str) const {
 }
 
 hxattr_cold void hxconsole_command_::usage_(const char* id) const {
-	hxlog_console("%s", (id != hxnull) ? id : "usage:");
+	hxlog_console("%s", (id != hxnull) ? id : "usage:"); (void)id;
 	for(const char* const* label = m_labels_; *label != hxnull; ++label) {
 		hxlog_console(" %s", *label);
 	}

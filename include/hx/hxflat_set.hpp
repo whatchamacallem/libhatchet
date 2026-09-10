@@ -270,7 +270,7 @@ public:
 	///   `hxslab_allocator_current`)
 	/// - `alignment` : The alignment for the allocation. (default:
 	///   `hxalignment`)
-	void reserve(hxsize_t cap_,
+	void reserve(hxsize_t size_,
 			hxslab_allocator_t allocator_=hxslab_allocator_current,
 			hxalignment_t alignment_=hxalignment);
 
@@ -313,6 +313,15 @@ private:
 	key_t_* m_end_;
 	/// \endcond
 };
+
+/// `hxflat_multiset` - A `hxflat_set` with `hxtrait_multi` set in `traits`,
+/// allowing multiple elements with equal keys.
+template<hxflat_set_concept_ key_t_,
+	typename compare_t_=hxkey_less_t<key_t_>,
+	hxsize_t capacity_=hxallocator_dynamic_capacity,
+	int traits_=0>
+using hxflat_multiset = hxflat_set<key_t_, compare_t_, capacity_,
+	traits_ | hxtrait_multi>;
 
 #include "detail/hxflat_set.inl"
 HX_NS_END_

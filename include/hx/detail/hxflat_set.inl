@@ -162,8 +162,8 @@ template<hxflat_set_concept_ key_t_, typename compare_t_, hxsize_t capacity_, in
 hxinline hxattr_flatten hxsize_t hxflat_set<key_t_, compare_t_, capacity_, traits_>::count(const key_t_& key_) const {
 	const compare_t comp_;
 	const key_t_* const end_ = m_end_;
-	hxif_constexpr(!(traits_ & hxtrait_multi)) {
-		return hxlower_bound_search_<const hxflat_set&, key_t_, compare_t, traits_>(*this, key_, comp_).b ? 1 : 0;
+	hxif_constexpr((traits_ & hxtrait_multi) == 0) {
+		return hxbinary_search_<const hxflat_set&, key_t_, compare_t, traits_>(*this, key_, comp_) ? 1 : 0;
 	}
 	else {
 		const key_t_* const it_ = hxlower_bound_position_<const hxflat_set&, key_t_, compare_t, traits_>(
@@ -185,7 +185,7 @@ template<hxflat_set_concept_ key_t_, typename compare_t_, hxsize_t capacity_, in
 hxattr_flatten hxsize_t hxflat_set<key_t_, compare_t_, capacity_, traits_>::erase(const key_t_& key_) noexcept {
 	const compare_t comp_;
 	key_t_* end_ = m_end_;
-	hxif_constexpr(!(traits_ & hxtrait_multi)) {
+	hxif_constexpr((traits_ & hxtrait_multi) == 0) {
 		const auto lo_ = hxlower_bound_search_<hxrange<key_t_*>, key_t_, compare_t, traits_>(
 			hxmake_range(this->data(), end_), key_, comp_);
 		if(!lo_.b) { return 0; }
@@ -244,7 +244,7 @@ hxinline hxattr_flatten bool hxflat_set<key_t_, compare_t_, capacity_, traits_>:
 template<hxflat_set_concept_ key_t_, typename compare_t_, hxsize_t capacity_, int traits_>
 hxinline hxattr_flatten auto hxflat_set<key_t_, compare_t_, capacity_, traits_>::insert(const key_t_& key_) noexcept -> const key_t_* {
 	const compare_t comp_;
-	hxif_constexpr(!(traits_ & hxtrait_multi)) {
+	hxif_constexpr((traits_ & hxtrait_multi) == 0) {
 		const auto lo_ = hxlower_bound_search_<hxrange<key_t_*>, key_t_, compare_t, traits_>(
 			hxmake_range(this->data(), m_end_), key_, comp_);
 		if(lo_.b) { return lo_.a; }
@@ -260,7 +260,7 @@ hxinline hxattr_flatten auto hxflat_set<key_t_, compare_t_, capacity_, traits_>:
 template<hxflat_set_concept_ key_t_, typename compare_t_, hxsize_t capacity_, int traits_>
 hxinline hxattr_flatten auto hxflat_set<key_t_, compare_t_, capacity_, traits_>::insert(key_t_&& key_) noexcept -> const key_t_* {
 	const compare_t comp_;
-	hxif_constexpr(!(traits_ & hxtrait_multi)) {
+	hxif_constexpr((traits_ & hxtrait_multi) == 0) {
 		const auto lo_ = hxlower_bound_search_<hxrange<key_t_*>, key_t_, compare_t, traits_>(
 			hxmake_range(this->data(), m_end_), key_, comp_);
 		if(lo_.b) { return lo_.a; }
@@ -309,9 +309,9 @@ hxinline hxattr_flatten auto hxflat_set<key_t_, compare_t_, capacity_, traits_>:
 #endif // HX_CPLUSPLUS >= 202302L
 
 template<hxflat_set_concept_ key_t_, typename compare_t_, hxsize_t capacity_, int traits_>
-hxinline hxattr_flatten void hxflat_set<key_t_, compare_t_, capacity_, traits_>::reserve(hxsize_t cap_,
+hxinline hxattr_flatten void hxflat_set<key_t_, compare_t_, capacity_, traits_>::reserve(hxsize_t size_,
 		hxslab_allocator_t allocator_, hxalignment_t alignment_) {
-	this->reserve_storage(cap_, allocator_, alignment_);
+	this->reserve_storage(size_, allocator_, alignment_);
 	if(m_end_ == hxnull) {
 		m_end_ = this->data();
 	}

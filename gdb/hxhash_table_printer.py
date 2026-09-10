@@ -25,8 +25,8 @@ HXHASH_TABLE_MAX_SORTED_NODES = 1024
 #	};
 #	template<hxhash_table_concept_ node_t_,
 #		typename deleter_t_=hxdefault_delete,
-#		bool multi_t_ = false,
-#		hxhash_t table_size_bits_=hxallocator_dynamic_capacity>
+#		uint32_t table_size_bits_=hxallocator_dynamic_capacity,
+#		int traits_=0>
 #	class hxhash_table : private deleter_t_, private hxhash_table_base_ {
 #		// ...
 #		hxsize_t m_size_;
@@ -34,7 +34,7 @@ HXHASH_TABLE_MAX_SORTED_NODES = 1024
 #	};
 #
 # hxpow2_allocator_ derives from hxallocator<hxhash_node_base*, ...> and holds
-# the bucket array. The fourth template argument table_size_bits_ selects
+# the bucket array. The third template argument table_size_bits_ selects
 # between two layouts. Dynamic layout is selected when table_size_bits_ == 0
 # and the bucket count is m_capacity_. Otherwise the layout is static and the
 # bucket count is 2^table_size_bits_. Each bucket slot is a hxhash_node_base*.
@@ -83,7 +83,7 @@ class hxhash_table_printer:
 		size: int = int(self.val['m_size_'])
 		table: gdb.Value = self.val['m_table_']
 
-		bits_arg: gdb.Value = self.val.type.template_argument(3)
+		bits_arg: gdb.Value = self.val.type.template_argument(2)
 		type_name: str = re.sub(r'(\w+|\(anonymous namespace\))::', '', f'{self.val.type.strip_typedefs()}')
 		bucket_addr: int
 		bucket_count: int

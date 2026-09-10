@@ -65,6 +65,12 @@ auto hxlower_bound_position_(range_t_&& range_, const value_t_& value_, const co
 	return begin_;
 }
 
+// Finds the lower bound and reports whether it holds an element equivalent to
+// value_. Mirrors hxlower_bound_position_'s loop, but takes the found bit from
+// hxcompare_::step at zero extra cost in the three way case, since a "not
+// before" step is the only kind that can converge on the final position and
+// its comparison is already being made. A later "before" step never moves
+// begin_ back to a position this step already ruled out.
 template<typename range_t_, typename value_t_, typename compare_t_, int traits_>
 hxattr_nodiscard hxinline hxconstexpr hxattr_flatten
 auto hxlower_bound_search_(range_t_&& range_, const value_t_& value_, const compare_t_& compare_)
@@ -78,34 +84,35 @@ auto hxlower_bound_search_(range_t_&& range_, const value_t_& value_, const comp
 	while(count_ > hxsize_t{0}) {
 		const hxsize_t step_ = count_ >> 1;
 		const iterator_t_ mid_ = begin_ + step_;
-		bool before_;
-		hxif_constexpr((traits_ & hxtrait_three_way) != 0) {
-			const auto cmp_ = compare_(*mid_, value_);
-			before_ = cmp_ < 0;
-			// Only a "not before" step can narrow down to the final position,
-			// so only that case may report equality. A later "before" step
-			// never moves begin_ back to a position this step already ruled
-			// out.
-			if(!before_) { found_ = cmp_ == 0; }
-		}
-		else {
-			before_ = hxcompare_<false>::before(compare_, *mid_, value_);
-		}
-		if(before_) {
+		const hxpair<bool, bool> cmp_ = hxcompare_<(traits_ & hxtrait_three_way) != 0>::step(compare_, *mid_, value_);
+		if(cmp_.a) {
 			begin_ = mid_ + hxsize_t{1};
 			count_ -= step_ + hxsize_t{1};
 		}
 		else {
+			found_ = cmp_.b;
 			count_ = step_;
 		}
 	}
 	hxif_constexpr((traits_ & hxtrait_three_way) == 0) {
-		found_ = begin_ != end_ && hxcompare_<(traits_ & hxtrait_three_way) != 0>::equal(compare_, value_, *begin_);
+		found_ = begin_ != end_ && hxcompare_<false>::equal(compare_, value_, *begin_);
 	}
 	else {
-		found_ = found_ && begin_ != end_;
+		// A "not before" step is the only kind that can leave begin_ at the
+		// converged position with found_ true, and it never leaves begin_ at
+		// end_.
+		found_ = found_ && begin_ != end_; // GCOVR_EXCL_BR_LINE
 	}
 	return { begin_, found_ };
+}
+
+// Reports whether the range holds an element equivalent to value_, without
+// reporting the position of the lower bound.
+template<typename range_t_, typename value_t_, typename compare_t_, int traits_>
+hxattr_nodiscard hxinline hxconstexpr hxattr_flatten
+bool hxbinary_search_(range_t_&& range_, const value_t_& value_, const compare_t_& compare_) {
+	return hxlower_bound_search_<range_t_, value_t_, compare_t_, traits_>(
+		hxforward<range_t_>(range_), value_, compare_).b;
 }
 
 // hxupper_bound_ shares hxrange.hpp's public hxupper_bound algorithm, but

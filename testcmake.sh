@@ -83,20 +83,20 @@ $16 = [8/8] hxdeque<hxtest_object, 0> = {[64B dynamic], { state=valid, value=4 }
 $17 = [1] const hxexpected<int, bool> = {hxallocator = [4B static], value = 34, error = false}
 $18 = [0] const hxexpected<int, bool> = {hxallocator = [4B static], error = true}
 $19 = [0] const hxexpected<int, int> = {hxallocator = [4B static], error = 31}
-$20 = [3/4] const hxflat_map<hxtest_object, hxtest_object, hxkey_less_t<hxtest_object, void>, false, 4, false> = {[32B static], [32B static], { state=valid, value=10 }, { state=valid, value=20 }, { state=valid, value=30 }}
-$21 = [3/3] const hxflat_map<hxtest_object, hxtest_object, hxkey_less_t<hxtest_object, void>, true, 0, false> = {[24B dynamic], [24B dynamic], { state=valid, value=10 }, { state=valid, value=20 }, { state=valid, value=30 }}
-$22 = [0/0] const hxflat_map<hxtest_object, hxtest_object, hxkey_less_t<hxtest_object, void>, true, 0, false>
-$23 = [0/4] hxflat_map<hxtest_object, hxtest_object, hxkey_less_t<hxtest_object, void>, true, 0, false> = {[32B dynamic], [32B dynamic]}
-$24 = [3/4] const hxflat_set<hxtest_object, hxkey_less_t<hxtest_object, void>, false, 4, false> = {[32B static], { state=valid, value=10 }, { state=valid, value=20 }, { state=valid, value=30 }}
-$25 = [3/3] const hxflat_set<hxtest_object, hxkey_less_t<hxtest_object, void>, true, 0, false> = {[24B dynamic], { state=valid, value=10 }, { state=valid, value=20 }, { state=valid, value=30 }}
-$26 = [0/0] const hxflat_set<hxtest_object, hxkey_less_t<hxtest_object, void>, true, 0, false>
-$27 = [0/8] hxflat_set<hxtest_object, hxkey_less_t<hxtest_object, void>, true, 0, false> = {[64B dynamic]}
+$20 = [3/4] const hxflat_map<hxtest_object, hxtest_object, hxkey_less_t<hxtest_object, void>, 4, 0> = {[32B static], [32B static], { state=valid, value=10 }, { state=valid, value=20 }, { state=valid, value=30 }}
+$21 = [3/3] const hxflat_map<hxtest_object, hxtest_object, hxkey_less_t<hxtest_object, void>, 0, 1> = {[24B dynamic], [24B dynamic], { state=valid, value=10 }, { state=valid, value=20 }, { state=valid, value=30 }}
+$22 = [0/0] const hxflat_map<hxtest_object, hxtest_object, hxkey_less_t<hxtest_object, void>, 0, 1>
+$23 = [0/4] hxflat_map<hxtest_object, hxtest_object, hxkey_less_t<hxtest_object, void>, 0, 1> = {[32B dynamic], [32B dynamic]}
+$24 = [3/4] const hxflat_set<hxtest_object, hxkey_less_t<hxtest_object, void>, 4, 0> = {[32B static], { state=valid, value=10 }, { state=valid, value=20 }, { state=valid, value=30 }}
+$25 = [3/3] const hxflat_set<hxtest_object, hxkey_less_t<hxtest_object, void>, 0, 1> = {[24B dynamic], { state=valid, value=10 }, { state=valid, value=20 }, { state=valid, value=30 }}
+$26 = [0/0] const hxflat_set<hxtest_object, hxkey_less_t<hxtest_object, void>, 0, 1>
+$27 = [0/8] hxflat_set<hxtest_object, hxkey_less_t<hxtest_object, void>, 0, 1> = {[64B dynamic]}
 $28 = [2/3] hxhandle_table<hxtest_object, hxdefault_delete, 2> = {[1] = { state=valid, value=0 }, [3] = { state=valid, value=2 }}
 $29 = [0/0] const hxhandle_table<hxtest_object, hxdefault_delete, 0>
-$30 = [39/32 buckets] hxhash_table<hxtest_object_node, hxdefault_delete, true, 0> = {[256B dynamic], { state=valid, value=57 }, { state=valid, value=39 }, { state=valid, value=61 }, { state=valid, value=67 }, { state=valid, value=55 }, { state=valid, value=48 }, { state=valid, value=45 }, { state=valid, value=75 }, { state=valid, value=60 }, { state=valid, value=64 }, { state=valid, value=72 }, { state=valid, value=56 }, { state=valid, value=59 }, { state=valid, value=66 }, { state=valid, value=42 }, { state=valid, value=63 }, { state=valid, value=44 }, { state=valid, value=62 }, { state=valid, value=53 }, { state=valid, value=58 }, { state=valid, value=73 }, { state=valid, value=71 }, { state=valid, value=40 }, { state=valid, value=52 }, { state=valid, value=46 }, { state=valid, value=68 }, { state=valid, value=41 }, { state=valid, value=65 }, { state=valid, value=51 }, { state=valid, value=70 }, { state=valid, value=76 }, { state=valid, value=77 }, { state=valid, value=49 }, { state=valid, value=69 }, { state=valid, value=43 }, { state=valid, value=54 }, { state=valid, value=47 }, { state=valid, value=50 }, { state=valid, value=74 }}
-$31 = [0/0 buckets] const hxhash_table<hxtest_set_node_t, hxdo_not_delete, false, 0>
-$32 = [1/2 buckets] hxhash_table<hxtest_set_node_t, hxdo_not_delete, false, 0> = {[16B dynamic], 31}
-$33 = [1/2 buckets] hxhash_table<hxtest_map_node_t, hxdo_not_delete, false, 1> = {["hxallocator"] = [16B static], [31] = 32}
+$30 = [39/32 buckets] hxhash_table<hxtest_object_node, hxdefault_delete, 0, 1> = {[256B dynamic], { state=valid, value=57 }, { state=valid, value=39 }, { state=valid, value=61 }, { state=valid, value=67 }, { state=valid, value=55 }, { state=valid, value=48 }, { state=valid, value=45 }, { state=valid, value=75 }, { state=valid, value=60 }, { state=valid, value=64 }, { state=valid, value=72 }, { state=valid, value=56 }, { state=valid, value=59 }, { state=valid, value=66 }, { state=valid, value=42 }, { state=valid, value=63 }, { state=valid, value=44 }, { state=valid, value=62 }, { state=valid, value=53 }, { state=valid, value=58 }, { state=valid, value=73 }, { state=valid, value=71 }, { state=valid, value=40 }, { state=valid, value=52 }, { state=valid, value=46 }, { state=valid, value=68 }, { state=valid, value=41 }, { state=valid, value=65 }, { state=valid, value=51 }, { state=valid, value=70 }, { state=valid, value=76 }, { state=valid, value=77 }, { state=valid, value=49 }, { state=valid, value=69 }, { state=valid, value=43 }, { state=valid, value=54 }, { state=valid, value=47 }, { state=valid, value=50 }, { state=valid, value=74 }}
+$31 = [0/0 buckets] const hxhash_table<hxtest_set_node_t, hxdo_not_delete, 0, 0>
+$32 = [1/2 buckets] hxhash_table<hxtest_set_node_t, hxdo_not_delete, 0, 0> = {[16B dynamic], 31}
+$33 = [1/2 buckets] hxhash_table<hxtest_map_node_t, hxdo_not_delete, 1, 0> = {["hxallocator"] = [16B static], [31] = 32}
 $34 = [0] const hxlist<hxtest_list_pair_node_t, hxdo_not_delete>
 $35 = [1] hxlist<hxtest_list_pair_node_t, hxdo_not_delete> = {31, 32}
 $36 = [3] hxlist<hxtest_list_object_node_t, hxdo_not_delete> = {{ state=valid, value=1 }, { state=valid, value=2 }, { state=valid, value=3 }}

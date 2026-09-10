@@ -191,7 +191,7 @@ template<hxhash_table_concept_ node_t_, typename deleter_t_, uint32_t table_size
 hxinline hxattr_flatten hxsize_t hxhash_table<node_t_, deleter_t_, table_size_bits_, traits_>::count(
 		const typename node_t_::key_t& key_) const {
 	const hxhash_t hash_ = node_t_::hash_value(key_);
-	hxif_constexpr(!(traits_ & hxtrait_multi)) {
+	hxif_constexpr((traits_ & hxtrait_multi) == 0) {
 		for(const node_t_* node_ = static_cast<const node_t_*>(*this->get_bucket_head_(hash_)); node_;
 				node_ = static_cast<const node_t_*>(node_->hash_next)) {
 			hxif_constexpr((traits_ & hxtrait_three_way) != 0) {
@@ -227,7 +227,7 @@ hxinline hxattr_flatten hxsize_t hxhash_table<node_t_, deleter_t_, table_size_bi
 		const typename node_t_::key_t& key_, deleter_u_&& deleter_) noexcept {
 	const hxhash_t hash_ = node_t_::hash_value(key_);
 	hxhash_node_base** const head_ = this->get_bucket_head_(hash_);
-	hxif_constexpr(!(traits_ & hxtrait_multi)) {
+	hxif_constexpr((traits_ & hxtrait_multi) == 0) {
 		hxhash_node_base* const node_ = this->chain_extract_(head_, &key_, &hxhash_equal_trampoline_<node_t_, traits_>);
 		if(node_ == hxnull) {
 			return 0;
@@ -365,7 +365,7 @@ hxhash_table<node_t_, deleter_t_, table_size_bits_, traits_>::insert(node_t_* pt
 	hxassertf([&]{ const iterator found_ = this->find(ptr_->hash_key());
 		return found_ == this->end() || &*found_ != ptr_; }(), "reinsert_err");
 	hxhash_node_base** const head_ = this->get_bucket_head_(ptr_->hash_value());
-	hxif_constexpr(!(traits_ & hxtrait_multi)) {
+	hxif_constexpr((traits_ & hxtrait_multi) == 0) {
 		for(node_t_* existing_ = static_cast<node_t_*>(*head_); existing_;
 				existing_ = static_cast<node_t_*>(existing_->hash_next)) {
 			hxif_constexpr((traits_ & hxtrait_three_way) != 0) {
@@ -395,7 +395,7 @@ hxhash_table<node_t_, deleter_t_, table_size_bits_, traits_>::insert(hxptr<node_
 	hxassertf([&]{ const iterator found_ = this->find(raw_->hash_key());
 		return found_ == this->end() || &*found_ != raw_; }(), "reinsert_err");
 	hxhash_node_base** const head_ = this->get_bucket_head_(raw_->hash_value());
-	hxif_constexpr(!(traits_ & hxtrait_multi)) {
+	hxif_constexpr((traits_ & hxtrait_multi) == 0) {
 		for(node_t_* existing_ = static_cast<node_t_*>(*head_); existing_;
 				existing_ = static_cast<node_t_*>(existing_->hash_next)) {
 			hxif_constexpr((traits_ & hxtrait_three_way) != 0) {
