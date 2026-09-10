@@ -14,6 +14,7 @@
 #endif
 
 #include "hxallocator.hpp"
+#include "hxinitializer_list.hpp"
 #include "hxrange.hpp"
 #include "hxutility.h"
 
@@ -154,6 +155,10 @@ public:
 	/// - `dynamic_capacity` : Element capacity for dynamic storage.
 	explicit hxdeque(hxsize_t dynamic_capacity_=0);
 
+	/// Construct with an `std::initializer_list`.
+	template<typename other_value_t_>
+	hxdeque(std::initializer_list<other_value_t_> x_) noexcept;
+
 	/// Destroys all elements in the deque.
 	~hxdeque(void);
 
@@ -223,6 +228,13 @@ public:
 
 	iterator end(void) { return iterator(this, this->size()); }
 
+	/// Returns a `const_iterator` to the first element equal to `value`, or
+	/// `end()`.
+	/// - `value` : The value to search for.
+	hxattr_nodiscard const_iterator find(const T_& value_) const;
+
+	hxattr_nodiscard iterator find(const T_& value_);
+
 	/// Returns a reference to the front element. The deque must not be empty.
 	hxattr_nodiscard T_& front(void);
 
@@ -259,6 +271,9 @@ public:
 
 	/// Returns the number of elements currently in the deque.
 	hxattr_nodiscard hxsize_t size(void) const;
+
+	/// Swaps the contents with `x` when dynamically allocated.
+	void swap(hxdeque& x_) noexcept;
 
 private:
 	// This is raw underlying data and would not be what was expected.
