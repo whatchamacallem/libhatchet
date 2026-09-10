@@ -86,17 +86,19 @@ TEST(hxconsole_test, register_command_replaces_duplicate) {
 
 #if !(HX_USE_GOOGLE_TEST)
 TEST(hxtest_main, filter) {
-	static const hxpair<hxsize_t, const char*> cases[] = {
+	const hxsize_t total = hxdetail_::hxtest_::dispatcher_().test_cases_().size();
+
+	const hxpair<hxsize_t, const char*> cases[] = {
 		{ 1, "hxtest_main.filter" },
 		{ 0, "hxtest_main.filte1" },
 		{ 1, "hxtest_main.filter*" },
 		{ 0, "hxtest_main.filterx*" },
 		{ 1, "hxtest_main.f*r" },
 		{ 0, "hxtest_main.f*x" },
-		{ 1, "*" },
+		{ total, "*" }, // GCOVR_EXCL_LINE
 		{ 1, "suite47:hxtest_main.filter" },
 		{ 0, "hxtest_main.filte1:suite47" },
-		{ 1, "-suite47" },
+		{ total, "-suite47" }, // GCOVR_EXCL_LINE
 		{ 1, "hxtest_main.filter*-suite47*" },
 		{ 0, "hxtest_main.filter-*" },
 		{ 0, "hxtest_main.filter::suite47" },
@@ -107,12 +109,14 @@ TEST(hxtest_main, filter) {
 		{ 0, ":" },
 	};
 
-	const hxslab_allocator_scope stack_0(hxslab_allocator_stack_0);
+	const hxslab_allocator_scope stack_1(hxslab_allocator_stack_0);
 	hxvector<hxdetail_::hxtest_case_*> copy; copy.reserve(HX_TEST_MAX_CASES);
 
 	for(hxsize_t i = 0; i < hxsize(cases); ++i) {
 		copy = hxdetail_::hxtest_::dispatcher_().test_cases_();
-		EXPECT_EQ(hxdetail_::hxtest_::filter_(cases[i].b, copy), cases[i].a);
+		hxdetail_::hxtest_case_** const new_end = hxdetail_::hxtest_::filter_(
+			cases[i].b, copy.begin(), copy.end());
+		EXPECT_EQ(static_cast<hxsize_t>(new_end - copy.begin()), cases[i].a);
 	}
 }
 
