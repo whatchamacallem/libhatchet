@@ -33,7 +33,9 @@ be exploratory. Make a checklist for any multi-step task. E.g. when a change
 touches two different places.
 
 If the prompt is only an error message or warning assume it is a request to have
-the error fixed.
+the error fixed. When asked to undo changes or take a different approach then
+restore existing code as faithfully as possible and make only the required
+changes.
 
 Instead of tracing manually, the expected values for a number of `check_stats`
 calls can be found in a single run. These must be monitored for optimal
@@ -73,7 +75,9 @@ functionality is often available. Prefer `hxsize_t` which is an alias for
 `ptrdiff_t` for sizes and array indexing as it is advantageous to the optimizer.
 
 Prefer methods that have already been added to a class over using the equivalent
-in `<hx/hxalgortims.hpp>`.
+in `<hx/hxrange.hpp>`. Any helper function, using clause, typedef or utility
+class that is not absolutely required will have to be manually inlined. One of
+the main selling points of this codebase is simple compiler errors.
 
 Do not use C++ exceptions, RTTI or assume asserts are enabled. Check when adding
 includes whether they are redundant and write them as `<stdio.h>` not
