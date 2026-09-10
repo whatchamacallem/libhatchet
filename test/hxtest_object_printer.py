@@ -13,8 +13,11 @@ class hxtest_object_printer:
 	def to_string(self) -> str:
 		try:
 			state: str = str(self.val['m_state']).rsplit('::', 1)[-1]
+			if state != 'valid':
+				return f'{{ state={state} }}'
 			value: int = int(self.val['m_value'])
-			return f'{{ state={state}, value={value} }}'
+			ticket: int = int(self.val['m_ticket'])
+			return f'{{ value={value}, ticket={ticket} }}'
 		except Exception:
 			error: str = f'{traceback.format_exc()}'
 			return error.split('\n', 1)[1]
