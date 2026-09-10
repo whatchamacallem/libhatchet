@@ -94,7 +94,7 @@ TEST_F(hxmonadic_test_f, hxflat_set_and_then) {
 	EXPECT_EQ(*s.and_then(hxtest_object(31), hxmake_ptr<const hxtest_object>), 31);
 	EXPECT_FALSE((bool)s.and_then(hxtest_object(32), hxmake_expected<hxtest_object>));
 	EXPECT_EQ(s.and_then(hxtest_object(32), hxmake_expected<hxtest_object>).value_or(missing), 32);
-	EXPECT_TRUE(check_stats(16, 14, 0, 10, 5, 1, 0, 0, 1, 12, 0));
+	EXPECT_TRUE(check_stats(16, 14, 0, 10, 5, 1, 0, 0, 1, 0, 7));
 }
 
 TEST_F(hxmonadic_test_f, hxflat_set_or_else) {
@@ -102,7 +102,7 @@ TEST_F(hxmonadic_test_f, hxflat_set_or_else) {
 	s.emplace(31);
 	EXPECT_EQ(*s.or_else(hxtest_object(31), [&]{ return s.end(); }), 31);
 	EXPECT_EQ(*s.or_else(hxtest_object(32), [&]{ return s.keys(); }), 31);
-	EXPECT_TRUE(check_stats(4, 3, 0, 3, 0, 1, 0, 0, 0, 3, 0));
+	EXPECT_TRUE(check_stats(4, 3, 0, 3, 0, 1, 0, 0, 0, 0, 2));
 }
 
 TEST_F(hxmonadic_test_f, hxflat_set_value_or) {
@@ -111,7 +111,7 @@ TEST_F(hxmonadic_test_f, hxflat_set_value_or) {
 	const hxtest_object missing(32);
 	EXPECT_EQ(s.value_or(hxtest_object(31), missing), 31);
 	EXPECT_EQ(s.value_or(hxtest_object(32), missing), 32);
-	EXPECT_TRUE(check_stats(7, 5, 0, 4, 2, 1, 0, 0, 0, 3, 0));
+	EXPECT_TRUE(check_stats(7, 5, 0, 4, 2, 1, 0, 0, 0, 0, 2));
 }
 
 TEST_F(hxmonadic_test_f, hxflat_map_and_then) {
@@ -124,7 +124,7 @@ TEST_F(hxmonadic_test_f, hxflat_map_and_then) {
 	EXPECT_EQ(*m.and_then(hxtest_object(1), hxmake_ptr<hxtest_object>), 31);
 	EXPECT_FALSE((bool)m.and_then(hxtest_object(2), hxmake_expected<hxtest_object>));
 	EXPECT_EQ(m.and_then(hxtest_object(2), hxmake_expected<hxtest_object>).value_or(hxtest_object(32)), 32);
-	EXPECT_TRUE(check_stats(19, 17, 0, 11, 5, 3, 0, 0, 1, 12, 0));
+	EXPECT_TRUE(check_stats(19, 17, 0, 11, 5, 3, 0, 0, 1, 0, 7));
 }
 
 TEST_F(hxmonadic_test_f, hxflat_map_or_else) {
@@ -132,7 +132,7 @@ TEST_F(hxmonadic_test_f, hxflat_map_or_else) {
 	m.emplace(hxtest_object(1), hxtest_object(31));
 	EXPECT_EQ((*m.or_else(hxtest_object(1), [&]{ return m.end(); })).value, 31);
 	EXPECT_EQ((*m.or_else(hxtest_object(2), [&]{ return m.begin(); })).value, 31);
-	EXPECT_TRUE(check_stats(7, 5, 0, 4, 1, 2, 0, 0, 0, 3, 0));
+	EXPECT_TRUE(check_stats(7, 5, 0, 4, 1, 2, 0, 0, 0, 0, 2));
 }
 
 TEST_F(hxmonadic_test_f, hxflat_map_value_or) {
@@ -140,7 +140,7 @@ TEST_F(hxmonadic_test_f, hxflat_map_value_or) {
 	m.emplace(hxtest_object(1), hxtest_object(31));
 	EXPECT_EQ(m.value_or(hxtest_object(1), hxtest_object(32)), 31);
 	EXPECT_EQ(m.value_or(hxtest_object(2), hxtest_object(32)), 32);
-	EXPECT_TRUE(check_stats(11, 9, 0, 6, 2, 3, 0, 0, 0, 3, 0));
+	EXPECT_TRUE(check_stats(11, 9, 0, 6, 2, 3, 0, 0, 0, 0, 2));
 }
 
 TEST_F(hxmonadic_test_f, hxhash_table_and_then) {

@@ -111,12 +111,13 @@ protected:
 ///
 /// When `traits & hxtrait_multi` is unset duplicate keys are rejected and
 /// `insert` returns an iterator to the existing element. When set, duplicate
-/// keys are always inserted. `compare_t` defaults to `hxkey_less_t`, a
-/// callable with signature `bool(const key_t_&, const key_t_&)` returning true
-/// when the first argument is ordered before the second. Passing
-/// `hxthree_way_t` and setting `hxtrait_three_way` in `traits` selects a
-/// three-way `compare_t` instead, returning a value less than, equal to, or
-/// greater than zero.
+/// keys are always inserted. `compare_t` defaults to `hxthree_way_t`, a
+/// callable with signature returning a value less than, equal to, or greater
+/// than zero, and `traits` defaults to `hxtrait_three_way`. Passing
+/// `hxkey_less_t` and clearing `hxtrait_three_way` in `traits` selects a
+/// strict weak order `compare_t` instead, with signature
+/// `bool(const key_t_&, const key_t_&)` returning true when the first
+/// argument is ordered before the second.
 ///
 /// When `capacity` is `hxallocator_dynamic_capacity` storage must be allocated
 /// by calling `reserve` before inserting elements. Otherwise the arrays are
@@ -137,8 +138,8 @@ protected:
 template<hxflat_map_concept_ key_t_,
 	hxflat_map_concept_ mapped_t_,
 	hxsize_t capacity_=hxallocator_dynamic_capacity,
-	typename compare_t_=hxkey_less_t<key_t_>,
-	int traits_=0>
+	typename compare_t_=hxthree_way_t<key_t_>,
+	int traits_=hxtrait_three_way>
 class hxflat_map {
 public:
 	using key_t = key_t_;
@@ -573,7 +574,7 @@ private:
 /// allowing multiple elements with equal keys.
 template<hxflat_map_concept_ key_t_, hxflat_map_concept_ mapped_t_,
 	hxsize_t capacity_=hxallocator_dynamic_capacity,
-	typename compare_t_=hxkey_less_t<key_t_>, int traits_=0>
+	typename compare_t_=hxthree_way_t<key_t_>, int traits_=hxtrait_three_way>
 using hxflat_multimap = hxflat_map<key_t_, mapped_t_, capacity_, compare_t_,
 	traits_ | hxtrait_multi>;
 

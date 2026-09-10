@@ -92,13 +92,6 @@ auto hxlower_bound_pair_(range_t_&& range_, const value_t_& value_, const compar
 	hxif_constexpr((traits_ & hxtrait_three_way) == 0) {
 		found_ = begin_ != end_ && hxcompare_<false>::equal(compare_, value_, *begin_);
 	}
-	else {
-		// A "not before" step is the only kind that can leave begin_ at the
-		// converged position with found_ true, and it never leaves begin_ at
-		// end_.
-		// TODO: Report to user why this has coverage issues.
-		found_ = found_ && begin_ != end_;
-	}
 	return { begin_, found_ };
 }
 
