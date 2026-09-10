@@ -221,37 +221,40 @@ static bool hxtest_pattern_list_match_(const char* list, const char* list_end,
 	}
 }
 
-hxsize_t hxtest_::filter_(const char* filter, test_cases_t_& test_cases) {
-	// The '-' delimits the positive and negative pattern lists and is not
-	// itself part of either list. An empty positive list (Including one
-	// implied by a leading '-') matches every test case.
+hxtest_case_** hxtest_::filter_(const char* filter, hxtest_case_** begin, hxtest_case_** end) {
+	// See the test case for examples of this subset of Google Test.
 	const char* const dash = static_cast<const char*>(::memchr(filter, '-', ::strlen(filter)));
 	const char* const positive = filter;
 	const char* const positive_end = dash ? dash : (filter + ::strlen(filter));
 	const char* const negative = dash ? dash + 1 : hxnull;
-	const char* const negative_end = dash ? (filter + ::strlen(filter)) : hxnull;
+	const char* const negative_end = dash ? (negative + ::strlen(negative)) : hxnull;
 
 	const bool positive_is_empty = positive == positive_end;
 	const bool positive_is_valid = positive_is_empty || hxtest_pattern_list_valid_(positive, positive_end);
 	const bool negative_is_valid = negative && hxtest_pattern_list_valid_(negative, negative_end);
 
-	test_cases.erase_if_unordered([&](hxtest_case_* test_case) -> bool {
-		if(!positive_is_valid || (negative && !negative_is_valid)) {
-			return true;
-		}
+	if(!positive_is_valid || (negative && !negative_is_valid)) {
+		return begin;
+	}
 
+	for(hxtest_case_** it = begin; it != end; ) {
 		char target[HX_MAX_LINE];
 		const int written = ::snprintf(target, HX_MAX_LINE, "%s.%s",
-			test_case->m_suite_, test_case->m_case_);
+			(*it)->m_suite_, (*it)->m_case_);
 		hxassert_always(written >= 0 && written < HX_MAX_LINE, "test_name_too_long %s", filter);
 
 		const bool positive_match = positive_is_empty ||
 			hxtest_pattern_list_match_(positive, positive_end, target);
 		const bool negative_match = negative &&
 			hxtest_pattern_list_match_(negative, negative_end, target);
-		return !(positive_match && !negative_match);
-	});
-	return test_cases.size();
+
+		if(!(positive_match && !negative_match)) {
+			*it = *--end;
+			continue;
+		}
+		++it;
+	}
+	return end;
 }
 
 int hxtest_::run_all_tests_(void) {
@@ -259,7 +262,10 @@ int hxtest_::run_all_tests_(void) {
 
 	if(hxg_settings.test_filter != hxnull) { // GCOVR_EXCL_LINE
 		// GCOVR_EXCL_START
-		if(!hxtest_::filter_(hxg_settings.test_filter, m_test_cases_)) {
+		hxtest_case_** const new_end = hxtest_::filter_(
+			hxg_settings.test_filter, m_test_cases_.begin(), m_test_cases_.end());
+		m_test_cases_.resize(static_cast<hxsize_t>(new_end - m_test_cases_.begin()));
+		if(m_test_cases_.empty()) {
 			hxlog_warning(
 				"usage: --gtest_filter=\"\" A ':'-separated list of positive patterns optionally\n"
 				"followed by '-' and a ':'-separated list of negative patterns. A test matches\n"
@@ -268,8 +274,8 @@ int hxtest_::run_all_tests_(void) {
 				"\t-suite.*, suite.*:-suite.case\n");
 			hxassert_always(false, "gtest_filter no matches %s", hxg_settings.test_filter);
 			return 1;
-			// GCOVR_EXCL_STOP
 		}
+		// GCOVR_EXCL_STOP
 	}
 
 	hxlog_console("[==========] Running tests: %s\n", // GCOVR_EXCL_LINE

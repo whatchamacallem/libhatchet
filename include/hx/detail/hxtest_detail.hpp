@@ -60,11 +60,11 @@ public:
 
 	const test_cases_t_& test_cases_(void) const;
 
-	// Assert callback used by macros.
 	void condition_check_(bool condition_, const char* file_, int line_,
 		const char* message_, bool is_assert_) hxattr_nonnull(3,5);
 
-	static hxsize_t filter_(const char* filter_, test_cases_t_& test_cases_) hxattr_nonnull(1);
+	static hxtest_case_** filter_(const char* filter_,
+		hxtest_case_** begin_, hxtest_case_** end_) hxattr_nonnull(1,2,3);
 
 	int run_all_tests_(void);
 
