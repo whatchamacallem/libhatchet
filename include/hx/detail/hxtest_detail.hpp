@@ -63,7 +63,7 @@ public:
 	void condition_check_(bool condition_, const char* file_, int line_,
 		const char* message_, bool is_assert_) hxattr_nonnull(3,5);
 
-	static bool filter_(const char* filter_, test_cases_t_& test_cases_) hxattr_nonnull(1);
+	static hxsize_t filter_(const char* filter_, test_cases_t_& test_cases_) hxattr_nonnull(1);
 
 	int run_all_tests_(void);
 

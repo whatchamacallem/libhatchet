@@ -416,10 +416,10 @@ constexpr hxremove_reference_t<T_>&& hxmove(T_&& t_) {
 	return static_cast<hxremove_reference_t<T_>&&>(t_);
 }
 
-/// `hxpair` - A pair of public fields `a` and `b`.
+/// `hxpair` - Provides C-style construction of a pair of public fields `a` and
+/// `b`. Avoid API use and prefer `hxexpected`.
 template<typename a_t_, typename b_t_> class hxpair {
 public:
-
 	/// The type of the first value.
 	using a_t = a_t_;
 	/// The type of the second value.

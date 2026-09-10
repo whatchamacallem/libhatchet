@@ -7,6 +7,7 @@
 #include "../include/hx/hxprofiler.hpp"
 
 #include <math.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 HX_NS_BEGIN_
@@ -151,55 +152,106 @@ void hxtest_::condition_check_(bool condition, const char* file, int line,
 }
 
 // hxtest_pattern_match_ - Internal. See hxtest::run_all_tests_ usage message.
-// A bare "*" pattern with nothing before it is not supported.
+// Matches "*" as a wildcard for any run of characters, anywhere in a glob
+// pattern, against the target string.
 static bool hxtest_pattern_match_(const char* pattern, const char* pattern_end,
-		const hxtest_case_* test_case) {
-	if(pattern == pattern_end || *pattern == '*') {
-		return false;
-	}
-	const char* target = test_case->m_suite_;
-	bool in_case = false;
-	for(; pattern != pattern_end; ++pattern) {
-		if(*pattern == '*' && pattern + 1 == pattern_end) {
-			return true;
-		}
-		if(!in_case && *target == 0) {
-			in_case = true;
-			target = test_case->m_case_;
-			if(*pattern != '.') {
-				return false;
-			}
+		const char* target) {
+	const char* star_pattern = hxnull;
+	const char* star_target = hxnull;
+	for(;;) {
+		if(pattern != pattern_end && *pattern == '*') {
+			star_pattern = ++pattern;
+			star_target = target;
 			continue;
 		}
-		if(*pattern != *target) {
-			return false;
+		if(*target != 0 && pattern != pattern_end && *pattern == *target) {
+			++pattern;
+			++target;
+			continue;
 		}
-		++target;
+		if(*target == 0) {
+			return pattern == pattern_end;
+		}
+		if(star_pattern != hxnull) {
+			pattern = star_pattern;
+			target = ++star_target;
+			continue;
+		}
+		return false;
 	}
-	return in_case && *target == 0;
 }
 
-bool hxtest_::filter_(const char* filter, test_cases_t_& test_cases) {
-	const char* const dash = ::strchr(filter, '-');
+// hxtest_pattern_list_valid_ - Internal. A ':'-separated list of patterns in
+// [list, list_end) is valid when list is non-empty and every ':'-separated
+// pattern in it is non-empty. A spurious ':' with an empty pattern on either
+// side is a parse error.
+static bool hxtest_pattern_list_valid_(const char* list, const char* list_end) {
+	if(list == list_end) {
+		return false;
+	}
+	for(const char* pattern = list; ; ) {
+		const char* pattern_end = static_cast<const char*>(::memchr(pattern, ':',
+			static_cast<size_t>(list_end - pattern)));
+		pattern_end = pattern_end ? pattern_end : list_end;
+		if(pattern == pattern_end) {
+			return false;
+		}
+		if(pattern_end == list_end) {
+			return true;
+		}
+		pattern = pattern_end + 1;
+	}
+}
+
+// hxtest_pattern_list_match_ - Internal. Checks a valid ':'-separated list of
+// glob patterns in [list, list_end) against target.
+static bool hxtest_pattern_list_match_(const char* list, const char* list_end,
+		const char* target) {
+	for(const char* pattern = list; ; ) {
+		const char* pattern_end = static_cast<const char*>(::memchr(pattern, ':',
+			static_cast<size_t>(list_end - pattern)));
+		pattern_end = pattern_end ? pattern_end : list_end;
+		if(hxtest_pattern_match_(pattern, pattern_end, target)) {
+			return true;
+		}
+		if(pattern_end == list_end) {
+			return false;
+		}
+		pattern = pattern_end + 1;
+	}
+}
+
+hxsize_t hxtest_::filter_(const char* filter, test_cases_t_& test_cases) {
+	// The '-' delimits the positive and negative pattern lists and is not
+	// itself part of either list. An empty positive list (Including one
+	// implied by a leading '-') matches every test case.
+	const char* const dash = static_cast<const char*>(::memchr(filter, '-', ::strlen(filter)));
+	const char* const positive = filter;
 	const char* const positive_end = dash ? dash : (filter + ::strlen(filter));
+	const char* const negative = dash ? dash + 1 : hxnull;
+	const char* const negative_end = dash ? (filter + ::strlen(filter)) : hxnull;
+
+	const bool positive_is_empty = positive == positive_end;
+	const bool positive_is_valid = positive_is_empty || hxtest_pattern_list_valid_(positive, positive_end);
+	const bool negative_is_valid = negative && hxtest_pattern_list_valid_(negative, negative_end);
+
 	test_cases.erase_if_unordered([&](hxtest_case_* test_case) -> bool {
-		bool positive_match = filter == positive_end;
-		for(const char* pattern = filter; pattern != positive_end && !positive_match; ) {
-			const char* pattern_end = ::strchr(pattern, ':');
-			pattern_end = (pattern_end && pattern_end < positive_end) ? pattern_end : positive_end;
-			positive_match = hxtest_pattern_match_(pattern, pattern_end, test_case);
-			pattern = pattern_end + (*pattern_end == ':' ? 1 : 0);
+		if(!positive_is_valid || (negative && !negative_is_valid)) {
+			return true;
 		}
-		bool negative_match = false;
-		for(const char* pattern = dash ? dash + 1 : hxnull; pattern && *pattern != 0 && !negative_match; ) {
-			const char* pattern_end = ::strchr(pattern, ':');
-			pattern_end = pattern_end ? pattern_end : (pattern + ::strlen(pattern));
-			negative_match = hxtest_pattern_match_(pattern, pattern_end, test_case);
-			pattern = pattern_end + (*pattern_end == ':' ? 1 : 0);
-		}
+
+		char target[HX_MAX_LINE];
+		const int written = ::snprintf(target, HX_MAX_LINE, "%s.%s",
+			test_case->m_suite_, test_case->m_case_);
+		hxassert_always(written >= 0 && written < HX_MAX_LINE, "test_name_too_long %s", filter);
+
+		const bool positive_match = positive_is_empty ||
+			hxtest_pattern_list_match_(positive, positive_end, target);
+		const bool negative_match = negative &&
+			hxtest_pattern_list_match_(negative, negative_end, target);
 		return !(positive_match && !negative_match);
 	});
-	return !test_cases.empty();
+	return test_cases.size();
 }
 
 int hxtest_::run_all_tests_(void) {

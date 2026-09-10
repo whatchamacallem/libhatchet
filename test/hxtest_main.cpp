@@ -90,144 +90,37 @@ TEST(hxtest_main, filter) {
 		hxdetail_::hxtest_::dispatcher_().test_cases_();
 
 	hxdetail_::hxtest_case_* self_ = hxnull;
-	int suite_count = 0;
 	for(hxdetail_::hxtest_case_* const* it = all_cases.begin(); it != all_cases.end(); ++it) {
-		if(::strcmp((*it)->m_suite_, "hxtest_main") == 0) {
-			++suite_count;
-			if(::strcmp((*it)->m_case_, "filter") == 0) {
-				self_ = *it;
-			}
+		if(::strcmp((*it)->m_suite_, "hxtest_main") == 0 && ::strcmp((*it)->m_case_, "filter") == 0) {
+			self_ = *it;
 		}
 	}
 	ASSERT_TRUE(self_ != hxnull);
-	EXPECT_GT(all_cases.size(), suite_count);
 
-	{
-		hxdetail_::hxtest_::test_cases_t_ copy(all_cases);
-		EXPECT_TRUE(hxdetail_::hxtest_::filter_("hxtest_main.filter", copy));
-		EXPECT_EQ(copy.size(), 1);
-		EXPECT_EQ(copy[0], self_);
-	}
-	{
-		hxdetail_::hxtest_::test_cases_t_ copy(all_cases);
-		EXPECT_TRUE(hxdetail_::hxtest_::filter_("hxtest_main.*", copy));
-		EXPECT_EQ(copy.size(), suite_count);
-		EXPECT_EQ(copy.find(self_) != copy.end(), true);
-	}
-	{
-		hxdetail_::hxtest_::test_cases_t_ copy(all_cases);
-		EXPECT_TRUE(hxdetail_::hxtest_::filter_(
-			"hxtest_no_such_suite.*:hxtest_main.filter", copy));
-		EXPECT_EQ(copy.size(), 1);
-		EXPECT_EQ(copy[0], self_);
-	}
-	{
-		hxdetail_::hxtest_::test_cases_t_ copy(all_cases);
-		EXPECT_TRUE(hxdetail_::hxtest_::filter_("-hxtest_main.*", copy));
-		EXPECT_EQ(copy.size(), all_cases.size() - suite_count);
-		EXPECT_EQ(copy.find(self_) == copy.end(), true);
-	}
-	{
-		hxdetail_::hxtest_::test_cases_t_ copy(all_cases);
-		EXPECT_FALSE(hxdetail_::hxtest_::filter_("hxtest_no_such_suite_at_all.*", copy));
-		EXPECT_TRUE(copy.empty());
-	}
-	{
-		hxdetail_::hxtest_::test_cases_t_ copy(1, self_);
-		EXPECT_FALSE(hxdetail_::hxtest_::filter_("-hxtest_no_such_suite.*:hxtest_main.filter", copy));
-		EXPECT_TRUE(copy.empty());
-	}
-	{
-		hxdetail_::hxtest_::test_cases_t_ copy(1, self_);
-		EXPECT_FALSE(hxdetail_::hxtest_::filter_("hxtest_mainxy", copy));
-	}
-	{
-		hxdetail_::hxtest_::test_cases_t_ copy(1, self_);
-		EXPECT_FALSE(hxdetail_::hxtest_::filter_("hxtest_main.y", copy));
-	}
-	{
-		hxdetail_::hxtest_::test_cases_t_ copy(1, self_);
-		EXPECT_FALSE(hxdetail_::hxtest_::filter_("hxtest_main.filte1", copy));
-	}
+	static const hxpair<bool, const char*> cases[] = {
+		{ true, "hxtest_main.filter" },
+		{ false, "hxtest_main.filte1" },
+		{ true, "hxtest_main.filter*" },
+		{ false, "hxtest_main.filterx*" },
+		{ true, "hxtest_main.f*r" },
+		{ false, "hxtest_main.f*x" },
+		{ true, "*" },
+		{ true, "suite47:hxtest_main.filter" },
+		{ false, "hxtest_main.filte1:suite47" },
+		{ true, "-suite47" },
+		{ true, "hxtest_main.filter*-suite47*" },
+		{ false, "hxtest_main.filter-*" },
+		{ false, "hxtest_main.filter::suite47" },
+		{ false, "hxtest_main.filter-suite47:" },
+		{ false, "hxtest_main.filter-" },
+		{ false, "x*:" },
+		{ false, ":x*" },
+		{ false, ":" },
+	};
 
-	// Trailing "*" prefix matching against the full "Suite.Case" string.
-	// "hxtest_main.filter" has suite_length 11, case_length 6 and
-	// full_length 18.
-	{
-		// prefix_length == full_length matches the whole string.
+	for(hxsize_t i = 0; i < hxsize(cases); ++i) {
 		hxdetail_::hxtest_::test_cases_t_ copy(1, self_);
-		EXPECT_TRUE(hxdetail_::hxtest_::filter_("hxtest_main.filter*", copy));
-	}
-	{
-		// prefix_length == full_length + 1 is too long to match.
-		hxdetail_::hxtest_::test_cases_t_ copy(1, self_);
-		EXPECT_FALSE(hxdetail_::hxtest_::filter_("hxtest_main.filterx*", copy));
-	}
-	{
-		// A bare "*" with an empty prefix is not supported and matches
-		// nothing.
-		hxdetail_::hxtest_::test_cases_t_ copy(1, self_);
-		EXPECT_FALSE(hxdetail_::hxtest_::filter_("*", copy));
-		EXPECT_TRUE(copy.empty());
-	}
-	{
-		// A bare "-*" is not supported, matches nothing to exclude, and so
-		// leaves the original test case in place.
-		hxdetail_::hxtest_::test_cases_t_ copy(1, self_);
-		EXPECT_TRUE(hxdetail_::hxtest_::filter_("-*", copy));
-		EXPECT_EQ(copy.size(), 1);
-		EXPECT_EQ(copy[0], self_);
-	}
-	{
-		// prefix_length == suite_length matches any case in the suite.
-		hxdetail_::hxtest_::test_cases_t_ copy(1, self_);
-		EXPECT_TRUE(hxdetail_::hxtest_::filter_("hxtest_main*", copy));
-	}
-	{
-		// prefix_length == suite_length - 1 is a partial suite name prefix.
-		hxdetail_::hxtest_::test_cases_t_ copy(1, self_);
-		EXPECT_TRUE(hxdetail_::hxtest_::filter_("hxtest_mai*", copy));
-	}
-	{
-		// prefix_length == suite_length + 1 requires the "." to be included
-		// in the prefix and to match literally.
-		hxdetail_::hxtest_::test_cases_t_ copy(1, self_);
-		EXPECT_TRUE(hxdetail_::hxtest_::filter_("hxtest_main.*", copy));
-	}
-	{
-		// A wrong character immediately after suite_length characters that
-		// is not "." fails even though the suite name matches.
-		hxdetail_::hxtest_::test_cases_t_ copy(1, self_);
-		EXPECT_FALSE(hxdetail_::hxtest_::filter_("hxtest_mainx*", copy));
-	}
-	{
-		// A mismatch in the suite name itself fails regardless of "*".
-		hxdetail_::hxtest_::test_cases_t_ copy(1, self_);
-		EXPECT_FALSE(hxdetail_::hxtest_::filter_("hxtest_mait*", copy));
-	}
-	{
-		// A partial case name prefix one character short of the full case
-		// name matches.
-		hxdetail_::hxtest_::test_cases_t_ copy(1, self_);
-		EXPECT_TRUE(hxdetail_::hxtest_::filter_("hxtest_main.filte*", copy));
-	}
-	{
-		// A wrong character within the case name prefix fails.
-		hxdetail_::hxtest_::test_cases_t_ copy(1, self_);
-		EXPECT_FALSE(hxdetail_::hxtest_::filter_("hxtest_main.filte1*", copy));
-	}
-	{
-		// A "*" that is not the final character of the pattern is not
-		// treated as a wildcard and must match literally, which fails.
-		hxdetail_::hxtest_::test_cases_t_ copy(1, self_);
-		EXPECT_FALSE(hxdetail_::hxtest_::filter_("hxtest_main.filt*r", copy));
-	}
-	{
-		// Multiple prefix patterns joined by ":" still match the case
-		// covered by the second pattern.
-		hxdetail_::hxtest_::test_cases_t_ copy(1, self_);
-		EXPECT_TRUE(hxdetail_::hxtest_::filter_(
-			"hxtest_no_such_suite*:hxtest_main.filt*", copy));
+		EXPECT_EQ(hxdetail_::hxtest_::filter_(cases[i].b, copy) != 0, cases[i].a);
 	}
 }
 
