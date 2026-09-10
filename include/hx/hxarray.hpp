@@ -93,19 +93,11 @@ public:
 	hxarray(std::initializer_list<other_value_t_> x_) noexcept;
 
 #if HX_CPLUSPLUS >= 202002L
-	/// Constructs by copying elements from a range referenced by an lvalue.
+	/// Constructs by copying or moving elements from a range of exactly
+	/// `capacity` elements. Elements are moved when `range` is an rvalue.
 	/// - `range` : A range of exactly `capacity` elements.
 	template<hxrange_concept_ range_t_>
 	requires(!hxis_same<hxremove_cvref_t<range_t_>, hxarray<T_, capacity_> >())
-	explicit hxarray(range_t_& range_) noexcept;
-
-	/// Constructs by moving elements from a temporary range. This overload
-	/// enables moving the range elements into the array when forwarding
-	/// rvalues.
-	/// - `range` : A temporary range of exactly `capacity` elements.
-	template<hxrange_concept_ range_t_>
-	requires(!hxis_lvalue_reference<range_t_>()
-			&& !hxis_same<hxremove_cvref_t<range_t_>, hxarray<T_, capacity_> >())
 	explicit hxarray(range_t_&& range_) noexcept;
 #endif
 

@@ -63,18 +63,6 @@ hxinline hxattr_flatten hxvector<T_, capacity_>::hxvector(
 template<hxvector_concept_ T_, hxsize_t capacity_>
 template<hxrange_concept_ range_t_>
 requires(!hxis_same<hxremove_cvref_t<range_t_>, hxvector<T_, capacity_> >())
-hxinline hxattr_flatten hxvector<T_, capacity_>::hxvector(range_t_& range_) noexcept : hxvector() {
-	if constexpr(requires(const decltype(range_.begin())& a_,
-			const decltype(range_.begin())& b_) { { b_ - a_ }; }) {
-		this->reserve(static_cast<hxsize_t>(range_.end() - range_.begin()));
-	}
-	this->add_range(range_);
-}
-
-template<hxvector_concept_ T_, hxsize_t capacity_>
-template<hxrange_concept_ range_t_>
-requires(!hxis_lvalue_reference<range_t_>()
-		&& !hxis_same<hxremove_cvref_t<range_t_>, hxvector<T_, capacity_> >())
 hxinline hxattr_flatten hxvector<T_, capacity_>::hxvector(range_t_&& range_) noexcept : hxvector() {
 	if constexpr(requires(const decltype(range_.begin())& a_,
 			const decltype(range_.begin())& b_) { { b_ - a_ }; }) {

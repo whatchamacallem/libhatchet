@@ -81,33 +81,6 @@ hxinline hxattr_flatten hxarray<T_, capacity_>::hxarray(
 template<hxarray_concept_ T_, hxsize_t capacity_>
 template<hxrange_concept_ range_t_>
 requires(!hxis_same<hxremove_cvref_t<range_t_>, hxarray<T_, capacity_> >())
-hxinline hxattr_flatten hxarray<T_, capacity_>::hxarray(range_t_& range_) noexcept {
-	hxrestrict_t<decltype(range_.begin())> src_(range_.begin());
-	const auto end_ = range_.end();
-	static_assert(capacity_ != hxallocator_dynamic_capacity
-			|| requires(const decltype(src_)& a_, const decltype(src_)& b_) { { b_ - a_ }; },
-		"hxallocator_dynamic_capacity requires a range supporting subtraction");
-	if constexpr(requires(const decltype(src_)& a_, const decltype(src_)& b_) { { b_ - a_ }; }) {
-		const hxsize_t size_ = static_cast<hxsize_t>(end_ - src_);
-		this->reserve_storage(size_);
-		T_* hxrestrict dst_ = this->data();
-		for(; src_ != end_; ++dst_, ++src_) {
-			::new(dst_) T_(*src_);
-		}
-	}
-	else {
-		T_* hxrestrict dst_ = this->data();
-		for(const T_*const dst_end_ = dst_ + this->capacity();  src_ != end_ && dst_ != dst_end_; ++dst_, ++src_) {
-			::new(dst_) T_(*src_);
-		}
-		hxassert_hard(src_ == end_ && dst_ == this->end(), "array_size mismatch %zd", this->capacity());
-	}
-}
-
-template<hxarray_concept_ T_, hxsize_t capacity_>
-template<hxrange_concept_ range_t_>
-requires(!hxis_lvalue_reference<range_t_>()
-		&& !hxis_same<hxremove_cvref_t<range_t_>, hxarray<T_, capacity_> >())
 hxinline hxattr_flatten hxarray<T_, capacity_>::hxarray(range_t_&& range_) noexcept {
 	hxrestrict_t<decltype(range_.begin())> src_(range_.begin());
 	const auto end_ = range_.end();
@@ -119,13 +92,13 @@ hxinline hxattr_flatten hxarray<T_, capacity_>::hxarray(range_t_&& range_) noexc
 		this->reserve_storage(size_);
 		T_* hxrestrict dst_ = this->data();
 		for(; src_ != end_; ++dst_, ++src_) {
-			::new(dst_) T_(hxmove(*src_));
+			::new(dst_) T_(hxforward_like<range_t_>(*src_));
 		}
 	}
 	else {
 		T_* hxrestrict dst_ = this->data();
 		for(const T_*const dst_end_ = dst_ + this->capacity();  src_ != end_ && dst_ != dst_end_; ++dst_, ++src_) {
-			::new(dst_) T_(hxmove(*src_));
+			::new(dst_) T_(hxforward_like<range_t_>(*src_));
 		}
 		hxassert_hard(src_ == end_ && dst_ == this->end(), "array_size mismatch %zd", this->capacity());
 	}
