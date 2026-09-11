@@ -24,33 +24,30 @@ export POSIXLY_CORRECT=1
 trap 'trap "" INT; pkill -9 -P $$ 2>/dev/null; wait 2>/dev/null; exit 1' INT
 set -eu
 
+HX_OPT_CLEAR_=0
+HX_OPT_DEFINES_=""
+HX_OPT_GRIND_=0
 HX_OPT_GTEST_BREAKPOINTS_="${GTEST_BREAK_ON_FAILURE:-0}"
 HX_OPT_GTEST_FILTER_=""
-HX_OPT_CLEAR_=0
-HX_OPT_GRIND_=0
 HX_OPT_RUN_=0
 HX_OPT_VERBOSE_=0
-HX_OPT_DEFINES_=""
 for HX_ARG_ in "$@"; do
 	case "$HX_ARG_" in
 		"")        ;;
-		--gtest_break_on_failure) HX_OPT_GTEST_BREAKPOINTS_=1 ;;
-		--gtest_filter=*) HX_OPT_GTEST_FILTER_="$HX_ARG_" ;;
 		--clear)   HX_OPT_CLEAR_=1 ;;
 		--grind)   HX_OPT_GRIND_=1 ;;
+		--gtest_break_on_failure) HX_OPT_GTEST_BREAKPOINTS_=1 ;;
+		--gtest_filter=*) HX_OPT_GTEST_FILTER_="$HX_ARG_" ;;
 		--run)     HX_OPT_RUN_=1 ;;
 		--verbose) HX_OPT_VERBOSE_=1 ;;
-		-D*=*)     HX_OPT_DEFINES_="$HX_OPT_DEFINES_ $HX_ARG_" ;;
-		-D*)
-			echo "error: bad_define $HX_ARG_ requires a value. It would be 1."
-			exit 1 ;;
+		-D*)       HX_OPT_DEFINES_="$HX_OPT_DEFINES_ $HX_ARG_" ;;
 		*)
-			echo "usage: $0 [--gtest_break_on_failure] [--gtest_filter=pattern] [--clear] [--grind] [--run] [--verbose] [-Dmacro=value]"
+			echo "usage_error: $0 [args..]"
+			echo "  --clear                   Clear the terminal before building."
+			echo "  --grind                   Build all configuration combinations."
 			echo "  --gtest_break_on_failure  Break on EXPECT_*/ASSERT_*/hxassert* failure."
 			echo "                            Also read from GTEST_BREAK_ON_FAILURE."
 			echo "  --gtest_filter=pattern    Forward a gtest-style filter to hxtest."
-			echo "  --clear                   Clear the terminal before building."
-			echo "  --grind                   Build all configuration combinations."
 			echo "  --run                     Run hxtest after building."
 			echo "  --verbose                 Full output."
 			echo "  -Dmacro=value             Forward a define to the compiler."

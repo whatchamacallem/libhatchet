@@ -14,7 +14,7 @@ HX_GCOV_=gcov-$(gcc -dumpversion)
 HX_COVERAGE_="--coverage -O0 -g -fprofile-update=atomic -fno-inline -fkeep-static-functions"
 HX_COVERAGE_CXX_="$HX_COVERAGE_ -fno-elide-constructors -fkeep-inline-functions"
 
-HX_USAGE_="usage: $0 [--verbose] [--] [destination-directory]"
+HX_USAGE_="usage_error: $0 [--verbose] [--] [destination-directory]"
 
 HX_VERBOSE_=
 HX_DEST_DIR_=

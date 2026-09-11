@@ -182,8 +182,8 @@ public:
 	// Parses and executes a command line. Returns false on failure.
 	bool execute_(const char* str_) const;
 
-	// Prints id (or "usage:") followed by the argument labels.
-	void usage_(const char* id_=hxnull) const;
+	// Prints name (or "usage_error:") followed by the argument labels.
+	void usage_(const char* name_=hxnull) const;
 
 private:
 	bool (*m_execute_)(hxconsole_target_ target_, const char* str_);

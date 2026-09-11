@@ -18,7 +18,7 @@ for HX_ARG_ in "$@"; do
 		--no-tidy)   HX_OPT_NO_TIDY_=1 ;;
 		--verbose)   HX_OPT_VERBOSE_=1 ;;
 		*)
-			echo "usage: $0 [--no-tidy] [--verbose]"
+			echo "usage_error: $0 [--no-tidy] [--verbose]"
 			echo "  --no-tidy   Skip clang-tidy."
 			echo "  --verbose   Full output."
 			exit 1 ;;

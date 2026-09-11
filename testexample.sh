@@ -12,7 +12,7 @@ HX_VERBOSE_=""
 if [ "${1:-}" = "--verbose" ]; then
 	HX_VERBOSE_="--verbose"
 elif [ -n "${1:-}" ]; then
-	echo "usage: $0 [--verbose]"
+	echo "usage_error: $0 [--verbose]"
 	exit 1
 fi
 
