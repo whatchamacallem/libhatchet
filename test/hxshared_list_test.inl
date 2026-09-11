@@ -150,6 +150,33 @@ TEST_F(hxlist_test_f, operator_less) {
 	EXPECT_TRUE(check_stats(6, 3, 0, 3, 3, 0, 0, 0, 4, 0, 0));
 }
 
+TEST_F(hxlist_test_f, operator_equal_and_operator_less_mixed_deleter) {
+	hxlist<hxtest_list_object_node_t> a;
+	hxlist<hxtest_list_object_node_t, hxdo_not_delete> b;
+	hxtest_list_object_node_t a1(hxtest_object(31)), a2(hxtest_object(32));
+	hxtest_list_object_node_t b1(hxtest_object(31)), b2(hxtest_object(32));
+	EXPECT_TRUE(a == b);
+	EXPECT_FALSE(a != b);
+	a.push_back(&a1);
+	EXPECT_FALSE(a == b);
+	EXPECT_TRUE(a != b);
+	EXPECT_FALSE(a < b);
+	EXPECT_TRUE(b < a);
+	b.push_back(&b1);
+	EXPECT_TRUE(a == b);
+	EXPECT_FALSE(a < b);
+	EXPECT_FALSE(b < a);
+	b.push_back(&b2);
+	EXPECT_TRUE(a < b);
+	EXPECT_FALSE(b < a);
+	a.push_back(&a2);
+	EXPECT_TRUE(a == b);
+	EXPECT_FALSE(a != b);
+	a.release_all();
+	b.release_all();
+	EXPECT_TRUE(check_stats(8, 4, 0, 4, 4, 0, 0, 0, 9, 0, 0));
+}
+
 TEST_F(hxlist_test_f, operator_less_smaller_element_is_less) {
 	hxlist<hxtest_list_object_node_t, hxdo_not_delete> a;
 	hxlist<hxtest_list_object_node_t, hxdo_not_delete> b;

@@ -196,11 +196,12 @@ hxinline hxattr_flatten void hxdeque<T_, capacity_>::push_front(args_t_&&... arg
 }
 
 template<hxdeque_concept_ T_, hxsize_t capacity_>
-hxinline hxattr_flatten void hxdeque<T_, capacity_>::reserve(hxsize_t dynamic_capacity_) {
-	hxassert_hard(dynamic_capacity_ > hxallocator_dynamic_capacity
-		&& (dynamic_capacity_ & (dynamic_capacity_ - 1)) == 0,
+hxinline hxattr_flatten void hxdeque<T_, capacity_>::reserve(hxsize_t size_,
+		hxslab_allocator_t allocator_, hxalignment_t alignment_) {
+	hxassert_hard(size_ > hxallocator_dynamic_capacity
+		&& (size_ & (size_ - 1)) == 0,
 		"bad_capacity not pow2");
-	this->reserve_storage(dynamic_capacity_);
+	this->reserve_storage(size_, allocator_, alignment_);
 }
 
 template<hxdeque_concept_ T_, hxsize_t capacity_>

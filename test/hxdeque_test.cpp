@@ -337,6 +337,9 @@ TEST(hxdeque_test, reserve) {
 	EXPECT_FALSE(d.full());
 	d.reserve(8);
 	EXPECT_EQ(d.capacity(), 8);
+	hxdeque<int> e;
+	e.reserve(4, hxslab_allocator_current, hxalignment);
+	EXPECT_EQ(e.capacity(), 4);
 }
 
 TEST_F(hxdeque_test_f, size) {

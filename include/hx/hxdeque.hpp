@@ -291,9 +291,13 @@ public:
 	void push_front(args_t_&&... args_) noexcept;
 
 	/// Allocates storage for a dynamic deque. May only be called once and only
-	/// when the deque has no storage.
-	/// - `dynamic_capacity` : Element capacity to allocate.
-	void reserve(hxsize_t dynamic_capacity_);
+	/// when the deque has no storage. `size` must be a power of two.
+	/// - `size` : The number of elements to allocate storage for.
+	/// - `allocator` : The memory manager ID to use for allocation.
+	/// - `alignment` : The alignment to use for the allocation.
+	void reserve(hxsize_t size_,
+			hxslab_allocator_t allocator_=hxslab_allocator_current,
+			hxalignment_t alignment_=hxalignment);
 
 	/// Returns the number of elements currently in the deque.
 	hxattr_nodiscard hxsize_t size(void) const;

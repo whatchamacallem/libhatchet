@@ -837,6 +837,19 @@ TEST_F(hxflat_map_test_f, copy_constructor) {
 	EXPECT_TRUE(check_stats(12, 3, 0, 3, 9, 0, 0, 0, 0, 0, 12));
 }
 
+TEST_F(hxflat_map_test_f, copy_constructor_different_capacity) {
+	const hxtest_object k1(1), k2(2), k3(3);
+	const hxflat_map<hxtest_object, int, 3> src{
+		{k1, 10}, {k2, 20}, {k3, 30}};
+	const hxflat_map<hxtest_object, int, 5> dst(src);
+	EXPECT_EQ(dst.size(), 3);
+	EXPECT_EQ(dst.find(k1).value(), 10);
+	EXPECT_EQ(dst.find(k2).value(), 20);
+	EXPECT_EQ(dst.find(k3).value(), 30);
+	EXPECT_TRUE(src == dst);
+	EXPECT_TRUE(check_stats(12, 3, 0, 3, 9, 0, 0, 0, 3, 0, 8));
+}
+
 TEST_F(hxflat_map_test_f, copy_constructor_empty) {
 	const hxflat_map<hxtest_object, int, 4> src;
 	const hxflat_map<hxtest_object, int, 4> dst(src); // NOLINT(performance-unnecessary-copy-initialization)

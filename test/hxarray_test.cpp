@@ -257,6 +257,14 @@ TEST_F(hxarray_test_f, range_constructor_from_const_lvalue) {
 	}
 	EXPECT_TRUE(check_stats(8, 0, 0, 4, 4, 0, 0, 0, 0, 0, 0));
 }
+
+TEST(hxarray_test, range_constructor_from_other_element_type_lvalue) {
+	hxarray<int32_t, 3> src{ 31, 32, 33 };
+	const hxarray<int64_t, 3> dst(src);
+	EXPECT_EQ(dst[0], 31);
+	EXPECT_EQ(dst[1], 32);
+	EXPECT_EQ(dst[2], 33);
+}
 #endif
 
 TEST(hxarray_test, search) {
@@ -328,6 +336,50 @@ TEST(hxarray_test, operator_equal_and_operator_less) {
 	EXPECT_FALSE(hxkey_equal(a, c));
 	EXPECT_FALSE(hxkey_less(a, b));
 	EXPECT_TRUE(hxkey_less(a, c));
+	const hxarray<int, 4> d{ 1, 2, 3, 4 };
+	const hxarray<int, 4> e{ 1, 2, 4, 0 };
+	const hxarray<int, 4> f{ 0, 2, 3, 4 };
+	EXPECT_FALSE(a == d);
+	EXPECT_FALSE(d == a);
+	EXPECT_TRUE(a != d);
+	EXPECT_TRUE(a < d);
+	EXPECT_FALSE(d < a);
+	EXPECT_TRUE(a < e);
+	EXPECT_FALSE(e < a);
+	EXPECT_FALSE(a < f);
+	EXPECT_TRUE(f < a);
+}
+
+TEST(hxarray_test, mixed_capacity_copy_constructor_and_operator_assign) {
+	hxarray<int, 4> a;
+	a[0] = 31; a[1] = 32; a[2] = 33; a[3] = 34;
+
+	const hxarray<int> b(a);
+	EXPECT_EQ(b.capacity(), 4);
+	EXPECT_EQ(b[0], 31);
+	EXPECT_EQ(b[3], 34);
+	EXPECT_TRUE(a == b);
+
+	const hxarray<int, 4> c(b);
+	EXPECT_EQ(c[0], 31);
+	EXPECT_EQ(c[3], 34);
+
+	hxarray<int, 4> d;
+	d = b;
+	EXPECT_EQ(d[0], 31);
+	EXPECT_EQ(d[3], 34);
+
+	hxarray<int> e;
+	e = a;
+	EXPECT_EQ(e.capacity(), 4);
+	EXPECT_EQ(e[0], 31);
+	EXPECT_EQ(e[3], 34);
+
+	hxarray<int> f;
+	f.reserve(4);
+	f = a;
+	EXPECT_EQ(f[0], 31);
+	EXPECT_EQ(f[3], 34);
 }
 
 TEST(hxarray_test, hxkey_hash) {
@@ -490,6 +542,24 @@ TEST(hxarray_test, swap_exchanges_dynamic_contents) {
 	EXPECT_EQ(b.size(), 2);
 	EXPECT_EQ(b[0], 2);
 	EXPECT_EQ(b[1], 7);
+
+	hxarray<int> c{ 34, 35 };
+	hxarray<int> d;
+	c.swap(d);
+	EXPECT_EQ(c.size(), 0);
+	EXPECT_EQ(c.capacity(), 0);
+	EXPECT_EQ(d.size(), 2);
+	EXPECT_EQ(d.capacity(), 2);
+	EXPECT_EQ(d[0], 34);
+	EXPECT_EQ(d[1], 35);
+
+	d.swap(c);
+	EXPECT_EQ(c.size(), 2);
+	EXPECT_EQ(c.capacity(), 2);
+	EXPECT_EQ(c[0], 34);
+	EXPECT_EQ(c[1], 35);
+	EXPECT_EQ(d.size(), 0);
+	EXPECT_EQ(d.capacity(), 0);
 }
 
 TEST_F(hxarray_test_f, hxswap_exchanges_dynamic_contents) {

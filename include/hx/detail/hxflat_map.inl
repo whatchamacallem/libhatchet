@@ -65,6 +65,14 @@ hxinline hxattr_flatten hxflat_map<key_t_, mapped_t_, capacity_, compare_t_, tra
 }
 
 template<hxflat_map_concept_ key_t_, hxflat_map_concept_ mapped_t_, hxsize_t capacity_, typename compare_t_, int traits_>
+template<hxsize_t capacity_x_>
+hxinline hxattr_flatten hxflat_map<key_t_, mapped_t_, capacity_, compare_t_, traits_>::hxflat_map(
+		const hxflat_map<key_t_, mapped_t_, capacity_x_, compare_t_, traits_>& x_) noexcept
+	: m_size_(0) {
+	this->operator=(x_);
+}
+
+template<hxflat_map_concept_ key_t_, hxflat_map_concept_ mapped_t_, hxsize_t capacity_, typename compare_t_, int traits_>
 hxinline hxattr_flatten hxflat_map<key_t_, mapped_t_, capacity_, compare_t_, traits_>::hxflat_map(
 		std::initializer_list<pair_t_> x_) noexcept : m_size_(0) {
 	hxif_constexpr(capacity_ == hxallocator_dynamic_capacity) {

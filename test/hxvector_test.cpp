@@ -761,6 +761,38 @@ TEST_F(hxvector_test_f, assignment) {
 	EXPECT_TRUE(check_stats(7, 7, 1, 0, 6, 0, 0, 0, 0, 0, 0));
 }
 
+TEST_F(hxvector_test_f, mixed_capacity_copy_constructor_from_non_const_lvalue) {
+	{
+		hxvector<hxtest_object, 2> src;
+		src.push_back(hxtest_object(31));
+		src.push_back(hxtest_object(32));
+		const hxvector<hxtest_object> dst(src);
+		EXPECT_EQ(dst.size(), 2);
+		EXPECT_EQ(dst[0].value(), 31);
+		EXPECT_EQ(dst[1].value(), 32);
+		EXPECT_EQ(src[0].state(), hxtest_object_state::valid);
+		EXPECT_EQ(src[1].state(), hxtest_object_state::valid);
+	}
+	EXPECT_TRUE(check_stats(6, 6, 0, 2, 2, 2, 0, 0, 0, 0, 0));
+}
+
+#if HX_CPLUSPLUS >= 202002L
+TEST_F(hxvector_test_f, mixed_capacity_range_constructor_moves_from_rvalue) {
+	{
+		hxvector<hxtest_object, 2> src;
+		src.push_back(hxtest_object(31));
+		src.push_back(hxtest_object(32));
+		const hxvector<hxtest_object> dst(hxmove(src));
+		EXPECT_EQ(dst.size(), 2);
+		EXPECT_EQ(dst[0].value(), 31);
+		EXPECT_EQ(dst[1].value(), 32);
+		EXPECT_EQ(src[0].state(), hxtest_object_state::moved);
+		EXPECT_EQ(src[1].state(), hxtest_object_state::moved);
+	}
+	EXPECT_TRUE(check_stats(6, 6, 0, 2, 0, 4, 0, 0, 0, 0, 0));
+}
+#endif
+
 TEST_F(hxvector_test_f, assign_copies_all_elements_including_last) {
 	{
 		hxvector<hxtest_object> dst;

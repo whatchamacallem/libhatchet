@@ -588,6 +588,19 @@ TEST_F(hxflat_set_test_f, copy_assign_different_capacity) {
 	EXPECT_TRUE(check_stats(8, 2, 0, 4, 4, 0, 0, 0, 0, 0, 5));
 }
 
+TEST_F(hxflat_set_test_f, copy_construct_different_capacity) {
+	hxflat_set<hxtest_object, 2> a;
+	const hxtest_object v10(10), v20(20);
+	a.insert(v10);
+	a.insert(v20);
+	const hxflat_set<hxtest_object, 4> b(a);
+	EXPECT_EQ(b.size(), 2);
+	EXPECT_NE(b.find(hxtest_object(10)), b.end());
+	EXPECT_NE(b.find(hxtest_object(20)), b.end());
+	EXPECT_TRUE(a == b);
+	EXPECT_TRUE(check_stats(8, 2, 0, 4, 4, 0, 0, 0, 2, 0, 5));
+}
+
 TEST_F(hxflat_set_test_f, move_assign_transfers_elements) {
 	{
 		const hxtest_object v10(10), v20(20), v30(30);

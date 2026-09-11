@@ -336,6 +336,14 @@ public:
 	///   compare_t, traits>`.
 	hxflat_map(const hxflat_map& x_) noexcept;
 
+	/// Copy constructs from an `hxflat_map` of a different capacity. Requires
+	/// `x.size()` <= `capacity()`.
+	/// - `x` : A non-temporary `hxflat_map<key_t, mapped_t, capacity_x,
+	///   compare_t, traits>`.
+	template<hxsize_t capacity_x_>
+	hxflat_map(const hxflat_map<key_t_, mapped_t_, capacity_x_, compare_t_,
+		traits_>& x_) noexcept;
+
 	/// Move constructs from a temporary `hxflat_map`. Requires
 	/// `hxallocator_dynamic_capacity`.
 	/// - `x` : A temporary `hxflat_map<key_t, mapped_t,

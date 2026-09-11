@@ -88,6 +88,13 @@ public:
 	///   traits>`.
 	hxflat_set(const hxflat_set& x_) noexcept;
 
+	/// Copy constructs from an `hxflat_set` of a different capacity. Requires
+	/// `x.size()` <= `capacity()`.
+	/// - `x` : A non-temporary `hxflat_set<key_t, capacity_x, compare_t,
+	///   traits>`.
+	template<hxsize_t capacity_x_>
+	hxflat_set(const hxflat_set<key_t_, capacity_x_, compare_t_, traits_>& x_) noexcept;
+
 	/// Move constructs from a temporary `hxflat_set`. Requires
 	/// `hxallocator_dynamic_capacity`.
 	/// - `x` : A temporary `hxflat_set<key_t,

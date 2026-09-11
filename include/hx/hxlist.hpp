@@ -228,15 +228,28 @@ public:
 	/// order, using `T`'s `operator==`.
 	/// - `a` : A list.
 	/// - `b` : The list to compare against.
-	hxattr_nodiscard friend bool operator==(const hxlist& a_, const hxlist& b_) {
+	template<typename deleter_x_>
+	hxattr_nodiscard friend bool operator==(const hxlist& a_,
+			const hxlist<T_, deleter_x_>& b_) {
 		return hxequal_range(a_, b_);
 	}
 
+#if HX_CPLUSPLUS < 202002L
+	/// Returns `true` if `x` contains different nodes or a different order.
+	/// - `x` : The list to compare against.
+	template<typename deleter_x_>
+	hxattr_nodiscard bool operator!=(const hxlist<T_, deleter_x_>& x_) const {
+		return !(*this == x_);
+	}
+#endif
+
 	/// Returns `true` if `a` compares less than `b` lexicographically,
-	/// using `T`'s `operator==` and `operator<`.
+	/// using `T`'s `operator==` and `operator<`. Sorts `[1]` before `[1, 2]`.
 	/// - `a` : A list.
 	/// - `b` : The list to compare against.
-	hxattr_nodiscard friend bool operator<(const hxlist& a_, const hxlist& b_) {
+	template<typename deleter_x_>
+	hxattr_nodiscard friend bool operator<(const hxlist& a_,
+			const hxlist<T_, deleter_x_>& b_) {
 		return hxless_range(a_, b_);
 	}
 

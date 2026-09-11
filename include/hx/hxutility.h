@@ -450,9 +450,14 @@ public:
 		return !(a_ == b_);
 	}
 #endif
+	template<hxsize_t capacity_x_>
+	hxattr_nodiscard friend bool operator<(const hxarray& a_, const hxarray<T_, capacity_x_>& b_) {
+		return hxless_range(a_, b_);
+	}
 
 	/// Returns `a.a - b.a` if that difference is nonzero and `a.b - b.b`
-	/// otherwise.
+	/// otherwise. Provided as a C++11 fallback that will get picked up
+	/// by hxthree_way.
 	hxattr_nodiscard friend hxconstexpr auto operator-(const hxpair& a_, const hxpair& b_)
 			-> decltype(hxdeclval<a_t_>() - hxdeclval<a_t_>()) {
 		const auto d_ = a_.a - b_.a;
