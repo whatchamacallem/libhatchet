@@ -120,7 +120,7 @@ public:
 #define TEST(suite_name_, case_name_) \
 	static void HX_TEST_NAME_(hxtest_, suite_name_, case_name_)(void); \
 	static HX_NS_PREFIX_ hxdetail_::hxtest_case_ HX_TEST_NAME_(hxs_test_, suite_name_, case_name_)( \
-		HX_TEST_NAME_(hxtest_, suite_name_, case_name_), #suite_name_, #case_name_, __FILE__, __LINE__); \
+		HX_TEST_NAME_(hxtest_, suite_name_, case_name_), HX_QUOTE(suite_name_), HX_QUOTE(case_name_), __FILE__, __LINE__); \
 	static void HX_TEST_NAME_(hxtest_, suite_name_, case_name_)(void)
 
 /// `TEST_F(suite_name, case_name)` - Google Test reimplementation for
@@ -131,17 +131,17 @@ public:
 #define TEST_F(suite_fixture_, case_name_) \
 	class HX_TEST_NAME_(hxtest_f_, suite_fixture_, case_name_) : public suite_fixture_ { \
 	public: \
-		static void hxrun_(void) { \
+		static hxinline void hxrun_(void) { \
 			HX_TEST_NAME_(hxtest_f_, suite_fixture_, case_name_) subclass_; \
 			subclass_.SetUp(); \
 			subclass_.hxrun_test_f_(); \
 			subclass_.TearDown(); \
 		} \
 	private: \
-		void hxrun_test_f_(void); \
+		hxinline void hxrun_test_f_(void); \
 	}; \
 	static HX_NS_PREFIX_ hxdetail_::hxtest_case_ HX_TEST_NAME_(hxs_test_f_, suite_fixture_, case_name_)( \
-		HX_TEST_NAME_(hxtest_f_, suite_fixture_, case_name_)::hxrun_, #suite_fixture_, #case_name_, __FILE__, __LINE__); \
+		HX_TEST_NAME_(hxtest_f_, suite_fixture_, case_name_)::hxrun_, HX_QUOTE(suite_fixture_), HX_QUOTE(case_name_), __FILE__, __LINE__); \
 	void HX_TEST_NAME_(hxtest_f_, suite_fixture_, case_name_)::hxrun_test_f_(void)
 
 /// `int RUN_ALL_TESTS(void)` - Executes all registered test cases. See

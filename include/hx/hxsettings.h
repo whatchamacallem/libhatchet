@@ -280,6 +280,10 @@
 #define hxif_constexpr if
 #endif
 
+#define HX_QUOTE_(x_) #x_
+/// Converts its arg into a string.
+#define HX_QUOTE(x_) HX_QUOTE_(x_)
+
 #if !defined HX_USE_MACROS_WITH_MODULE
 /// `HX_USE_MACROS_WITH_MODULE` - Setting `-DHX_USE_MACROS_WITH_MODULE=1` when
 /// using modules (e.g. `import hx;`) will allow the macros in
@@ -403,9 +407,6 @@
 #define HX_USE_FLOATING_POINT_TRAPS 0
 #endif
 
-/// Converts its arg into a string.
-#define HX_QUOTE(x_) #x_
-
 /// \cond HIDDEN
 // `HX_TEST_ERROR_HANDLING` - Tests that the failure of tests is handled
 // correctly. Set to `0` if not defined. Set by `testerrorhandling.sh` and
@@ -416,7 +417,7 @@
 
 #if HX_CPLUSPLUS
 // HX_USE_* feature test flags must not be empty as that is evaluated as 0.
-#define HX_CHECK_USE_(x_) static_assert(HX_QUOTE(x_)[0] != 0, #x_ " must not be empty");
+#define HX_CHECK_USE_(x_) static_assert(HX_QUOTE(x_)[0] >= '0', #x_ " must be an int.");
 HX_CHECK_USE_(HX_PROVIDE_NEW_DELETE)
 HX_CHECK_USE_(HX_TEST_ERROR_HANDLING)
 HX_CHECK_USE_(HX_USE_CONSOLE)
@@ -432,13 +433,6 @@ HX_CHECK_USE_(HX_USE_PROFILER)
 HX_CHECK_USE_(HX_USE_THREADS)
 #endif
 
-// HX_APPEND_COUNTER - Used to generate unique identifiers. This is weird
-// because the ## operator happens before macro arg evaluation and both happen
-// before general macro evaluation.
-#define HX_APPEND_COUNTER2_(x_, y_) x_ ## y_
-#define HX_APPEND_COUNTER_(x_, y_) HX_APPEND_COUNTER2_(x_, y_)
-#define HX_APPEND_COUNTER(x_) HX_APPEND_COUNTER_(x_, __COUNTER__)
-
 // HX_INL_BEGIN_/HX_INL_END_ - These allow excluding .inl files from the module
 // export block. See hxmodule.cppm for details.
 #if !defined HX_INL_BEGIN_
@@ -449,7 +443,7 @@ HX_CHECK_USE_(HX_USE_THREADS)
 // HX_USE_NAMESPACE - Wraps the entire library in a namespace when HX_USE_NAMESPACE is
 // defined as a valid namespace identifier.
 #if HX_CPLUSPLUS && defined HX_USE_NAMESPACE
-HX_CHECK_USE_(HX_USE_NAMESPACE)
+static_assert(HX_QUOTE(HX_USE_NAMESPACE)[0] >= 'A', "HX_USE_NAMESPACE must be a name.");
 #define HX_NS_BEGIN_  namespace HX_USE_NAMESPACE {
 #define HX_NS_END_    }
 #define HX_NS_PREFIX_ HX_USE_NAMESPACE::

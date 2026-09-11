@@ -241,7 +241,8 @@ hxtest_case_** hxtest_::filter_(const char* filter, hxtest_case_** begin, hxtest
 		char target[HX_MAX_LINE];
 		const int written = ::snprintf(target, HX_MAX_LINE, "%s.%s",
 			(*it)->m_suite_, (*it)->m_case_);
-		hxassert_always(written >= 0 && written < HX_MAX_LINE, "test_name_too_long %s", filter);
+
+			hxassert_always(written >= 0 && written < HX_MAX_LINE, "test_name_size %s", filter);
 
 		const bool positive_match = positive_is_empty ||
 			hxtest_pattern_list_match_(positive, positive_end, target);
@@ -267,11 +268,12 @@ int hxtest_::run_all_tests_(void) {
 		m_test_cases_.resize(static_cast<hxsize_t>(new_end - m_test_cases_.begin()));
 		if(m_test_cases_.empty()) {
 			hxlog_warning(
-				"usage: --gtest_filter=\"\" A ':'-separated list of positive patterns optionally\n"
-				"followed by '-' and a ':'-separated list of negative patterns. A test matches\n"
-				"\tif it matches any positive pattern (or the positive list is empty) and no\n"
-				"\tnegative pattern. Examples: suite*, suite.*, suite.case*, suite.case -suite*,\n"
-				"\t-suite.*, suite.*:-suite.case\n");
+				"usage_error: --gtest_filter=\"...\" where ... is a ':'-separated list\n"
+				"of positive patterns optionally followed by '-' and a ':'-separated\n"
+				"list of negative patterns. A test matches if it matches any positive\n"
+				"pattern (or the positive list is empty) and no negative pattern. '*'\n"
+				"matches any substring. Examples: suite*, suite.*, suite.case*,\n"
+				"suite.case, -suite*, -suite.*, suite.*-suite.case\n");
 			hxassert_always(false, "gtest_filter no matches %s", hxg_settings.test_filter);
 			return 1;
 		}

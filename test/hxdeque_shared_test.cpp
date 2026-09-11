@@ -2,10 +2,7 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-#include <hx/hxarray.hpp>
-#if HX_CPLUSPLUS >= 202302L
-#include <hx/hxexpected.hpp>
-#endif // HX_CPLUSPLUS >= 202302L
+#include <hx/hxdeque.hpp>
 #include <hx/hxrange.hpp>
 #include <hx/hxtest.hpp>
 
@@ -13,16 +10,24 @@
 
 HX_NS_USE
 
-hxattr_noinline static void hxtest_gdb_break_hxarray_shared(void) { }
+// Show API is a shared subset with hxarray, hxvector and hxflat_set.
+hxattr_noinline static void hxtest_gdb_break_hxdeque_shared(void) { }
+#define hxtest_gdb_break_hxarray_shared hxtest_gdb_break_hxdeque_shared
+#define hxarray hxdeque
+#define hxarray_shared_test_f hxdeque_shared_test_f
 
-#define HXSHARED_ARRAY_EQUAL(a_, b_) ((a_).equal(b_))
-#define HXSHARED_ARRAY_LESS(a_, b_) ((a_).less(b_))
+#define HXSHARED_ARRAY_EQUAL(a_, b_) ((a_) == (b_))
+#define HXSHARED_ARRAY_LESS(a_, b_) ((a_) < (b_))
 
-// hxarray has a fixed size equal to its capacity.
-#define HX_ARRAY_TEST_NO_ADD_RANGE
-#define HX_ARRAY_TEST_NO_CLEAR
-#define HX_ARRAY_TEST_NO_BACK
+// Elements are addressed through a ring buffer instead of contiguous storage.
+#define HX_ARRAY_TEST_NO_DATA
+#define HX_ARRAY_TEST_NO_ALGORITHM
+#define HX_ARRAY_TEST_NO_SORT
+#define HX_ARRAY_TEST_NO_HASH
+#define HX_ARRAY_TEST_NO_MEMSET
 #define HX_ARRAY_TEST_NO_ERASE
+#define HX_ARRAY_TEST_NO_COPY_ASSIGN
+#define HX_ARRAY_TEST_NO_MONADIC
 
 #define HXSHARED_ARRAY_STATS_1 8, 4, 0, 4, 4, 0, 0, 0, 0, 0, 0
 #define HXSHARED_ARRAY_STATS_2 8, 4, 0, 4, 4, 0, 0, 0, 0, 0, 0
@@ -36,13 +41,10 @@ hxattr_noinline static void hxtest_gdb_break_hxarray_shared(void) { }
 #define HXSHARED_ARRAY_STATS_10 10, 6, 0, 6, 4, 0, 0, 0, 5, 0, 0
 #define HXSHARED_ARRAY_STATS_11 8, 4, 0, 4, 4, 0, 0, 0, 2, 0, 0
 #define HXSHARED_ARRAY_STATS_12 8, 4, 0, 4, 4, 0, 0, 0, 0, 0, 0
-#define HXSHARED_ARRAY_STATS_13 8, 4, 0, 4, 4, 0, 0, 0, 0, 0, 0
 #define HXSHARED_ARRAY_STATS_14 11, 7, 0, 7, 4, 0, 0, 0, 9, 0, 0
-#define HXSHARED_ARRAY_STATS_18 8, 4, 0, 4, 4, 0, 0, 0, 0, 0, 0
+#define HXSHARED_ARRAY_STATS_15 9, 0, 0, 4, 4, 1, 0, 0, 0, 0, 0
+#define HXSHARED_ARRAY_STATS_16 9, 9, 0, 5, 4, 0, 0, 0, 0, 0, 0
+#define HXSHARED_ARRAY_STATS_17 6, 6, 0, 4, 0, 2, 0, 0, 0, 0, 0
 #define HXSHARED_ARRAY_STATS_19 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-#define HXSHARED_ARRAY_STATS_20 20, 16, 0, 12, 4, 4, 0, 11, 0, 35, 0
-#define HXSHARED_ARRAY_STATS_21 24, 12, 0, 12, 12, 0, 0, 0, 0, 0, 0
-#define HXSHARED_ARRAY_STATS_23 16, 4, 4, 4, 8, 0, 4, 0, 8, 0, 0
-#define HXSHARED_ARRAY_STATS_24 12, 8, 0, 6, 6, 0, 0, 0, 0, 0, 0
 
 #include "./hxshared_array_test.inl"

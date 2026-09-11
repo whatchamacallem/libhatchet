@@ -18,7 +18,7 @@ if ./debugbuild.sh --run --gtest_filter=hxtest_no_such_suite.no_such_case \
 	exit 1
 fi
 
-if ! grep -q usage build/console_output.txt; then
-	echo "error: debugbuild.sh --gtest_filter with a bad filter should mention usage."
+if ! grep -q usage_error build/console_output.txt; then
+	echo "error: debugbuild.sh --gtest_filter with a bad filter should mention usage_error."
 	exit 1
 fi

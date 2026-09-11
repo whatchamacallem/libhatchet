@@ -436,10 +436,22 @@ public:
 		return a == x_.a && b == x_.b;
 	}
 
-#if HX_CPLUSPLUS < 202002L
+#if HX_CPLUSPLUS >= 202002L
+	/// Returns `a.a <=> b.a` if `a.a <=> b.a != 0` and `a.b <=> b.b` otherwise.
+    hxattr_nodiscard constexpr auto operator<=>(const hxpair& x_) {
+        if (auto c = a <=> x_.a; c != 0) { return c; }
+        return b <=> x_.b;
+    }
+#else
 	/// Returns false if `a` and `b` are equal to `x.a` and `x.b`.
 	hxconstexpr bool operator!=(const hxpair& x_) const { return !(*this == x_); }
 #endif
+
+	/// C++11 fallback for the three way operator::<=> operator using operator::-.
+    hxattr_nodiscard constexpr auto operator-(const pair& x_) {
+        if (auto c = a - x_.a; c != 0) { return c; }
+        return b - x_.b;
+    }
 
 	/// The first value.
 	a_t_ a;
