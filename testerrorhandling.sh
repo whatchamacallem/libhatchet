@@ -12,7 +12,7 @@ if ! ./debugbuild.sh --run --gtest_filter=hxtest_no_such_suite.no_such_case 2>&1
 	exit 1
 fi
 
-if ! ./debugbuild.sh -DHX_USE_SLAB_ALLOCATOR 2>&1 | grep -q bad_define; then
+if ! ./debugbuild.sh -DHX_USE_SLAB_ALLOCATOR= 2>&1 | grep -q bad_define; then
 	echo "error: debugbuild.sh with an empty define should mention bad_define."
 	exit 1
 fi
