@@ -16,9 +16,6 @@ hxattr_noinline static void hxtest_gdb_break_hxdeque_shared(void) { }
 #define hxarray hxdeque
 #define hxarray_shared_test_f hxdeque_shared_test_f
 
-#define HXSHARED_ARRAY_EQUAL(a_, b_) ((a_) == (b_))
-#define HXSHARED_ARRAY_LESS(a_, b_) ((a_) < (b_))
-
 // Elements are addressed through a ring buffer instead of contiguous storage.
 #define HX_ARRAY_TEST_NO_DATA
 #define HX_ARRAY_TEST_NO_ALGORITHM

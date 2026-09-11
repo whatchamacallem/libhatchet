@@ -259,18 +259,12 @@ hxinline hxattr_flatten hxsize_t hxarray<T_, capacity_>::capacity(void) const {
 	return hxallocator<T_, capacity_>::capacity();
 }
 
+#if HX_CPLUSPLUS < 202002L
 template<hxarray_concept_ T_, hxsize_t capacity_>
-hxinline hxattr_flatten bool hxarray<T_, capacity_>::equal(const hxarray& x_) const {
-	const hxsize_t c_ = this->capacity();
-	if(c_ != x_.capacity()) { return false; }
-	for(const T_* it0_ = this->data(), *it1_ = x_.data(), *const end_ = it0_ + c_;
-			it0_ != end_; ++it0_, ++it1_) {
-		if(!hxkey_equal(*it0_, *it1_)) {
-			return false;
-		}
-	}
-	return true;
+hxinline hxattr_flatten bool hxarray<T_, capacity_>::operator!=(const hxarray& x_) const {
+	return !(*this == x_);
 }
+#endif
 
 template<hxarray_concept_ T_, hxsize_t capacity_>
 hxinline hxattr_flatten const T_* hxarray<T_, capacity_>::find(const T_& value_) const {
@@ -344,20 +338,6 @@ hxinline hxattr_flatten hxhash_t hxarray<T_, capacity_>::hash(void) const {
 template<hxarray_concept_ T_, hxsize_t capacity_>
 hxinline hxattr_flatten void hxarray<T_, capacity_>::insertion_sort(void) noexcept {
 	hxinsertion_sort<T_*>(this->data(), this->data() + this->capacity(), hxkey_less_t<T_>{});
-}
-
-template<hxarray_concept_ T_, hxsize_t capacity_>
-hxinline hxattr_flatten bool hxarray<T_, capacity_>::less(const hxarray& x_) const {
-	const hxsize_t c_ = this->capacity();
-	const hxsize_t nx_ = x_.capacity();
-	const hxsize_t min_ = c_ < nx_ ? c_ : nx_;
-	for(const T_* it0_ = this->data(), *it1_ = x_.data(), *const end_ = it0_ + min_;
-			it0_ != end_; ++it0_, ++it1_) {
-		if(!hxkey_equal(*it0_, *it1_)) {
-			return hxkey_less(*it0_, *it1_);
-		}
-	}
-	return c_ < nx_;
 }
 
 template<hxarray_concept_ T_, hxsize_t capacity_>

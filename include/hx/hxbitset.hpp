@@ -75,9 +75,19 @@ public:
 	/// - `count` : Number of positions to shift right.
 	hxconstexpr hxbitset& operator>>=(size_t count_);
 
-	/// Returns `true` if all bits compare equal to those of `x`.
-	/// - `x` : The `hxbitset` to compare with.
-	hxattr_nodiscard hxconstexpr bool operator==(const hxbitset& x_) const;
+	/// Returns `true` if all bits of `a` compare equal to those of `b`.
+	/// - `a` : An `hxbitset`.
+	/// - `b` : The `hxbitset` to compare with.
+	hxattr_nodiscard friend hxconstexpr bool operator==(const hxbitset& a_, const hxbitset& b_) {
+		hxassertf(static_cast<const void*>(&a_) != static_cast<const void*>(&b_), "bad_ref");
+		size_t difference_ = 0u;
+		const size_t* hxrestrict src_ = b_.m_data_;
+		for(const size_t* hxrestrict dst_ = a_.m_data_, *const end_ = a_.m_data_ + s_words_;
+				dst_ != end_; ++dst_, ++src_) {
+			difference_ |= *dst_ ^ *src_;
+		}
+		return difference_ == 0u;
+	}
 
 #if HX_CPLUSPLUS < 202002L
 	/// Returns `true` if any bits differ from those of `x`.

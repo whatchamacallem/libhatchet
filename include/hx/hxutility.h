@@ -425,15 +425,15 @@ public:
 	/// The type of the second value.
 	using b_t = b_t_;
 
-	/// Returns true if `a` is less than `x.a`, or if they are equal, if `b` is
-	/// less than `x.b`.
-	hxattr_nodiscard constexpr bool operator<(const hxpair& x_) const {
-		return a < x_.a || (!(x_.a < a) && b < x_.b);
+	/// Returns true if `a.a` is less than `b.a`, or if they are equal, if `a.b`
+	/// is less than `b.b`.
+	hxattr_nodiscard friend constexpr bool operator<(const hxpair& a_, const hxpair& b_) {
+		return a_.a < b_.a || (!(b_.a < a_.a) && a_.b < b_.b);
 	}
 
-	/// Returns true if `a` and `b` are equal to `x.a` and `x.b`.
-	hxattr_nodiscard constexpr bool operator==(const hxpair& x_) const {
-		return a == x_.a && b == x_.b;
+	/// Returns true if `a.a` and `a.b` are equal to `b.a` and `b.b`.
+	hxattr_nodiscard friend constexpr bool operator==(const hxpair& a_, const hxpair& b_) {
+		return a_.a == b_.a && a_.b == b_.b;
 	}
 
 #if HX_CPLUSPLUS >= 202002L
@@ -447,11 +447,11 @@ public:
 	hxconstexpr bool operator!=(const hxpair& x_) const { return !(*this == x_); }
 #endif
 
-	/// C++11 fallback for the three way operator::<=> operator using operator::-.
-    hxattr_nodiscard constexpr auto operator-(const pair& x_) {
-        if (auto c = a - x_.a; c != 0) { return c; }
-        return b - x_.b;
-    }
+	/// Returns `a - x.a` if that difference is nonzero and `b - x.b` otherwise.
+	hxattr_nodiscard hxconstexpr auto operator-(const hxpair& x_) const
+			-> decltype(hxdeclval<a_t_>() - hxdeclval<a_t_>()) {
+		return (a - x_.a) != 0 ? (a - x_.a) : (b - x_.b);
+	}
 
 	/// The first value.
 	a_t_ a;

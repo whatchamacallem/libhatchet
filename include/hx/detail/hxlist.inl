@@ -51,11 +51,6 @@ hxinline hxattr_flatten auto hxlist<T_, deleter_t_>::const_iterator::operator--(
 	return t_;
 }
 
-template<hxlist_concept_ T_, typename deleter_t_>
-hxinline bool hxlist<T_, deleter_t_>::const_iterator::operator==(const const_iterator& x_) const {
-	return m_current_node_ == x_.m_current_node_;
-}
-
 // iterator
 
 template<hxlist_concept_ T_, typename deleter_t_>
@@ -77,16 +72,6 @@ hxinline hxattr_flatten auto hxlist<T_, deleter_t_>::iterator::operator--(int) -
 template<hxlist_concept_ T_, typename deleter_t_>
 hxinline hxattr_flatten hxlist<T_, deleter_t_>::hxlist(deleter_t_ deleter_)
 		: deleter_t_(deleter_) {
-}
-
-template<hxlist_concept_ T_, typename deleter_t_>
-hxinline hxattr_flatten bool hxlist<T_, deleter_t_>::operator==(const hxlist& x_) const {
-	return hxequal_range(*this, x_);
-}
-
-template<hxlist_concept_ T_, typename deleter_t_>
-hxinline hxattr_flatten bool hxlist<T_, deleter_t_>::operator<(const hxlist& x_) const {
-	return hxless_range(*this, x_);
 }
 
 template<hxlist_concept_ T_, typename deleter_t_>

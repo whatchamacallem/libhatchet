@@ -147,17 +147,33 @@ public:
 	/// - `index` : The 0-based position of the element.
 	hxattr_nodiscard const key_t_* operator[](hxsize_t index_) const;
 
-	/// Returns `true` if this set and `x` contain the same keys in the same
+	/// Returns `true` if `a` and `b` contain the same keys in the same
 	/// order using `hxkey_equal`.
-	/// - `x` : The set to compare against.
+	/// - `a` : A set.
+	/// - `b` : The set to compare against.
 	template<hxsize_t capacity_x_>
-	hxattr_nodiscard bool operator==(const hxflat_set<key_t_, capacity_x_, compare_t_, traits_>& x_) const;
+	hxattr_nodiscard friend bool operator==(const hxflat_set& a_,
+			const hxflat_set<key_t_, capacity_x_, compare_t_, traits_>& b_) {
+		return hxequal_range(a_, b_);
+	}
 
-	/// Returns `true` if this set compares less than `x` lexicographically,
-	/// using `hxkey_equal` and `hxkey_less` on keys.
+#if HX_CPLUSPLUS < 202002L
+	/// Returns `true` if this set and `x` differ in size or in any key, using
+	/// `hxkey_equal`.
 	/// - `x` : The set to compare against.
 	template<hxsize_t capacity_x_>
-	hxattr_nodiscard bool operator<(const hxflat_set<key_t_, capacity_x_, compare_t_, traits_>& x_) const;
+	hxattr_nodiscard bool operator!=(const hxflat_set<key_t_, capacity_x_, compare_t_, traits_>& x_) const;
+#endif
+
+	/// Returns `true` if `a` compares less than `b` lexicographically,
+	/// using `hxkey_equal` and `hxkey_less` on keys.
+	/// - `a` : A set.
+	/// - `b` : The set to compare against.
+	template<hxsize_t capacity_x_>
+	hxattr_nodiscard friend bool operator<(const hxflat_set& a_,
+			const hxflat_set<key_t_, capacity_x_, compare_t_, traits_>& b_) {
+		return hxless_range(a_, b_);
+	}
 
 	/// Inserts every key from a temporary range by moving each key with
 	/// `insert`. This overload enables moving the range keys into the set

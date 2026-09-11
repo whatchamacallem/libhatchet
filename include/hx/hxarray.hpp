@@ -153,6 +153,46 @@ public:
 
 	T_& operator[](hxsize_t index_);
 
+	/// Returns true if the arrays compare equivalent using `hxkey_equal`.
+	/// Callers must check the return value to detect mismatches.
+	/// - `a` : An array.
+	/// - `b` : The other array.
+	hxattr_nodiscard friend bool operator==(const hxarray& a_, const hxarray& b_) {
+		const hxsize_t c_ = a_.capacity();
+		if(c_ != b_.capacity()) { return false; }
+		for(const T_* it0_ = a_.data(), *it1_ = b_.data(), *const end_ = it0_ + c_;
+				it0_ != end_; ++it0_, ++it1_) {
+			if(!hxkey_equal(*it0_, *it1_)) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+#if HX_CPLUSPLUS < 202002L
+	/// Returns true if the arrays do not compare equivalent using `hxkey_equal`.
+	/// - `x` : The other array.
+	hxattr_nodiscard bool operator!=(const hxarray& x_) const;
+#endif
+
+	/// Returns true if `a` compares less than `b` using `hxkey_equal`
+	/// and `hxkey_less`.
+	/// Callers must check the return value to observe the ordering result.
+	/// - `a` : An array.
+	/// - `b` : The other array.
+	hxattr_nodiscard friend bool operator<(const hxarray& a_, const hxarray& b_) {
+		const hxsize_t c_ = a_.capacity();
+		const hxsize_t nx_ = b_.capacity();
+		const hxsize_t min_ = c_ < nx_ ? c_ : nx_;
+		for(const T_* it0_ = a_.data(), *it1_ = b_.data(), *const end_ = it0_ + min_;
+				it0_ != end_; ++it0_, ++it1_) {
+			if(!hxkey_equal(*it0_, *it1_)) {
+				return hxkey_less(*it0_, *it1_);
+			}
+		}
+		return c_ < nx_;
+	}
+
 	/// Returns true if the predicate returns true for every element and false
 	/// otherwise. Will stop iterating when the predicate returns false. e.g.,
 	/// ```cpp
@@ -208,11 +248,6 @@ public:
 
 	T_* end(void) { return this->data() + this->capacity(); }
 
-	/// Returns true if the arrays compare equivalent using `hxkey_equal`.
-	/// Callers must check the return value to detect mismatches.
-	/// - `x` : The other array.
-	hxattr_nodiscard bool equal(const hxarray& x_) const;
-
 	/// Finds the first occurrence of `value` using `hxkey_equal`. Returns
 	/// `end()` if no element matches.
 	/// - `value` : The value to locate.
@@ -246,12 +281,6 @@ public:
 
 	/// Sorts the array with insertion sort using `hxkey_less`.
 	void insertion_sort(void) noexcept;
-
-	/// Returns true if this array compares less than `x` using `hxkey_equal`
-	/// and `hxkey_less`.
-	/// Callers must check the return value to observe the ordering result.
-	/// - `x` : The other array.
-	hxattr_nodiscard bool less(const hxarray& x_) const;
 
 	/// Returns the capacity of the array.
 	hxinline hxattr_nodiscard hxsize_t max_size(void) const { return this->capacity(); }
@@ -339,30 +368,6 @@ public:
 
 private:
 	void destruct_(T_* begin_, T_* end_) noexcept;
-};
-
-/// `hxkey_equal_t<hxarray<T, N>>` - Compares the contents of `x` and `y` for
-/// equivalence.
-template<typename T_, hxsize_t capacity_>
-class hxkey_equal_t<hxarray<T_, capacity_> > {
-public:
-	hxattr_nodiscard hxinline hxattr_flatten
-	bool operator()(
-			const hxarray<T_, capacity_>& x_, const hxarray<T_, capacity_>& y_) const {
-		return x_.equal(y_);
-	}
-};
-
-/// `hxkey_less_t<hxarray<T, N>>` - Compares the contents of `x` and `y`
-/// lexicographically using `hxkey_equal_t` and `hxkey_less_t` on each element.
-template<typename T_, hxsize_t capacity_>
-class hxkey_less_t<hxarray<T_, capacity_> > {
-public:
-	hxattr_nodiscard hxinline hxattr_flatten
-	bool operator()(
-			const hxarray<T_, capacity_>& x_, const hxarray<T_, capacity_>& y_) const {
-		return x_.less(y_);
-	}
 };
 
 /// `hxkey_hash_t<hxarray<T, N>>` - Returns a hash mixing the hashes of every

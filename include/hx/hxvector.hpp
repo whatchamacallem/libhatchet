@@ -202,6 +202,52 @@ public:
 
 	T_& operator[](hxsize_t index_);
 
+	/// Returns true if the arrays compare equivalent using `hxkey_equal`.
+	/// Callers must check the return value to detect mismatches.
+	/// - `a` : An array.
+	/// - `b` : The other array.
+	template<hxsize_t capacity_x_>
+	hxattr_nodiscard friend bool operator==(const hxvector& a_,
+			const hxvector<T_, capacity_x_>& b_) {
+		if(a_.size() != b_.size()) {
+			return false;
+		}
+		for(const T_*it0_ = a_.data(), *it1_ = b_.data(), *const end_ = a_.m_end_;
+				it0_ != end_; ++it0_, ++it1_) {
+			if(!hxkey_equal(*it0_, *it1_)) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+#if HX_CPLUSPLUS < 202002L
+	/// Returns true if the arrays do not compare equivalent using `hxkey_equal`.
+	/// - `x` : The other array.
+	template<hxsize_t capacity_x_>
+	hxattr_nodiscard bool operator!=(const hxvector<T_, capacity_x_>& x_) const;
+#endif
+
+	/// Returns true if `a` compares less than `b` using `hxkey_equal`
+	/// and `hxkey_less`. Sorts `[1]` before `[1, 2]`.
+	/// Callers must check the return value to observe the ordering result.
+	/// - `a` : An array.
+	/// - `b` : The other array.
+	template<hxsize_t capacity_x_>
+	hxattr_nodiscard friend bool operator<(const hxvector& a_,
+			const hxvector<T_, capacity_x_>& b_) {
+		const hxsize_t size_ = hxmin(a_.size(), b_.size());
+		for(const T_* it0_ = a_.data(), *it1_ = b_.data(), *const end_ = it0_ + size_;
+				it0_ != end_; ++it0_, ++it1_) {
+			// Use `a == b` instead of `a < b && b < a` for performance.
+			if(!hxkey_equal(*it0_, *it1_)) {
+				return hxkey_less(*it0_, *it1_);
+			}
+		}
+		// Order the prefix before the other.
+		return a_.size() < b_.size();
+	}
+
 	/// Appends an element. (Non-standard.) Vector math is not a goal so this
 	/// should not end up overloaded. Perfect argument forwarding would be too
 	/// ambiguous.
@@ -327,12 +373,6 @@ public:
 
 	T_* end(void) { return m_end_; }
 
-	/// Returns true if the arrays compare equivalent using `hxkey_equal`.
-	/// Callers must check the return value to detect mismatches.
-	/// - `x` : The other array.
-	template<hxsize_t capacity_x_>
-	hxattr_nodiscard bool equal(const hxvector<T_, capacity_x_>& x_) const;
-
 	/// Erases the element indicated. Should not compile with hxnull. Support
 	/// for erasing ranges has not been added yet.
 	/// - `it` : Non-null pointer to an element currently stored in the array.
@@ -451,13 +491,6 @@ public:
 
 	/// Sorts the array with insertion sort using `hxkey_less`. (Non-standard.)
 	void insertion_sort(void) noexcept;
-
-	/// Returns true if this array compares less than `x` using `hxkey_equal`
-	/// and `hxkey_less`. Sorts `[1]` before `[1, 2]`.
-	/// Callers must check the return value to observe the ordering result.
-	/// - `x` : The other array.
-	template<hxsize_t capacity_x_>
-	hxattr_nodiscard bool less(const hxvector<T_, capacity_x_>& x_) const;
 
 	/// Converts the array into a max-heap using `hxkey_less`. (Non-standard.)
 	void make_heap(void) noexcept;
@@ -582,32 +615,6 @@ private:
 	void* push_back_unconstructed_(void);
 
 	T_* m_end_;
-};
-
-/// `hxkey_equal_t<hxvector<T>>` - Compares the contents of `x` and `y` for
-/// equivalence.
-template<typename T_, hxsize_t capacity_x_>
-class hxkey_equal_t<hxvector<T_, capacity_x_> > {
-public:
-	template<hxsize_t capacity_y_>
-	hxattr_nodiscard hxinline hxattr_flatten
-	bool operator()(
-			const hxvector<T_, capacity_x_>& x_, const hxvector<T_, capacity_y_>& y_) const {
-		return x_.equal(y_);
-	}
-};
-
-/// `hxkey_less_t<hxvector<T>>` - Compares the contents of `x` and `y`
-/// lexicographically using `hxkey_equal_t` and `hxkey_less_t` on each element.
-template<typename T_, hxsize_t capacity_x_>
-class hxkey_less_t<hxvector<T_, capacity_x_> > {
-public:
-	template<hxsize_t capacity_y_>
-	hxattr_nodiscard hxinline hxattr_flatten
-	bool operator()(
-			const hxvector<T_, capacity_x_>& x_, const hxvector<T_, capacity_y_>& y_) const {
-		return x_.less(y_);
-	}
 };
 
 /// `hxkey_hash_t<hxvector<T>>` - Returns a hash mixing the hashes of every

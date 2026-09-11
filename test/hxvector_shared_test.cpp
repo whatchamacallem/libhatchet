@@ -19,10 +19,6 @@ hxattr_noinline static void hxtest_gdb_break_hxvector_shared(void) { }
 #define hxarray hxvector
 #define hxarray_shared_test_f hxvector_shared_test_f
 
-#define HXSHARED_ARRAY_EQUAL(a_, b_) ((a_).equal(b_))
-#define HXSHARED_ARRAY_LESS(a_, b_) ((a_).less(b_))
-#define HXSHARED_ARRAY_ERASE(a_, it_) ((a_).erase(it_))
-
 #define HXSHARED_ARRAY_STATS_1 8, 4, 0, 4, 4, 0, 0, 0, 0, 0, 0
 #define HXSHARED_ARRAY_STATS_2 8, 4, 0, 4, 4, 0, 0, 0, 0, 0, 0
 #define HXSHARED_ARRAY_STATS_3 8, 4, 0, 4, 4, 0, 0, 0, 0, 0, 0

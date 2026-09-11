@@ -141,8 +141,11 @@ public:
 		/// position.
 		const_iterator operator--(int);
 		/// Returns `true` if both iterators point to the same node.
-		/// - `x` : The iterator to compare against.
-		bool operator==(const const_iterator& x_) const;
+		/// - `a` : An iterator.
+		/// - `b` : The iterator to compare against.
+		friend bool operator==(const const_iterator& a_, const const_iterator& b_) {
+			return a_.m_current_node_ == b_.m_current_node_;
+		}
 #if HX_CPLUSPLUS < 202002L
 		/// Returns `true` if the iterators point to different nodes.
 		/// - `x` : The iterator to compare against.
@@ -221,15 +224,21 @@ public:
 	/// every remaining node.
 	~hxlist(void) { this->clear(this->deleter()); }
 
-	/// Returns `true` if this list and `x` contain the same nodes in the same
+	/// Returns `true` if `a` and `b` contain the same nodes in the same
 	/// order, using `T`'s `operator==`.
-	/// - `x` : The list to compare against.
-	hxattr_nodiscard bool operator==(const hxlist& x_) const;
+	/// - `a` : A list.
+	/// - `b` : The list to compare against.
+	hxattr_nodiscard friend bool operator==(const hxlist& a_, const hxlist& b_) {
+		return hxequal_range(a_, b_);
+	}
 
-	/// Returns `true` if this list compares less than `x` lexicographically,
+	/// Returns `true` if `a` compares less than `b` lexicographically,
 	/// using `T`'s `operator==` and `operator<`.
-	/// - `x` : The list to compare against.
-	hxattr_nodiscard bool operator<(const hxlist& x_) const;
+	/// - `a` : A list.
+	/// - `b` : The list to compare against.
+	hxattr_nodiscard friend bool operator<(const hxlist& a_, const hxlist& b_) {
+		return hxless_range(a_, b_);
+	}
 
 	/// Links each `T` from a temporary range into this list by address, exactly
 	/// as `push_back(T*)` would. The range's nodes are threaded into the list

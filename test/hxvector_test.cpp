@@ -1194,40 +1194,40 @@ TEST_F(hxvector_test_f, erase_unordered_last_element_no_swap) {
 }
 
 #if HX_CPLUSPLUS >= 202002L
-TEST(hxvector_test, less_equal_vectors_not_less) {
+TEST(hxvector_test, operator_less_equal_vectors_not_less) {
 	static const int vals[] = { 1, 2, 3 };
 	const hxvector<int, 3> a(hxmake_range(vals));
 	const hxvector<int, 3> b(hxmake_range(vals));
-	EXPECT_FALSE(a.less(b));
-	EXPECT_FALSE(b.less(a));
+	EXPECT_FALSE(a < b);
+	EXPECT_FALSE(b < a);
 }
 #endif
 
-TEST(hxvector_test, less_shorter_prefix_is_less) {
+TEST(hxvector_test, operator_less_shorter_prefix_is_less) {
 	const hxvector<int, 2> a{ 1, 2 };
 	const hxvector<int, 3> b{ 1, 2, 3 };
-	EXPECT_TRUE(a.less(b));
-	EXPECT_FALSE(b.less(a));
+	EXPECT_TRUE(a < b);
+	EXPECT_FALSE(b < a);
 }
 
-TEST(hxvector_test, equal_different_sizes_not_equal) {
+TEST(hxvector_test, operator_equal_different_sizes_not_equal) {
 	const hxvector<int, 3> a{1, 2};
 	const hxvector<int, 3> b{1};
-	EXPECT_FALSE(a.equal(b));
+	EXPECT_FALSE(a == b);
 }
 
-TEST(hxvector_test, equal_differs_at_last_element) {
+TEST(hxvector_test, operator_equal_differs_at_last_element) {
 	const hxvector<int, 3> a{ 1, 2, 3 };
 	const hxvector<int, 3> b{ 1, 2, 4 };
-	EXPECT_FALSE(a.equal(b));
+	EXPECT_FALSE(a == b);
 }
 
 #if HX_CPLUSPLUS >= 202002L
-TEST(hxvector_test, equal_same_content_returns_true) {
+TEST(hxvector_test, operator_equal_same_content_returns_true) {
 	static const int vals[] = { 5, 10, 15 };
 	const hxvector<int, 3> a(hxmake_range(vals));
 	const hxvector<int, 3> b(hxmake_range(vals));
-	EXPECT_TRUE(a.equal(b));
+	EXPECT_TRUE(a == b);
 }
 #endif
 

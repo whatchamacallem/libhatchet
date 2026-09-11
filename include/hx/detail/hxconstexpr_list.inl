@@ -45,12 +45,6 @@ hxinline hxattr_flatten hxconstexpr auto hxconstexpr_list<T_, deleter_t_>::const
 	return t_;
 }
 
-template<hxconstexpr_list_concept_ T_, typename deleter_t_>
-hxinline hxattr_flatten hxconstexpr bool hxconstexpr_list<T_, deleter_t_>::const_iterator::operator==(
-		const const_iterator& x_) const {
-	return m_current_node_ == x_.m_current_node_;
-}
-
 // iterator
 
 template<hxconstexpr_list_concept_ T_, typename deleter_t_>
@@ -75,18 +69,6 @@ hxinline hxattr_flatten hxconstexpr hxconstexpr_list<T_, deleter_t_>::hxconstexp
 	m_size_ = 0;
 	m_sentinel_.m_list_prev_ = &m_sentinel_;
 	m_sentinel_.m_list_next_ = &m_sentinel_;
-}
-
-template<hxconstexpr_list_concept_ T_, typename deleter_t_>
-hxinline hxattr_flatten hxconstexpr bool hxconstexpr_list<T_, deleter_t_>::operator==(
-		const hxconstexpr_list& x_) const {
-	return hxequal_range(*this, x_);
-}
-
-template<hxconstexpr_list_concept_ T_, typename deleter_t_>
-hxinline hxattr_flatten hxconstexpr bool hxconstexpr_list<T_, deleter_t_>::operator<(
-		const hxconstexpr_list& x_) const {
-	return hxless_range(*this, x_);
 }
 
 template<hxconstexpr_list_concept_ T_, typename deleter_t_>

@@ -29,20 +29,6 @@ hxinline hxsize_t hxflat_map<key_t_, mapped_t_, capacity_, compare_t_, traits_>:
 	return m_index_ - x_.m_index_;
 }
 
-template<hxflat_map_concept_ key_t_, hxflat_map_concept_ mapped_t_, hxsize_t capacity_, typename compare_t_, int traits_>
-hxinline bool hxflat_map<key_t_, mapped_t_, capacity_, compare_t_, traits_>::const_iterator::operator==(
-		const const_iterator& x_) const {
-	hxassertf(m_map_ != hxnull && m_map_ == x_.m_map_, "bad_iter");
-	return m_index_ == x_.m_index_;
-}
-
-template<hxflat_map_concept_ key_t_, hxflat_map_concept_ mapped_t_, hxsize_t capacity_, typename compare_t_, int traits_>
-hxinline bool hxflat_map<key_t_, mapped_t_, capacity_, compare_t_, traits_>::const_iterator::operator<(
-		const const_iterator& x_) const {
-	hxassertf(m_map_ != hxnull && m_map_ == x_.m_map_, "bad_iter");
-	return m_index_ < x_.m_index_;
-}
-
 #if HX_CPLUSPLUS < 202002L
 template<hxflat_map_concept_ key_t_, hxflat_map_concept_ mapped_t_, hxsize_t capacity_, typename compare_t_, int traits_>
 hxinline bool hxflat_map<key_t_, mapped_t_, capacity_, compare_t_, traits_>::const_iterator::operator!=(
@@ -255,12 +241,14 @@ hxinline hxattr_flatten auto hxflat_map<key_t_, mapped_t_, capacity_, compare_t_
 	}
 }
 
+#if HX_CPLUSPLUS < 202002L
 template<hxflat_map_concept_ key_t_, hxflat_map_concept_ mapped_t_, hxsize_t capacity_, typename compare_t_, int traits_>
 template<hxsize_t capacity_x_>
-hxinline hxattr_flatten bool hxflat_map<key_t_, mapped_t_, capacity_, compare_t_, traits_>::operator==(
+hxinline hxattr_flatten bool hxflat_map<key_t_, mapped_t_, capacity_, compare_t_, traits_>::operator!=(
 		const hxflat_map<key_t_, mapped_t_, capacity_x_, compare_t_, traits_>& x_) const {
-	return hxequal_range(*this, x_);
+	return !(*this == x_);
 }
+#endif
 
 template<hxflat_map_concept_ key_t_, hxflat_map_concept_ mapped_t_, hxsize_t capacity_, typename compare_t_, int traits_>
 hxattr_flatten hxsize_t hxflat_map<key_t_, mapped_t_, capacity_, compare_t_, traits_>::erase(const key_t_& key_) noexcept {
@@ -402,13 +390,6 @@ template<hxflat_map_concept_ key_t_, hxflat_map_concept_ mapped_t_, hxsize_t cap
 hxinline hxattr_flatten const key_t_*
 hxflat_map<key_t_, mapped_t_, capacity_, compare_t_, traits_>::keys(void) const noexcept {
 	return m_keys_.data();
-}
-
-template<hxflat_map_concept_ key_t_, hxflat_map_concept_ mapped_t_, hxsize_t capacity_, typename compare_t_, int traits_>
-template<hxsize_t capacity_x_>
-hxinline hxattr_flatten bool hxflat_map<key_t_, mapped_t_, capacity_, compare_t_, traits_>::operator<(
-		const hxflat_map<key_t_, mapped_t_, capacity_x_, compare_t_, traits_>& x_) const {
-	return hxless_range(*this, x_);
 }
 
 template<hxflat_map_concept_ key_t_, hxflat_map_concept_ mapped_t_, hxsize_t capacity_, typename compare_t_, int traits_>

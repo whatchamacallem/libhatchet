@@ -37,7 +37,7 @@ commands
   echo \n=== hxarray dynamic ===\n
   hxprint a
   echo === hxallocator dynamic ===\n
-  hxprint *(hxallocator<hxtest_util::hxtest_object,0>*)&a
+  hxprint *(hxallocator<hxtest_util::hxtest_object,0,false>*)&a
   continue
 end
 
@@ -47,7 +47,7 @@ commands
   echo \n=== hxarray static ===\n
   hxprint a
   echo === hxallocator static ===\n
-  hxprint *(hxallocator<hxtest_util::hxtest_object,4>*)&a
+  hxprint *(hxallocator<hxtest_util::hxtest_object,4,false>*)&a
   continue
 end
 
@@ -57,7 +57,7 @@ commands
   echo \n=== hxarray unallocated ===\n
   hxprint a
   echo === hxallocator unallocated ===\n
-  hxprint *(hxallocator<int,0>*)&a
+  hxprint *(hxallocator<int,0,false>*)&a
   continue
 end
 

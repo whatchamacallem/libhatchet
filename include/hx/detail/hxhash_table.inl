@@ -30,19 +30,6 @@ hxinline void hxhash_delete_trampoline_(hxhash_node_base* node_, void* context_)
 }
 /// \endcond
 
-template<typename key_t_, typename value_t_>
-hxinline bool hxhash_table_map_node<key_t_, value_t_>::operator==(const hxhash_table_map_node& x_) const {
-	return hxhash_table_set_node<key_t_>::operator==(x_) && hxkey_equal(this->m_value_, x_.m_value_);
-}
-
-template<typename key_t_, typename value_t_>
-hxinline bool hxhash_table_map_node<key_t_, value_t_>::operator<(const hxhash_table_map_node& x_) const {
-	if(!hxkey_equal(this->hash_key(), x_.hash_key())) {
-		return hxhash_table_set_node<key_t_>::operator<(x_);
-	}
-	return hxkey_less(this->m_value_, x_.m_value_);
-}
-
 template<hxhash_table_concept_ node_t_, typename deleter_t_, uint32_t table_size_bits_, int traits_>
 hxinline const node_t_&
 hxhash_table<node_t_, deleter_t_, table_size_bits_, traits_>::const_iterator::operator*(void) const {
@@ -98,12 +85,6 @@ hxinline hxattr_flatten auto hxhash_table<node_t_, deleter_t_, table_size_bits_,
 		this->next_bucket_();
 	}
 	return *this;
-}
-
-template<hxhash_table_concept_ node_t_, typename deleter_t_, uint32_t table_size_bits_, int traits_>
-hxinline bool hxhash_table<node_t_, deleter_t_, table_size_bits_, traits_>::const_iterator::operator==(
-		const const_iterator& x_) const {
-	return m_current_node_ == x_.m_current_node_;
 }
 
 template<hxhash_table_concept_ node_t_, typename deleter_t_, uint32_t table_size_bits_, int traits_>

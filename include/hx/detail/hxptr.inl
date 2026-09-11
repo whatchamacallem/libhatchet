@@ -54,11 +54,6 @@ hxinline hxconstexpr T_* hxptr<T_, deleter_t_>::operator->(void) const {
 template<typename T_, typename deleter_t_>
 hxinline hxconstexpr hxptr<T_, deleter_t_>::operator bool(void) const { return m_ptr_ != hxnull; }
 
-template<typename T_, typename deleter_t_>
-hxinline hxconstexpr bool hxptr<T_, deleter_t_>::operator==(hxnil_t) const {
-	return m_ptr_ == hxnull;
-}
-
 #if HX_CPLUSPLUS < 202002L
 template<typename T_, typename deleter_t_>
 hxinline hxconstexpr bool hxptr<T_, deleter_t_>::operator!=(const hxptr& x_) const {
@@ -100,11 +95,6 @@ template<hxslab_allocator_t allocator_, hxalignment_t alignment_, typename... ar
 hxinline hxattr_flatten T_& hxptr<T_, deleter_t_>::emplace(args_t_&&... args_) noexcept {
 	this->reset(hxnew<T_, allocator_, alignment_>(hxforward<args_t_>(args_)...));
 	return *m_ptr_;
-}
-
-template<typename T_, typename deleter_t_>
-hxinline hxconstexpr bool hxptr<T_, deleter_t_>::equal(const hxptr& x_) const {
-	return m_ptr_ == x_.m_ptr_;
 }
 
 template<typename T_, typename deleter_t_>

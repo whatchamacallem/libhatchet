@@ -60,15 +60,12 @@ hxinline hxattr_flatten T_& hxdeque<T_, capacity_>::operator[](hxsize_t index_) 
 	return this->data()[(m_head_ + static_cast<size_t>(index_)) & mask_];
 }
 
+#if HX_CPLUSPLUS < 202002L
 template<hxdeque_concept_ T_, hxsize_t capacity_>
-hxinline hxattr_flatten bool hxdeque<T_, capacity_>::operator==(const hxdeque& x_) const {
-	return hxequal_range(*this, x_);
+hxinline hxattr_flatten bool hxdeque<T_, capacity_>::operator!=(const hxdeque& x_) const {
+	return !(*this == x_);
 }
-
-template<hxdeque_concept_ T_, hxsize_t capacity_>
-hxinline hxattr_flatten bool hxdeque<T_, capacity_>::operator<(const hxdeque& x_) const {
-	return hxless_range(*this, x_);
-}
+#endif
 
 template<hxdeque_concept_ T_, hxsize_t capacity_>
 template<hxrange_concept_ range_t_>

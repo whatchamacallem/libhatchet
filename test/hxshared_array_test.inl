@@ -13,9 +13,6 @@
 // Each including translation unit renames `hxarray` and `hxarray_shared_test_f`
 // to the class it tests and its own test suite name, then defines these macros.
 //
-//   HXSHARED_ARRAY_EQUAL    - Compares two containers for equality.
-//   HXSHARED_ARRAY_LESS     - Compares two containers lexicographically.
-//   HXSHARED_ARRAY_ERASE    - Erases the element an iterator addresses.
 //   HXSHARED_ARRAY_STATS_1 to HXSHARED_ARRAY_STATS_24 - The check_stats
 //     arguments for each test, in the order the tests appear below.
 //
@@ -126,7 +123,7 @@ TEST_F(hxarray_shared_test_f, find_on_empty) {
 	EXPECT_TRUE(check_stats(HXSHARED_ARRAY_STATS_7));
 }
 
-TEST_F(hxarray_shared_test_f, equal) {
+TEST_F(hxarray_shared_test_f, operator_equal) {
 	const hxarray<hxtest_object> a{
 		hxtest_object(31), hxtest_object(32), hxtest_object(33), hxtest_object(34) };
 	const hxarray<hxtest_object> a2{
@@ -135,26 +132,26 @@ TEST_F(hxarray_shared_test_f, equal) {
 		hxtest_object(31), hxtest_object(32), hxtest_object(33), hxtest_object(35) };
 	const hxarray<hxtest_object> b{ };
 	const hxarray<hxtest_object> b2{ };
-	EXPECT_TRUE(HXSHARED_ARRAY_EQUAL(a, a2));
-	EXPECT_FALSE(HXSHARED_ARRAY_EQUAL(a, c));
-	EXPECT_TRUE(HXSHARED_ARRAY_EQUAL(b, b2));
-	EXPECT_FALSE(HXSHARED_ARRAY_EQUAL(a, b));
-	EXPECT_FALSE(HXSHARED_ARRAY_EQUAL(b, a));
+	EXPECT_TRUE(a == a2);
+	EXPECT_FALSE(a == c);
+	EXPECT_TRUE(b == b2);
+	EXPECT_FALSE(a == b);
+	EXPECT_FALSE(b == a);
 	EXPECT_TRUE(check_stats(HXSHARED_ARRAY_STATS_8));
 }
 
-TEST_F(hxarray_shared_test_f, less) {
+TEST_F(hxarray_shared_test_f, operator_less) {
 	const hxarray<hxtest_object> a{
 		hxtest_object(31), hxtest_object(32), hxtest_object(33), hxtest_object(34) };
 	const hxarray<hxtest_object> c{
 		hxtest_object(31), hxtest_object(32), hxtest_object(33), hxtest_object(35) };
 	const hxarray<hxtest_object> b{ };
-	EXPECT_TRUE(HXSHARED_ARRAY_LESS(a, c));
-	EXPECT_FALSE(HXSHARED_ARRAY_LESS(c, a));
-	EXPECT_FALSE(HXSHARED_ARRAY_LESS(a, a));
-	EXPECT_TRUE(HXSHARED_ARRAY_LESS(b, a));
-	EXPECT_FALSE(HXSHARED_ARRAY_LESS(a, b));
-	EXPECT_FALSE(HXSHARED_ARRAY_LESS(b, b));
+	EXPECT_TRUE(a < c);
+	EXPECT_FALSE(c < a);
+	EXPECT_FALSE(a < a);
+	EXPECT_TRUE(b < a);
+	EXPECT_FALSE(a < b);
+	EXPECT_FALSE(b < b);
 	EXPECT_TRUE(check_stats(HXSHARED_ARRAY_STATS_9));
 }
 
@@ -425,22 +422,22 @@ TEST_F(hxarray_shared_test_f, memcpy_and_memset_replace_contents) {
 TEST_F(hxarray_shared_test_f, erase_iterator_from_front_middle_and_back) {
 	hxarray<hxtest_object, HXSHARED_ARRAY_CAPACITY> a{
 		hxtest_object(31), hxtest_object(32), hxtest_object(33), hxtest_object(34) };
-	HXSHARED_ARRAY_ERASE(a, a.begin() + 3);
+	a.erase(a.begin() + 3);
 	EXPECT_EQ(a.size(), 3);
 	EXPECT_EQ(a.find(hxtest_object(34)), a.end());
 	EXPECT_EQ((*(a.end() - 1)).value(), 33);
 
-	HXSHARED_ARRAY_ERASE(a, a.begin() + 1);
+	a.erase(a.begin() + 1);
 	EXPECT_EQ(a.size(), 2);
 	EXPECT_EQ((*a.begin()).value(), 31);
 	EXPECT_EQ((*(a.begin() + 1)).value(), 33);
 	EXPECT_EQ(a.find(hxtest_object(32)), a.end());
 
-	HXSHARED_ARRAY_ERASE(a, a.begin());
+	a.erase(a.begin());
 	EXPECT_EQ(a.size(), 1);
 	EXPECT_EQ((*a.begin()).value(), 33);
 
-	HXSHARED_ARRAY_ERASE(a, a.begin());
+	a.erase(a.begin());
 	EXPECT_TRUE(a.empty());
 	EXPECT_EQ(a.begin(), a.end());
 	EXPECT_TRUE(check_stats(HXSHARED_ARRAY_STATS_22));
@@ -453,7 +450,7 @@ TEST_F(hxarray_shared_test_f, copy_construct_and_copy_assign) {
 		hxtest_object(31), hxtest_object(32), hxtest_object(33), hxtest_object(34) };
 	hxarray<hxtest_object, HXSHARED_ARRAY_CAPACITY> copy(a);
 	EXPECT_EQ(copy.size(), 4);
-	EXPECT_TRUE(HXSHARED_ARRAY_EQUAL(copy, a));
+	EXPECT_TRUE(copy == a);
 	EXPECT_EQ((*copy.begin()).value(), 31);
 	EXPECT_EQ((*(copy.end() - 1)).value(), 34);
 	EXPECT_NE(&*copy.begin(), &*a.begin());
@@ -461,7 +458,7 @@ TEST_F(hxarray_shared_test_f, copy_construct_and_copy_assign) {
 	hxarray<hxtest_object, HXSHARED_ARRAY_CAPACITY> assigned;
 	assigned = a;
 	EXPECT_EQ(assigned.size(), 4);
-	EXPECT_TRUE(HXSHARED_ARRAY_EQUAL(assigned, a));
+	EXPECT_TRUE(assigned == a);
 	EXPECT_EQ((*assigned.begin()).value(), 31);
 	EXPECT_EQ((*(assigned.end() - 1)).value(), 34);
 	EXPECT_TRUE(check_stats(HXSHARED_ARRAY_STATS_23));

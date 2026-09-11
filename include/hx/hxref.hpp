@@ -92,17 +92,45 @@ public:
 
 	/// Returns `true` if both references are null or both reference equal
 	/// values.
-	/// - `x` : Right-hand side reference.
-	hxattr_nodiscard bool operator==(const hxref& x_) const { return this->equal(x_); }
+	/// - `a` : Left-hand side reference.
+	/// - `b` : Right-hand side reference.
+	hxattr_nodiscard friend bool operator==(const hxref& a_, const hxref& b_) {
+		if (a_.m_value_ == hxnull || b_.m_value_ == hxnull) {
+			return a_.m_value_ == b_.m_value_;
+		}
+		return *a_.m_value_ == *b_.m_value_;
+	}
 
-	/// Returns `true` if this reference is null.
+	/// Returns `true` if `a` is null.
+	/// - `a` : Left-hand side reference.
 	/// - `hxnil` : The error sentinel.
-	hxattr_nodiscard bool operator==(hxnil_t) const { return m_value_ == hxnull; }
+	hxattr_nodiscard friend bool operator==(const hxref& a_, hxnil_t) {
+		return a_.m_value_ == hxnull;
+	}
 
-	/// Returns `true` if this reference is non-null and its referent equals
+	/// Returns `true` if `a` is non-null and its referent equals
+	/// `b`.
+	/// - `a` : Left-hand side reference.
+	/// - `b` : The value to compare against.
+	hxattr_nodiscard friend bool operator==(const hxref& a_, const T_& b_) {
+		return a_.m_value_ != hxnull && (*a_.m_value_ == b_);
+	}
+
+#if HX_CPLUSPLUS < 202002L
+	/// Returns `true` if exactly one reference is null or the referenced values
+	/// differ.
+	/// - `x` : Right-hand side reference.
+	hxattr_nodiscard bool operator!=(const hxref& x_) const;
+
+	/// Returns `true` if this reference is non-null.
+	/// - `hxnil` : The error sentinel.
+	hxattr_nodiscard bool operator!=(hxnil_t) const;
+
+	/// Returns `true` if this reference is null or its referent differs from
 	/// `value`.
 	/// - `value` : The value to compare against.
-	hxattr_nodiscard bool operator==(const T_& value_) const;
+	hxattr_nodiscard bool operator!=(const T_& value_) const;
+#endif
 
 	/// Returns the result of calling `callable` with the referenced value if
 	/// non-null, otherwise returns `hxnil`. Use `and_then` to return `hxptr`,
@@ -111,11 +139,6 @@ public:
 	template<typename self_t_, typename callable_t_>
 	hxattr_nodiscard auto and_then(this self_t_&& self_, callable_t_&& callable_)
 		-> hxremove_cvref_t<decltype(hxforward<callable_t_>(callable_)(hxdeclval<T_&>()))>;
-
-	/// Returns `true` if both references are null or both reference equal
-	/// values.
-	/// - `x` : The `hxref` to compare against.
-	hxattr_nodiscard bool equal(const hxref& x_) const;
 
 	/// Returns `true` if the reference is non-null.
 	hxattr_nodiscard bool has_value(void) const { return m_value_ != hxnull; }
@@ -157,17 +180,6 @@ private:
 /// - `value` : The lvalue to reference.
 template<typename T_, typename U_=T_, hxenable_if_t<hxbinds_directly<T_, U_>(), bool> = true>
 hxattr_nodiscard hxref<T_> hxmake_ref(U_& value_) { return hxref<T_>(value_); }
-
-/// `hxkey_equal_t<hxref<T>>` - Compares `x` and `y` for equivalence.
-template<typename T_>
-class hxkey_equal_t<hxref<T_> > {
-public:
-	hxattr_nodiscard hxinline hxattr_flatten
-	bool operator()(
-			const hxref<T_>& x_, const hxref<T_>& y_) const {
-		return x_.equal(y_);
-	}
-};
 
 /// `hxkey_hash_t<hxref<T>>` - Returns the hash of the referenced value if
 /// non-null, otherwise `31u`.

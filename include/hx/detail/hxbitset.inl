@@ -168,18 +168,6 @@ inline hxconstexpr hxbitset<bit_count_>& hxbitset<bit_count_>::operator>>=(size_
 	return *this;
 }
 
-template<size_t bit_count_>
-hxinline hxconstexpr bool hxbitset<bit_count_>::operator==(const hxbitset& x_) const {
-	hxassertf(static_cast<const void*>(this) != static_cast<const void*>(&x_), "bad_ref");
-	size_t difference_ = 0u;
-	const size_t* hxrestrict src_ = x_.m_data_;
-	for(const size_t* hxrestrict dst_ = m_data_, *const end_ = m_data_ + s_words_;
-			dst_ != end_; ++dst_, ++src_) {
-		difference_ |= *dst_ ^ *src_;
-	}
-	return difference_ == 0u;
-}
-
 #if HX_CPLUSPLUS < 202002L
 template<size_t bit_count_>
 hxinline hxconstexpr bool hxbitset<bit_count_>::operator!=(const hxbitset& x_) const {

@@ -40,19 +40,23 @@ concept hxflat_map_concept_ = requires(T_& x_) {
 template<typename key_t_, typename mapped_t_>
 class hxflat_map_const_value_t {
 public:
-	/// Compares the referenced key and value for equality with `x`, using
-	/// `hxkey_equal` on both.
-	/// - `x` : The element to compare against.
-	bool operator==(const hxflat_map_const_value_t& x_) const {
-		return hxkey_equal(key, x_.key) && hxkey_equal(value, x_.value);
+	/// Compares the referenced keys and values of `a` and `b` for equality,
+	/// using `hxkey_equal` on both.
+	/// - `a` : An element.
+	/// - `b` : The element to compare against.
+	friend bool operator==(const hxflat_map_const_value_t& a_,
+			const hxflat_map_const_value_t& b_) {
+		return hxkey_equal(a_.key, b_.key) && hxkey_equal(a_.value, b_.value);
 	}
 
-	/// Returns true when this element is ordered before `x`, comparing keys
+	/// Returns true when `a` is ordered before `b`, comparing keys
 	/// first and then values with `hxkey_equal` and `hxkey_less`.
-	/// - `x` : The element to compare against.
-	bool operator<(const hxflat_map_const_value_t& x_) const {
-		if(!hxkey_equal(key, x_.key)) { return hxkey_less(key, x_.key); }
-		return hxkey_less(value, x_.value);
+	/// - `a` : An element.
+	/// - `b` : The element to compare against.
+	friend bool operator<(const hxflat_map_const_value_t& a_,
+			const hxflat_map_const_value_t& b_) {
+		if(!hxkey_equal(a_.key, b_.key)) { return hxkey_less(a_.key, b_.key); }
+		return hxkey_less(a_.value, b_.value);
 	}
 
 	/// The referenced key.
@@ -74,19 +78,21 @@ protected:
 template<typename key_t_, typename mapped_t_>
 class hxflat_map_value_t {
 public:
-	/// Compares the referenced key and value for equality with `x`, using
-	/// `hxkey_equal` on both.
-	/// - `x` : The element to compare against.
-	bool operator==(const hxflat_map_value_t& x_) const {
-		return hxkey_equal(key, x_.key) && hxkey_equal(value, x_.value);
+	/// Compares the referenced keys and values of `a` and `b` for equality,
+	/// using `hxkey_equal` on both.
+	/// - `a` : An element.
+	/// - `b` : The element to compare against.
+	friend bool operator==(const hxflat_map_value_t& a_, const hxflat_map_value_t& b_) {
+		return hxkey_equal(a_.key, b_.key) && hxkey_equal(a_.value, b_.value);
 	}
 
-	/// Returns true when this element is ordered before `x`, comparing keys
+	/// Returns true when `a` is ordered before `b`, comparing keys
 	/// first and then values with `hxkey_equal` and `hxkey_less`.
-	/// - `x` : The element to compare against.
-	bool operator<(const hxflat_map_value_t& x_) const {
-		if(!hxkey_equal(key, x_.key)) { return hxkey_less(key, x_.key); }
-		return hxkey_less(value, x_.value);
+	/// - `a` : An element.
+	/// - `b` : The element to compare against.
+	friend bool operator<(const hxflat_map_value_t& a_, const hxflat_map_value_t& b_) {
+		if(!hxkey_equal(a_.key, b_.key)) { return hxkey_less(a_.key, b_.key); }
+		return hxkey_less(a_.value, b_.value);
 	}
 
 	/// The referenced key.
@@ -197,12 +203,20 @@ public:
 		const_iterator operator--(int) { const_iterator t_(*this); operator--(); return t_; }
 
 		/// Compares two iterators for equality.
-		/// - `x` : The iterator to compare against.
-		bool operator==(const const_iterator& x_) const;
+		/// - `a` : An iterator.
+		/// - `b` : The iterator to compare against.
+		friend bool operator==(const const_iterator& a_, const const_iterator& b_) {
+			hxassertf(a_.m_map_ != hxnull && a_.m_map_ == b_.m_map_, "bad_iter");
+			return a_.m_index_ == b_.m_index_;
+		}
 
-		/// Returns true when this iterator is ordered before `x`.
-		/// - `x` : The iterator to compare against.
-		bool operator<(const const_iterator& x_) const;
+		/// Returns true when `a` is ordered before `b`.
+		/// - `a` : An iterator.
+		/// - `b` : The iterator to compare against.
+		friend bool operator<(const const_iterator& a_, const const_iterator& b_) {
+			hxassertf(a_.m_map_ != hxnull && a_.m_map_ == b_.m_map_, "bad_iter");
+			return a_.m_index_ < b_.m_index_;
+		}
 
 		/// Returns true when this iterator is ordered after `x`.
 		/// - `x` : The iterator to compare against.
@@ -383,19 +397,34 @@ public:
 
 	hxattr_nodiscard iterator operator[](hxsize_t index_);
 
-	/// Returns `true` if this map and `x` contain the same key-value pairs in
+	/// Returns `true` if `a` and `b` contain the same key-value pairs in
 	/// the same order using `hxkey_equal` on both keys and values.
-	/// - `x` : The map to compare against.
+	/// - `a` : A map.
+	/// - `b` : The map to compare against.
 	template<hxsize_t capacity_x_>
-	hxattr_nodiscard bool operator==(const hxflat_map<key_t_, mapped_t_, capacity_x_,
-		compare_t_, traits_>& x_) const;
+	hxattr_nodiscard friend bool operator==(const hxflat_map& a_,
+			const hxflat_map<key_t_, mapped_t_, capacity_x_, compare_t_, traits_>& b_) {
+		return hxequal_range(a_, b_);
+	}
 
-	/// Returns `true` if this map compares less than `x` lexicographically,
-	/// using `hxkey_equal` and `hxkey_less` on keys and values.
+#if HX_CPLUSPLUS < 202002L
+	/// Returns `true` if this map and `x` differ in size or in any key-value
+	/// pair, using `hxkey_equal` on both keys and values.
 	/// - `x` : The map to compare against.
 	template<hxsize_t capacity_x_>
-	hxattr_nodiscard bool operator<(const hxflat_map<key_t_, mapped_t_, capacity_x_,
+	hxattr_nodiscard bool operator!=(const hxflat_map<key_t_, mapped_t_, capacity_x_,
 		compare_t_, traits_>& x_) const;
+#endif
+
+	/// Returns `true` if `a` compares less than `b` lexicographically,
+	/// using `hxkey_equal` and `hxkey_less` on keys and values.
+	/// - `a` : A map.
+	/// - `b` : The map to compare against.
+	template<hxsize_t capacity_x_>
+	hxattr_nodiscard friend bool operator<(const hxflat_map& a_,
+			const hxflat_map<key_t_, mapped_t_, capacity_x_, compare_t_, traits_>& b_) {
+		return hxless_range(a_, b_);
+	}
 
 	/// Returns a const iterator pointing to the first element.
 	const_iterator begin(void) const { return const_iterator(this, 0); }

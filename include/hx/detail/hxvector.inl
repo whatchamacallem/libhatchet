@@ -293,21 +293,14 @@ hxinline hxattr_flatten T_& hxvector<T_, capacity_>::emplace_back(args_t_&&... a
 	return *::new(m_end_++) T_(hxforward<args_t_>(args_)...);
 }
 
+#if HX_CPLUSPLUS < 202002L
 template<hxvector_concept_ T_, hxsize_t capacity_>
 template<hxsize_t capacity_x_>
-hxinline hxattr_flatten bool hxvector<T_, capacity_>::equal(
+hxinline hxattr_flatten bool hxvector<T_, capacity_>::operator!=(
 		const hxvector<T_, capacity_x_>& x_) const {
-	if(this->size() != x_.size()) {
-		return false;
-	}
-	for(const T_*it0_ = this->data(), *it1_ = x_.data(), *const end_ = m_end_;
-			it0_ != end_; ++it0_, ++it1_) {
-		if(!hxkey_equal(*it0_, *it1_)) {
-			return false;
-		}
-	}
-	return true;
+	return !(*this == x_);
 }
+#endif
 
 template<hxvector_concept_ T_, hxsize_t capacity_>
 hxinline hxattr_flatten void hxvector<T_, capacity_>::erase(T_* it_) noexcept {
@@ -490,22 +483,6 @@ hxinline hxattr_flatten void hxvector<T_, capacity_>::insert(hxsize_t index_,
 template<hxvector_concept_ T_, hxsize_t capacity_>
 hxinline hxattr_flatten void hxvector<T_, capacity_>::insertion_sort(void) noexcept {
 	hxinsertion_sort<T_*>(this->data(), m_end_, hxkey_less_t<T_>{});
-}
-
-template<hxvector_concept_ T_, hxsize_t capacity_>
-template<hxsize_t capacity_x_>
-hxinline hxattr_flatten bool hxvector<T_, capacity_>::less(
-		const hxvector<T_, capacity_x_>& x_) const {
-	const hxsize_t size_ = hxmin(this->size(), x_.size());
-	for(const T_* it0_ = this->data(), *it1_ = x_.data(), *const end_ = it0_ + size_;
-			it0_ != end_; ++it0_, ++it1_) {
-		// Use `a == b` instead of `a < b && b < a` for performance.
-		if(!hxkey_equal(*it0_, *it1_)) {
-			return hxkey_less(*it0_, *it1_);
-		}
-	}
-	// Order the prefix before the other.
-	return this->size() < x_.size();
 }
 
 template<hxvector_concept_ T_, hxsize_t capacity_>

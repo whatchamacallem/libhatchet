@@ -34,7 +34,11 @@ public:
 
 	/// Comparison operator for comparison sorting `hxradix_sort_key` objects
 	/// by key as a fallback for short arrays.
-	bool operator<(hxradix_sort_key x_) const { return m_key_ < x_.m_key_; }
+	/// - `a` : A key.
+	/// - `b` : The key to compare against.
+	friend bool operator<(hxradix_sort_key a_, hxradix_sort_key b_) {
+		return a_.m_key_ < b_.m_key_;
+	}
 
 	/// A version of the key that may have been modified to work as a
 	/// `uint32_t`.

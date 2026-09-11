@@ -85,6 +85,10 @@ TEST(hxconsole_test, register_command_replaces_duplicate) {
 #endif // HX_USE_CONSOLE
 
 #if !(HX_USE_GOOGLE_TEST)
+TEST(hxtest_main, filter) {
+	EXPECT_TRUE(true);
+}
+
 TEST(hxtest_main, gtest_filter) {
 	const hxsize_t total = hxdetail_::hxtest_::dispatcher_().test_cases_().size();
 

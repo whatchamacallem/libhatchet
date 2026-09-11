@@ -35,8 +35,11 @@ public:
 		int priority;
 
 		/// Orders records by `priority` so the highest priority sorts last.
-		/// - `x` : The record to compare against.
-		bool operator<(const record_t& x_) const { return this->priority < x_.priority; }
+		/// - `a` : A record.
+		/// - `b` : The record to compare against.
+		friend bool operator<(const record_t& a_, const record_t& b_) {
+			return a_.priority < b_.priority;
+		}
 
 #if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
 		const char* label;

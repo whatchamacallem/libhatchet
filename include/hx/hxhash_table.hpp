@@ -80,14 +80,20 @@ public:
 	hxhash_table_set_node(const hxhash_table_set_node& src_) = delete;
 	hxhash_table_set_node& operator=(const hxhash_table_set_node& x_) = delete;
 
-	/// Returns `true` if this node and `x` have equal keys, using `hxkey_equal`.
-	/// - `x` : The node to compare against.
-	bool operator==(const hxhash_table_set_node& x_) const { return hxkey_equal(m_key_, x_.m_key_); }
+	/// Returns `true` if `a` and `b` have equal keys, using `hxkey_equal`.
+	/// - `a` : A node.
+	/// - `b` : The node to compare against.
+	friend bool operator==(const hxhash_table_set_node& a_, const hxhash_table_set_node& b_) {
+		return hxkey_equal(a_.m_key_, b_.m_key_);
+	}
 
-	/// Returns `true` if this node's key is ordered before `x`'s key, using
+	/// Returns `true` if `a`'s key is ordered before `b`'s key, using
 	/// `hxkey_less`.
-	/// - `x` : The node to compare against.
-	bool operator<(const hxhash_table_set_node& x_) const { return hxkey_less(m_key_, x_.m_key_); }
+	/// - `a` : A node.
+	/// - `b` : The node to compare against.
+	friend bool operator<(const hxhash_table_set_node& a_, const hxhash_table_set_node& b_) {
+		return hxkey_less(a_.m_key_, b_.m_key_);
+	}
 
 	/// The key and hash identify the `node_t` and should not change once added.
 	const key_t_& hash_key(void) const { return m_key_; }
@@ -125,15 +131,25 @@ public:
 	hxhash_table_map_node(const key_t_& key_, ref_t_&& value_) :
 		hxhash_table_set_node<key_t_>(key_), m_value_(hxforward<ref_t_>(value_)) { }
 
-	/// Returns `true` if this node and `x` have equal keys and values, using
+	/// Returns `true` if `a` and `b` have equal keys and values, using
 	/// `hxkey_equal`.
-	/// - `x` : The node to compare against.
-	bool operator==(const hxhash_table_map_node& x_) const;
+	/// - `a` : A node.
+	/// - `b` : The node to compare against.
+	friend bool operator==(const hxhash_table_map_node& a_, const hxhash_table_map_node& b_) {
+		return hxkey_equal(a_.hash_key(), b_.hash_key())
+			&& hxkey_equal(a_.m_value_, b_.m_value_);
+	}
 
-	/// Returns `true` if this node is ordered before `x`, comparing keys first
+	/// Returns `true` if `a` is ordered before `b`, comparing keys first
 	/// and then values with `hxkey_equal` and `hxkey_less`.
-	/// - `x` : The node to compare against.
-	bool operator<(const hxhash_table_map_node& x_) const;
+	/// - `a` : A node.
+	/// - `b` : The node to compare against.
+	friend bool operator<(const hxhash_table_map_node& a_, const hxhash_table_map_node& b_) {
+		if(!hxkey_equal(a_.hash_key(), b_.hash_key())) {
+			return hxkey_less(a_.hash_key(), b_.hash_key());
+		}
+		return hxkey_less(a_.m_value_, b_.m_value_);
+	}
 
 	/// Returns the stored value.
 	const value_t_& value(void) const { return m_value_; }
@@ -243,8 +259,11 @@ public:
 		/// Advances the iterator to the next element (post-increment).
 		const_iterator operator++(int) { const_iterator t_(*this); operator++(); return t_; }
 		/// Compares two iterators for equality.
-		/// - `x` : The iterator to compare against.
-		bool operator==(const const_iterator& x_) const;
+		/// - `a` : An iterator.
+		/// - `b` : The iterator to compare against.
+		friend bool operator==(const const_iterator& a_, const const_iterator& b_) {
+			return a_.m_current_node_ == b_.m_current_node_;
+		}
 #if HX_CPLUSPLUS < 202002L
 		/// Compares two iterators for inequality.
 		/// - `x` : The iterator to compare against.

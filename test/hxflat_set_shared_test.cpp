@@ -19,10 +19,6 @@ hxattr_noinline static void hxtest_gdb_break_hxflat_set_shared(void) { }
 #define hxarray hxflat_set
 #define hxarray_shared_test_f hxflat_set_shared_test_f
 
-#define HXSHARED_ARRAY_EQUAL(a_, b_) ((a_) == (b_))
-#define HXSHARED_ARRAY_LESS(a_, b_) ((a_) < (b_))
-#define HXSHARED_ARRAY_ERASE(a_, it_) ((a_).erase(it_))
-
 // Keys are const and always sorted.
 #define HX_ARRAY_TEST_NO_INDEX
 #define HX_ARRAY_TEST_NO_MUTATE

@@ -139,16 +139,47 @@ public:
 
 	/// Returns `true` if both expected values contain equal values or equal
 	/// errors.
-	/// - `x` : Right hand side expected value.
-	hxattr_nodiscard bool operator==(const hxexpected& x_) const { return this->equal(x_); }
+	/// - `a` : Left hand side expected value.
+	/// - `b` : Right hand side expected value.
+	hxattr_nodiscard friend bool operator==(const hxexpected& a_, const hxexpected& b_) {
+		if(a_.has_value() != b_.has_value()) {
+			return false;
+		}
+		if(!a_.has_value()) {
+			return a_.m_error_ == b_.m_error_;
+		}
+		return *a_.data() == *b_.data();
+	}
 
-	/// Returns `true` if this expected value contains an error.
+	/// Returns `true` if `a` contains an error.
+	/// - `a` : Left hand side expected value.
 	/// - `hxnil` : The error sentinel.
-	hxattr_nodiscard bool operator==(hxnil_t) const { return static_cast<bool>(m_error_); }
+	hxattr_nodiscard friend bool operator==(const hxexpected& a_, hxnil_t) {
+		return static_cast<bool>(a_.m_error_);
+	}
 
-	/// Returns `true` if this expected value contains a value equal to `value`.
+	/// Returns `true` if `a` contains a value equal to `b`.
+	/// - `a` : Left hand side expected value.
+	/// - `b` : The value to compare against.
+	hxattr_nodiscard friend bool operator==(const hxexpected& a_, const T_& b_) {
+		return a_.has_value() && (*a_.data() == b_);
+	}
+
+#if HX_CPLUSPLUS < 202002L
+	/// Returns `true` if the expected values differ in whether they hold a
+	/// value, or hold differing values or errors.
+	/// - `x` : Right hand side expected value.
+	hxattr_nodiscard bool operator!=(const hxexpected& x_) const;
+
+	/// Returns `true` if this expected value contains a value.
+	/// - `hxnil` : The error sentinel.
+	hxattr_nodiscard bool operator!=(hxnil_t) const;
+
+	/// Returns `true` if this expected value contains an error or a value
+	/// differing from `value`.
 	/// - `value` : The value to compare against.
-	hxattr_nodiscard bool operator==(const T_& value_) const;
+	hxattr_nodiscard bool operator!=(const T_& value_) const;
+#endif
 
 	/// Returns the result of calling `callable` with the contained value when
 	/// there is no error, otherwise returns `hxnil`. Use `and_then` to return
@@ -163,11 +194,6 @@ public:
 	/// - `args` : Arguments forwarded to the constructor of `T`.
 	template<typename... args_t_>
 	T_& emplace(args_t_&&... args_) noexcept;
-
-	/// Returns `true` if both expected values contain equal values or equal
-	/// errors.
-	/// - `x` : The `hxexpected` to compare against.
-	hxattr_nodiscard bool equal(const hxexpected& x_) const;
 
 	/// Returns a reference to the error with the constness and value category
 	/// of `self`. The expected value must contain an error.
@@ -238,17 +264,6 @@ hxattr_nodiscard hxexpected<T_, E_> hxmake_expected(args_t_&&... args_) {
 	result_.emplace(hxforward<args_t_>(args_)...);
 	return result_;
 }
-
-/// `hxkey_equal_t<hxexpected<T, E>>` - Compares `x` and `y` for equivalence.
-template<typename T_, typename E_>
-class hxkey_equal_t<hxexpected<T_, E_> > {
-public:
-	hxattr_nodiscard hxinline hxattr_flatten
-	bool operator()(
-			const hxexpected<T_, E_>& x_, const hxexpected<T_, E_>& y_) const {
-		return x_.equal(y_);
-	}
-};
 
 /// `hxkey_hash_t<hxexpected<T, E>>` - Returns the hash of the contained value
 /// if non-null, otherwise `31u`.

@@ -71,12 +71,19 @@ public:
 	/// Returns `true` if the owned pointer is non-null.
 	hxattr_nodiscard hxconstexpr explicit operator bool(void) const;
 
-	/// Returns `true` if this and `x` point to the same object.
-	/// - `x` : The `hxptr` to compare against.
-	hxattr_nodiscard hxconstexpr bool operator==(const hxptr& x_) const { return this->equal(x_); }
+	/// Returns `true` if `a` and `b` point to the same object.
+	/// - `a` : An `hxptr`.
+	/// - `b` : The `hxptr` to compare against.
+	hxattr_nodiscard friend hxconstexpr bool operator==(const hxptr& a_, const hxptr& b_) {
+		return a_.m_ptr_ == b_.m_ptr_;
+	}
 
-	/// Returns `true` if the owned pointer is null.
-	hxattr_nodiscard hxconstexpr bool operator==(hxnil_t) const;
+	/// Returns `true` if the pointer owned by `a` is null.
+	/// - `a` : An `hxptr`.
+	/// - `hxnil` : The null sentinel.
+	hxattr_nodiscard friend hxconstexpr bool operator==(const hxptr& a_, hxnil_t) {
+		return a_.m_ptr_ == hxnull;
+	}
 
 #if HX_CPLUSPLUS < 202002L
 	/// Returns `true` if this and `x` point to different objects.
@@ -109,10 +116,6 @@ public:
 	template<hxslab_allocator_t allocator_=hxslab_allocator_current,
 		hxalignment_t alignment_=hxalignment, typename... args_t_>
 	T_& emplace(args_t_&&... args_) noexcept;
-
-	/// Returns `true` if this and `x` point to the same object.
-	/// - `x` : The `hxptr` to compare against.
-	hxattr_nodiscard hxconstexpr bool equal(const hxptr& x_) const;
 
 	/// Returns the owned pointer without releasing ownership.
 	hxattr_nodiscard hxconstexpr T_* get(void) const { return m_ptr_; }
@@ -189,16 +192,6 @@ hxattr_nodiscard hxptr<T_, deleter_t_> hxemplace_ptr(args_t_&&... args_) noexcep
 	return hxptr<T_, deleter_t_>(::new(hxmalloc_ext(sizeof(T_), allocator_, align_))
 		T_(hxforward<args_t_>(args_)...));
 }
-
-/// `hxkey_equal_t<hxptr<T>>` - Compares `x` and `y` for equivalence.
-template<typename T_, typename deleter_t_>
-class hxkey_equal_t<hxptr<T_, deleter_t_> > {
-public:
-	hxattr_nodiscard hxinline hxattr_flatten bool operator()(
-			const hxptr<T_, deleter_t_>& x_, const hxptr<T_, deleter_t_>& y_) const {
-		return x_.equal(y_);
-	}
-};
 
 /// `hxkey_hash_t<hxptr<T>>` - Returns the hash of the owned value if
 /// non-null, otherwise `31u`.

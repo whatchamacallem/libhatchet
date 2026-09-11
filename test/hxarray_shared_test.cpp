@@ -15,9 +15,6 @@ HX_NS_USE
 
 hxattr_noinline static void hxtest_gdb_break_hxarray_shared(void) { }
 
-#define HXSHARED_ARRAY_EQUAL(a_, b_) ((a_).equal(b_))
-#define HXSHARED_ARRAY_LESS(a_, b_) ((a_).less(b_))
-
 // hxarray has a fixed size equal to its capacity.
 #define HX_ARRAY_TEST_NO_ADD_RANGE
 #define HX_ARRAY_TEST_NO_CLEAR

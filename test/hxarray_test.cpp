@@ -314,16 +314,16 @@ TEST(hxarray_test, memcpy_and_memset) {
 #endif
 
 #if HX_CPLUSPLUS >= 202002L
-TEST(hxarray_test, equal_and_less) {
+TEST(hxarray_test, operator_equal_and_operator_less) {
 	static const int v1[3] = { 1, 2, 3 };
 	const hxarray<int, 3> a(hxmake_range(v1));
 	const hxarray<int, 3> b(hxmake_range(v1));
 	const hxarray<int, 3> c{ 1, 2, 4 };
-	EXPECT_TRUE(a.equal(b));
-	EXPECT_FALSE(a.equal(c));
-	EXPECT_FALSE(a.less(b));
-	EXPECT_TRUE(a.less(c));
-	EXPECT_FALSE(c.less(a));
+	EXPECT_TRUE(a == b);
+	EXPECT_FALSE(a == c);
+	EXPECT_FALSE(a < b);
+	EXPECT_TRUE(a < c);
+	EXPECT_FALSE(c < a);
 	EXPECT_TRUE(hxkey_equal(a, b));
 	EXPECT_FALSE(hxkey_equal(a, c));
 	EXPECT_FALSE(hxkey_less(a, b));
@@ -418,36 +418,36 @@ TEST(hxarray_test, dynamic_initializer_list_constructor) {
 }
 #endif
 
-TEST(hxarray_test, equal_mismatched_capacity) {
+TEST(hxarray_test, operator_equal_mismatched_capacity) {
 	{
 		const hxarray<int, hxallocator_dynamic_capacity> a{1, 2};
 		const hxarray<int, hxallocator_dynamic_capacity> b{1, 2, 3};
-		EXPECT_FALSE(a.equal(b));
+		EXPECT_FALSE(a == b);
 	}
 }
 
-TEST(hxarray_test, less_different_sizes) {
+TEST(hxarray_test, operator_less_different_sizes) {
 	{
 		const hxarray<int, hxallocator_dynamic_capacity> shorter{1, 2};
 		const hxarray<int, hxallocator_dynamic_capacity> longer{1, 2, 3};
-		EXPECT_TRUE(shorter.less(longer));
-		EXPECT_FALSE(longer.less(shorter));
-		EXPECT_FALSE(shorter.less(shorter));
+		EXPECT_TRUE(shorter < longer);
+		EXPECT_FALSE(longer < shorter);
+		EXPECT_FALSE(shorter < shorter);
 	}
 }
 
-TEST(hxarray_test, equal_detects_last_element_difference) {
+TEST(hxarray_test, operator_equal_detects_last_element_difference) {
 	const hxarray<int, 3> a{ 1, 2, 3 };
 	const hxarray<int, 3> b{ 1, 2, 4 };
-	EXPECT_FALSE(a.equal(b));
-	EXPECT_FALSE(b.equal(a));
+	EXPECT_FALSE(a == b);
+	EXPECT_FALSE(b == a);
 }
 
-TEST(hxarray_test, less_detects_last_element_difference) {
+TEST(hxarray_test, operator_less_detects_last_element_difference) {
 	const hxarray<int, 3> a{ 1, 2, 3 };
 	const hxarray<int, 3> b{ 1, 2, 4 };
-	EXPECT_TRUE(a.less(b));
-	EXPECT_FALSE(b.less(a));
+	EXPECT_TRUE(a < b);
+	EXPECT_FALSE(b < a);
 }
 
 TEST_F(hxarray_test_f, dynamic_move_constructor) {

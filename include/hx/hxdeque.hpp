@@ -82,12 +82,18 @@ public:
 		const_iterator operator--(int) { const_iterator t_(*this); operator--(); return t_; }
 
 		/// Compares two iterators for equality.
-		/// - `x` : The iterator to compare against.
-		bool operator==(const const_iterator& x_) const { return m_index_ == x_.m_index_; }
+		/// - `a` : An iterator.
+		/// - `b` : The iterator to compare against.
+		friend bool operator==(const const_iterator& a_, const const_iterator& b_) {
+			return a_.m_index_ == b_.m_index_;
+		}
 
-		/// Returns true when this iterator is ordered before `x`.
-		/// - `x` : The iterator to compare against.
-		bool operator<(const const_iterator& x_) const { return m_index_ < x_.m_index_; }
+		/// Returns true when `a` is ordered before `b`.
+		/// - `a` : An iterator.
+		/// - `b` : The iterator to compare against.
+		friend bool operator<(const const_iterator& a_, const const_iterator& b_) {
+			return a_.m_index_ < b_.m_index_;
+		}
 
 #if HX_CPLUSPLUS < 202002L
 		/// Compares two iterators for inequality.
@@ -168,15 +174,28 @@ public:
 
 	hxattr_nodiscard T_& operator[](hxsize_t index_);
 
-	/// Returns `true` if this deque and `x` contain the same elements in the
+	/// Returns `true` if `a` and `b` contain the same elements in the
 	/// same order, using `hxkey_equal`.
-	/// - `x` : The deque to compare against.
-	hxattr_nodiscard bool operator==(const hxdeque& x_) const;
+	/// - `a` : A deque.
+	/// - `b` : The deque to compare against.
+	hxattr_nodiscard friend bool operator==(const hxdeque& a_, const hxdeque& b_) {
+		return hxequal_range(a_, b_);
+	}
 
-	/// Returns `true` if this deque compares less than `x` lexicographically,
-	/// using `hxkey_equal` and `hxkey_less`.
+#if HX_CPLUSPLUS < 202002L
+	/// Returns `true` if this deque and `x` differ in length or in any element,
+	/// using `hxkey_equal`.
 	/// - `x` : The deque to compare against.
-	hxattr_nodiscard bool operator<(const hxdeque& x_) const;
+	hxattr_nodiscard bool operator!=(const hxdeque& x_) const;
+#endif
+
+	/// Returns `true` if `a` compares less than `b` lexicographically,
+	/// using `hxkey_equal` and `hxkey_less`.
+	/// - `a` : A deque.
+	/// - `b` : The deque to compare against.
+	hxattr_nodiscard friend bool operator<(const hxdeque& a_, const hxdeque& b_) {
+		return hxless_range(a_, b_);
+	}
 
 	/// Returns a const iterator pointing to the first element.
 	const_iterator begin(void) const { return const_iterator(this, 0); }

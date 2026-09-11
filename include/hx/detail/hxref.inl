@@ -45,11 +45,6 @@ hxinline hxattr_flatten hxref<T_>& hxref<T_>::operator=(U_& value_) {
 }
 
 template<typename T_>
-hxinline hxattr_flatten bool hxref<T_>::operator==(const T_& value_) const {
-	return m_value_ != hxnull && (*m_value_ == value_);
-}
-
-template<typename T_>
 template<typename self_t_, typename callable_t_>
 hxinline hxattr_flatten auto hxref<T_>::and_then(
 		this self_t_&& self_, callable_t_&& callable_)
@@ -60,13 +55,22 @@ hxinline hxattr_flatten auto hxref<T_>::and_then(
 	return hxnil;
 }
 
+#if HX_CPLUSPLUS < 202002L
 template<typename T_>
-hxinline hxattr_flatten bool hxref<T_>::equal(const hxref& x_) const {
-	if (m_value_ == hxnull || x_.m_value_ == hxnull) {
-		return m_value_ == x_.m_value_;
-	}
-	return *m_value_ == *x_.m_value_;
+hxinline hxattr_flatten bool hxref<T_>::operator!=(const hxref& x_) const {
+	return !(*this == x_);
 }
+
+template<typename T_>
+hxinline hxattr_flatten bool hxref<T_>::operator!=(hxnil_t) const {
+	return !(*this == hxnil);
+}
+
+template<typename T_>
+hxinline hxattr_flatten bool hxref<T_>::operator!=(const T_& value_) const {
+	return !(*this == value_);
+}
+#endif
 
 template<typename T_>
 hxinline hxattr_flatten hxhash_t hxref<T_>::hash(void) const {
