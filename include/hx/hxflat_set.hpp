@@ -162,7 +162,9 @@ public:
 	/// `hxkey_equal`.
 	/// - `x` : The set to compare against.
 	template<hxsize_t capacity_x_>
-	hxattr_nodiscard bool operator!=(const hxflat_set<key_t_, capacity_x_, compare_t_, traits_>& x_) const;
+	hxattr_nodiscard bool operator!=(const hxflat_set<key_t_, capacity_x_, compare_t_, traits_>& x_) const {
+		return !(*this == x_);
+	}
 #endif
 
 	/// Returns `true` if `a` compares less than `b` lexicographically,

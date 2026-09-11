@@ -120,15 +120,6 @@ hxinline hxattr_flatten auto hxflat_set<key_t_, capacity_, compare_t_, traits_>:
 	return ptr_;
 }
 
-#if HX_CPLUSPLUS < 202002L
-template<hxflat_set_concept_ key_t_, hxsize_t capacity_, typename compare_t_, int traits_>
-template<hxsize_t capacity_x_>
-hxinline hxattr_flatten bool hxflat_set<key_t_, capacity_, compare_t_, traits_>::operator!=(
-		const hxflat_set<key_t_, capacity_x_, compare_t_, traits_>& x_) const {
-	return !(*this == x_);
-}
-#endif
-
 template<hxflat_set_concept_ key_t_, hxsize_t capacity_, typename compare_t_, int traits_>
 template<hxrange_concept_ range_t_>
 hxinline hxattr_flatten void hxflat_set<key_t_, capacity_, compare_t_, traits_>::add_range(range_t_&& range_) noexcept {

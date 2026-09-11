@@ -55,23 +55,6 @@ hxinline hxattr_flatten auto hxref<T_>::and_then(
 	return hxnil;
 }
 
-#if HX_CPLUSPLUS < 202002L
-template<typename T_>
-hxinline hxattr_flatten bool hxref<T_>::operator!=(const hxref& x_) const {
-	return !(*this == x_);
-}
-
-template<typename T_>
-hxinline hxattr_flatten bool hxref<T_>::operator!=(hxnil_t) const {
-	return !(*this == hxnil);
-}
-
-template<typename T_>
-hxinline hxattr_flatten bool hxref<T_>::operator!=(const T_& value_) const {
-	return !(*this == value_);
-}
-#endif
-
 template<typename T_>
 hxinline hxattr_flatten hxhash_t hxref<T_>::hash(void) const {
 	return this->has_value() ? hxkey_hash(*m_value_) : hxhash_t{31u};

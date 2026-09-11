@@ -169,16 +169,16 @@ public:
 	/// Returns `true` if the expected values differ in whether they hold a
 	/// value, or hold differing values or errors.
 	/// - `x` : Right hand side expected value.
-	hxattr_nodiscard bool operator!=(const hxexpected& x_) const;
+	hxattr_nodiscard bool operator!=(const hxexpected& x_) const { return !(*this == x_); }
 
 	/// Returns `true` if this expected value contains a value.
 	/// - `hxnil` : The error sentinel.
-	hxattr_nodiscard bool operator!=(hxnil_t) const;
+	hxattr_nodiscard bool operator!=(hxnil_t) const { return !(*this == hxnil); }
 
 	/// Returns `true` if this expected value contains an error or a value
 	/// differing from `value`.
 	/// - `value` : The value to compare against.
-	hxattr_nodiscard bool operator!=(const T_& value_) const;
+	hxattr_nodiscard bool operator!=(const T_& value_) const { return !(*this == value_); }
 #endif
 
 	/// Returns the result of calling `callable` with the contained value when

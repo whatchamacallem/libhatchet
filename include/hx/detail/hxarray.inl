@@ -259,13 +259,6 @@ hxinline hxattr_flatten hxsize_t hxarray<T_, capacity_>::capacity(void) const {
 	return hxallocator<T_, capacity_>::capacity();
 }
 
-#if HX_CPLUSPLUS < 202002L
-template<hxarray_concept_ T_, hxsize_t capacity_>
-hxinline hxattr_flatten bool hxarray<T_, capacity_>::operator!=(const hxarray& x_) const {
-	return !(*this == x_);
-}
-#endif
-
 template<hxarray_concept_ T_, hxsize_t capacity_>
 hxinline hxattr_flatten const T_* hxarray<T_, capacity_>::find(const T_& value_) const {
 	const T_* it_ = this->data();

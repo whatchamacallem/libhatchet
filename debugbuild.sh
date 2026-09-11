@@ -30,6 +30,7 @@ HX_OPT_CLEAR_=0
 HX_OPT_GRIND_=0
 HX_OPT_RUN_=0
 HX_OPT_VERBOSE_=0
+HX_OPT_DEFINES_=""
 for HX_ARG_ in "$@"; do
 	case "$HX_ARG_" in
 		"")        ;;
@@ -39,8 +40,12 @@ for HX_ARG_ in "$@"; do
 		--grind)   HX_OPT_GRIND_=1 ;;
 		--run)     HX_OPT_RUN_=1 ;;
 		--verbose) HX_OPT_VERBOSE_=1 ;;
+		-D*=*)     HX_OPT_DEFINES_="$HX_OPT_DEFINES_ $HX_ARG_" ;;
+		-D*)
+			echo "error: bad_define $HX_ARG_ requires a value. It would be 1."
+			exit 1 ;;
 		*)
-			echo "usage: $0 [--gtest_break_on_failure] [--gtest_filter=pattern] [--clear] [--grind] [--run] [--verbose]"
+			echo "usage: $0 [--gtest_break_on_failure] [--gtest_filter=pattern] [--clear] [--grind] [--run] [--verbose] [-Dmacro=value]"
 			echo "  --gtest_break_on_failure  Break on EXPECT_*/ASSERT_*/hxassert* failure."
 			echo "                            Also read from GTEST_BREAK_ON_FAILURE."
 			echo "  --gtest_filter=pattern    Forward a gtest-style filter to hxtest."
@@ -48,6 +53,7 @@ for HX_ARG_ in "$@"; do
 			echo "  --grind                   Build all configuration combinations."
 			echo "  --run                     Run hxtest after building."
 			echo "  --verbose                 Full output."
+			echo "  -Dmacro=value             Forward a define to the compiler."
 			exit 1 ;;
 	esac
 done
@@ -117,6 +123,7 @@ if [ "$HX_OPT_GRIND_" = "1" ]; then
 		HX_BUILD_="$HX_BUILD_ -DHX_USE_SLAB_ALLOCATOR=$HX_MEMORY_"
 		HX_BUILD_="$HX_BUILD_ -DHX_USE_PROFILER=$HX_PROFILER_"
 		HX_BUILD_="$HX_BUILD_ -DHX_USE_THREADS=$HX_THREADS_"
+		HX_BUILD_="$HX_BUILD_$HX_OPT_DEFINES_"
 
 		if [ "$HX_OPT_VERBOSE_" = "1" ]; then
 			echo "[$HX_COUNT_] $HX_BUILD_"
@@ -135,7 +142,7 @@ fi
 
 # Enable as much code as possible for the default build and run.
 HX_BUILD_="-DHX_USE_NAMESPACE=hx -DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG \
-	-DHX_USE_CONSOLE=2 -DHX_USE_FILE_IO=2 -DHX_USE_PROFILER=1"
+	-DHX_USE_CONSOLE=2 -DHX_USE_FILE_IO=2 -DHX_USE_PROFILER=1$HX_OPT_DEFINES_"
 build_hxtest ccache
 
 # Show stats or save tokens.

@@ -130,23 +130,6 @@ hxexpected<T_, E_>::operator=(U_&& value_) noexcept {
 	return *this;
 }
 
-#if HX_CPLUSPLUS < 202002L
-template<hxexpected_concept_ T_, hxunexpected_concept_ E_>
-hxinline hxattr_flatten bool hxexpected<T_, E_>::operator!=(const hxexpected& x_) const {
-	return !(*this == x_);
-}
-
-template<hxexpected_concept_ T_, hxunexpected_concept_ E_>
-hxinline hxattr_flatten bool hxexpected<T_, E_>::operator!=(hxnil_t) const {
-	return !(*this == hxnil);
-}
-
-template<hxexpected_concept_ T_, hxunexpected_concept_ E_>
-hxinline hxattr_flatten bool hxexpected<T_, E_>::operator!=(const T_& value_) const {
-	return !(*this == value_);
-}
-#endif
-
 template<hxexpected_concept_ T_, hxunexpected_concept_ E_>
 template<typename self_t_, typename callable_t_>
 hxinline hxattr_flatten auto hxexpected<T_, E_>::and_then(

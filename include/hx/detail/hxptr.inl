@@ -54,18 +54,6 @@ hxinline hxconstexpr T_* hxptr<T_, deleter_t_>::operator->(void) const {
 template<typename T_, typename deleter_t_>
 hxinline hxconstexpr hxptr<T_, deleter_t_>::operator bool(void) const { return m_ptr_ != hxnull; }
 
-#if HX_CPLUSPLUS < 202002L
-template<typename T_, typename deleter_t_>
-hxinline hxconstexpr bool hxptr<T_, deleter_t_>::operator!=(const hxptr& x_) const {
-	return !(*this == x_);
-}
-
-template<typename T_, typename deleter_t_>
-hxinline hxconstexpr bool hxptr<T_, deleter_t_>::operator!=(hxnil_t) const {
-	return !(*this == hxnil);
-}
-#endif
-
 #if HX_CPLUSPLUS >= 202302L
 template<typename T_, typename deleter_t_>
 template<typename self_t_, typename callable_t_>

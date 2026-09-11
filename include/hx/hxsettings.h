@@ -417,7 +417,7 @@
 
 #if HX_CPLUSPLUS
 // HX_USE_* feature test flags must not be empty as that is evaluated as 0.
-#define HX_CHECK_USE_(x_) static_assert(HX_QUOTE(x_)[0] >= '0', #x_ " must be an int.");
+#define HX_CHECK_USE_(x_) static_assert(static_cast<signed>(HX_QUOTE(x_)[0]) >= '!', "bad_define not an expression: " #x_);
 HX_CHECK_USE_(HX_PROVIDE_NEW_DELETE)
 HX_CHECK_USE_(HX_TEST_ERROR_HANDLING)
 HX_CHECK_USE_(HX_USE_CONSOLE)
@@ -443,7 +443,7 @@ HX_CHECK_USE_(HX_USE_THREADS)
 // HX_USE_NAMESPACE - Wraps the entire library in a namespace when HX_USE_NAMESPACE is
 // defined as a valid namespace identifier.
 #if HX_CPLUSPLUS && defined HX_USE_NAMESPACE
-static_assert(HX_QUOTE(HX_USE_NAMESPACE)[0] >= 'A', "HX_USE_NAMESPACE must be a name.");
+static_assert(static_cast<signed>(HX_QUOTE(HX_USE_NAMESPACE)[0]) >= 'A', "bad_define not a name: HX_USE_NAMESPACE");
 #define HX_NS_BEGIN_  namespace HX_USE_NAMESPACE {
 #define HX_NS_END_    }
 #define HX_NS_PREFIX_ HX_USE_NAMESPACE::

@@ -92,7 +92,9 @@ public:
 #if HX_CPLUSPLUS < 202002L
 	/// Returns `true` if any bits differ from those of `x`.
 	/// - `x` : The `hxbitset` to compare with.
-	hxattr_nodiscard hxinline hxconstexpr bool operator!=(const hxbitset& x_) const;
+	hxattr_nodiscard hxconstexpr bool operator!=(const hxbitset& x_) const {
+		return !(*this == x_);
+	}
 #endif
 
 	/// Returns `true` if all bits are set.

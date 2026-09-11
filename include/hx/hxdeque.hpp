@@ -178,7 +178,9 @@ public:
 	/// same order, using `hxkey_equal`.
 	/// - `a` : A deque.
 	/// - `b` : The deque to compare against.
-	hxattr_nodiscard friend bool operator==(const hxdeque& a_, const hxdeque& b_) {
+	template<hxsize_t capacity_x_>
+	hxattr_nodiscard friend bool operator==(const hxdeque& a_,
+			const hxdeque<T_, capacity_x_>& b_) {
 		return hxequal_range(a_, b_);
 	}
 
@@ -186,14 +188,19 @@ public:
 	/// Returns `true` if this deque and `x` differ in length or in any element,
 	/// using `hxkey_equal`.
 	/// - `x` : The deque to compare against.
-	hxattr_nodiscard bool operator!=(const hxdeque& x_) const;
+	template<hxsize_t capacity_x_>
+	hxattr_nodiscard bool operator!=(const hxdeque<T_, capacity_x_>& x_) const {
+		return !(*this == x_);
+	}
 #endif
 
 	/// Returns `true` if `a` compares less than `b` lexicographically,
 	/// using `hxkey_equal` and `hxkey_less`.
 	/// - `a` : A deque.
 	/// - `b` : The deque to compare against.
-	hxattr_nodiscard friend bool operator<(const hxdeque& a_, const hxdeque& b_) {
+	template<hxsize_t capacity_x_>
+	hxattr_nodiscard friend bool operator<(const hxdeque& a_,
+			const hxdeque<T_, capacity_x_>& b_) {
 		return hxless_range(a_, b_);
 	}
 

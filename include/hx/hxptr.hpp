@@ -88,10 +88,10 @@ public:
 #if HX_CPLUSPLUS < 202002L
 	/// Returns `true` if this and `x` point to different objects.
 	/// - `x` : The `hxptr` to compare against.
-	hxattr_nodiscard hxconstexpr bool operator!=(const hxptr& x_) const;
+	hxattr_nodiscard hxconstexpr bool operator!=(const hxptr& x_) const { return !(*this == x_); }
 
 	/// Returns `true` if the owned pointer is non-null.
-	hxattr_nodiscard hxconstexpr bool operator!=(hxnil_t) const;
+	hxattr_nodiscard hxconstexpr bool operator!=(hxnil_t) const { return !(*this == hxnil); }
 #endif
 
 #if HX_CPLUSPLUS >= 202302L

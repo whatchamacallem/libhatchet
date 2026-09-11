@@ -233,7 +233,10 @@ public:
 #if HX_CPLUSPLUS < 202002L
 		/// Compares two iterators for inequality.
 		/// - `x` : The iterator to compare against.
-		bool operator!=(const const_iterator& x_) const;
+		bool operator!=(const const_iterator& x_) const {
+			hxassertf(m_map_ != hxnull && m_map_ == x_.m_map_, "bad_iter");
+			return m_index_ != x_.m_index_;
+		}
 #endif
 
 		/// Returns the key at the current position. This is simple so the
@@ -413,7 +416,9 @@ public:
 	/// - `x` : The map to compare against.
 	template<hxsize_t capacity_x_>
 	hxattr_nodiscard bool operator!=(const hxflat_map<key_t_, mapped_t_, capacity_x_,
-		compare_t_, traits_>& x_) const;
+			compare_t_, traits_>& x_) const {
+		return !(*this == x_);
+	}
 #endif
 
 	/// Returns `true` if `a` compares less than `b` lexicographically,

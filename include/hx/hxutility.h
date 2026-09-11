@@ -437,20 +437,26 @@ public:
 	}
 
 #if HX_CPLUSPLUS >= 202002L
-	/// Returns `a.a <=> b.a` if `a.a <=> b.a != 0` and `a.b <=> b.b` otherwise.
-    hxattr_nodiscard constexpr auto operator<=>(const hxpair& x_) {
-        if (auto c = a <=> x_.a; c != 0) { return c; }
-        return b <=> x_.b;
-    }
+	/// Returns `a.a <=> b.a` if that ordering is nonzero and `a.b <=> b.b`
+	/// otherwise.
+	hxattr_nodiscard friend constexpr auto operator<=>(const hxpair& a_, const hxpair& b_) {
+		const auto c_ = a_.a <=> b_.a;
+		if(c_ != 0) { return c_; }
+		return a_.b <=> b_.b;
+	}
 #else
-	/// Returns false if `a` and `b` are equal to `x.a` and `x.b`.
-	hxconstexpr bool operator!=(const hxpair& x_) const { return !(*this == x_); }
+	/// Returns false if `a.a` and `a.b` are equal to `b.a` and `b.b`.
+	hxattr_nodiscard friend hxconstexpr bool operator!=(const hxpair& a_, const hxpair& b_) {
+		return !(a_ == b_);
+	}
 #endif
 
-	/// Returns `a - x.a` if that difference is nonzero and `b - x.b` otherwise.
-	hxattr_nodiscard hxconstexpr auto operator-(const hxpair& x_) const
+	/// Returns `a.a - b.a` if that difference is nonzero and `a.b - b.b`
+	/// otherwise.
+	hxattr_nodiscard friend hxconstexpr auto operator-(const hxpair& a_, const hxpair& b_)
 			-> decltype(hxdeclval<a_t_>() - hxdeclval<a_t_>()) {
-		return (a - x_.a) != 0 ? (a - x_.a) : (b - x_.b);
+		const auto d_ = a_.a - b_.a;
+		return d_ != 0 ? d_ : (a_.b - b_.b);
 	}
 
 	/// The first value.

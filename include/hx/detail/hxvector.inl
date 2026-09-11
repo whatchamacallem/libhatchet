@@ -293,15 +293,6 @@ hxinline hxattr_flatten T_& hxvector<T_, capacity_>::emplace_back(args_t_&&... a
 	return *::new(m_end_++) T_(hxforward<args_t_>(args_)...);
 }
 
-#if HX_CPLUSPLUS < 202002L
-template<hxvector_concept_ T_, hxsize_t capacity_>
-template<hxsize_t capacity_x_>
-hxinline hxattr_flatten bool hxvector<T_, capacity_>::operator!=(
-		const hxvector<T_, capacity_x_>& x_) const {
-	return !(*this == x_);
-}
-#endif
-
 template<hxvector_concept_ T_, hxsize_t capacity_>
 hxinline hxattr_flatten void hxvector<T_, capacity_>::erase(T_* it_) noexcept {
 	hxassert_hard(it_ >= this->data() && it_ < m_end_, "bad_iter %zd %zd",

@@ -158,21 +158,13 @@ public:
 	/// - `a` : An array.
 	/// - `b` : The other array.
 	hxattr_nodiscard friend bool operator==(const hxarray& a_, const hxarray& b_) {
-		const hxsize_t c_ = a_.capacity();
-		if(c_ != b_.capacity()) { return false; }
-		for(const T_* it0_ = a_.data(), *it1_ = b_.data(), *const end_ = it0_ + c_;
-				it0_ != end_; ++it0_, ++it1_) {
-			if(!hxkey_equal(*it0_, *it1_)) {
-				return false;
-			}
-		}
-		return true;
+		return hxequal_range(a_, b_);
 	}
 
 #if HX_CPLUSPLUS < 202002L
 	/// Returns true if the arrays do not compare equivalent using `hxkey_equal`.
 	/// - `x` : The other array.
-	hxattr_nodiscard bool operator!=(const hxarray& x_) const;
+	hxattr_nodiscard bool operator!=(const hxarray& x_) const { return !(*this == x_); }
 #endif
 
 	/// Returns true if `a` compares less than `b` using `hxkey_equal`
@@ -181,16 +173,7 @@ public:
 	/// - `a` : An array.
 	/// - `b` : The other array.
 	hxattr_nodiscard friend bool operator<(const hxarray& a_, const hxarray& b_) {
-		const hxsize_t c_ = a_.capacity();
-		const hxsize_t nx_ = b_.capacity();
-		const hxsize_t min_ = c_ < nx_ ? c_ : nx_;
-		for(const T_* it0_ = a_.data(), *it1_ = b_.data(), *const end_ = it0_ + min_;
-				it0_ != end_; ++it0_, ++it1_) {
-			if(!hxkey_equal(*it0_, *it1_)) {
-				return hxkey_less(*it0_, *it1_);
-			}
-		}
-		return c_ < nx_;
+		return hxless_range(a_, b_);
 	}
 
 	/// Returns true if the predicate returns true for every element and false

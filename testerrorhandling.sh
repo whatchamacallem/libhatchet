@@ -22,3 +22,13 @@ if ! grep -q usage_error build/console_output.txt; then
 	echo "error: debugbuild.sh --gtest_filter with a bad filter should mention usage_error."
 	exit 1
 fi
+
+if ! ./debugbuild.sh -DHX_USE_SLAB_ALLOCATOR 2>&1 | grep -q bad_define; then
+	echo "error: debugbuild.sh with a valueless define should mention bad_define."
+	exit 1
+fi
+
+if ! ./debugbuild.sh -DHX_USE_SLAB_ALLOCATOR= 2>&1 | grep -q bad_define; then
+	echo "error: debugbuild.sh with an empty define should mention bad_define."
+	exit 1
+fi

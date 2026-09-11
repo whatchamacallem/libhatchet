@@ -168,13 +168,6 @@ inline hxconstexpr hxbitset<bit_count_>& hxbitset<bit_count_>::operator>>=(size_
 	return *this;
 }
 
-#if HX_CPLUSPLUS < 202002L
-template<size_t bit_count_>
-hxinline hxconstexpr bool hxbitset<bit_count_>::operator!=(const hxbitset& x_) const {
-	return !(*this == x_);
-}
-#endif
-
 template<size_t bit_count_>
 hxinline hxconstexpr bool hxbitset<bit_count_>::all(void) const {
 	hxassertf((m_data_[s_words_-1u] & ~s_trailing_mask_) == 0u, "stray_bits");

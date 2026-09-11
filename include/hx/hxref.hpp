@@ -120,16 +120,16 @@ public:
 	/// Returns `true` if exactly one reference is null or the referenced values
 	/// differ.
 	/// - `x` : Right-hand side reference.
-	hxattr_nodiscard bool operator!=(const hxref& x_) const;
+	hxattr_nodiscard bool operator!=(const hxref& x_) const { return !(*this == x_); }
 
 	/// Returns `true` if this reference is non-null.
 	/// - `hxnil` : The error sentinel.
-	hxattr_nodiscard bool operator!=(hxnil_t) const;
+	hxattr_nodiscard bool operator!=(hxnil_t) const { return !(*this == hxnil); }
 
 	/// Returns `true` if this reference is null or its referent differs from
 	/// `value`.
 	/// - `value` : The value to compare against.
-	hxattr_nodiscard bool operator!=(const T_& value_) const;
+	hxattr_nodiscard bool operator!=(const T_& value_) const { return !(*this == value_); }
 #endif
 
 	/// Returns the result of calling `callable` with the referenced value if

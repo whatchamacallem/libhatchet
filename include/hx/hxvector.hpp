@@ -209,23 +209,16 @@ public:
 	template<hxsize_t capacity_x_>
 	hxattr_nodiscard friend bool operator==(const hxvector& a_,
 			const hxvector<T_, capacity_x_>& b_) {
-		if(a_.size() != b_.size()) {
-			return false;
-		}
-		for(const T_*it0_ = a_.data(), *it1_ = b_.data(), *const end_ = a_.m_end_;
-				it0_ != end_; ++it0_, ++it1_) {
-			if(!hxkey_equal(*it0_, *it1_)) {
-				return false;
-			}
-		}
-		return true;
+		return hxequal_range(a_, b_);
 	}
 
 #if HX_CPLUSPLUS < 202002L
 	/// Returns true if the arrays do not compare equivalent using `hxkey_equal`.
 	/// - `x` : The other array.
 	template<hxsize_t capacity_x_>
-	hxattr_nodiscard bool operator!=(const hxvector<T_, capacity_x_>& x_) const;
+	hxattr_nodiscard bool operator!=(const hxvector<T_, capacity_x_>& x_) const {
+		return !(*this == x_);
+	}
 #endif
 
 	/// Returns true if `a` compares less than `b` using `hxkey_equal`
@@ -236,16 +229,7 @@ public:
 	template<hxsize_t capacity_x_>
 	hxattr_nodiscard friend bool operator<(const hxvector& a_,
 			const hxvector<T_, capacity_x_>& b_) {
-		const hxsize_t size_ = hxmin(a_.size(), b_.size());
-		for(const T_* it0_ = a_.data(), *it1_ = b_.data(), *const end_ = it0_ + size_;
-				it0_ != end_; ++it0_, ++it1_) {
-			// Use `a == b` instead of `a < b && b < a` for performance.
-			if(!hxkey_equal(*it0_, *it1_)) {
-				return hxkey_less(*it0_, *it1_);
-			}
-		}
-		// Order the prefix before the other.
-		return a_.size() < b_.size();
+		return hxless_range(a_, b_);
 	}
 
 	/// Appends an element. (Non-standard.) Vector math is not a goal so this
