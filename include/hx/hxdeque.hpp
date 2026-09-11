@@ -98,7 +98,7 @@ public:
 #if HX_CPLUSPLUS < 202002L
 		/// Compares two iterators for inequality.
 		/// - `x` : The iterator to compare against.
-		bool operator!=(const const_iterator& x_) const { return m_index_ != x_.m_index_; }
+		hxattr_nodiscard bool operator!=(const const_iterator& x_) const { return !(*this == x_); }
 #endif
 
 	protected:

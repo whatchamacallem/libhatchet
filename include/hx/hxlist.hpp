@@ -149,7 +149,7 @@ public:
 #if HX_CPLUSPLUS < 202002L
 		/// Returns `true` if the iterators point to different nodes.
 		/// - `x` : The iterator to compare against.
-		bool operator!=(const const_iterator& x_) const { return !(*this == x_); }
+		hxattr_nodiscard bool operator!=(const const_iterator& x_) const { return !(*this == x_); }
 #endif
 		/// Returns a const reference to the current node.
 		const T_& operator*(void) const {
