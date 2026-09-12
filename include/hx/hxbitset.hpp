@@ -80,13 +80,16 @@ public:
 	/// - `b` : The `hxbitset` to compare with.
 	hxattr_nodiscard friend hxconstexpr bool operator==(const hxbitset& a_, const hxbitset& b_) {
 		hxassertf(static_cast<const void*>(&a_) != static_cast<const void*>(&b_), "bad_ref");
-		size_t difference_ = 0u;
-		const size_t* hxrestrict src_ = b_.m_data_;
-		for(const size_t* hxrestrict dst_ = a_.m_data_, *const end_ = a_.m_data_ + s_words_;
-				dst_ != end_; ++dst_, ++src_) {
-			difference_ |= *dst_ ^ *src_;
+#if HX_CPLUSPLUS >= 202302L
+		// ::memcmp cannot be constant evaluated over size_t arrays.
+		if consteval {
+			for(size_t i_ = 0u; i_ != s_words_; ++i_) {
+				if(a_.m_data_[i_] != b_.m_data_[i_]) { return false; }
+			}
+			return true;
 		}
-		return difference_ == 0u;
+#endif
+		return ::memcmp(a_.m_data_, b_.m_data_, hxbitset::bytes()) == 0;
 	}
 
 #if HX_CPLUSPLUS < 202002L
