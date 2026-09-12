@@ -284,7 +284,8 @@ error values and returned together, instead of ad hoc error checking.
   owning pointer with a monadic `and_then` and a deleter that may decline
   deletion, e.g. `hxdo_not_delete`.
 - Every keyed container and sort compares keys through the free functions
-  `hxkey_equal`, `hxkey_less` and `hxkey_hash` in `hxkey.hpp`. `hxpair.hpp`
+  `hxkey_equal`, `hxkey_less`, `hxkey_three_way` and `hxkey_hash` in
+  `hxkey.hpp`. `char*` is treated as an unowned UTF-8 object. `hxpair.hpp`
   provides a pair of public fields that works as a key.
 - Containers with dynamic capacity move and `hxswap` in O(1) without touching
   elements.
@@ -308,9 +309,9 @@ Differences from the standard versions are listed.
 - All of `hxexpected`, `hxptr`, `hxref` and `hxvector` should be able to
   masquerade as a pointer. Although ranges are preferred and support for
   `add_range` is near universal.
-- Every comparison routes through the `hxkey_less` and `hxkey_equal` free
-  functions or an explicit callable, so custom key types overload two free
-  functions once instead of passing comparators everywhere.
+- Every comparison routes through the `hxkey_less`, `hxkey_equal` and
+  `hxkey_three_way` free functions or an explicit callable, so custom key types
+  overload the free functions once instead of passing comparators everywhere.
 - For scalar keys up to 32 bits, `hxradix_sort` sorts in O(n) time. Its
   implementation is in `src/hxradix_sort.cpp`. It sorts
   `hxradix_sort_key<key_t, value_t>` pairs and handles signed and `float`

@@ -25,18 +25,9 @@ HX_NS_BEGIN_
 /// \cond HIDDEN
 // UTF-8 string detection. Does not match signed/unsigned char.
 template<typename T_> struct hxis_string_ : public hxfalse_t { };
-template<> struct hxis_string_<char*> : public hxtrue_t { };
-template<> struct hxis_string_<const char*> : public hxtrue_t { };
-template<> struct hxis_string_<volatile char*> : public hxtrue_t { };
-template<> struct hxis_string_<const volatile char*> : public hxtrue_t { };
-template<size_t size_> struct hxis_string_<char[size_]> : public hxtrue_t { };
-template<size_t size_> struct hxis_string_<const char[size_]> : public hxtrue_t { };
-template<size_t size_> struct hxis_string_<volatile char[size_]> : public hxtrue_t { };
-template<size_t size_> struct hxis_string_<const volatile char[size_]> : public hxtrue_t { };
-template<> struct hxis_string_<char[]> : public hxtrue_t { };
-template<> struct hxis_string_<const char[]> : public hxtrue_t { };
-template<> struct hxis_string_<volatile char[]> : public hxtrue_t { };
-template<> struct hxis_string_<const volatile char[]> : public hxtrue_t { };
+template<typename T_> struct hxis_string_<T_*> : public hxis_same_<hxremove_cv_t<T_>, char> { };
+template<typename T_, size_t size_> struct hxis_string_<T_[size_]> : public hxis_same_<hxremove_cv_t<T_>, char> { };
+template<typename T_> struct hxis_string_<T_[]> : public hxis_same_<hxremove_cv_t<T_>, char> { };
 /// \endcond
 
 /// `hxis_string<T>` - Checks if T is some kind of `char*` or `char` array,
@@ -68,6 +59,15 @@ public:
 	hxattr_nodiscard hxinline bool operator()(const volatile char* a_, const volatile char* b_) const {
 		return ::strcmp(const_cast<const char*>(a_), const_cast<const char*>(b_)) == 0;
 	}
+};
+
+/// `hxkey_equal_t<T>` for a raw pointer `T` that is not a C string - Deleted.
+/// Comparing unrelated raw pointers is likely UB and not a key operation.
+template<typename T_>
+class hxkey_equal_t<T_, hxenable_if_t<hxis_pointer<T_>() && !hxis_string<T_>()>> {
+public:
+	template<typename A_, typename B_>
+	bool operator()(const A_& a_, const B_& b_) const = delete;
 };
 
 /// `hxkey_equal` - Returns true if `a` and `b` are equivalent, deducing `A`
@@ -106,6 +106,15 @@ public:
 	hxattr_nodiscard hxinline bool operator()(const volatile char* a_, const volatile char* b_) const {
 		return ::strcmp(const_cast<const char*>(a_), const_cast<const char*>(b_)) < 0;
 	}
+};
+
+/// `hxkey_less_t<T>` for a raw pointer `T` that is not a C string - Deleted.
+/// Comparing unrelated raw pointers is likely UB and not a key operation.
+template<typename T_>
+class hxkey_less_t<T_, hxenable_if_t<hxis_pointer<T_>() && !hxis_string<T_>()>> {
+public:
+	template<typename A_, typename B_>
+	bool operator()(const A_& a_, const B_& b_) const = delete;
 };
 
 /// `hxkey_less` - Returns true if `a` is less than `b`, deducing `A` and
@@ -193,6 +202,26 @@ public:
 	template<typename A_, typename B_>
 	hxattr_nodiscard hxinline hxconstexpr hxattr_flatten
 	auto operator()(const A_& a_, const B_& b_) const -> decltype(a_ - b_) { return a_ - b_; }
+};
+
+/// `hxkey_three_way_t<T>` for a C string pointer `T` - Returns the sign of
+/// `strcmp(a, b)`. With UTF-8 this is code point order preserving.
+template<typename T_>
+class hxkey_three_way_t<T_, hxenable_if_t<hxis_string<T_>()>> {
+public:
+	hxattr_nodiscard hxinline int32_t operator()(const volatile char* a_, const volatile char* b_) const {
+		return ::strcmp(const_cast<const char*>(a_), const_cast<const char*>(b_));
+	}
+};
+
+/// `hxkey_three_way_t<T>` for a raw pointer `T` that is not a C string -
+/// Deleted. Comparing unrelated raw pointers is likely UB and not a key
+/// operation.
+template<typename T_>
+class hxkey_three_way_t<T_, hxenable_if_t<hxis_pointer<T_>() && !hxis_string<T_>()>> {
+public:
+	template<typename A_, typename B_>
+	int32_t operator()(const A_& a_, const B_& b_) const = delete;
 };
 
 #if HX_CPLUSPLUS >= 202002L

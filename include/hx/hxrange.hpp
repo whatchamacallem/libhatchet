@@ -55,10 +55,10 @@ concept hxrandom_iterator_concept_ = hxbidirectional_iterator_concept_<T_>
 template<typename T_>
 concept hxsorted_iterator_concept_ = hxrandom_iterator_concept_<T_>
 && (requires(const T_& x_) {
-		{ hxkey_less(x_, x_) } -> hxconvertible_to<bool>;
-		{ hxkey_equal(x_, x_) } -> hxconvertible_to<bool>;
+		{ hxkey_less(*x_, *x_) } -> hxconvertible_to<bool>;
+		{ hxkey_equal(*x_, *x_) } -> hxconvertible_to<bool>;
 	} || requires(const T_& x_) {
-		hxkey_three_way(x_, x_);
+		hxkey_three_way(*x_, *x_);
 	}
 );
 template<typename T_>

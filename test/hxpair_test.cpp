@@ -40,6 +40,23 @@ TEST(hxpair_test, spaceship_matches_operator_minus) {
 }
 #endif // HX_CPLUSPLUS >= 202002L
 
+TEST(hxpair_test, three_way_orders_string_fields_by_content) {
+	char alpha_storage[] = "alpha"; // NOLINT(misc-const-correctness)
+	const hxpair<int32_t, const char*> alpha = { 31, "alpha" };
+	const hxpair<int32_t, const char*> beta = { 31, "beta" };
+	const hxpair<int32_t, const char*> distinct = { 31, alpha_storage };
+	const hxpair<int32_t, const char*> higher_first = { 32, "alpha" };
+	EXPECT_NE(alpha.b, distinct.b);
+	EXPECT_TRUE((alpha - distinct) == 0);
+	EXPECT_TRUE((alpha - beta) < 0);
+	EXPECT_TRUE((beta - alpha) > 0);
+	EXPECT_TRUE((alpha - higher_first) < 0);
+	EXPECT_TRUE((higher_first - alpha) > 0);
+	EXPECT_TRUE((beta - higher_first) < 0);
+	EXPECT_TRUE(hxkey_three_way(alpha, beta) < 0);
+	EXPECT_TRUE(hxkey_three_way(alpha, distinct) == 0);
+}
+
 TEST(hxpair_test, mixed_field_types_order_and_hash) {
 	const hxpair<int32_t, const char*> a = { 31, "alpha" };
 	const hxpair<int32_t, const char*> b = { 31, "beta" };

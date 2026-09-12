@@ -62,7 +62,10 @@ teststrip.sh
 testcmake.sh --no-tidy
 ```
 
-When asked to "build all" then use `testall.sh` instead.
+When asked to "build all" then use `testall.sh` instead. Only run test scripts
+from the top level directory and only run the test suite in the resulting
+subdirectory symlink `build`. Run `clean.sh` if you think different test runs
+are interacting because that should be impossible.
 
 ## Style Guide
 

@@ -45,13 +45,13 @@ public:
 #if HX_CPLUSPLUS >= 202002L
 	/// Returns a negative value if `a` orders before `b`, a positive value if
 	/// it orders after and zero otherwise. Compares `a.b` against `b.b` only
-	/// when `a.a` and `b.a` are equivalent.
-	hxattr_nodiscard friend hxconstexpr int32_t operator<=>(const hxpair& a_, const hxpair& b_) {
-		if(hxkey_less(a_.a, b_.a)) { return -1; }
-		if(hxkey_less(b_.a, a_.a)) { return 1; }
-		if(hxkey_less(a_.b, b_.b)) { return -1; }
-		if(hxkey_less(b_.b, a_.b)) { return 1; }
-		return 0;
+	/// when `a.a` and `b.a` are equivalent. Both fields must return a
+	/// compatible type.
+	hxattr_nodiscard friend hxconstexpr auto operator<=>(const hxpair& a_, const hxpair& b_)
+			-> decltype(hxkey_three_way(hxdeclval<const a_t_&>(), hxdeclval<const a_t_&>())) {
+		const auto c_ = hxkey_three_way(a_.a, b_.a);
+		if(c_ != 0) { return c_; }
+		return hxkey_three_way(a_.b, b_.b);
 	}
 #else
 	/// Returns false if `a.a` and `a.b` are equal to `b.a` and `b.b`.
@@ -62,13 +62,13 @@ public:
 
 	/// Returns a negative value if `a` orders before `b`, a positive value if
 	/// it orders after and zero otherwise. Provided as a C++11 fallback that
-	/// will get picked up by `hxkey_three_way`.
-	hxattr_nodiscard friend hxconstexpr int32_t operator-(const hxpair& a_, const hxpair& b_) {
-		if(hxkey_less(a_.a, b_.a)) { return -1; }
-		if(hxkey_less(b_.a, a_.a)) { return 1; }
-		if(hxkey_less(a_.b, b_.b)) { return -1; }
-		if(hxkey_less(b_.b, a_.b)) { return 1; }
-		return 0;
+	/// will get picked up by `hxkey_three_way`. Both fields must return a
+	/// compatible type.
+	hxattr_nodiscard friend hxconstexpr auto operator-(const hxpair& a_, const hxpair& b_)
+			-> decltype(hxkey_three_way(hxdeclval<const a_t_&>(), hxdeclval<const a_t_&>())) {
+		const auto d_ = hxkey_three_way(a_.a, b_.a);
+		if(d_ != 0) { return d_; }
+		return hxkey_three_way(a_.b, b_.b);
 	}
 
 	/// The first value.

@@ -27,6 +27,16 @@ static_assert(hxis_same<
 		hxdeclval<const char&>(),
 		hxdeclval<const char&>())), bool>(),
 	"hxkey_less_t must handle non-const volatile references.");
+static_assert(hxis_same<
+	decltype(hxkey_three_way_t<const volatile char*>{}(
+		hxdeclval<const volatile char* const&>(),
+		hxdeclval<const volatile char* const&>())), int32_t>(),
+	"hxkey_three_way_t must preserve const volatile pointer types");
+static_assert(hxis_same<
+	decltype(hxkey_three_way_t<char[6]>{}(
+		hxdeclval<const char* const&>(),
+		hxdeclval<const char* const&>())), int32_t>(),
+	"hxkey_three_way_t must handle char array types");
 
 TEST(hxis_string_test, hxis_string_detects_char_pointers) {
 	EXPECT_TRUE(hxis_string<char*>());
@@ -125,6 +135,50 @@ TEST(hxkey_three_way_test, hxkey_three_way_scalar) {
 	EXPECT_TRUE(hxkey_three_way(3, 4) < 0);
 	EXPECT_TRUE(hxkey_three_way(3, 3) == 0);
 	EXPECT_TRUE(hxkey_three_way(4, 3) > 0);
+}
+
+TEST(hxkey_three_way_test, three_way_char_and_const_char_overloads) {
+	char mutable_alpha_storage[] = "alpha"; // NOLINT(misc-const-correctness)
+	const char* immutable_alpha = "alpha";
+	const char* distinct_alpha = mutable_alpha_storage;
+	EXPECT_NE(immutable_alpha, distinct_alpha);
+	EXPECT_TRUE(hxkey_three_way(immutable_alpha, distinct_alpha) == 0);
+	EXPECT_TRUE(hxkey_three_way_t<char*>{}(mutable_alpha_storage, immutable_alpha) == 0);
+	EXPECT_TRUE(hxkey_three_way_t<char[6]>{}(mutable_alpha_storage, immutable_alpha) == 0);
+
+	const char* alpha = "alpha";
+	const char* beta = "beta";
+	EXPECT_TRUE(hxkey_three_way(alpha, beta) < 0);
+	EXPECT_TRUE(hxkey_three_way(beta, alpha) > 0);
+	EXPECT_TRUE(hxkey_three_way(alpha, alpha) == 0);
+
+	const char* prefix = "a";
+	const char* longer = "ab";
+	EXPECT_TRUE(hxkey_three_way(prefix, longer) < 0);
+	EXPECT_TRUE(hxkey_three_way(longer, prefix) > 0);
+	const char* empty = "";
+	EXPECT_TRUE(hxkey_three_way(empty, prefix) < 0);
+	EXPECT_TRUE(hxkey_three_way(prefix, empty) > 0);
+	EXPECT_TRUE(hxkey_three_way(empty, "") == 0);
+
+	const char* first_byte_low = "azz";
+	const char* first_byte_high = "bzz";
+	EXPECT_TRUE(hxkey_three_way(first_byte_low, first_byte_high) < 0);
+	const char* last_byte_low = "zza";
+	const char* last_byte_high = "zzb";
+	EXPECT_TRUE(hxkey_three_way(last_byte_low, last_byte_high) < 0);
+	EXPECT_TRUE(hxkey_three_way(last_byte_high, last_byte_low) > 0);
+}
+
+TEST(hxkey_three_way_test, three_way_orders_strings_by_content_not_address) {
+	static const char descending_first[] = "zzz";
+	static const char descending_second[] = "aaa";
+	const char* high = descending_first;
+	const char* low = descending_second;
+	EXPECT_TRUE(hxkey_three_way(low, high) < 0);
+	EXPECT_TRUE(hxkey_three_way(high, low) > 0);
+	EXPECT_TRUE(hxkey_less(low, high));
+	EXPECT_FALSE(hxkey_less(high, low));
 }
 
 #if HX_CPLUSPLUS >= 202002L
