@@ -339,6 +339,13 @@ public:
 	/// Clears the array, destroying all elements.
 	void clear(void) noexcept;
 
+	/// Appends the elements of `range` for which the predicate `callable`
+	/// returns true.
+	/// - `range` : The range to copy elements from.
+	/// - `callable` : The predicate selecting which elements to copy.
+	template<hxrange_concept_ range_t_, typename callable_t_>
+	void copy_if(range_t_&& range_, callable_t_&& callable_) noexcept;
+
 	/// Returns a pointer to a potentially uninitialized array of `T`.
 	using hxallocator<T_, capacity_>::data;
 

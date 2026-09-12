@@ -248,7 +248,7 @@ TEST_F(hxarray_test_f, range_constructor_from_rvalue) {
 
 TEST_F(hxarray_test_f, range_constructor_from_const_lvalue) {
 	const hxarray<hxtest_object, 4> src{ 31, 32, 33, 34 };
-	hxrange<const hxtest_object*> range(src.begin(), src.end());
+	const hxrange<const hxtest_object*> range(src.begin(), src.end());
 	const hxarray<hxtest_object, 4> elements(range);
 	for(hxsize_t i = 0; i < 4; ++i) {
 		EXPECT_EQ(elements[i].value(), src[i].value());
@@ -256,14 +256,6 @@ TEST_F(hxarray_test_f, range_constructor_from_const_lvalue) {
 		EXPECT_EQ(src[i].state(), hxtest_object_state::valid);
 	}
 	EXPECT_TRUE(check_stats(8, 0, 0, 4, 4, 0, 0, 0, 0, 0, 0));
-}
-
-TEST(hxarray_test, range_constructor_from_other_element_type_lvalue) {
-	hxarray<int32_t, 3> src{ 31, 32, 33 };
-	const hxarray<int64_t, 3> dst(src);
-	EXPECT_EQ(dst[0], 31);
-	EXPECT_EQ(dst[1], 32);
-	EXPECT_EQ(dst[2], 33);
 }
 #endif
 
@@ -350,38 +342,6 @@ TEST(hxarray_test, operator_equal_and_operator_less) {
 	EXPECT_TRUE(f < a);
 }
 
-TEST(hxarray_test, mixed_capacity_copy_constructor_and_operator_assign) {
-	hxarray<int, 4> a;
-	a[0] = 31; a[1] = 32; a[2] = 33; a[3] = 34;
-
-	const hxarray<int> b(a);
-	EXPECT_EQ(b.capacity(), 4);
-	EXPECT_EQ(b[0], 31);
-	EXPECT_EQ(b[3], 34);
-	EXPECT_TRUE(a == b);
-
-	const hxarray<int, 4> c(b);
-	EXPECT_EQ(c[0], 31);
-	EXPECT_EQ(c[3], 34);
-
-	hxarray<int, 4> d;
-	d = b;
-	EXPECT_EQ(d[0], 31);
-	EXPECT_EQ(d[3], 34);
-
-	hxarray<int> e;
-	e = a;
-	EXPECT_EQ(e.capacity(), 4);
-	EXPECT_EQ(e[0], 31);
-	EXPECT_EQ(e[3], 34);
-
-	hxarray<int> f;
-	f.reserve(4);
-	f = a;
-	EXPECT_EQ(f[0], 31);
-	EXPECT_EQ(f[3], 34);
-}
-
 TEST(hxarray_test, hxkey_hash) {
 	const hxarray<int, 3> a{ 31, 32, 33 };
 	const hxarray<int, 3> b{ 31, 32, 33 };
@@ -426,22 +386,6 @@ TEST(hxarray_test, reserve_static_noop) {
 	hxarray<int, 4> a;
 	a.reserve(4);
 	EXPECT_EQ(a.size(), 4);
-}
-
-TEST_F(hxarray_test_f, dynamic_copy_constructor) {
-	{
-		const hxarray<hxtest_object, hxallocator_dynamic_capacity> src{
-			hxtest_object(7), hxtest_object(8)};
-		const hxarray<hxtest_object, hxallocator_dynamic_capacity> dst(src); // NOLINT(performance-unnecessary-copy-initialization)
-		EXPECT_EQ(dst.size(), 2);
-		EXPECT_EQ(dst[0].value(), 7);
-		EXPECT_EQ(dst[1].value(), 8);
-		for(hxsize_t i = 0; i < 2; ++i) {
-			EXPECT_EQ(dst[i].state(), hxtest_object_state::valid);
-			EXPECT_EQ(src[i].state(), hxtest_object_state::valid);
-		}
-	}
-	EXPECT_TRUE(check_stats(6, 6, 0, 2, 4, 0, 0, 0, 0, 0, 0));
 }
 
 #if HX_CPLUSPLUS >= 202002L

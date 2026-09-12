@@ -179,6 +179,43 @@ bool hxany_of(range_t_&& range_, callable_t_&& callable_) {
 	return false;
 }
 
+/// `hxcopy_range` - Copy-assigns every element of `range` into `output`. The
+/// input range must not overlap the destination array. Returns an output
+/// iterator positioned one past the last element written. Requires a
+/// `forward-iterator`.
+template<hxrange_concept_ range_t_, typename output_iterator_t_>
+hxinline hxconstexpr hxattr_flatten
+output_iterator_t_ hxcopy_range(const range_t_& range_, output_iterator_t_&& output_) noexcept {
+	hxrestrict_t<decltype(range_.begin())> src_(range_.begin());
+	const auto end_ = range_.end();
+	hxrestrict_t<output_iterator_t_> output_r_(hxforward<output_iterator_t_>(output_));
+	for(; src_ != end_; ++src_) {
+		*output_r_ = *src_;
+		++output_r_;
+	}
+	return output_r_;
+}
+
+/// `hxcopy_range_if` - Copy-assigns the elements of `range` for which the
+/// predicate `callable` returns true into `output`. The input range must not
+/// overlap the destination array. Returns an output iterator positioned one
+/// past the last element written. Requires a `forward-iterator`.
+template<hxrange_concept_ range_t_, typename output_iterator_t_, typename callable_t_>
+hxinline hxconstexpr hxattr_flatten
+output_iterator_t_ hxcopy_range_if(const range_t_& range_, output_iterator_t_&& output_,
+		callable_t_&& callable_) noexcept {
+	hxrestrict_t<decltype(range_.begin())> src_(range_.begin());
+	const auto end_ = range_.end();
+	hxrestrict_t<output_iterator_t_> output_r_(hxforward<output_iterator_t_>(output_));
+	for(; src_ != end_; ++src_) {
+		if(hxforward<callable_t_>(callable_)(*src_)) {
+			*output_r_ = *src_;
+			++output_r_;
+		}
+	}
+	return output_r_;
+}
+
 /// `hxcount_if` - Returns the number of elements of `range` for which the
 /// predicate `callable` returns true. Requires a `forward-iterator`.
 template<hxrange_concept_ range_t_, typename callable_t_>
@@ -275,6 +312,44 @@ callable_t_ hxfor_each(range_t_&& range_, callable_t_&& callable_) {
 	return hxforward<callable_t_>(callable_);
 }
 
+/// `hxforward_range` - Assigns every element of `range` to `output` with the
+/// value category of `range`. The input range must not overlap the destination
+/// array. Returns an output iterator positioned one past the last element
+/// written. Requires a `forward-iterator`.
+template<hxrange_concept_ range_t_, typename output_iterator_t_>
+hxinline hxconstexpr hxattr_flatten
+output_iterator_t_ hxforward_range(range_t_&& range_, output_iterator_t_&& output_) noexcept {
+	hxrestrict_t<decltype(range_.begin())> src_(range_.begin());
+	const auto end_ = range_.end();
+	hxrestrict_t<output_iterator_t_> output_r_(hxforward<output_iterator_t_>(output_));
+	for(; src_ != end_; ++src_) {
+		*output_r_ = hxforward_like<range_t_>(*src_);
+		++output_r_;
+	}
+	return output_r_;
+}
+
+/// `hxforward_range_if` - Assigns the elements of `range` for which the
+/// predicate `callable` returns true to `output` with the value category of
+/// `range`. The input range must not overlap the destination array. Returns an
+/// output iterator positioned one past the last element written. Requires a
+/// `forward-iterator`.
+template<hxrange_concept_ range_t_, typename output_iterator_t_, typename callable_t_>
+hxinline hxconstexpr hxattr_flatten
+output_iterator_t_ hxforward_range_if(range_t_&& range_, output_iterator_t_&& output_,
+		callable_t_&& callable_) noexcept {
+	hxrestrict_t<decltype(range_.begin())> src_(range_.begin());
+	const auto end_ = range_.end();
+	hxrestrict_t<output_iterator_t_> output_r_(hxforward<output_iterator_t_>(output_));
+	for(; src_ != end_; ++src_) {
+		if(hxforward<callable_t_>(callable_)(hxforward_like<range_t_>(*src_))) {
+			*output_r_ = hxforward_like<range_t_>(*src_);
+			++output_r_;
+		}
+	}
+	return output_r_;
+}
+
 /// `hxless_range` - Returns true if `range0` is lexicographically less than
 /// `range1`, using `equal` to detect matching elements and `less` to order
 /// the first pair that differs. A range that is a proper prefix of the other
@@ -343,6 +418,43 @@ auto hxlower_bound(range_t_&& range_, const value_t_& value_) -> decltype(range_
 	const auto begin_ = range_.begin();
 	return hxlower_bound(hxforward<range_t_>(range_), value_,
 		hxkey_less_t<decltype(*begin_)>{});
+}
+
+/// `hxmove_range` - Move-assigns every element of `range` into `output`. The
+/// input range must not overlap the destination array. Returns an output
+/// iterator positioned one past the last element written. Requires a
+/// `forward-iterator`.
+template<hxrange_concept_ range_t_, typename output_iterator_t_>
+hxinline hxconstexpr hxattr_flatten
+output_iterator_t_ hxmove_range(range_t_&& range_, output_iterator_t_&& output_) noexcept {
+	hxrestrict_t<decltype(range_.begin())> src_(range_.begin());
+	const auto end_ = range_.end();
+	hxrestrict_t<output_iterator_t_> output_r_(hxforward<output_iterator_t_>(output_));
+	for(; src_ != end_; ++src_) {
+		*output_r_ = hxmove(*src_);
+		++output_r_;
+	}
+	return output_r_;
+}
+
+/// `hxmove_range_if` - Move-assigns the elements of `range` for which the
+/// predicate `callable` returns true into `output`. The input range must not
+/// overlap the destination array. Returns an output iterator positioned one
+/// past the last element written. Requires a `forward-iterator`.
+template<hxrange_concept_ range_t_, typename output_iterator_t_, typename callable_t_>
+hxinline hxconstexpr hxattr_flatten
+output_iterator_t_ hxmove_range_if(range_t_&& range_, output_iterator_t_&& output_,
+		callable_t_&& callable_) noexcept {
+	hxrestrict_t<decltype(range_.begin())> src_(range_.begin());
+	const auto end_ = range_.end();
+	hxrestrict_t<output_iterator_t_> output_r_(hxforward<output_iterator_t_>(output_));
+	for(; src_ != end_; ++src_) {
+		if(hxforward<callable_t_>(callable_)(*src_)) {
+			*output_r_ = hxmove(*src_);
+			++output_r_;
+		}
+	}
+	return output_r_;
 }
 
 /// `hxsearch` - Performs a binary search for `value` in the sorted

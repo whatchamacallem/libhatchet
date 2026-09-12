@@ -853,6 +853,50 @@ TEST_F(hxvector_test_f, add_range_from_const_appends_to_existing) {
 	EXPECT_TRUE(check_stats(10, 1, 0, 5, 4, 1, 0, 0, 4, 0, 0));
 }
 
+TEST_F(hxvector_test_f, copy_if_selects_boundary_elements) {
+	const int32_t source_ints[] = { 31, 32, 33, 34 };
+	const hxvector<hxtest_object> source(hxmake_range(source_ints));
+	hxvector<hxtest_object> elements;
+	elements.reserve(4);
+	const hxrange<const hxtest_object*> range(source.begin(), source.end());
+	elements.copy_if(range, [](const hxtest_object& x) { return x.value() % 2 == 0; });
+	EXPECT_EQ(elements.size(), hxsize_t{2});
+	EXPECT_EQ(elements[0].value(), 32);
+	EXPECT_EQ(elements[1].value(), 34);
+	for(hxsize_t i = 0; i < 4; ++i) {
+		EXPECT_EQ(source[i].state(), hxtest_object_state::valid);
+	}
+
+	elements.clear();
+	elements.copy_if(range, [](const hxtest_object& x) { return x.value() > 100; });
+	EXPECT_EQ(elements.size(), hxsize_t{0});
+
+	elements.copy_if(range, [](const hxtest_object& x) { return x.value() > 0; });
+	EXPECT_EQ(elements.size(), hxsize_t{4});
+	EXPECT_EQ(elements[0].value(), 31);
+	EXPECT_EQ(elements[3].value(), 34);
+	EXPECT_TRUE(check_stats(10, 2, 0, 4, 6, 0, 0, 0, 0, 0, 0));
+}
+
+TEST_F(hxvector_test_f, copy_if_moves_from_rvalue_range) {
+	hxtest_object source_elements[] = {
+		hxtest_object(31),
+		hxtest_object(32),
+		hxtest_object(33)
+	};
+	hxvector<hxtest_object> elements;
+	elements.reserve(3);
+	elements.copy_if(hxmake_range(source_elements, source_elements + 3),
+		[](const hxtest_object& x) { return x.value() != 32; });
+	EXPECT_EQ(elements.size(), hxsize_t{2});
+	EXPECT_EQ(elements[0].value(), 31);
+	EXPECT_EQ(elements[1].value(), 33);
+	EXPECT_EQ(source_elements[0].state(), hxtest_object_state::moved);
+	EXPECT_EQ(source_elements[1].state(), hxtest_object_state::valid);
+	EXPECT_EQ(source_elements[2].state(), hxtest_object_state::moved);
+	EXPECT_TRUE(check_stats(5, 0, 0, 3, 0, 2, 0, 0, 0, 0, 0));
+}
+
 TEST_F(hxvector_test_f, add_range_from_mutable_range) {
 	hxtest_object source_elements[] = {
 		hxtest_object(2),

@@ -80,7 +80,7 @@ hxinline hxattr_flatten hxarray<T_, capacity_>::hxarray(
 #if HX_CPLUSPLUS >= 202002L
 template<hxarray_concept_ T_, hxsize_t capacity_>
 template<hxrange_concept_ range_t_>
-requires(!hxis_same<hxremove_cvref_t<range_t_>, hxarray<T_, capacity_> >())
+requires(!hxis_hxarray_<hxremove_cvref_t<range_t_> >::value)
 hxinline hxattr_flatten hxarray<T_, capacity_>::hxarray(range_t_&& range_) noexcept {
 	hxrestrict_t<decltype(range_.begin())> src_(range_.begin());
 	const auto end_ = range_.end();
@@ -142,26 +142,10 @@ hxinline hxattr_flatten auto hxarray<T_, capacity_>::and_then(
 
 template<hxarray_concept_ T_, hxsize_t capacity_>
 hxinline hxattr_flatten void hxarray<T_, capacity_>::operator=(const hxarray& x_) noexcept {
+	static_assert(capacity_ != hxallocator_dynamic_capacity,
+		"hxarray requires a matching non-zero capacity to assign");
 	hxassertf(static_cast<const void*>(this) != static_cast<const void*>(&x_), "bad_ref");
-	hxif_constexpr(capacity_ == hxallocator_dynamic_capacity) {
-		if(this->capacity() == 0) {
-			const hxsize_t c_ = x_.capacity();
-			this->reserve_storage(c_);
-			const T_* hxrestrict src_ = x_.data();
-			T_* hxrestrict dst_ = this->data();
-			for(const T_*const end_ = dst_ + c_; dst_ != end_; ++dst_, ++src_) {
-				::new(dst_) T_(*src_);
-			}
-			return;
-		}
-	}
-	hxassert_hard(this->capacity() == x_.capacity(),
-		"array_size mismatch %zd %zd", this->capacity(), x_.capacity());
-	const T_* hxrestrict src_ = x_.data();
-	T_* hxrestrict dst_ = this->data();
-	for(const T_*const end_ = dst_ + this->capacity(); dst_ != end_; ++dst_, ++src_) {
-		*dst_ = *src_;
-	}
+	hxcopy_range(x_, this->data());
 }
 
 template<hxarray_concept_ T_, hxsize_t capacity_>

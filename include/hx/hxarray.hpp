@@ -27,6 +27,11 @@ concept hxarray_concept_ = requires(T_& x_) {
 	sizeof(T_);
 	x_.~T_();
 };
+
+template<hxarray_concept_ T_, hxsize_t capacity_> class hxarray;
+template<typename T_> struct hxis_hxarray_ : public hxfalse_t { };
+template<typename T_, hxsize_t capacity_>
+struct hxis_hxarray_<hxarray<T_, capacity_> > : public hxtrue_t { };
 /// \endcond
 #else
 #define hxarray_concept_ typename
@@ -71,6 +76,9 @@ public:
 	/// - `x` : An `hxarray<T, capacity>`.
 	hxarray(const hxarray& x_) noexcept;
 
+	template<hxsize_t capacity_x_>
+	hxarray(const hxarray<T_, capacity_x_>& x_) noexcept = delete;
+
 	/// Move constructs from a temporary `hxarray`. Requires
 	/// `hxallocator_dynamic_capacity`.
 	/// - `x` : A temporary `hxarray<T, hxallocator_dynamic_capacity>`.
@@ -97,7 +105,7 @@ public:
 	/// `capacity` elements. Elements are moved when `range` is an rvalue.
 	/// - `range` : A range of exactly `capacity` elements.
 	template<hxrange_concept_ range_t_>
-	requires(!hxis_same<hxremove_cvref_t<range_t_>, hxarray<T_, capacity_> >())
+	requires(!hxis_hxarray_<hxremove_cvref_t<range_t_> >::value)
 	explicit hxarray(range_t_&& range_) noexcept;
 #endif
 
@@ -132,6 +140,9 @@ public:
 	/// - `x` : A non-temporary `hxarray<T, capacity>`.
 	void operator=(const hxarray& x_) noexcept;
 
+	template<hxsize_t capacity_x_>
+	void operator=(const hxarray<T_, capacity_x_>& x_) noexcept = delete;
+
 	/// Move assigns from a temporary `hxarray`. Requires
 	/// `hxallocator_dynamic_capacity`.
 	/// - `x` : A temporary `hxarray<T, hxallocator_dynamic_capacity>`.
@@ -157,7 +168,9 @@ public:
 	/// Callers must check the return value to detect mismatches.
 	/// - `a` : An array.
 	/// - `b` : The other array.
-	hxattr_nodiscard friend bool operator==(const hxarray& a_, const hxarray& b_) {
+	template<hxsize_t capacity_x_>
+	hxattr_nodiscard friend bool operator==(const hxarray& a_,
+			const hxarray<T_, capacity_x_>& b_) {
 		return hxequal_range(a_, b_);
 	}
 
@@ -172,7 +185,9 @@ public:
 	/// Callers must check the return value to observe the ordering result.
 	/// - `a` : An array.
 	/// - `b` : The other array.
-	hxattr_nodiscard friend bool operator<(const hxarray& a_, const hxarray& b_) {
+	template<hxsize_t capacity_x_>
+	hxattr_nodiscard friend bool operator<(const hxarray& a_,
+			const hxarray<T_, capacity_x_>& b_) {
 		return hxless_range(a_, b_);
 	}
 

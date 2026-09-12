@@ -12,10 +12,13 @@
 
 HX_NS_USE
 
+using hxcopy_range_test_f = hxtest_object_fixture;
 using hxcount_if_test_f = hxtest_object_fixture;
 using hxequal_range_test_f = hxtest_object_fixture;
 using hxexchange_test_f = hxtest_object_fixture;
 using hxfind_if_test_f = hxtest_object_fixture;
+using hxforward_range_test_f = hxtest_object_fixture;
+using hxmove_range_test_f = hxtest_object_fixture;
 using hxquantifier_test_f = hxtest_object_fixture;
 using hxsearch_test_f = hxtest_object_fixture;
 using hxtest_test_f = hxtest_object_fixture;
@@ -125,6 +128,242 @@ TEST_F(hxsearch_test_f, search_grinder) {
 		}
 	}
 	EXPECT_TRUE(check_stats(485, 485, 0, 100, 100, 285, 0, 627, 0, 1729, 0));
+}
+
+TEST(hxcopy_range_test, boundary_elements) {
+	const int source[4] = { 31, 32, 33, 34 };
+	int destination[5] = { 0, 0, 0, 0, 91 };
+	const int* const end = hxcopy_range(hxmake_range(source, source + 4), +destination);
+	EXPECT_EQ(end - destination, 4);
+	EXPECT_EQ(destination[0], 31);
+	EXPECT_EQ(destination[3], 34);
+	EXPECT_EQ(destination[4], 91);
+
+	int single[2] = { 0, 92 };
+	const int* const single_end = hxcopy_range(hxmake_range(source, source + 1), +single);
+	EXPECT_EQ(single_end - single, 1);
+	EXPECT_EQ(single[0], 31);
+	EXPECT_EQ(single[1], 92);
+
+	int empty[1] = { 93 };
+	const int* const empty_end = hxcopy_range(hxmake_range(source, source), +empty);
+	EXPECT_EQ(empty_end - empty, 0);
+	EXPECT_EQ(empty[0], 93);
+
+	hxvector<int, 5> appended{ 30 };
+	hxcopy_range<hxrange<const int*>, hxvector<int, 5>&>(
+		hxmake_range(source, source + 3), appended);
+	EXPECT_EQ(appended.size(), hxsize_t{4});
+	EXPECT_EQ(appended[0], 30);
+	EXPECT_EQ(appended[1], 31);
+	EXPECT_EQ(appended[3], 33);
+}
+
+TEST_F(hxcopy_range_test_f, copies_from_rvalue_range) {
+	{
+		hxvector<hxtest_object, 3> source{ 31, 32, 33 };
+		hxvector<hxtest_object, 3> destination{ 34, 35, 36 };
+		hxcopy_range(hxmove(source), destination.begin());
+		EXPECT_EQ(destination[0].value(), 31);
+		EXPECT_EQ(destination[2].value(), 33);
+		for(hxsize_t i = 0; i < 3; ++i) {
+			EXPECT_EQ(source[i].state(), hxtest_object_state::valid);
+		}
+	}
+	EXPECT_TRUE(check_stats(6, 6, 0, 6, 0, 0, 3, 0, 0, 0, 0));
+}
+
+TEST(hxcopy_range_if_test, boundary_matches) {
+	const int last_matches[4] = { 31, 33, 35, 36 };
+	int destination[4] = { 0, 0, 0, 90 };
+	const int* const end = hxcopy_range_if(hxmake_range(last_matches, last_matches + 4),
+		+destination, [](const int& x) { return x % 2 == 0; });
+	EXPECT_EQ(end - destination, 1);
+	EXPECT_EQ(destination[0], 36);
+	EXPECT_EQ(destination[1], 0);
+
+	const int first_matches[4] = { 36, 31, 33, 35 };
+	int first_destination[2] = { 0, 91 };
+	const int* const first_end = hxcopy_range_if(hxmake_range(first_matches, first_matches + 4),
+		+first_destination, [](const int& x) { return x % 2 == 0; });
+	EXPECT_EQ(first_end - first_destination, 1);
+	EXPECT_EQ(first_destination[0], 36);
+	EXPECT_EQ(first_destination[1], 91);
+
+	int none[1] = { 92 };
+	const int* const none_end = hxcopy_range_if(hxmake_range(last_matches, last_matches + 4),
+		+none, [](const int& x) { return x > 100; });
+	EXPECT_EQ(none_end - none, 0);
+	EXPECT_EQ(none[0], 92);
+
+	int all[4] = { 0, 0, 0, 0 };
+	const int* const all_end = hxcopy_range_if(hxmake_range(last_matches, last_matches + 4),
+		+all, [](const int& x) { return x > 0; });
+	EXPECT_EQ(all_end - all, 4);
+	EXPECT_EQ(all[0], 31);
+	EXPECT_EQ(all[3], 36);
+}
+
+TEST(hxforward_range_test, boundary_elements) {
+	const int source[4] = { 31, 32, 33, 34 };
+	int destination[5] = { 0, 0, 0, 0, 91 };
+	const int* const end = hxforward_range(hxmake_range(source, source + 4), +destination);
+	EXPECT_EQ(end - destination, 4);
+	EXPECT_EQ(destination[0], 31);
+	EXPECT_EQ(destination[3], 34);
+	EXPECT_EQ(destination[4], 91);
+
+	int single[2] = { 0, 92 };
+	const int* const single_end = hxforward_range(hxmake_range(source, source + 1), +single);
+	EXPECT_EQ(single_end - single, 1);
+	EXPECT_EQ(single[0], 31);
+	EXPECT_EQ(single[1], 92);
+
+	int empty[1] = { 93 };
+	const int* const empty_end = hxforward_range(hxmake_range(source, source), +empty);
+	EXPECT_EQ(empty_end - empty, 0);
+	EXPECT_EQ(empty[0], 93);
+
+	hxvector<int, 5> appended{ 30 };
+	hxforward_range<hxrange<const int*>, hxvector<int, 5>&>(
+		hxmake_range(source, source + 3), appended);
+	EXPECT_EQ(appended.size(), hxsize_t{4});
+	EXPECT_EQ(appended[0], 30);
+	EXPECT_EQ(appended[1], 31);
+	EXPECT_EQ(appended[3], 33);
+}
+
+TEST_F(hxforward_range_test_f, moves_from_rvalue_range) {
+	{
+		hxvector<hxtest_object, 3> source{ 31, 32, 33 };
+		hxvector<hxtest_object, 3> destination{ 34, 35, 36 };
+		hxforward_range(hxmove(source), destination.begin());
+		EXPECT_EQ(destination[0].value(), 31);
+		EXPECT_EQ(destination[2].value(), 33);
+		for(hxsize_t i = 0; i < 3; ++i) {
+			EXPECT_EQ(source[i].state(), hxtest_object_state::moved);
+		}
+
+		hxvector<hxtest_object, 3> lvalue_source{ 37, 38, 39 };
+		hxforward_range(lvalue_source, destination.begin());
+		EXPECT_EQ(destination[0].value(), 37);
+		EXPECT_EQ(destination[2].value(), 39);
+		for(hxsize_t i = 0; i < 3; ++i) {
+			EXPECT_EQ(lvalue_source[i].state(), hxtest_object_state::valid);
+		}
+	}
+	EXPECT_TRUE(check_stats(9, 9, 0, 9, 0, 0, 3, 3, 0, 0, 0));
+}
+
+TEST(hxforward_range_if_test, boundary_matches) {
+	const int last_matches[4] = { 31, 33, 35, 36 };
+	int destination[4] = { 0, 0, 0, 90 };
+	const int* const end = hxforward_range_if(hxmake_range(last_matches, last_matches + 4),
+		+destination, [](const int& x) { return x % 2 == 0; });
+	EXPECT_EQ(end - destination, 1);
+	EXPECT_EQ(destination[0], 36);
+	EXPECT_EQ(destination[1], 0);
+
+	const int first_matches[4] = { 36, 31, 33, 35 };
+	int first_destination[2] = { 0, 91 };
+	const int* const first_end = hxforward_range_if(hxmake_range(first_matches, first_matches + 4),
+		+first_destination, [](const int& x) { return x % 2 == 0; });
+	EXPECT_EQ(first_end - first_destination, 1);
+	EXPECT_EQ(first_destination[0], 36);
+	EXPECT_EQ(first_destination[1], 91);
+
+	int none[1] = { 92 };
+	const int* const none_end = hxforward_range_if(hxmake_range(last_matches, last_matches + 4),
+		+none, [](const int& x) { return x > 100; });
+	EXPECT_EQ(none_end - none, 0);
+	EXPECT_EQ(none[0], 92);
+
+	int all[4] = { 0, 0, 0, 0 };
+	const int* const all_end = hxforward_range_if(hxmake_range(last_matches, last_matches + 4),
+		+all, [](const int& x) { return x > 0; });
+	EXPECT_EQ(all_end - all, 4);
+	EXPECT_EQ(all[0], 31);
+	EXPECT_EQ(all[3], 36);
+}
+
+TEST_F(hxmove_range_test_f, boundary_elements) {
+	{
+		hxvector<hxtest_object, 4> source{ 31, 32, 33, 34 };
+		hxvector<hxtest_object, 5> destination{ 35, 36, 37, 38, 91 };
+		const hxtest_object* const end = hxmove_range(
+			hxmake_range(source.begin(), source.end()), destination.begin());
+		EXPECT_EQ(end - destination.begin(), 4);
+		EXPECT_EQ(destination[0].value(), 31);
+		EXPECT_EQ(destination[3].value(), 34);
+		EXPECT_EQ(destination[4].value(), 91);
+		for(hxsize_t i = 0; i < 4; ++i) {
+			EXPECT_EQ(source[i].state(), hxtest_object_state::moved);
+		}
+
+		hxvector<hxtest_object, 2> single_source{ 39, 40 };
+		hxvector<hxtest_object, 2> single{ 41, 92 };
+		const hxtest_object* const single_end = hxmove_range(
+			hxmake_range(single_source.begin(), single_source.begin() + 1), single.begin());
+		EXPECT_EQ(single_end - single.begin(), 1);
+		EXPECT_EQ(single[0].value(), 39);
+		EXPECT_EQ(single[1].value(), 92);
+		EXPECT_EQ(single_source[0].state(), hxtest_object_state::moved);
+		EXPECT_EQ(single_source[1].state(), hxtest_object_state::valid);
+
+		hxvector<hxtest_object, 1> empty{ 93 };
+		const hxtest_object* const empty_end = hxmove_range(
+			hxmake_range(single_source.begin(), single_source.begin()), empty.begin());
+		EXPECT_EQ(empty_end - empty.begin(), 0);
+		EXPECT_EQ(empty[0].value(), 93);
+	}
+	EXPECT_TRUE(check_stats(14, 14, 0, 14, 0, 0, 0, 5, 0, 0, 0));
+}
+
+TEST_F(hxmove_range_test_f, boundary_matches) {
+	{
+		hxvector<hxtest_object, 4> last_matches{ 31, 33, 35, 36 };
+		hxvector<hxtest_object, 4> destination{ 0, 0, 0, 90 };
+		const hxtest_object* const end = hxmove_range_if(
+			hxmake_range(last_matches.begin(), last_matches.end()), destination.begin(),
+			[](const hxtest_object& x) { return x.value() % 2 == 0; });
+		EXPECT_EQ(end - destination.begin(), 1);
+		EXPECT_EQ(destination[0].value(), 36);
+		EXPECT_EQ(destination[1].value(), 0);
+		EXPECT_EQ(last_matches[0].state(), hxtest_object_state::valid);
+		EXPECT_EQ(last_matches[2].state(), hxtest_object_state::valid);
+		EXPECT_EQ(last_matches[3].state(), hxtest_object_state::moved);
+
+		hxvector<hxtest_object, 4> first_matches{ 36, 31, 33, 35 };
+		hxvector<hxtest_object, 2> first_destination{ 0, 91 };
+		const hxtest_object* const first_end = hxmove_range_if(
+			hxmake_range(first_matches.begin(), first_matches.end()), first_destination.begin(),
+			[](const hxtest_object& x) { return x.value() % 2 == 0; });
+		EXPECT_EQ(first_end - first_destination.begin(), 1);
+		EXPECT_EQ(first_destination[0].value(), 36);
+		EXPECT_EQ(first_destination[1].value(), 91);
+		EXPECT_EQ(first_matches[0].state(), hxtest_object_state::moved);
+		EXPECT_EQ(first_matches[1].state(), hxtest_object_state::valid);
+
+		hxvector<hxtest_object, 4> none_source{ 31, 33, 35, 36 };
+		hxvector<hxtest_object, 1> none{ 92 };
+		const hxtest_object* const none_end = hxmove_range_if(
+			hxmake_range(none_source.begin(), none_source.end()), none.begin(),
+			[](const hxtest_object& x) { return x.value() > 100; });
+		EXPECT_EQ(none_end - none.begin(), 0);
+		EXPECT_EQ(none[0].value(), 92);
+
+		hxvector<hxtest_object, 4> all_source{ 37, 38, 39, 40 };
+		hxvector<hxtest_object, 4> all{ 0, 0, 0, 0 };
+		const hxtest_object* const all_end = hxmove_range_if(
+			hxmake_range(all_source.begin(), all_source.end()), all.begin(),
+			[](const hxtest_object& x) { return x.value() > 0; });
+		EXPECT_EQ(all_end - all.begin(), 4);
+		EXPECT_EQ(all[0].value(), 37);
+		EXPECT_EQ(all[3].value(), 40);
+		EXPECT_EQ(all_source[0].state(), hxtest_object_state::moved);
+		EXPECT_EQ(all_source[3].state(), hxtest_object_state::moved);
+	}
+	EXPECT_TRUE(check_stats(27, 27, 0, 27, 0, 0, 0, 6, 0, 0, 0));
 }
 
 TEST_F(hxcount_if_test_f, simple_case) {

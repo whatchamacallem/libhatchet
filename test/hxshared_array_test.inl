@@ -448,7 +448,7 @@ TEST_F(hxarray_shared_test_f, erase_iterator_from_front_middle_and_back) {
 TEST_F(hxarray_shared_test_f, copy_construct_and_copy_assign) {
 	const hxarray<hxtest_object, HXSHARED_ARRAY_CAPACITY> a{
 		hxtest_object(31), hxtest_object(32), hxtest_object(33), hxtest_object(34) };
-	hxarray<hxtest_object, HXSHARED_ARRAY_CAPACITY> copy(a);
+	const hxarray<hxtest_object, HXSHARED_ARRAY_CAPACITY> copy(a); // NOLINT(performance-unnecessary-copy-initialization)
 	EXPECT_EQ(copy.size(), 4);
 	EXPECT_TRUE(copy == a);
 	EXPECT_EQ((*copy.begin()).value(), 31);
