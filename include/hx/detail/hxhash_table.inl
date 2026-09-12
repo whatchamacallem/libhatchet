@@ -15,7 +15,7 @@ HX_INL_BEGIN_
 template<typename node_t_, int traits_>
 hxinline bool hxhash_equal_trampoline_(const hxhash_node_base* node_, const void* key_) {
 	hxif_constexpr((traits_ & hxtrait_three_way) != 0) {
-		return hxthree_way(static_cast<const node_t_*>(node_)->hash_key(),
+		return hxkey_three_way(static_cast<const node_t_*>(node_)->hash_key(),
 			*static_cast<const typename node_t_::key_t*>(key_)) == 0;
 	}
 	else {
@@ -176,7 +176,7 @@ hxinline hxattr_flatten hxsize_t hxhash_table<node_t_, deleter_t_, table_size_bi
 		for(const node_t_* node_ = static_cast<const node_t_*>(*this->get_bucket_head_(hash_)); node_;
 				node_ = static_cast<const node_t_*>(node_->hash_next)) {
 			hxif_constexpr((traits_ & hxtrait_three_way) != 0) {
-				if(hxthree_way(node_->hash_key(), key_) == 0) {
+				if(hxkey_three_way(node_->hash_key(), key_) == 0) {
 					return 1;
 				}
 			}
@@ -281,7 +281,7 @@ hxinline hxattr_flatten auto hxhash_table<node_t_, deleter_t_, table_size_bits_,
 		for(const node_t_* node_ = static_cast<const node_t_*>(*this->get_bucket_head_(hash_)); node_;
 				node_ = static_cast<const node_t_*>(node_->hash_next)) {
 			hxif_constexpr((traits_ & hxtrait_three_way) != 0) {
-				if(hxthree_way(node_->hash_key(), key_) == 0) {
+				if(hxkey_three_way(node_->hash_key(), key_) == 0) {
 					return const_iterator(this, const_cast<node_t_*>(node_));
 				}
 			}
@@ -294,7 +294,7 @@ hxinline hxattr_flatten auto hxhash_table<node_t_, deleter_t_, table_size_bits_,
 	}
 	else hxif_constexpr((traits_ & hxtrait_multi) != 0) {
 		hxif_constexpr((traits_ & hxtrait_three_way) != 0) {
-			hxassertf(hxthree_way(key_, previous_node_->hash_key()) == 0, "history_mismatch");
+			hxassertf(hxkey_three_way(key_, previous_node_->hash_key()) == 0, "history_mismatch");
 		}
 		else {
 			hxassertf(hxkey_equal(key_, previous_node_->hash_key()), "history_mismatch");
@@ -303,7 +303,7 @@ hxinline hxattr_flatten auto hxhash_table<node_t_, deleter_t_, table_size_bits_,
 		for(const node_t_* node_ = static_cast<const node_t_*>(previous_node_->hash_next); node_;
 				node_ = static_cast<const node_t_*>(node_->hash_next)) {
 			hxif_constexpr((traits_ & hxtrait_three_way) != 0) {
-				if(hxthree_way(node_->hash_key(), key_) == 0) {
+				if(hxkey_three_way(node_->hash_key(), key_) == 0) {
 					return const_iterator(this, const_cast<node_t_*>(node_));
 				}
 			}
@@ -350,7 +350,7 @@ hxhash_table<node_t_, deleter_t_, table_size_bits_, traits_>::insert(node_t_* pt
 		for(node_t_* existing_ = static_cast<node_t_*>(*head_); existing_;
 				existing_ = static_cast<node_t_*>(existing_->hash_next)) {
 			hxif_constexpr((traits_ & hxtrait_three_way) != 0) {
-				if(hxthree_way(existing_->hash_key(), ptr_->hash_key()) != 0) { continue; }
+				if(hxkey_three_way(existing_->hash_key(), ptr_->hash_key()) != 0) { continue; }
 			}
 			else {
 				if(!hxkey_equal(existing_->hash_key(), ptr_->hash_key())) { continue; }
@@ -380,7 +380,7 @@ hxhash_table<node_t_, deleter_t_, table_size_bits_, traits_>::insert(hxptr<node_
 		for(node_t_* existing_ = static_cast<node_t_*>(*head_); existing_;
 				existing_ = static_cast<node_t_*>(existing_->hash_next)) {
 			hxif_constexpr((traits_ & hxtrait_three_way) != 0) {
-				if(hxthree_way(existing_->hash_key(), raw_->hash_key()) == 0) {
+				if(hxkey_three_way(existing_->hash_key(), raw_->hash_key()) == 0) {
 					return iterator(this, existing_);
 				}
 			}

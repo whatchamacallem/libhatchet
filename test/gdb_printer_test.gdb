@@ -10,7 +10,7 @@
 source ../gdb/hxallocator_printer.py
 source ../gdb/hxarray_printer.py
 source ../gdb/hxbitset_printer.py
-source ../gdb/hxconstexpr_list_printer.py
+source ../gdb/hxlist_constexpr_printer.py
 source ../gdb/hxdeque_printer.py
 source ../gdb/hxexpected_printer.py
 source ../gdb/hxflat_map_printer.py
@@ -73,20 +73,20 @@ commands
   continue
 end
 
-break hxtest_gdb_break_hxconstexpr_list
+break hxtest_gdb_break_hxlist_constexpr
 commands
   up
-  echo \n=== hxconstexpr_list ===\n
+  echo \n=== hxlist_constexpr ===\n
   hxprint list
   continue
 end
 
-break hxtest_gdb_break_hxconstexpr_list_empty
+break hxtest_gdb_break_hxlist_constexpr_empty
 commands
   up
-  echo \n=== hxconstexpr_list empty and multi-field ===\n
+  echo \n=== hxlist_constexpr empty and multi-field ===\n
   hxprint a
-  echo === hxconstexpr_list multi-field ===\n
+  echo === hxlist_constexpr multi-field ===\n
   hxprint b
   continue
 end

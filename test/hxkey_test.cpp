@@ -121,25 +121,25 @@ TEST(hxkey_hash, char_pointer_matches_const_char_pointer) {
 	EXPECT_EQ(hxkey_hash_t<const char*>{}(""), hxkey_hash(static_cast<const char*>("")));
 }
 
-TEST(hxthree_way_test, hxthree_way_scalar) {
-	EXPECT_TRUE(hxthree_way(3, 4) < 0);
-	EXPECT_TRUE(hxthree_way(3, 3) == 0);
-	EXPECT_TRUE(hxthree_way(4, 3) > 0);
+TEST(hxkey_three_way_test, hxkey_three_way_scalar) {
+	EXPECT_TRUE(hxkey_three_way(3, 4) < 0);
+	EXPECT_TRUE(hxkey_three_way(3, 3) == 0);
+	EXPECT_TRUE(hxkey_three_way(4, 3) > 0);
 }
 
 #if HX_CPLUSPLUS >= 202002L
-TEST(hxthree_way_test, hxthree_way_spaceship) {
-	class hxthree_way_test_t {
+TEST(hxkey_three_way_test, hxkey_three_way_spaceship) {
+	class hxkey_three_way_test_t {
 	public:
-		explicit hxthree_way_test_t(int32_t value) : m_value(value) { }
-		int32_t operator<=>(const hxthree_way_test_t& x) const { return m_value - x.m_value; }
+		explicit hxkey_three_way_test_t(int32_t value) : m_value(value) { }
+		int32_t operator<=>(const hxkey_three_way_test_t& x) const { return m_value - x.m_value; }
 	private:
 		int32_t m_value;
 	};
-	const hxthree_way_test_t a(31), b(32);
-	EXPECT_TRUE(hxthree_way(a, b) < 0);
-	EXPECT_TRUE(hxthree_way(a, a) == 0);
-	EXPECT_TRUE(hxthree_way(b, a) > 0);
+	const hxkey_three_way_test_t a(31), b(32);
+	EXPECT_TRUE(hxkey_three_way(a, b) < 0);
+	EXPECT_TRUE(hxkey_three_way(a, a) == 0);
+	EXPECT_TRUE(hxkey_three_way(b, a) > 0);
 }
 #endif // HX_CPLUSPLUS >= 202002L
 

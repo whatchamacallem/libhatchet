@@ -73,9 +73,9 @@ $6 = [0B dynamic]
 $7 = [16B] const hxbitset<67> = {01000000 00000000 05000000 00000000}
 $8 = [16B] const hxbitset<67> = {01000000 00000000 05000000 00000000}
 $9 = [40B] const hxbitset<259> = {1f000000 00000000 00000000 00000000, 00000000 00000000 00000000 00000000, 01000000 00000000}
-$10 = [0] const hxconstexpr_list<hxtest_constexpr_list_pair_node_t, hxdo_not_delete>
-$11 = [1] hxconstexpr_list<hxtest_constexpr_list_pair_node_t, hxdo_not_delete> = {31, 32}
-$12 = [3] hxconstexpr_list<hxtest_constexpr_list_object_node_t, hxdo_not_delete> = {{ value=1, ticket=100 }, { value=2, ticket=101 }, { value=3, ticket=102 }}
+$10 = [0] const hxlist_constexpr<hxtest_constexpr_list_pair_node_t, hxdo_not_delete>
+$11 = [1] hxlist_constexpr<hxtest_constexpr_list_pair_node_t, hxdo_not_delete> = {31, 32}
+$12 = [3] hxlist_constexpr<hxtest_constexpr_list_object_node_t, hxdo_not_delete> = {{ value=1, ticket=100 }, { value=2, ticket=101 }, { value=3, ticket=102 }}
 $13 = [4/4] hxdeque<hxtest_object, 4> = {[32B static], { value=3, ticket=102 }, { value=4, ticket=103 }, { value=5, ticket=104 }, { value=6, ticket=105 }}
 $14 = [0/0] const hxdeque<int, 0>
 $15 = [0/4] hxdeque<int, 0> = {[16B dynamic]}
@@ -83,14 +83,14 @@ $16 = [8/8] hxdeque<hxtest_object, 0> = {[64B dynamic], { value=4, ticket=104 },
 $17 = [1] const hxexpected<int, bool> = {hxallocator = [4B static], value = 34, error = false}
 $18 = [0] const hxexpected<int, bool> = {hxallocator = [4B static], error = true}
 $19 = [0] const hxexpected<int, int> = {hxallocator = [4B static], error = 31}
-$20 = [3/4] const hxflat_map<hxtest_object, hxtest_object, 4, hxthree_way_t<hxtest_object, void>, 2> = {[32B static], [32B static], { value=10, ticket=103 }, { value=20, ticket=104 }, { value=30, ticket=105 }}
-$21 = [3/3] const hxflat_map<hxtest_object, hxtest_object, 0, hxthree_way_t<hxtest_object, void>, 3> = {[24B dynamic], [24B dynamic], { value=10, ticket=103 }, { value=20, ticket=104 }, { value=30, ticket=105 }}
-$22 = [0/0] const hxflat_map<hxtest_object, hxtest_object, 0, hxthree_way_t<hxtest_object, void>, 3>
-$23 = [0/4] hxflat_map<hxtest_object, hxtest_object, 0, hxthree_way_t<hxtest_object, void>, 3> = {[32B dynamic], [32B dynamic]}
-$24 = [3/4] const hxflat_set<hxtest_object, 4, hxthree_way_t<hxtest_object, void>, 2> = {[32B static], { value=10, ticket=100 }, { value=20, ticket=101 }, { value=30, ticket=102 }}
-$25 = [3/3] const hxflat_set<hxtest_object, 0, hxthree_way_t<hxtest_object, void>, 3> = {[24B dynamic], { value=10, ticket=100 }, { value=20, ticket=101 }, { value=30, ticket=102 }}
-$26 = [0/0] const hxflat_set<hxtest_object, 0, hxthree_way_t<hxtest_object, void>, 3>
-$27 = [0/8] hxflat_set<hxtest_object, 0, hxthree_way_t<hxtest_object, void>, 3> = {[64B dynamic]}
+$20 = [3/4] const hxflat_map<hxtest_object, hxtest_object, 4, hxkey_three_way_t<hxtest_object, void>, 2> = {[32B static], [32B static], { value=10, ticket=103 }, { value=20, ticket=104 }, { value=30, ticket=105 }}
+$21 = [3/3] const hxflat_map<hxtest_object, hxtest_object, 0, hxkey_three_way_t<hxtest_object, void>, 3> = {[24B dynamic], [24B dynamic], { value=10, ticket=103 }, { value=20, ticket=104 }, { value=30, ticket=105 }}
+$22 = [0/0] const hxflat_map<hxtest_object, hxtest_object, 0, hxkey_three_way_t<hxtest_object, void>, 3>
+$23 = [0/4] hxflat_map<hxtest_object, hxtest_object, 0, hxkey_three_way_t<hxtest_object, void>, 3> = {[32B dynamic], [32B dynamic]}
+$24 = [3/4] const hxflat_set<hxtest_object, 4, hxkey_three_way_t<hxtest_object, void>, 2> = {[32B static], { value=10, ticket=100 }, { value=20, ticket=101 }, { value=30, ticket=102 }}
+$25 = [3/3] const hxflat_set<hxtest_object, 0, hxkey_three_way_t<hxtest_object, void>, 3> = {[24B dynamic], { value=10, ticket=100 }, { value=20, ticket=101 }, { value=30, ticket=102 }}
+$26 = [0/0] const hxflat_set<hxtest_object, 0, hxkey_three_way_t<hxtest_object, void>, 3>
+$27 = [0/8] hxflat_set<hxtest_object, 0, hxkey_three_way_t<hxtest_object, void>, 3> = {[64B dynamic]}
 $28 = [2/3] hxhandle_table<hxtest_object, hxdefault_delete, 2> = {[1] = { value=0, ticket=100 }, [3] = { value=2, ticket=102 }}
 $29 = [0/0] const hxhandle_table<hxtest_object, hxdefault_delete, 0>
 $30 = [39/32 buckets] hxhash_table<hxtest_object_node, hxdefault_delete, 0, 1> = {[256B dynamic], { value=57, ticket=215 }, { value=39, ticket=179 }, { value=61, ticket=223 }, { value=67, ticket=235 }, { value=55, ticket=211 }, { value=48, ticket=197 }, { value=45, ticket=191 }, { value=75, ticket=251 }, { value=60, ticket=221 }, { value=64, ticket=229 }, { value=72, ticket=245 }, { value=56, ticket=213 }, { value=59, ticket=219 }, { value=66, ticket=233 }, { value=42, ticket=185 }, { value=63, ticket=227 }, { value=44, ticket=189 }, { value=62, ticket=225 }, { value=53, ticket=207 }, { value=58, ticket=217 }, { value=73, ticket=247 }, { value=71, ticket=243 }, { value=40, ticket=181 }, { value=52, ticket=205 }, { value=46, ticket=193 }, { value=68, ticket=237 }, { value=41, ticket=183 }, { value=65, ticket=231 }, { value=51, ticket=203 }, { value=70, ticket=241 }, { value=76, ticket=253 }, { value=77, ticket=255 }, { value=49, ticket=199 }, { value=69, ticket=239 }, { value=43, ticket=187 }, { value=54, ticket=209 }, { value=47, ticket=195 }, { value=50, ticket=201 }, { value=74, ticket=249 }}

@@ -8,36 +8,36 @@ import re
 import traceback
 from typing import Iterator, Optional, Set, Tuple
 
-# hxconstexpr_list uses this layout:
+# hxlist_constexpr uses this layout:
 #
-#	class hxconstexpr_list_node {
+#	class hxlist_constexpr_node {
 #		// ...
-#		hxconstexpr_list_node* m_list_prev_;
-#		hxconstexpr_list_node* m_list_next_;
+#		hxlist_constexpr_node* m_list_prev_;
+#		hxlist_constexpr_node* m_list_next_;
 #	};
 #
 #	template<typename node_t_, typename deleter_t_=hxdefault_delete>
-#	class hxconstexpr_list : private deleter_t_ {
+#	class hxlist_constexpr : private deleter_t_ {
 #		// ...
 #		hxsize_t              m_size_;
 #		// m_sentinel_.m_list_next_ is front. m_sentinel_.m_list_prev_ is back.
-#		hxconstexpr_list_node m_sentinel_;
+#		hxlist_constexpr_node m_sentinel_;
 #	};
 #
 
-def _hxconstexpr_list_find_link_base(node_type: gdb.Type) -> Optional[gdb.Type]:
+def _hxlist_constexpr_find_link_base(node_type: gdb.Type) -> Optional[gdb.Type]:
 	for field in node_type.fields():
 		if not field.is_base_class:
 			continue
 		for base_field in field.type.fields():
 			if base_field.name == 'm_list_next_':
 				return field.type
-		deeper: Optional[gdb.Type] = _hxconstexpr_list_find_link_base(field.type)
+		deeper: Optional[gdb.Type] = _hxlist_constexpr_find_link_base(field.type)
 		if deeper is not None:
 			return deeper
 	return None
 
-class hxconstexpr_list_printer:
+class hxlist_constexpr_printer:
 	def __init__(self, val: gdb.Value) -> None:
 		self.val: gdb.Value = val
 		self._summary: Optional[str] = None
@@ -65,7 +65,7 @@ class hxconstexpr_list_printer:
 		self._sentinel_addr = int(self.val['m_sentinel_'].address)
 		self._front_addr = int(self.val['m_sentinel_']['m_list_next_'])
 
-		self._base_type = _hxconstexpr_list_find_link_base(node_type)
+		self._base_type = _hxlist_constexpr_find_link_base(node_type)
 		self._base_field_names = set()
 		if self._base_type is not None:
 			for base_field in self._base_type.fields():
@@ -119,8 +119,8 @@ class hxconstexpr_list_printer:
 		return 'array'
 
 def build_pretty_printer() -> gdb.printing.RegexpCollectionPrettyPrinter:
-	pp = gdb.printing.RegexpCollectionPrettyPrinter('hxconstexpr_list')
-	pp.add_printer('hxconstexpr_list', r'^(\w+::)*hxconstexpr_list<.*>$', hxconstexpr_list_printer)
+	pp = gdb.printing.RegexpCollectionPrettyPrinter('hxlist_constexpr')
+	pp.add_printer('hxlist_constexpr', r'^(\w+::)*hxlist_constexpr<.*>$', hxlist_constexpr_printer)
 	return pp
 
 gdb.printing.register_pretty_printer(gdb.current_objfile(), build_pretty_printer(), replace=True)

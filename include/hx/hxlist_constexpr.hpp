@@ -24,49 +24,49 @@ HX_NS_BEGIN_
 
 #if HX_CPLUSPLUS >= 202002L
 /// \cond HIDDEN
-class hxconstexpr_list_node;
+class hxlist_constexpr_node;
 
 template<typename T_>
-concept hxconstexpr_list_concept_ = requires(T_& x_, T_* ptr_) {
+concept hxlist_constexpr_concept_ = requires(T_& x_, T_* ptr_) {
 	sizeof(T_);
 	x_.~T_();
-	{ ptr_ } -> hxconvertible_to<hxconstexpr_list_node*>; // T must derive from hxconstexpr_list_node
+	{ ptr_ } -> hxconvertible_to<hxlist_constexpr_node*>; // T must derive from hxlist_constexpr_node
 };
 /// \endcond
 #else
-#define hxconstexpr_list_concept_ typename
+#define hxlist_constexpr_concept_ typename
 #endif
 
-/// `hxconstexpr_list_node` - Intrusive doubly linked list node base. This is
+/// `hxlist_constexpr_node` - Intrusive doubly linked list node base. This is
 /// the same as `hxlist` except that it works with `constexpr` at the expense of
-/// using an additional pointer per-node. Derive from `hxconstexpr_list_node` to
-/// make a type linkable into an `hxconstexpr_list`. Copy construction produces
+/// using an additional pointer per-node. Derive from `hxlist_constexpr_node` to
+/// make a type linkable into an `hxlist_constexpr`. Copy construction produces
 /// an unlinked node and assignment does nothing.
-class hxconstexpr_list_node {
+class hxlist_constexpr_node {
 public:
 	/// Constructs an unlinked node.
-	hxconstexpr hxconstexpr_list_node(void) : m_list_prev_(hxnull), m_list_next_(hxnull) { }
+	hxconstexpr hxlist_constexpr_node(void) : m_list_prev_(hxnull), m_list_next_(hxnull) { }
 
 	/// Constructs an unlinked node.
-	hxconstexpr hxconstexpr_list_node(const hxconstexpr_list_node&) : hxconstexpr_list_node() { }
+	hxconstexpr hxlist_constexpr_node(const hxlist_constexpr_node&) : hxlist_constexpr_node() { }
 
 	/// Assigns nothing. List linkage of either node is not affected.
-	hxconstexpr hxconstexpr_list_node& operator=(const hxconstexpr_list_node& x_) {
+	hxconstexpr hxlist_constexpr_node& operator=(const hxlist_constexpr_node& x_) {
 		hxassertf(this != &x_, "self_assignment"); (void)x_;
 		return *this;
 	}
 
 private:
 	/// \cond HIDDEN
-	template<hxconstexpr_list_concept_, typename> friend class hxconstexpr_list;
-	hxconstexpr_list_node* m_list_prev_;
-	hxconstexpr_list_node* m_list_next_;
+	template<hxlist_constexpr_concept_, typename> friend class hxlist_constexpr;
+	hxlist_constexpr_node* m_list_prev_;
+	hxlist_constexpr_node* m_list_next_;
 	/// \endcond
 };
 
-/// `hxconstexpr_list` - An intrusive doubly linked list that takes ownership of
+/// `hxlist_constexpr` - An intrusive doubly linked list that takes ownership of
 /// nodes via a `deleter_t` callable, defaulting to `hxdefault_delete`. `T` must
-/// derive from `hxconstexpr_list_node`. The destructor calls `clear()` which
+/// derive from `hxlist_constexpr_node`. The destructor calls `clear()` which
 /// invokes the deleter on all remaining nodes. Subclasses of `T` may be
 /// inserted heterogeneously. Note: It is possible to iterate backwards from
 /// `--list.end()` to `--list.begin()` however reverse iterators are not
@@ -75,12 +75,12 @@ private:
 /// For example:
 ///
 /// ```cpp
-///   struct example_t : public hxconstexpr_list_node {
+///   struct example_t : public hxlist_constexpr_node {
 ///       example_t(int x) : value(x) { }
 ///       int value;
 ///   };
 ///
-///   hxconstexpr_list<example_t> list;
+///   hxlist_constexpr<example_t> list;
 ///   list.push_back(hxnew<example_t>(7));
 ///
 ///   for(example_t& n : list) {
@@ -88,14 +88,14 @@ private:
 ///   }
 /// ```
 ///
-/// - `T` : The node type. Must derive from `hxconstexpr_list_node`.
+/// - `T` : The node type. Must derive from `hxlist_constexpr_node`.
 /// - `deleter_t` : A class type invoked as `deleter(T*)` to free the owned
 ///    pointer. See also `hxdo_not_delete` and `hxconsteval_delete`.
-template<hxconstexpr_list_concept_ T_, typename deleter_t_=hxdefault_delete>
-class hxconstexpr_list : private deleter_t_ {
+template<hxlist_constexpr_concept_ T_, typename deleter_t_=hxdefault_delete>
+class hxlist_constexpr : private deleter_t_ {
 public:
 	/// `T` - The node type stored in the list. Derives from
-	/// `hxconstexpr_list_node`.
+	/// `hxlist_constexpr_node`.
 	using node_t = T_;
 
 	/// `const_iterator` - Bidirectional iterator over const nodes.
@@ -146,16 +146,16 @@ public:
 		}
 	protected:
 		/// \cond HIDDEN
-		template<hxconstexpr_list_concept_, typename> friend class hxconstexpr_list;
-		hxconstexpr const_iterator(hxconstexpr_list_node* current_, const hxconstexpr_list_node* sentinel_)
+		template<hxlist_constexpr_concept_, typename> friend class hxlist_constexpr;
+		hxconstexpr const_iterator(hxlist_constexpr_node* current_, const hxlist_constexpr_node* sentinel_)
 			: m_current_node_(current_)
 #if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
 			, m_sentinel_(sentinel_)
 #endif
 		{ (void)sentinel_; }
-		hxconstexpr_list_node* m_current_node_;
+		hxlist_constexpr_node* m_current_node_;
 #if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
-		const hxconstexpr_list_node* m_sentinel_;
+		const hxlist_constexpr_node* m_sentinel_;
 #endif
 		/// \endcond
 	};
@@ -191,8 +191,8 @@ public:
 		}
 	private:
 		/// \cond HIDDEN
-		template<hxconstexpr_list_concept_, typename> friend class hxconstexpr_list;
-		hxconstexpr iterator(hxconstexpr_list_node* current_, const hxconstexpr_list_node* sentinel_)
+		template<hxlist_constexpr_concept_, typename> friend class hxlist_constexpr;
+		hxconstexpr iterator(hxlist_constexpr_node* current_, const hxlist_constexpr_node* sentinel_)
 			: const_iterator(current_, sentinel_) { }
 		hxconstexpr iterator(const const_iterator& x_) : const_iterator(x_) { }
 		/// \endcond
@@ -200,19 +200,19 @@ public:
 
 	/// Constructs an empty list with an optional deleter instance.
 	/// - `deleter` : Callable with signature `bool deleter(T*)`.
-	hxconstexpr explicit hxconstexpr_list(deleter_t_ deleter_=deleter_t_());
+	hxconstexpr explicit hxlist_constexpr(deleter_t_ deleter_=deleter_t_());
 
 	/// Destroys the list by calling `clear()`, which invokes the deleter on
 	/// every remaining node.
-	hxconstexpr ~hxconstexpr_list(void) { this->clear(this->deleter()); }
+	hxconstexpr ~hxlist_constexpr(void) { this->clear(this->deleter()); }
 
 	/// Returns `true` if `a` and `b` contain the same nodes in the same
 	/// order, using `T`'s `operator==`.
 	/// - `a` : A list.
 	/// - `b` : The list to compare against.
 	template<typename deleter_x_>
-	hxattr_nodiscard friend hxconstexpr bool operator==(const hxconstexpr_list& a_,
-			const hxconstexpr_list<T_, deleter_x_>& b_) {
+	hxattr_nodiscard friend hxconstexpr bool operator==(const hxlist_constexpr& a_,
+			const hxlist_constexpr<T_, deleter_x_>& b_) {
 		return hxequal_range(a_, b_);
 	}
 
@@ -221,7 +221,7 @@ public:
 	/// - `x` : The list to compare against.
 	template<typename deleter_x_>
 	hxattr_nodiscard hxconstexpr bool operator!=(
-			const hxconstexpr_list<T_, deleter_x_>& x_) const {
+			const hxlist_constexpr<T_, deleter_x_>& x_) const {
 		return !(*this == x_);
 	}
 #endif
@@ -231,8 +231,8 @@ public:
 	/// - `a` : A list.
 	/// - `b` : The list to compare against.
 	template<typename deleter_x_>
-	hxattr_nodiscard friend hxconstexpr bool operator<(const hxconstexpr_list& a_,
-			const hxconstexpr_list<T_, deleter_x_>& b_) {
+	hxattr_nodiscard friend hxconstexpr bool operator<(const hxlist_constexpr& a_,
+			const hxlist_constexpr<T_, deleter_x_>& b_) {
 		return hxless_range(a_, b_);
 	}
 
@@ -416,21 +416,21 @@ public:
 	/// ownership. `x` is left empty after the call.
 	/// - `it` : Iterator before which nodes are inserted.
 	/// - `x` : The list to splice from. Left empty after the call.
-	hxconstexpr void splice(const_iterator it_, hxconstexpr_list& x_);
+	hxconstexpr void splice(const_iterator it_, hxlist_constexpr& x_);
 
 private:
-	hxconstexpr_list(const hxconstexpr_list&) = delete;
-	hxconstexpr_list(hxconstexpr_list&&) = delete;
-	hxconstexpr_list& operator=(const hxconstexpr_list&) = delete;
-	hxconstexpr_list& operator=(hxconstexpr_list&&) = delete;
+	hxlist_constexpr(const hxlist_constexpr&) = delete;
+	hxlist_constexpr(hxlist_constexpr&&) = delete;
+	hxlist_constexpr& operator=(const hxlist_constexpr&) = delete;
+	hxlist_constexpr& operator=(hxlist_constexpr&&) = delete;
 
-	hxconstexpr void insert_(hxconstexpr_list_node* prev_, hxconstexpr_list_node* next_,
-		hxconstexpr_list_node* ptr_);
-	hxconstexpr void extract_(hxconstexpr_list_node* ptr_);
+	hxconstexpr void insert_(hxlist_constexpr_node* prev_, hxlist_constexpr_node* next_,
+		hxlist_constexpr_node* ptr_);
+	hxconstexpr void extract_(hxlist_constexpr_node* ptr_);
 
 	hxsize_t m_size_;
-	hxconstexpr_list_node m_sentinel_;
+	hxlist_constexpr_node m_sentinel_;
 };
 
-#include "detail/hxconstexpr_list.inl"
+#include "detail/hxlist_constexpr.inl"
 HX_NS_END_

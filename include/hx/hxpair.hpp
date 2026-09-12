@@ -5,10 +5,7 @@
 
 /// \file
 /// A pair of public fields with the key operations required by the keyed
-/// containers. `operator<`, `operator==`, `operator<=>` and `operator-` are
-/// picked up by `hxkey_less_t`, `hxkey_equal_t` and `hxthree_way_t` without
-/// further specialization. `hxkey_hash_t` is specialized here because there is
-/// no operator for hashing.
+/// containers.
 
 #include "libhatchet.h"
 
@@ -65,7 +62,7 @@ public:
 
 	/// Returns a negative value if `a` orders before `b`, a positive value if
 	/// it orders after and zero otherwise. Provided as a C++11 fallback that
-	/// will get picked up by `hxthree_way`.
+	/// will get picked up by `hxkey_three_way`.
 	hxattr_nodiscard friend hxconstexpr int32_t operator-(const hxpair& a_, const hxpair& b_) {
 		if(hxkey_less(a_.a, b_.a)) { return -1; }
 		if(hxkey_less(b_.a, a_.a)) { return 1; }

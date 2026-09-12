@@ -233,7 +233,7 @@ private:
 ///   `hxtrait_multi` is unset and a node with an equal key already exists,
 ///   insertion into the list will fail when a node with the same key already
 ///   exists. When `hxtrait_three_way` is set, key equality is tested with
-///   `hxthree_way(a, b) == 0` instead of `hxkey_equal`.
+///   `hxkey_three_way(a, b) == 0` instead of `hxkey_equal`.
 template<hxhash_table_concept_ node_t_,
 	typename deleter_t_=hxdefault_delete,
 	uint32_t table_size_bits_=hxallocator_dynamic_capacity,

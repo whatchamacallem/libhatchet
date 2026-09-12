@@ -139,7 +139,7 @@ unused except when initializing system allocators.
   `ptrdiff_t`, but could be made 32-bit on a 64-bit platform if desired.
 
 - **constexpr Ready**: C++11 `constexpr` is used where possible. Asserts, the
-  algorithms, `hxconstexpr_list`, `hxbitset` and `hxrandom` support `consteval`
+  algorithms, `hxlist_constexpr`, `hxbitset` and `hxrandom` support `consteval`
   in C++23.
 
 ## Documentation
@@ -256,7 +256,7 @@ error values and returned together, instead of ad hoc error checking.
   Unlike `std::bitset` it exposes the underlying words via `data` and `bytes`.
   Shifts and bitwise operators are provided.
 - `hxlist` is an intrusive doubly linked XOR list at half the size of a
-  conventional one. `hxconstexpr_list` has the same interface but uses normal
+  conventional one. `hxlist_constexpr` has the same interface but uses normal
   pointers so it works in constexpr code. Nodes are owned through a
   configurable deleter, and subclasses of the node type may be stored
   heterogeneously. `extract`, `pop_front` and `pop_back` return an owning

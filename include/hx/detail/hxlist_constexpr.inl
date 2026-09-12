@@ -1,0 +1,387 @@
+#pragma once
+// SPDX-FileCopyrightText: © 2017-2026 Adrian Johnston.
+// SPDX-License-Identifier: MIT
+// This file is licensed under the MIT license found in the LICENSE.md file.
+
+#ifndef LIBHATCHET_VER
+#error Internal. Do not include this file directly.
+#endif
+
+#ifndef HX_DOXYGEN_PARSER
+HX_INL_BEGIN_
+
+// const_iterator
+
+template<hxlist_constexpr_concept_ T_, typename deleter_t_>
+hxinline hxconstexpr auto hxlist_constexpr<T_, deleter_t_>::const_iterator::operator++(void)
+		-> const_iterator& {
+	// Checking for m_sentinel_ is not done for symmetry.
+	hxassertf(this->m_current_node_ != hxnull, "bad_iter");
+	m_current_node_ = m_current_node_->m_list_next_;
+	return *this;
+}
+
+template<hxlist_constexpr_concept_ T_, typename deleter_t_>
+hxinline hxattr_flatten hxconstexpr auto hxlist_constexpr<T_, deleter_t_>::const_iterator::operator++(int)
+		-> const_iterator {
+	const_iterator t_(*this);
+	this->operator++();
+	return t_;
+}
+
+template<hxlist_constexpr_concept_ T_, typename deleter_t_>
+hxinline hxconstexpr auto hxlist_constexpr<T_, deleter_t_>::const_iterator::operator--(void)
+		-> const_iterator& {
+	hxassertf(this->m_current_node_ != hxnull, "bad_iter");
+	m_current_node_ = m_current_node_->m_list_prev_;
+	return *this;
+}
+
+template<hxlist_constexpr_concept_ T_, typename deleter_t_>
+hxinline hxattr_flatten hxconstexpr auto hxlist_constexpr<T_, deleter_t_>::const_iterator::operator--(int)
+		-> const_iterator {
+	const_iterator t_(*this);
+	this->operator--();
+	return t_;
+}
+
+// iterator
+
+template<hxlist_constexpr_concept_ T_, typename deleter_t_>
+hxinline hxattr_flatten hxconstexpr auto hxlist_constexpr<T_, deleter_t_>::iterator::operator++(int) -> iterator {
+	iterator t_(*this);
+	this->const_iterator::operator++();
+	return t_;
+}
+
+template<hxlist_constexpr_concept_ T_, typename deleter_t_>
+hxinline hxattr_flatten hxconstexpr auto hxlist_constexpr<T_, deleter_t_>::iterator::operator--(int) -> iterator {
+	iterator t_(*this);
+	this->const_iterator::operator--();
+	return t_;
+}
+
+// hxlist_constexpr
+
+template<hxlist_constexpr_concept_ T_, typename deleter_t_>
+hxinline hxattr_flatten hxconstexpr hxlist_constexpr<T_, deleter_t_>::hxlist_constexpr(deleter_t_ deleter_)
+		: deleter_t_(hxmove(deleter_)) {
+	m_size_ = 0;
+	m_sentinel_.m_list_prev_ = &m_sentinel_;
+	m_sentinel_.m_list_next_ = &m_sentinel_;
+}
+
+template<hxlist_constexpr_concept_ T_, typename deleter_t_>
+template<hxrange_concept_ range_t_, hxenable_if_t<!hxis_lvalue_reference<range_t_>(), int> >
+hxinline hxattr_flatten hxconstexpr void hxlist_constexpr<T_, deleter_t_>::add_range(range_t_&& range_) noexcept {
+	hxrestrict_t<decltype(range_.begin())> it_(range_.begin());
+	for(const auto end_ = range_.end(); it_ != end_; ++it_) {
+		this->push_back(&*it_);
+	}
+}
+
+template<hxlist_constexpr_concept_ T_, typename deleter_t_>
+hxinline hxconstexpr const T_& hxlist_constexpr<T_, deleter_t_>::back(void) const {
+	hxassert_hard(!this->empty(), "list_empty");
+	return *static_cast<const T_*>(m_sentinel_.m_list_prev_);
+}
+
+template<hxlist_constexpr_concept_ T_, typename deleter_t_>
+hxinline hxconstexpr T_& hxlist_constexpr<T_, deleter_t_>::back(void) {
+	hxassert_hard(!this->empty(), "list_empty");
+	return *static_cast<T_*>(m_sentinel_.m_list_prev_);
+}
+
+template<hxlist_constexpr_concept_ T_, typename deleter_t_>
+hxinline hxattr_flatten hxconstexpr auto hxlist_constexpr<T_, deleter_t_>::begin(void) const -> const_iterator {
+	return const_iterator(m_sentinel_.m_list_next_, &m_sentinel_);
+}
+
+template<hxlist_constexpr_concept_ T_, typename deleter_t_>
+hxinline hxattr_flatten hxconstexpr auto hxlist_constexpr<T_, deleter_t_>::end(void) const -> const_iterator {
+	return const_iterator(const_cast<hxlist_constexpr_node*>(&m_sentinel_), &m_sentinel_);
+}
+
+template<hxlist_constexpr_concept_ T_, typename deleter_t_>
+hxinline hxattr_flatten hxconstexpr bool hxlist_constexpr<T_, deleter_t_>::empty(void) const {
+	return m_size_ == 0;
+}
+
+template<hxlist_constexpr_concept_ T_, typename deleter_t_>
+template<typename deleter_u_>
+hxinline hxattr_flatten hxconstexpr void hxlist_constexpr<T_, deleter_t_>::clear(deleter_u_&& deleter_) noexcept {
+	if(m_size_ != 0) {
+		if(deleter_) {
+			hxlist_constexpr_node* node_ = m_sentinel_.m_list_next_;
+			while(node_ != &m_sentinel_) {
+				hxlist_constexpr_node* next_ = node_->m_list_next_;
+				deleter_(static_cast<T_*>(node_));
+				node_ = next_;
+			}
+		}
+		this->release_all();
+	}
+}
+
+template<hxlist_constexpr_concept_ T_, typename deleter_t_>
+template<typename deleter_u_>
+hxinline hxattr_flatten hxconstexpr void hxlist_constexpr<T_, deleter_t_>::erase(
+		const_iterator it_, deleter_u_&& deleter_) noexcept {
+	T_* ptr_ = static_cast<T_*>(it_.m_current_node_);
+	this->extract_(it_.m_current_node_);
+	if(deleter_) {
+		deleter_(ptr_);
+	}
+}
+
+template<hxlist_constexpr_concept_ T_, typename deleter_t_>
+hxinline hxattr_flatten hxconstexpr void hxlist_constexpr<T_, deleter_t_>::erase(const_iterator it_) noexcept {
+	this->erase(it_, static_cast<const deleter_t_&>(*this));
+}
+
+template<hxlist_constexpr_concept_ T_, typename deleter_t_>
+hxinline hxattr_flatten hxconstexpr hxptr<T_, deleter_t_> hxlist_constexpr<T_, deleter_t_>::extract(const_iterator it_) {
+	T_* const ptr_ = static_cast<T_*>(it_.m_current_node_);
+	this->extract_(it_.m_current_node_);
+	return hxptr<T_, deleter_t_>(ptr_, static_cast<deleter_t_&>(*this));
+}
+
+template<hxlist_constexpr_concept_ T_, typename deleter_t_>
+template<typename callable_t_>
+hxinline hxattr_flatten hxconstexpr auto hxlist_constexpr<T_, deleter_t_>::find_if(
+		callable_t_&& callable_) const -> const_iterator {
+	const const_iterator end_ = this->end();
+	for(const_iterator it_ = this->begin(); it_ != end_; ++it_) {
+		if(hxforward<callable_t_>(callable_)(*it_)) {
+			return it_;
+		}
+	}
+	return end_;
+}
+
+template<hxlist_constexpr_concept_ T_, typename deleter_t_>
+template<typename callable_t_>
+hxinline hxattr_flatten hxconstexpr auto hxlist_constexpr<T_, deleter_t_>::find_if(callable_t_&& callable_) -> iterator {
+	const iterator end_ = this->end();
+	for(iterator it_ = this->begin(); it_ != end_; ++it_) {
+		if(hxforward<callable_t_>(callable_)(*it_)) {
+			return it_;
+		}
+	}
+	return end_;
+}
+
+template<hxlist_constexpr_concept_ T_, typename deleter_t_>
+template<typename callable_t_>
+hxinline hxattr_flatten hxconstexpr void hxlist_constexpr<T_, deleter_t_>::for_each(callable_t_&& callable_) const {
+	const hxlist_constexpr_node* node_ = m_sentinel_.m_list_next_;
+	while(node_ != &m_sentinel_) {
+		hxforward<callable_t_>(callable_)(*static_cast<const T_*>(node_));
+		node_ = node_->m_list_next_;
+	}
+}
+
+template<hxlist_constexpr_concept_ T_, typename deleter_t_>
+template<typename callable_t_>
+hxinline hxattr_flatten hxconstexpr void hxlist_constexpr<T_, deleter_t_>::for_each(callable_t_&& callable_) {
+	hxlist_constexpr_node* node_ = m_sentinel_.m_list_next_;
+	while(node_ != &m_sentinel_) {
+		hxforward<callable_t_>(callable_)(*static_cast<T_*>(node_));
+		node_ = node_->m_list_next_;
+	}
+}
+
+template<hxlist_constexpr_concept_ T_, typename deleter_t_>
+hxinline hxconstexpr const deleter_t_& hxlist_constexpr<T_, deleter_t_>::deleter(void) const {
+	return static_cast<const deleter_t_&>(*this);
+}
+
+template<hxlist_constexpr_concept_ T_, typename deleter_t_>
+hxinline hxconstexpr deleter_t_& hxlist_constexpr<T_, deleter_t_>::deleter(void) {
+	return static_cast<deleter_t_&>(*this);
+}
+
+template<hxlist_constexpr_concept_ T_, typename deleter_t_>
+hxinline hxconstexpr const T_& hxlist_constexpr<T_, deleter_t_>::front(void) const {
+	hxassert_hard(!this->empty(), "list_empty");
+	return *static_cast<const T_*>(m_sentinel_.m_list_next_);
+}
+
+template<hxlist_constexpr_concept_ T_, typename deleter_t_>
+hxinline hxconstexpr T_& hxlist_constexpr<T_, deleter_t_>::front(void) {
+	hxassert_hard(!this->empty(), "list_empty");
+	return *static_cast<T_*>(m_sentinel_.m_list_next_);
+}
+
+template<hxlist_constexpr_concept_ T_, typename deleter_t_>
+template<typename deleter_u_>
+hxinline hxattr_flatten hxconstexpr auto hxlist_constexpr<T_, deleter_t_>::insert_after(
+		const_iterator it_, hxptr<T_, deleter_u_>&& ptr_) -> iterator {
+	return this->insert_after(it_, ptr_.release());
+}
+
+template<hxlist_constexpr_concept_ T_, typename deleter_t_>
+hxinline hxattr_flatten hxconstexpr auto hxlist_constexpr<T_, deleter_t_>::insert_after(
+		const_iterator it_, T_* ptr_) -> iterator {
+	hxlist_constexpr_node* pos_node_ = it_.m_current_node_;
+	this->insert_(pos_node_, pos_node_->m_list_next_, ptr_);
+	return iterator(ptr_, &m_sentinel_);
+}
+
+template<hxlist_constexpr_concept_ T_, typename deleter_t_>
+template<typename deleter_u_>
+hxinline hxattr_flatten hxconstexpr auto hxlist_constexpr<T_, deleter_t_>::insert(
+		const_iterator it_, hxptr<T_, deleter_u_>&& ptr_) -> iterator {
+	return this->insert(it_, ptr_.release());
+}
+
+template<hxlist_constexpr_concept_ T_, typename deleter_t_>
+hxinline hxattr_flatten hxconstexpr auto hxlist_constexpr<T_, deleter_t_>::insert(
+		const_iterator it_, T_* ptr_) -> iterator {
+	hxlist_constexpr_node* pos_node_ = it_.m_current_node_;
+	this->insert_(pos_node_->m_list_prev_, pos_node_, ptr_);
+	return iterator(ptr_, &m_sentinel_);
+}
+
+template<hxlist_constexpr_concept_ T_, typename deleter_t_>
+hxinline hxattr_flatten hxconstexpr hxptr<T_, deleter_t_> hxlist_constexpr<T_, deleter_t_>::pop_back(void) {
+	hxassert_hard(!this->empty(), "list_empty");
+	T_* const ptr_ = static_cast<T_*>(m_sentinel_.m_list_prev_);
+	hxlist_constexpr_node* const prev_ = ptr_->m_list_prev_;
+	prev_->m_list_next_ = &m_sentinel_;
+	m_sentinel_.m_list_prev_ = prev_;
+	--m_size_;
+	return hxptr<T_, deleter_t_>(ptr_, static_cast<deleter_t_&>(*this));
+}
+
+template<hxlist_constexpr_concept_ T_, typename deleter_t_>
+hxinline hxattr_flatten hxconstexpr hxptr<T_, deleter_t_> hxlist_constexpr<T_, deleter_t_>::pop_front(void) {
+	hxassert_hard(!this->empty(), "list_empty");
+	T_* const ptr_ = static_cast<T_*>(m_sentinel_.m_list_next_);
+	hxlist_constexpr_node* const next_ = ptr_->m_list_next_;
+	m_sentinel_.m_list_next_ = next_;
+	next_->m_list_prev_ = &m_sentinel_;
+	--m_size_;
+	return hxptr<T_, deleter_t_>(ptr_, static_cast<deleter_t_&>(*this));
+}
+
+template<hxlist_constexpr_concept_ T_, typename deleter_t_>
+template<typename deleter_u_>
+hxinline hxattr_flatten hxconstexpr auto hxlist_constexpr<T_, deleter_t_>::push_back(
+		hxptr<T_, deleter_u_>&& ptr_) -> iterator {
+	return this->push_back(ptr_.release());
+}
+
+template<hxlist_constexpr_concept_ T_, typename deleter_t_>
+hxinline hxattr_flatten hxconstexpr auto hxlist_constexpr<T_, deleter_t_>::push_back(T_* ptr_) -> iterator {
+	this->insert_(m_sentinel_.m_list_prev_, &m_sentinel_, ptr_);
+	return iterator(ptr_, &m_sentinel_);
+}
+
+template<hxlist_constexpr_concept_ T_, typename deleter_t_>
+template<typename deleter_u_>
+hxinline hxattr_flatten hxconstexpr auto hxlist_constexpr<T_, deleter_t_>::push_front(
+		hxptr<T_, deleter_u_>&& ptr_) -> iterator {
+	return this->push_front(ptr_.release());
+}
+
+template<hxlist_constexpr_concept_ T_, typename deleter_t_>
+hxinline hxattr_flatten hxconstexpr auto hxlist_constexpr<T_, deleter_t_>::push_front(T_* ptr_) -> iterator {
+	this->insert_(&m_sentinel_, m_sentinel_.m_list_next_, ptr_);
+	return iterator(ptr_, &m_sentinel_);
+}
+
+template<hxlist_constexpr_concept_ T_, typename deleter_t_>
+hxinline hxconstexpr void hxlist_constexpr<T_, deleter_t_>::release_all(void) {
+	m_sentinel_.m_list_prev_ = &m_sentinel_;
+	m_sentinel_.m_list_next_ = &m_sentinel_;
+	m_size_ = 0;
+}
+
+template<hxlist_constexpr_concept_ T_, typename deleter_t_>
+template<typename callable_t_, typename deleter_u_>
+hxattr_flatten hxconstexpr hxsize_t hxlist_constexpr<T_, deleter_t_>::remove_if(callable_t_&& callable_,
+		deleter_u_&& deleter_) noexcept {
+	hxsize_t size_ = m_size_;
+	hxlist_constexpr_node* prev_ = &m_sentinel_;
+	hxlist_constexpr_node* node_ = m_sentinel_.m_list_next_;
+	while(node_ != &m_sentinel_) {
+		hxlist_constexpr_node* const next_ = node_->m_list_next_;
+		T_* const n_ = static_cast<T_*>(node_);
+		if(hxforward<callable_t_>(callable_)(*n_)) {
+			prev_->m_list_next_ = next_;
+			next_->m_list_prev_ = prev_;
+			--size_;
+			if(deleter_) {
+				deleter_(n_);
+			}
+		} else {
+			prev_ = n_;
+		}
+		node_ = next_;
+	}
+	const hxsize_t count_ = m_size_ - size_;
+	m_size_ = size_;
+	return count_;
+}
+
+template<hxlist_constexpr_concept_ T_, typename deleter_t_>
+template<typename callable_t_>
+hxinline hxattr_flatten hxconstexpr hxsize_t
+		hxlist_constexpr<T_, deleter_t_>::remove_if(callable_t_&& callable_) noexcept {
+	return this->remove_if(hxforward<callable_t_>(callable_), static_cast<const deleter_t_&>(*this));
+}
+
+template<hxlist_constexpr_concept_ T_, typename deleter_t_>
+hxinline hxconstexpr void hxlist_constexpr<T_, deleter_t_>::reverse(void) {
+	hxlist_constexpr_node* node_ = &m_sentinel_;
+	do {
+		hxlist_constexpr_node* next_ = node_->m_list_next_;
+		node_->m_list_next_ = node_->m_list_prev_;
+		node_->m_list_prev_ = next_;
+		node_ = next_;
+	} while(node_ != &m_sentinel_);
+}
+
+template<hxlist_constexpr_concept_ T_, typename deleter_t_>
+hxattr_flatten hxconstexpr void hxlist_constexpr<T_, deleter_t_>::splice(
+		const_iterator it_, hxlist_constexpr& x_) {
+	hxassertf(&x_ != this, "bad_splice same list");
+	hxassertf(it_.m_current_node_ != hxnull, "bad_iter");
+	if(x_.empty()) {
+		return;
+	}
+	hxlist_constexpr_node* pos_node_ = it_.m_current_node_;
+	hxlist_constexpr_node* prev_node_ = pos_node_->m_list_prev_;
+	hxlist_constexpr_node* other_first_ = x_.m_sentinel_.m_list_next_;
+	hxlist_constexpr_node* other_last_ = x_.m_sentinel_.m_list_prev_;
+	prev_node_->m_list_next_ = other_first_;
+	other_first_->m_list_prev_ = prev_node_;
+	other_last_->m_list_next_ = pos_node_;
+	pos_node_->m_list_prev_ = other_last_;
+	m_size_ += x_.m_size_;
+	x_.release_all();
+}
+
+template<hxlist_constexpr_concept_ T_, typename deleter_t_>
+hxinline hxattr_flatten hxconstexpr void hxlist_constexpr<T_, deleter_t_>::insert_(
+		hxlist_constexpr_node* prev_, hxlist_constexpr_node* next_, hxlist_constexpr_node* ptr_) {
+	hxassertf(ptr_ != hxnull, "bad_node");
+	ptr_->m_list_prev_ = prev_;
+	ptr_->m_list_next_ = next_;
+	prev_->m_list_next_ = ptr_;
+	next_->m_list_prev_ = ptr_;
+	++m_size_;
+}
+
+template<hxlist_constexpr_concept_ T_, typename deleter_t_>
+hxinline hxattr_flatten hxconstexpr void hxlist_constexpr<T_, deleter_t_>::extract_(hxlist_constexpr_node* ptr_) {
+	hxassert_hard(!this->empty(), "list_empty");
+	hxassertf(ptr_ != hxnull, "bad_node");
+	ptr_->m_list_prev_->m_list_next_ = ptr_->m_list_next_;
+	ptr_->m_list_next_->m_list_prev_ = ptr_->m_list_prev_;
+	--m_size_;
+}
+
+HX_INL_END_
+#endif // HX_DOXYGEN_PARSER

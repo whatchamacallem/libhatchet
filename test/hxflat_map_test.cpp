@@ -951,7 +951,7 @@ TEST_F(hxflat_map_test_f, hxswap_empty_and_nonempty) {
 #endif // HX_CPLUSPLUS >= 202002L
 
 TEST_F(hxflat_map_test_f, three_way_find_hit_costs_one_comparison) {
-	hxflat_map<hxtest_object, int, hxallocator_dynamic_capacity, hxthree_way_t<hxtest_object>, hxtrait_three_way> m;
+	hxflat_map<hxtest_object, int, hxallocator_dynamic_capacity, hxkey_three_way_t<hxtest_object>, hxtrait_three_way> m;
 	m.reserve(4);
 	const hxtest_object k10(10), k20(20), k30(30);
 	m.insert(k10, 100);
@@ -965,7 +965,7 @@ TEST_F(hxflat_map_test_f, three_way_find_hit_costs_one_comparison) {
 }
 
 TEST_F(hxflat_map_test_f, three_way_count_insert_erase_unique) {
-	hxflat_map<hxtest_object, int, hxallocator_dynamic_capacity, hxthree_way_t<hxtest_object>, hxtrait_three_way> m;
+	hxflat_map<hxtest_object, int, hxallocator_dynamic_capacity, hxkey_three_way_t<hxtest_object>, hxtrait_three_way> m;
 	m.reserve(4);
 	const hxtest_object k5(5);
 	m.insert(k5, 50);
@@ -982,7 +982,7 @@ TEST_F(hxflat_map_test_f, three_way_count_insert_erase_unique) {
 }
 
 TEST_F(hxflat_map_test_f, three_way_multi_count_and_erase) {
-	hxflat_multimap<hxtest_object, int, hxallocator_dynamic_capacity, hxthree_way_t<hxtest_object>, hxtrait_three_way> m;
+	hxflat_multimap<hxtest_object, int, hxallocator_dynamic_capacity, hxkey_three_way_t<hxtest_object>, hxtrait_three_way> m;
 	m.reserve(4);
 	const hxtest_object k7a(7), k7b(7), k3(3);
 	m.insert(k7a, 70);
@@ -995,7 +995,7 @@ TEST_F(hxflat_map_test_f, three_way_multi_count_and_erase) {
 }
 
 TEST(hxflat_map_test, three_way_int_key_uses_subtraction_fallback) {
-	hxflat_map<int, int, hxallocator_dynamic_capacity, hxthree_way_t<int>, hxtrait_three_way> m;
+	hxflat_map<int, int, hxallocator_dynamic_capacity, hxkey_three_way_t<int>, hxtrait_three_way> m;
 	m.reserve(4);
 	m.insert(31, 310);
 	m.insert(32, 320);

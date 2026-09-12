@@ -16,9 +16,9 @@ TEST(hxpair_test, three_way_matches_ordering) {
 	EXPECT_TRUE((a - c) < 0);
 	EXPECT_TRUE((c - a) > 0);
 	EXPECT_TRUE((a - a) == 0);
-	EXPECT_TRUE(hxthree_way(a, b) < 0);
-	EXPECT_TRUE(hxthree_way(b, a) > 0);
-	EXPECT_TRUE(hxthree_way(a, a) == 0);
+	EXPECT_TRUE(hxkey_three_way(a, b) < 0);
+	EXPECT_TRUE(hxkey_three_way(b, a) > 0);
+	EXPECT_TRUE(hxkey_three_way(a, a) == 0);
 }
 
 #if HX_CPLUSPLUS >= 202002L

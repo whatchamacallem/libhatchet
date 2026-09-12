@@ -6,7 +6,7 @@
 /// \file
 /// User-specializable key-equal, key-less, key-hash, and key-three-way
 /// callables. Override key operations for a type by explicitly specializing
-/// `hxkey_equal_t`, `hxkey_less_t`, `hxthree_way_t`, or `hxkey_hash_t`, the
+/// `hxkey_equal_t`, `hxkey_less_t`, `hxkey_three_way_t`, or `hxkey_hash_t`, the
 /// same way `std::hash` is specialized. Specializations are evaluated when and
 /// where the derived container is instantiated and must be consistently
 /// available.
@@ -184,11 +184,11 @@ hxattr_nodiscard hxinline hxattr_flatten hxhash_t hxkey_hash(const T_& x_) {
 	return hxkey_hash_t<T_>{}(x_);
 }
 
-/// `hxthree_way_t<T>` - By default returns `a - b`, which is correct and
+/// `hxkey_three_way_t<T>` - By default returns `a - b`, which is correct and
 /// efficient without including `<compare>`.
 /// - `T` : The type to compare.
 template<typename T_=void, typename enabled_t=void>
-class hxthree_way_t {
+class hxkey_three_way_t {
 public:
 	template<typename A_, typename B_>
 	hxattr_nodiscard hxinline hxconstexpr hxattr_flatten
@@ -196,28 +196,28 @@ public:
 };
 
 #if HX_CPLUSPLUS >= 202002L
-/// `hxthree_way_t<T>` for a `T` with its own `operator<=>`.
+/// `hxkey_three_way_t<T>` for a `T` with its own `operator<=>`.
 template<typename T_>
        requires(!hxis_integral<T_>() && !hxis_floating_point<T_>() && !hxis_pointer<T_>())
 	&& requires(const T_& a_) { a_ <=> a_; }
-class hxthree_way_t<T_> {
+class hxkey_three_way_t<T_> {
 public:
 	hxattr_nodiscard hxinline hxconstexpr hxattr_flatten
 	auto operator()(const T_& a_, const T_& b_) const -> decltype(a_ <=> b_) { return a_ <=> b_; }
 };
 #endif // HX_CPLUSPLUS >= 202002L
 
-/// `hxthree_way` - Returns the three-way comparison of `a` and `b`, deducing
-/// `A` and invoking `hxthree_way_t<A>`.
+/// `hxkey_three_way` - Returns the three-way comparison of `a` and `b`, deducing
+/// `A` and invoking `hxkey_three_way_t<A>`.
 /// - `a` : The first value to compare.
 /// - `b` : The second value to compare.
 template<typename A_, typename B_>
 #if HX_CPLUSPLUS >= 202002L
-	requires requires(const A_& a_, const B_& b_) { hxthree_way_t<A_>{}(a_, b_); }
+	requires requires(const A_& a_, const B_& b_) { hxkey_three_way_t<A_>{}(a_, b_); }
 #endif
 hxattr_nodiscard hxinline hxconstexpr hxattr_flatten
-auto hxthree_way(const A_& a_, const B_& b_) -> decltype(hxthree_way_t<A_>{}(a_, b_)) {
-	return hxthree_way_t<A_>{}(a_, b_);
+auto hxkey_three_way(const A_& a_, const B_& b_) -> decltype(hxkey_three_way_t<A_>{}(a_, b_)) {
+	return hxkey_three_way_t<A_>{}(a_, b_);
 }
 
 HX_NS_END_

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-// This file is used for hxlist and hxconstexpr_list to show they have identical
+// This file is used for hxlist and hxlist_constexpr to show they have identical
 // APIs.
 
 namespace {
