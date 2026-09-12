@@ -421,57 +421,6 @@ constexpr hxremove_reference_t<T_>&& hxmove(T_&& t_) {
 	return static_cast<hxremove_reference_t<T_>&&>(t_);
 }
 
-/// `hxpair` - Provides C-style construction of a pair of public fields `a` and
-/// `b`. Avoid API use and prefer `hxexpected`.
-template<typename a_t_, typename b_t_> class hxpair {
-public:
-	/// The type of the first value.
-	using a_t = a_t_;
-	/// The type of the second value.
-	using b_t = b_t_;
-
-	/// Returns true if `a.a` is less than `b.a`, or if they are equal, if `a.b`
-	/// is less than `b.b`.
-	hxattr_nodiscard friend constexpr bool operator<(const hxpair& a_, const hxpair& b_) {
-		return a_.a < b_.a || (!(b_.a < a_.a) && a_.b < b_.b);
-	}
-
-	/// Returns true if `a.a` and `a.b` are equal to `b.a` and `b.b`.
-	hxattr_nodiscard friend constexpr bool operator==(const hxpair& a_, const hxpair& b_) {
-		return a_.a == b_.a && a_.b == b_.b;
-	}
-
-#if HX_CPLUSPLUS >= 202002L
-	/// Returns `a.a <=> b.a` if that ordering is nonzero and `a.b <=> b.b`
-	/// otherwise.
-	hxattr_nodiscard friend constexpr auto operator<=>(const hxpair& a_, const hxpair& b_) {
-		const auto c_ = a_.a <=> b_.a;
-		if(c_ != 0) { return c_; }
-		return a_.b <=> b_.b;
-	}
-#else
-	/// Returns false if `a.a` and `a.b` are equal to `b.a` and `b.b`.
-	hxattr_nodiscard friend hxconstexpr bool operator!=(const hxpair& a_, const hxpair& b_) {
-		return !(a_ == b_);
-	}
-#endif
-
-	/// Returns `a.a - b.a` if that difference is nonzero and `a.b - b.b`
-	/// otherwise. Provided as a C++11 fallback that will get picked up by
-	/// `hxthree_way`.
-	hxattr_nodiscard friend hxconstexpr auto operator-(const hxpair& a_, const hxpair& b_)
-			-> decltype(hxdeclval<a_t_>() - hxdeclval<a_t_>()) {
-		const auto d_ = a_.a - b_.a;
-		if(d_ != 0) { return d_; }
-		return a_.b - b_.b;
-	}
-
-	/// The first value.
-	a_t_ a;
-	/// The second value.
-	b_t_ b;
-};
-
 /// `hxswap` - Exchanges the contents of `x` and `y` using a temporary. If `T`
 /// has `T::T(T&&)` or `T::operator=(T&&)` then those will be used.
 template<typename T_>

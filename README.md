@@ -284,8 +284,8 @@ error values and returned together, instead of ad hoc error checking.
   owning pointer with a monadic `and_then` and a deleter that may decline
   deletion, e.g. `hxdo_not_delete`.
 - Every keyed container and sort compares keys through the free functions
-  `hxkey_equal`, `hxkey_less` and `hxkey_hash` in `hxkey.hpp`. Overload them for
-  custom key types. The defaults require only `==` and `<`.
+  `hxkey_equal`, `hxkey_less` and `hxkey_hash` in `hxkey.hpp`. `hxpair.hpp`
+  provides a pair of public fields that works as a key.
 - Containers with dynamic capacity move and `hxswap` in O(1) without touching
   elements.
 

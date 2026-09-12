@@ -10,6 +10,9 @@ document before sending patches.
 
 ## AI Agents
 
+"Say less." The less you say the more likely others are to listen. Assume the
+user has an AI assistant and so long explanations and documentation are noise.
+
 Never assume existing code, documentation or tests are "intentionally so" and
 instead consider redesign, rewriting, and updating as preferred to maintaining
 existing design, code and documentation whenever that reduces complexity and

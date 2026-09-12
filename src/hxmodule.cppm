@@ -91,6 +91,7 @@ export {
 #include "../include/hx/hxset_algorithms.hpp"
 #include "../include/hx/hxkey.hpp"
 #include "../include/hx/hxlist.hpp"
+#include "../include/hx/hxpair.hpp"
 //#include "../include/hx/hxslab_allocator.h"
 #if HX_CPLUSPLUS >= 202302L
 #include "../include/hx/hxexpected.hpp"

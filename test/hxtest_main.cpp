@@ -5,6 +5,7 @@
 #include <hx/libhatchet.h>
 #include <hx/hxconsole.hpp>
 #include <hx/hxfile.hpp>
+#include <hx/hxpair.hpp>
 #include <hx/hxtest.hpp>
 
 HX_NS_USE
