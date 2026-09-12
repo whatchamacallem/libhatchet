@@ -21,14 +21,14 @@ static_assert(hxis_same<
 	decltype(hxkey_less_t<const volatile char*>{}(
 		hxdeclval<const volatile char* const&>(),
 		hxdeclval<const volatile char* const&>())), bool>(),
-	"hxkey_equal_t must preserve const volatile pointer types");
+	"hxkey_less_t must preserve const volatile pointer types");
 static_assert(hxis_same<
 	decltype(hxkey_less_t<volatile char&&>{}(
 		hxdeclval<const char&>(),
 		hxdeclval<const char&>())), bool>(),
 	"hxkey_less_t must handle non-const volatile references.");
 
-TEST(hxthree_way_test, hxis_string_detects_char_pointers) {
+TEST(hxis_string_test, hxis_string_detects_char_pointers) {
 	EXPECT_TRUE(hxis_string<char*>());
 	EXPECT_TRUE(hxis_string<const char*>());
 	EXPECT_FALSE(hxis_string<int>());
@@ -55,7 +55,7 @@ TEST(hxthree_way_test, hxis_string_detects_char_pointers) {
 	EXPECT_FALSE(hxis_string<const void*>());
 }
 
-TEST(hxthree_way_test, equal_char_and_const_char_overloads) {
+TEST(hxkey_equal_test, equal_char_and_const_char_overloads) {
 	char mutable_equal_storage[] = "match"; // NOLINT(misc-const-correctness)
 	char mutable_differ_storage[] = "matci"; // NOLINT(misc-const-correctness)
 	char* mutable_equal = mutable_equal_storage;
@@ -65,9 +65,24 @@ TEST(hxthree_way_test, equal_char_and_const_char_overloads) {
 	EXPECT_FALSE(hxkey_equal(mutable_differ, immutable));
 	EXPECT_TRUE(hxkey_equal(mutable_equal, immutable));
 	EXPECT_FALSE(hxkey_equal(mutable_differ, mutable_equal));
+
+	char distinct_storage[] = "match"; // NOLINT(misc-const-correctness)
+	const char* distinct = distinct_storage;
+	EXPECT_NE(immutable, distinct);
+	EXPECT_TRUE(hxkey_equal_t<const char*>{}(immutable, distinct));
+	EXPECT_TRUE(hxkey_equal_t<char[6]>{}(immutable, distinct));
+	EXPECT_FALSE(hxkey_equal_t<const char*>{}(immutable, mutable_differ));
+
+	char prefix_storage[] = "matc"; // NOLINT(misc-const-correctness)
+	const char* prefix = prefix_storage;
+	EXPECT_FALSE(hxkey_equal(prefix, immutable));
+	EXPECT_FALSE(hxkey_equal(immutable, prefix));
+	const char* empty = "";
+	EXPECT_FALSE(hxkey_equal(empty, immutable));
+	EXPECT_TRUE(hxkey_equal(empty, ""));
 }
 
-TEST(hxthree_way_test, less_char_and_const_char_overloads) {
+TEST(hxkey_less_test, less_char_and_const_char_overloads) {
 	char mutable_a_storage[] = "a"; // NOLINT(misc-const-correctness)
 	char mutable_b_storage[] = "b"; // NOLINT(misc-const-correctness)
 	char* mutable_a = mutable_a_storage;
@@ -78,11 +93,32 @@ TEST(hxthree_way_test, less_char_and_const_char_overloads) {
 	EXPECT_FALSE(hxkey_less(immutable_b, mutable_a));
 	EXPECT_TRUE(hxkey_less(mutable_a, immutable_b));
 	EXPECT_FALSE(hxkey_less(mutable_b, mutable_a));
+
+	char distinct_a_storage[] = "a"; // NOLINT(misc-const-correctness)
+	const char* distinct_a = distinct_a_storage;
+	EXPECT_NE(immutable_a, distinct_a);
+	EXPECT_FALSE(hxkey_less_t<const char*>{}(immutable_a, distinct_a));
+	EXPECT_FALSE(hxkey_less_t<const char*>{}(distinct_a, immutable_a));
+	EXPECT_TRUE(hxkey_less_t<char[2]>{}(immutable_a, immutable_b));
+
+	const char* prefix = "a";
+	const char* longer = "ab";
+	EXPECT_TRUE(hxkey_less(prefix, longer));
+	EXPECT_FALSE(hxkey_less(longer, prefix));
+	const char* empty = "";
+	EXPECT_TRUE(hxkey_less(empty, prefix));
+	EXPECT_FALSE(hxkey_less(prefix, empty));
+	EXPECT_FALSE(hxkey_less(empty, ""));
 }
 
 TEST(hxkey_hash, char_pointer_matches_const_char_pointer) {
 	char mutable_hello[] = "hello";
 	EXPECT_EQ(hxkey_hash_t<char*>{}(mutable_hello), hxkey_hash_t<const char*>{}("hello"));
+	EXPECT_EQ(hxkey_hash_t<char[6]>{}(mutable_hello), hxkey_hash_t<const char*>{}("hello"));
+	EXPECT_NE(hxkey_hash_t<const char*>{}("hello"), hxkey_hash_t<const char*>{}("hellp"));
+	EXPECT_NE(hxkey_hash_t<const char*>{}("hello"), hxkey_hash_t<const char*>{}("hell"));
+	EXPECT_NE(hxkey_hash_t<const char*>{}(""), hxkey_hash_t<const char*>{}("h"));
+	EXPECT_EQ(hxkey_hash_t<const char*>{}(""), hxkey_hash(static_cast<const char*>("")));
 }
 
 TEST(hxthree_way_test, hxthree_way_scalar) {

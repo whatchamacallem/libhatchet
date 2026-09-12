@@ -309,7 +309,7 @@ hxattr_nodiscard constexpr bool hxisspace(char ch_) {
 /// returns -127 for 0 and rounds up for `i` >= 2^32-128 returning an incorrect
 /// result.
 /// - `i` : A `uint32_t`.
-hxattr_nodiscard hxinline int hxlog2i(uint32_t i_) {
+hxattr_nodiscard hxinline constexpr int hxlog2i(uint32_t i_) {
 #if defined _MSC_VER
 	unsigned long index_ = 0ul;
 	::_BitScanReverse(&index_, i_);
@@ -317,9 +317,14 @@ hxattr_nodiscard hxinline int hxlog2i(uint32_t i_) {
 #elif defined __GNUC__ || defined __clang__
 	return 31 - __builtin_clz(i_);
 #else
-	float f_ = static_cast<float>(i_);
-	uint32_t bits_ = 0u; ::memcpy(&bits_, &f_, sizeof f_);
-	return static_cast<int>((bits_ >> 23) & 0xffu) - 127;
+	// Compile time fallback.
+	uint32_t result_ = 0;
+	if (i_ & 0xFFFF0000) { i_ >>= 16; result_ += 16; }
+	if (i_ & 0xFF00)     { i_ >>= 8;  result_ += 8;  }
+	if (i_ & 0xF0)       { i_ >>= 4;  result_ += 4;  }
+	if (i_ & 0xC)        { i_ >>= 2;  result_ += 2;  }
+	if (i_ & 0x2)        {            result_ += 1;  }
+	return result_;
 #endif
 }
 
@@ -450,18 +455,15 @@ public:
 		return !(a_ == b_);
 	}
 #endif
-	template<hxsize_t capacity_x_>
-	hxattr_nodiscard friend bool operator<(const hxarray& a_, const hxarray<T_, capacity_x_>& b_) {
-		return hxless_range(a_, b_);
-	}
 
 	/// Returns `a.a - b.a` if that difference is nonzero and `a.b - b.b`
-	/// otherwise. Provided as a C++11 fallback that will get picked up
-	/// by hxthree_way.
+	/// otherwise. Provided as a C++11 fallback that will get picked up by
+	/// `hxthree_way`.
 	hxattr_nodiscard friend hxconstexpr auto operator-(const hxpair& a_, const hxpair& b_)
 			-> decltype(hxdeclval<a_t_>() - hxdeclval<a_t_>()) {
 		const auto d_ = a_.a - b_.a;
-		return d_ != 0 ? d_ : (a_.b - b_.b);
+		if(d_ != 0) { return d_; }
+		return a_.b - b_.b;
 	}
 
 	/// The first value.

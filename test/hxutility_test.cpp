@@ -260,6 +260,17 @@ TEST(hxutility_test, arithmetic_helpers_cover_min_max_abs_clamp) {
 	EXPECT_EQ(hxabs(0), 0);
 }
 
+TEST(hxutility_test, hxpair_operator_minus_is_three_way) {
+	const hxpair<int32_t, int32_t> a = { 31, 35 };
+	const hxpair<int32_t, int32_t> b = { 33, 34 };
+	const hxpair<int32_t, int32_t> c = { 31, 36 };
+	EXPECT_EQ(a - b, -2);
+	EXPECT_EQ(b - a, 2);
+	EXPECT_EQ(a - c, -1);
+	EXPECT_EQ(c - a, 1);
+	EXPECT_EQ(a - a, 0);
+}
+
 TEST(hxutility_test, hxswap_memcpy) {
 	struct hxutility_test_memcpy_record_t {
 		int32_t first;
