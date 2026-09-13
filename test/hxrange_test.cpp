@@ -464,21 +464,21 @@ TEST(hxfind_if_test, flat_map_iterator) {
 	m.insert(2, 20);
 	m.insert(3, 30);
 	map_t::const_iterator result = hxfind_if(hxmake_range(m.cbegin(), m.cend()),
-		[](const hxflat_map_const_value_t<int, int>& v) { return v.value >= 20; });
+		[](const hxflat_map_const_value_t<int, int>& v) { return v.b >= 20; });
 	EXPECT_NE(result, m.end());
 	EXPECT_EQ(result.key(), 2);
 	result = hxfind_if(hxmake_range(m.cbegin(), m.cend()),
-		[](const hxflat_map_const_value_t<int, int>& v) { return v.key == 1; });
+		[](const hxflat_map_const_value_t<int, int>& v) { return v.a == 1; });
 	EXPECT_EQ(result, m.begin());
 	result = hxfind_if(hxmake_range(m.cbegin(), m.cend()),
-		[](const hxflat_map_const_value_t<int, int>& v) { return v.value == 30; });
+		[](const hxflat_map_const_value_t<int, int>& v) { return v.b == 30; });
 	EXPECT_NE(result, m.end());
 	EXPECT_EQ(result.key(), 3);
 	result = hxfind_if(hxmake_range(m.cbegin(), m.cend()),
-		[](const hxflat_map_const_value_t<int, int>& v) { return v.value == 99; });
+		[](const hxflat_map_const_value_t<int, int>& v) { return v.b == 99; });
 	EXPECT_EQ(result, m.end());
 	result = hxfind_if(hxmake_range(m.cbegin(), m.cbegin()),
-		[](const hxflat_map_const_value_t<int, int>& v) { return v.value == 10; });
+		[](const hxflat_map_const_value_t<int, int>& v) { return v.b == 10; });
 	EXPECT_EQ(result, m.begin());
 }
 

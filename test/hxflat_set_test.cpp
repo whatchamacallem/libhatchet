@@ -818,6 +818,81 @@ TEST_F(hxflat_set_test_f, add_range_unsorted_input_sorts) {
 	EXPECT_EQ(s[4]->value(), 35);
 	EXPECT_TRUE(check_stats(10, 0, 0, 5, 0, 5, 0, 5, 0, 0, 6));
 }
+
+TEST_F(hxflat_set_test_f, add_range_is_sorted_appends_to_empty) {
+	hxflat_set<hxtest_object, 8> s;
+	hxarray<hxtest_object, 5> range{31, 32, 33, 34, 35};
+	s.add_range(true, hxmove(range));
+	EXPECT_EQ(s.size(), 5);
+	EXPECT_EQ(s[0]->value(), 31);
+	EXPECT_EQ(s[1]->value(), 32);
+	EXPECT_EQ(s[2]->value(), 33);
+	EXPECT_EQ(s[3]->value(), 34);
+	EXPECT_EQ(s[4]->value(), 35);
+	EXPECT_TRUE(check_stats(10, 0, 0, 5, 0, 5, 0, 0, 0, 0, 4));
+}
+
+TEST_F(hxflat_set_test_f, add_range_is_sorted_appends_to_nonempty) {
+	hxflat_set<hxtest_object, 8> s{
+		hxtest_object(31), hxtest_object(32)};
+	hxarray<hxtest_object, 3> range{33, 34, 35};
+	s.add_range(true, hxmove(range));
+	EXPECT_EQ(s.size(), 5);
+	EXPECT_EQ(s[0]->value(), 31);
+	EXPECT_EQ(s[1]->value(), 32);
+	EXPECT_EQ(s[2]->value(), 33);
+	EXPECT_EQ(s[3]->value(), 34);
+	EXPECT_EQ(s[4]->value(), 35);
+	EXPECT_TRUE(check_stats(10, 2, 0, 5, 2, 3, 0, 0, 0, 1, 5));
+}
+
+TEST_F(hxflat_set_test_f, add_range_is_sorted_empty_range_preserves_existing) {
+	hxflat_set<hxtest_object, 8> s{
+		hxtest_object(31), hxtest_object(32)};
+	hxarray<hxtest_object, 3> storage{33, 34, 35};
+	s.add_range(true, hxmake_range(storage.begin(), storage.begin()));
+	EXPECT_EQ(s.size(), 2);
+	EXPECT_EQ(s[0]->value(), 31);
+	EXPECT_EQ(s[1]->value(), 32);
+	EXPECT_TRUE(check_stats(7, 2, 0, 5, 2, 0, 0, 0, 0, 0, 2));
+}
+
+TEST_F(hxflat_set_test_f, add_range_is_sorted_false_falls_back_to_sorting) {
+	hxflat_set<hxtest_object, 8> s;
+	hxarray<hxtest_object, 5> range{34, 31, 35, 32, 33};
+	s.add_range(false, hxmove(range));
+	EXPECT_EQ(s.size(), 5);
+	EXPECT_EQ(s[0]->value(), 31);
+	EXPECT_EQ(s[1]->value(), 32);
+	EXPECT_EQ(s[2]->value(), 33);
+	EXPECT_EQ(s[3]->value(), 34);
+	EXPECT_EQ(s[4]->value(), 35);
+	EXPECT_TRUE(check_stats(10, 0, 0, 5, 0, 5, 0, 5, 0, 0, 6));
+}
+
+TEST_F(hxflat_set_test_f, add_range_is_sorted_uses_fewer_operators_than_unsorted) {
+	int sorted_three_way = 0;
+	int sorted_move_assign = 0;
+	{
+		hxflat_set<hxtest_object, 8> s;
+		hxarray<hxtest_object, 5> range{31, 32, 33, 34, 35};
+		s.add_range(true, hxmove(range));
+		EXPECT_EQ(s.size(), 5);
+		sorted_three_way = m_three_way;
+		sorted_move_assign = m_move_assign;
+	}
+	m_three_way = 0;
+	m_move_assign = 0;
+	{
+		hxflat_set<hxtest_object, 8> s;
+		hxarray<hxtest_object, 5> range{31, 32, 33, 34, 35};
+		s.add_range(hxmove(range));
+		EXPECT_EQ(s.size(), 5);
+	}
+	EXPECT_LT(sorted_three_way, m_three_way);
+	EXPECT_LE(sorted_move_assign, m_move_assign);
+	EXPECT_TRUE(check_stats(20, 20, 0, 10, 0, 10, 0, 0, 0, 0, 6));
+}
 #endif // HX_CPLUSPLUS >= 202002L
 
 TEST_F(hxflat_set_test_f, three_way_find_hit_costs_one_comparison) {

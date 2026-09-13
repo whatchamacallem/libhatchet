@@ -74,13 +74,13 @@ hxinline hxattr_flatten hxflat_map<key_t_, mapped_t_, capacity_, compare_t_, tra
 
 template<hxflat_map_concept_ key_t_, hxflat_map_concept_ mapped_t_, hxsize_t capacity_, typename compare_t_, int traits_>
 hxinline hxattr_flatten hxflat_map<key_t_, mapped_t_, capacity_, compare_t_, traits_>::hxflat_map(
-		std::initializer_list<pair_t_> x_) noexcept : m_size_(0) {
+		std::initializer_list<hxpair<key_t_, mapped_t_> > x_) noexcept : m_size_(0) {
 	hxif_constexpr(capacity_ == hxallocator_dynamic_capacity) {
 		this->reserve(static_cast<hxsize_t>(x_.size()));
 	}
-	const pair_t_* hxrestrict src_ = x_.begin();
-	for(const pair_t_*const end_ = x_.end(); src_ != end_; ++src_) {
-		this->insert(src_->key_, src_->mapped_);
+	const hxpair<key_t_, mapped_t_>* hxrestrict src_ = x_.begin();
+	for(const hxpair<key_t_, mapped_t_>*const end_ = x_.end(); src_ != end_; ++src_) {
+		this->insert(src_->a, src_->b);
 	}
 }
 
@@ -184,6 +184,39 @@ hxinline hxattr_flatten auto hxflat_map<key_t_, mapped_t_, capacity_, compare_t_
 		hxsize_t index_) -> iterator {
 	hxassert_hard(static_cast<size_t>(index_) < static_cast<size_t>(m_size_), "bad_index %zd size %zd", index_, m_size_);
 	return iterator(this, index_);
+}
+
+template<hxflat_map_concept_ key_t_, hxflat_map_concept_ mapped_t_, hxsize_t capacity_, typename compare_t_, int traits_>
+template<hxrange_concept_ range_t_>
+hxinline hxattr_flatten void hxflat_map<key_t_, mapped_t_, capacity_, compare_t_, traits_>::add_range(
+		range_t_&& range_) noexcept {
+	hxrestrict_t<decltype(range_.begin())> it_(range_.begin());
+	for(const auto end_ = range_.end(); it_ != end_; ++it_) {
+		this->insert((*it_).a, hxforward_like<range_t_>((*it_).b));
+	}
+}
+
+template<hxflat_map_concept_ key_t_, hxflat_map_concept_ mapped_t_, hxsize_t capacity_, typename compare_t_, int traits_>
+template<hxrange_concept_ range_t_>
+hxinline hxattr_flatten void hxflat_map<key_t_, mapped_t_, capacity_, compare_t_, traits_>::add_range(
+		bool is_sorted_, range_t_&& range_) noexcept {
+	if(!is_sorted_) {
+		this->add_range(hxforward<range_t_>(range_));
+		return;
+	}
+	hxrestrict_t<decltype(range_.begin())> it_(range_.begin());
+	const auto end_ = range_.end();
+	key_t_* hxrestrict k_ = m_keys_.data();
+	mapped_t_* hxrestrict v_ = m_values_.data();
+	hxsize_t size_ = m_size_;
+	for(; it_ != end_; ++it_, ++size_) {
+		hxassertf(size_ < m_keys_.capacity(), "hxflat_map full %zd", m_keys_.capacity());
+		::new(k_ + size_) key_t_((*it_).a);
+		::new(v_ + size_) mapped_t_(hxforward_like<range_t_>((*it_).b));
+	}
+	hxassert_hard(size_ < m_keys_.capacity(), "hxflat_map full %zd", m_keys_.capacity());
+	m_size_ = size_;
+	hxassertf(this->validate_(), "wrong_order");
 }
 
 template<hxflat_map_concept_ key_t_, hxflat_map_concept_ mapped_t_, hxsize_t capacity_, typename compare_t_, int traits_>
@@ -514,6 +547,28 @@ hxattr_flatten auto hxflat_map<key_t_, mapped_t_, capacity_, compare_t_, traits_
 	}
 	m_size_ = size_ + 1;
 	return iterator(this, index_);
+}
+
+template<hxflat_map_concept_ key_t_, hxflat_map_concept_ mapped_t_, hxsize_t capacity_, typename compare_t_, int traits_>
+hxattr_flatten bool hxflat_map<key_t_, mapped_t_, capacity_, compare_t_, traits_>::validate_(void) const {
+	const key_t_* const keys_ = m_keys_.data();
+	const hxsize_t size_ = m_size_;
+	for(hxsize_t i_ = 1; i_ < size_; ++i_) {
+		hxif_constexpr((traits_ & hxtrait_three_way) != 0) {
+			const auto order_ = hxkey_three_way(keys_[i_ - 1], keys_[i_]);
+			if(order_ > 0) { return false; }
+			hxif_constexpr((traits_ & hxtrait_multi) == 0) {
+				if(order_ == 0) { return false; }
+			}
+		}
+		else {
+			if(hxkey_less(keys_[i_], keys_[i_ - 1])) { return false; }
+			hxif_constexpr((traits_ & hxtrait_multi) == 0) {
+				if(!hxkey_less(keys_[i_ - 1], keys_[i_])) { return false; }
+			}
+		}
+	}
+	return true;
 }
 
 HX_INL_END_

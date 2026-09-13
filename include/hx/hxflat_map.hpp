@@ -18,6 +18,7 @@
 #include "hxrange.hpp"
 #include "hxinitializer_list.hpp"
 #include "hxkey.hpp"
+#include "hxpair.hpp"
 #include "detail/hxrange_detail.hpp"
 
 HX_NS_BEGIN_
@@ -34,80 +35,15 @@ concept hxflat_map_concept_ = requires(T_& x_) {
 #define hxflat_map_concept_ typename
 #endif
 
-/// `hxflat_map_const_value_t` - A proxy referencing the key and mapped
-/// value at a fixed position, returned by dereferencing an `hxflat_map`'s
-/// `const_iterator`.
+/// `hxflat_map_const_value_t` - A proxy referencing the key and mapped value at
+/// a fixed position. The key is field `a` and the mapped value is field `b`.
 template<typename key_t_, typename mapped_t_>
-class hxflat_map_const_value_t {
-public:
-	/// Compares the referenced keys and values of `a` and `b` for equality,
-	/// using `hxkey_equal` on both.
-	/// - `a` : An element.
-	/// - `b` : The element to compare against.
-	friend bool operator==(const hxflat_map_const_value_t& a_,
-			const hxflat_map_const_value_t& b_) {
-		return hxkey_equal(a_.key, b_.key) && hxkey_equal(a_.value, b_.value);
-	}
+using hxflat_map_const_value_t = hxpair<const key_t_&, const mapped_t_&>;
 
-	/// Returns true when `a` is ordered before `b`, comparing keys
-	/// first and then values with `hxkey_equal` and `hxkey_less`.
-	/// - `a` : An element.
-	/// - `b` : The element to compare against.
-	friend bool operator<(const hxflat_map_const_value_t& a_,
-			const hxflat_map_const_value_t& b_) {
-		if(!hxkey_equal(a_.key, b_.key)) { return hxkey_less(a_.key, b_.key); }
-		return hxkey_less(a_.value, b_.value);
-	}
-
-	/// The referenced key.
-	const key_t_& key;
-
-	/// The referenced mapped value.
-	const mapped_t_& value;
-
-protected:
-	/// \cond HIDDEN
-	template<hxflat_map_concept_, hxflat_map_concept_, hxsize_t, typename, int> friend class hxflat_map;
-	hxflat_map_const_value_t(const key_t_& key_, const mapped_t_& mapped_)
-		: key(key_), value(mapped_) { }
-	/// \endcond
-};
-
-/// `hxflat_map_value_t` - A proxy referencing the key and mapped value at
-/// a fixed position, returned by dereferencing an `hxflat_map`'s `iterator`.
+/// `hxflat_map_value_t` - A proxy referencing the key and mapped value at a
+/// fixed position. The key is field `a` and the mapped value is field `b`.
 template<typename key_t_, typename mapped_t_>
-class hxflat_map_value_t {
-public:
-	/// Compares the referenced keys and values of `a` and `b` for equality,
-	/// using `hxkey_equal` on both.
-	/// - `a` : An element.
-	/// - `b` : The element to compare against.
-	friend bool operator==(const hxflat_map_value_t& a_, const hxflat_map_value_t& b_) {
-		return hxkey_equal(a_.key, b_.key) && hxkey_equal(a_.value, b_.value);
-	}
-
-	/// Returns true when `a` is ordered before `b`, comparing keys
-	/// first and then values with `hxkey_equal` and `hxkey_less`.
-	/// - `a` : An element.
-	/// - `b` : The element to compare against.
-	friend bool operator<(const hxflat_map_value_t& a_, const hxflat_map_value_t& b_) {
-		if(!hxkey_equal(a_.key, b_.key)) { return hxkey_less(a_.key, b_.key); }
-		return hxkey_less(a_.value, b_.value);
-	}
-
-	/// The referenced key.
-	const key_t_& key;
-
-	/// The referenced mapped value, allowing mutation.
-	mapped_t_& value;
-
-protected:
-	/// \cond HIDDEN
-	template<hxflat_map_concept_, hxflat_map_concept_, hxsize_t, typename, int> friend class hxflat_map;
-	hxflat_map_value_t(const key_t_& key_, mapped_t_& mapped_)
-		: key(key_), value(mapped_) { }
-	/// \endcond
-};
+using hxflat_map_value_t = hxpair<const key_t_&, mapped_t_&>;
 
 /// `hxflat_map` - A sorted associative container that stores keys and mapped
 /// values in two parallel arrays. Lookup is O(log n) via binary search. Insert
@@ -162,7 +98,7 @@ public:
 		/// Returns a `hxflat_map_const_value_t` proxy referencing the key and
 		/// value at the current position.
 		hxflat_map_const_value_t<key_t_, mapped_t_> operator*(void) const {
-			return hxflat_map_const_value_t<key_t_, mapped_t_>(this->key(), this->value());
+			return hxflat_map_const_value_t<key_t_, mapped_t_>{this->key(), this->value()};
 		}
 
 		/// Advances the iterator by `n` positions.
@@ -266,7 +202,7 @@ public:
 		/// Returns a `hxflat_map_value_t` proxy referencing the key and value
 		/// at the current position, allowing mutation of the value.
 		hxflat_map_value_t<key_t_, mapped_t_> operator*(void) const {
-			return hxflat_map_value_t<key_t_, mapped_t_>(this->key(), this->value());
+			return hxflat_map_value_t<key_t_, mapped_t_>{this->key(), this->value()};
 		}
 
 		/// Advances the iterator by `n` positions.
@@ -318,14 +254,6 @@ public:
 		/// \endcond
 	};
 
-	/// \cond HIDDEN
-	class pair_t_ {
-	public:
-		key_t_ key_;
-		mapped_t_ mapped_;
-	};
-	/// \endcond
-
 	/// Constructs an empty map. Requires `reserve` before inserting when
 	/// `capacity` is `hxallocator_dynamic_capacity`.
 	explicit hxflat_map(void);
@@ -353,8 +281,8 @@ public:
 	/// Constructs a map by inserting every key-value pair from `x` in order
 	/// using `insert`. Requires `x.size()` <= `capacity` when `capacity` is
 	/// fixed.
-	/// - `x` : A `std::initializer_list<pair_t_>`.
-	hxflat_map(std::initializer_list<pair_t_> x_) noexcept;
+	/// - `x` : A `std::initializer_list<hxpair<key_t, mapped_t>>`.
+	hxflat_map(std::initializer_list<hxpair<key_t_, mapped_t_> > x_) noexcept;
 
 	/// Destructs the map and destroys all key-value pairs.
 	~hxflat_map(void) noexcept;
@@ -437,6 +365,21 @@ public:
 			const hxflat_map<key_t_, mapped_t_, capacity_x_, compare_t_, traits_>& b_) {
 		return hxless_range(a_, b_);
 	}
+
+	/// Inserts every key-value pair from a range by moving each pair with
+	/// `insert`. The range elements must provide `a` and `b` fields.
+	/// - `range` : The range to move key-value pairs from.
+	template<hxrange_concept_ range_t_>
+	void add_range(range_t_&& range_) noexcept;
+
+	/// Appends every key-value pair from a sorted range to the end of the
+	/// arrays without searching for an insertion point or shifting existing
+	/// pairs. Requires the first key in `range` to be ordered after the last key of
+	/// the map and requires `range` to be sorted.
+	/// - `is_sorted` : True when `range` is sorted and ordered after the map.
+	/// - `range` : The range to move key-value pairs from.
+	template<hxrange_concept_ range_t_>
+	void add_range(bool is_sorted_, range_t_&& range_) noexcept;
 
 	/// Returns a const iterator pointing to the first element.
 	const_iterator begin(void) const { return const_iterator(this, 0); }
@@ -604,6 +547,7 @@ private:
 
 	template<typename mapped_u_>
 	iterator insert_at_(hxsize_t index_, const key_t_& key_, mapped_u_&& mapped_) noexcept;
+	bool validate_(void) const;
 
 	hxsize_t m_size_;
 	hxallocator<key_t_, capacity_> m_keys_;

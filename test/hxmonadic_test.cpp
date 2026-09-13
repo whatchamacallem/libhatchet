@@ -130,8 +130,8 @@ TEST_F(hxmonadic_test_f, hxflat_map_and_then) {
 TEST_F(hxmonadic_test_f, hxflat_map_or_else) {
 	hxflat_map<hxtest_object, hxtest_object, 3> m;
 	m.emplace(hxtest_object(1), hxtest_object(31));
-	EXPECT_EQ((*m.or_else(hxtest_object(1), [&]{ return m.end(); })).value, 31);
-	EXPECT_EQ((*m.or_else(hxtest_object(2), [&]{ return m.begin(); })).value, 31);
+	EXPECT_EQ((*m.or_else(hxtest_object(1), [&]{ return m.end(); })).b, 31);
+	EXPECT_EQ((*m.or_else(hxtest_object(2), [&]{ return m.begin(); })).b, 31);
 	EXPECT_TRUE(check_stats(7, 5, 0, 4, 1, 2, 0, 0, 0, 0, 2));
 }
 

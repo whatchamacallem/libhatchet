@@ -28,11 +28,11 @@ public:
 	using b_t = b_t_;
 
 	/// Returns true if `a.a` is less than `b.a`, or if they are equal, if `a.b`
-	/// is less than `b.b`. Ordering of each field uses `hxkey_less` so that a C
-	/// string field is ordered by `strcmp`.
+	/// is less than `b.b`. Ordering and equality of each field uses
+	/// `hxkey_less` and `hxkey_equal` so that a C string field is ordered and
+	/// compared by `strcmp`.
 	hxattr_nodiscard friend hxconstexpr bool operator<(const hxpair& a_, const hxpair& b_) {
-		return hxkey_less(a_.a, b_.a)
-			|| (!hxkey_less(b_.a, a_.a) && hxkey_less(a_.b, b_.b));
+		return hxkey_equal(a_.a, b_.a) ? hxkey_less(a_.b, b_.b) : hxkey_less(a_.a, b_.a);
 	}
 
 	/// Returns true if `a.a` and `a.b` are equal to `b.a` and `b.b`. Equality

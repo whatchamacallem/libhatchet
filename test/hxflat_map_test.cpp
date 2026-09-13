@@ -4,6 +4,7 @@
 
 #include <hx/hxflat_map.hpp>
 #include <hx/hxslab_allocator.h>
+#include <hx/hxarray.hpp>
 #if HX_CPLUSPLUS >= 202302L
 #include <hx/hxexpected.hpp>
 #endif // HX_CPLUSPLUS >= 202302L
@@ -507,7 +508,7 @@ TEST_F(hxflat_map_test_f, const_iterator_arithmetic) {
 	EXPECT_EQ(it2.key(), 30);
 	const hxflat_map<hxtest_object, int, 3>::const_iterator it3 = it2 - 1;
 	EXPECT_EQ(it3.key(), 20);
-	EXPECT_EQ(m.begin()[1].key, 20);
+	EXPECT_EQ(m.begin()[1].a, 20);
 	EXPECT_EQ(m.end() - m.begin(), ptrdiff_t{3});
 	EXPECT_TRUE(check_stats(9, 3, 0, 3, 6, 0, 0, 0, 0, 0, 2));
 }
@@ -557,8 +558,8 @@ TEST_F(hxflat_map_test_f, const_iterator_dereference_proxy) {
 	const hxtest_object k(3);
 	m.insert(k, 7);
 	const hxflat_map<hxtest_object, int, 1>::const_iterator it = m.begin();
-	EXPECT_EQ((*it).key, 3);
-	EXPECT_EQ((*it).value, 7);
+	EXPECT_EQ((*it).a, 3);
+	EXPECT_EQ((*it).b, 7);
 	EXPECT_TRUE(check_stats(2, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0));
 }
 
@@ -567,8 +568,8 @@ TEST_F(hxflat_map_test_f, iterator_dereference_and_mutation) {
 	const hxtest_object k(3);
 	m.insert(k, 7);
 	const hxflat_map<hxtest_object, int, 1>::iterator it = m.begin();
-	EXPECT_EQ((*it).key, 3);
-	(*it).value = 99;
+	EXPECT_EQ((*it).a, 3);
+	(*it).b = 99;
 	EXPECT_EQ(m.find(k).value(), 99);
 	EXPECT_TRUE(check_stats(2, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1));
 }
@@ -586,7 +587,7 @@ TEST_F(hxflat_map_test_f, iterator_arithmetic) {
 	EXPECT_EQ(it2.key(), 30);
 	const hxflat_map<hxtest_object, int, 3>::iterator it3 = it2 - 1;
 	EXPECT_EQ(it3.key(), 20);
-	EXPECT_EQ(it[1].key, 30);
+	EXPECT_EQ(it[1].a, 30);
 	EXPECT_EQ(it2 - it3, hxsize_t{1});
 	EXPECT_TRUE(check_stats(9, 3, 0, 3, 6, 0, 0, 0, 0, 0, 2));
 }
@@ -979,6 +980,99 @@ TEST_F(hxflat_map_test_f, three_way_count_insert_erase_unique) {
 	EXPECT_EQ(m.erase(hxtest_object(5)), 1);
 	EXPECT_EQ(m.erase(hxtest_object(5)), 0);
 	EXPECT_TRUE(check_stats(8, 6, 0, 7, 1, 0, 0, 0, 0, 0, 5));
+}
+
+TEST_F(hxflat_map_test_f, add_range_inserts_and_sorts) {
+	hxflat_map<hxtest_object, int, 8> m;
+	hxarray<hxpair<hxtest_object, int>, 3> range{
+		hxpair<hxtest_object, int>{hxtest_object(33), 330},
+		hxpair<hxtest_object, int>{hxtest_object(31), 310},
+		hxpair<hxtest_object, int>{hxtest_object(32), 320}};
+	m.add_range(hxmove(range));
+	EXPECT_EQ(m.size(), 3);
+	EXPECT_EQ(m[0].key().value(), 31);
+	EXPECT_EQ(m[0].value(), 310);
+	EXPECT_EQ(m[1].key().value(), 32);
+	EXPECT_EQ(m[2].key().value(), 33);
+	EXPECT_TRUE(check_stats(9, 3, 0, 3, 4, 2, 2, 0, 0, 0, 3));
+}
+
+TEST_F(hxflat_map_test_f, add_range_is_sorted_appends_to_nonempty) {
+	hxflat_map<hxtest_object, int, 8> m;
+	const hxtest_object k31(31);
+	m.insert(k31, 310);
+	hxarray<hxpair<hxtest_object, int>, 3> range{
+		hxpair<hxtest_object, int>{hxtest_object(32), 320},
+		hxpair<hxtest_object, int>{hxtest_object(33), 330},
+		hxpair<hxtest_object, int>{hxtest_object(34), 340}};
+	m.add_range(true, hxmove(range));
+	EXPECT_EQ(m.size(), 4);
+	EXPECT_EQ(m[0].key().value(), 31);
+	EXPECT_EQ(m[1].key().value(), 32);
+	EXPECT_EQ(m[1].value(), 320);
+	EXPECT_EQ(m[2].key().value(), 33);
+	EXPECT_EQ(m[3].key().value(), 34);
+	EXPECT_EQ(m[3].value(), 340);
+	EXPECT_TRUE(check_stats(11, 3, 0, 4, 7, 0, 0, 0, 0, 1, 3));
+}
+
+TEST_F(hxflat_map_test_f, add_range_is_sorted_empty_range_preserves_existing) {
+	hxflat_map<hxtest_object, int, 8> m;
+	const hxtest_object k31(31);
+	m.insert(k31, 310);
+	hxarray<hxpair<hxtest_object, int>, 3> range;
+	m.add_range(true, hxmake_range(range.begin(), range.begin()));
+	EXPECT_EQ(m.size(), 1);
+	EXPECT_EQ(m[0].key().value(), 31);
+	EXPECT_TRUE(check_stats(5, 0, 3, 1, 1, 0, 0, 0, 0, 0, 0));
+}
+
+TEST_F(hxflat_map_test_f, add_range_is_sorted_false_falls_back_to_sorting) {
+	hxflat_map<hxtest_object, int, 8> m;
+	hxarray<hxpair<hxtest_object, int>, 3> range{
+		hxpair<hxtest_object, int>{hxtest_object(33), 330},
+		hxpair<hxtest_object, int>{hxtest_object(31), 310},
+		hxpair<hxtest_object, int>{hxtest_object(32), 320}};
+	m.add_range(false, hxmove(range));
+	EXPECT_EQ(m.size(), 3);
+	EXPECT_EQ(m[0].key().value(), 31);
+	EXPECT_EQ(m[1].key().value(), 32);
+	EXPECT_EQ(m[2].key().value(), 33);
+	EXPECT_TRUE(check_stats(9, 3, 0, 3, 4, 2, 2, 0, 0, 0, 3));
+}
+
+TEST_F(hxflat_map_test_f, add_range_is_sorted_uses_fewer_operators_than_unsorted) {
+	int sorted_three_way = 0;
+	int sorted_move_assign = 0;
+	{
+		hxflat_map<hxtest_object, int, 8> m;
+		hxarray<hxpair<hxtest_object, int>, 4> range{
+			hxpair<hxtest_object, int>{hxtest_object(31), 310},
+			hxpair<hxtest_object, int>{hxtest_object(32), 320},
+			hxpair<hxtest_object, int>{hxtest_object(33), 330},
+			hxpair<hxtest_object, int>{hxtest_object(34), 340}};
+		m_three_way = 0;
+		m_move_assign = 0;
+		m.add_range(true, hxmove(range));
+		EXPECT_EQ(m.size(), 4);
+		sorted_three_way = m_three_way;
+		sorted_move_assign = m_move_assign;
+	}
+	{
+		hxflat_map<hxtest_object, int, 8> m;
+		hxarray<hxpair<hxtest_object, int>, 4> range{
+			hxpair<hxtest_object, int>{hxtest_object(31), 310},
+			hxpair<hxtest_object, int>{hxtest_object(32), 320},
+			hxpair<hxtest_object, int>{hxtest_object(33), 330},
+			hxpair<hxtest_object, int>{hxtest_object(34), 340}};
+		m_three_way = 0;
+		m_move_assign = 0;
+		m.add_range(hxmove(range));
+		EXPECT_EQ(m.size(), 4);
+	}
+	EXPECT_LT(sorted_three_way, m_three_way);
+	EXPECT_LE(sorted_move_assign, m_move_assign);
+	EXPECT_TRUE(check_stats(24, 24, 0, 8, 16, 0, 0, 0, 0, 0, 4));
 }
 
 TEST_F(hxflat_map_test_f, three_way_multi_count_and_erase) {
