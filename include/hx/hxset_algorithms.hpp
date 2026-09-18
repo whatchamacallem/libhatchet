@@ -40,6 +40,8 @@ output_iterator_t_ hxmerge(range0_t_&& range0_, range1_t_&& range1_,
 	hxrestrict_t<decltype(range1_.begin())> src1_(range1_.begin());
 	const auto end1_ = range1_.end();
 	hxrestrict_t<output_iterator_t_> output_r_(hxforward<output_iterator_t_>(output_));
+	hxassert_different_iterator(output_r_, src0_);
+	hxassert_different_iterator(output_r_, src1_);
 	while(src0_ != end0_ && src1_ != end1_) {
 		const bool take1_ = less_(*src1_, *src0_);
 		if(take1_) { *output_r_ = hxforward_like<range1_t_>(*src1_); }
@@ -135,6 +137,8 @@ output_iterator_t_ hxset_difference(range0_t_&& range0_, range1_t_&& range1_,
 	hxrestrict_t<decltype(range1_.begin())> src1_(range1_.begin());
 	const auto end1_ = range1_.end();
 	hxrestrict_t<output_iterator_t_> output_r_(hxforward<output_iterator_t_>(output_));
+	hxassert_different_iterator(output_r_, src0_);
+	hxassert_different_iterator(output_r_, src1_);
 	while(src0_ != end0_ && src1_ != end1_) {
 		const bool lt_ = less_(*src0_, *src1_);
 		const bool gt_ = less_(*src1_, *src0_);
@@ -186,6 +190,8 @@ output_iterator_t_ hxset_intersection(range0_t_&& range0_, range1_t_&& range1_,
 	hxrestrict_t<decltype(range1_.begin())> src1_(range1_.begin());
 	const auto end1_ = range1_.end();
 	hxrestrict_t<output_iterator_t_> output_r_(hxforward<output_iterator_t_>(output_));
+	hxassert_different_iterator(output_r_, src0_);
+	hxassert_different_iterator(output_r_, src1_);
 	while(src0_ != end0_ && src1_ != end1_) {
 		const bool lt_ = less_(*src0_, *src1_);
 		const bool gt_ = less_(*src1_, *src0_);
@@ -233,6 +239,8 @@ output_iterator_t_ hxset_union(range0_t_&& range0_, range1_t_&& range1_,
 	hxrestrict_t<decltype(range1_.begin())> src1_(range1_.begin());
 	const auto end1_ = range1_.end();
 	hxrestrict_t<output_iterator_t_> output_r_(hxforward<output_iterator_t_>(output_));
+	hxassert_different_iterator(output_r_, src0_);
+	hxassert_different_iterator(output_r_, src1_);
 	while(src0_ != end0_ && src1_ != end1_) {
 		const bool take1_ = less_(*src1_, *src0_);
 		const bool less0_ = less_(*src0_, *src1_);

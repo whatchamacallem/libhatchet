@@ -18,7 +18,6 @@
 #include "hxinitializer_list.hpp"
 #include "hxkey.hpp"
 #include "hxsort.hpp"
-#include "detail/hxrange_detail.hpp"
 
 HX_NS_BEGIN_
 

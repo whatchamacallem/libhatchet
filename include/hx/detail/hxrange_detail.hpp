@@ -51,6 +51,29 @@ template<> struct hxcompare_<true> {
 	}
 };
 
+
+// In C++20 enforces address-of return value of iterators is different. Falls
+// back to comparing pointers when a specialization on pointers is available.
+template<typename a_t_, typename b_t_>
+hxinline hxconstexpr
+void hxassert_different_iterator(const a_t_&, const b_t_&) { }
+
+template<typename a_t_, typename b_t_,
+	hxenable_if_t<hxbinds_directly<a_t_, b_t_>() || hxbinds_directly<b_t_, a_t_>(), int> = 0>
+hxinline hxconstexpr
+void hxassert_different_iterator(a_t_* a_, b_t_* b_) {
+	hxassertf(!(a_ == b_), "bad_overlap");
+}
+
+#if HX_CPLUSPLUS >= 202002L
+template<typename a_t_, typename b_t_>
+	requires requires(const a_t_& a_, const b_t_& b_) { { &*a_ == &*b_ } -> hxconvertible_to<bool>; }
+hxinline hxconstexpr
+void hxassert_different_iterator(const a_t_& a_, const b_t_& b_) {
+	hxassertf(!(&*a_ == &*b_), "bad_overlap");
+}
+#endif
+
 template<typename range_t_, typename value_t_, typename compare_t_, int traits_>
 hxattr_nodiscard hxinline hxconstexpr hxattr_flatten
 auto hxlower_bound_iterator_(range_t_&& range_, const value_t_& value_, const compare_t_& compare_)

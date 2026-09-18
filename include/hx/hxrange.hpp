@@ -23,6 +23,7 @@
 #endif
 
 #include "hxkey.hpp"
+#include "detail/hxrange_detail.hpp"
 
 HX_NS_BEGIN_
 
@@ -187,6 +188,7 @@ output_iterator_t_ hxcopy_range(const range_t_& range_, output_iterator_t_&& out
 	hxrestrict_t<decltype(range_.begin())> src_(range_.begin());
 	const auto end_ = range_.end();
 	hxrestrict_t<output_iterator_t_> output_r_(hxforward<output_iterator_t_>(output_));
+	hxassert_different_iterator(output_r_, src_);
 	for(; src_ != end_; ++src_) {
 		*output_r_ = *src_;
 		++output_r_;
@@ -205,6 +207,7 @@ output_iterator_t_ hxcopy_range_if(const range_t_& range_, output_iterator_t_&& 
 	hxrestrict_t<decltype(range_.begin())> src_(range_.begin());
 	const auto end_ = range_.end();
 	hxrestrict_t<output_iterator_t_> output_r_(hxforward<output_iterator_t_>(output_));
+	hxassert_different_iterator(output_r_, src_);
 	for(; src_ != end_; ++src_) {
 		if(hxforward<callable_t_>(callable_)(*src_)) {
 			*output_r_ = *src_;
@@ -320,6 +323,7 @@ output_iterator_t_ hxforward_range(range_t_&& range_, output_iterator_t_&& outpu
 	hxrestrict_t<decltype(range_.begin())> src_(range_.begin());
 	const auto end_ = range_.end();
 	hxrestrict_t<output_iterator_t_> output_r_(hxforward<output_iterator_t_>(output_));
+	hxassert_different_iterator(output_r_, src_);
 	for(; src_ != end_; ++src_) {
 		*output_r_ = hxforward_like<range_t_>(*src_);
 		++output_r_;
@@ -339,6 +343,7 @@ output_iterator_t_ hxforward_range_if(range_t_&& range_, output_iterator_t_&& ou
 	hxrestrict_t<decltype(range_.begin())> src_(range_.begin());
 	const auto end_ = range_.end();
 	hxrestrict_t<output_iterator_t_> output_r_(hxforward<output_iterator_t_>(output_));
+	hxassert_different_iterator(output_r_, src_);
 	for(; src_ != end_; ++src_) {
 		if(hxforward<callable_t_>(callable_)(hxforward_like<range_t_>(*src_))) {
 			*output_r_ = hxforward_like<range_t_>(*src_);
@@ -428,6 +433,7 @@ output_iterator_t_ hxmove_range(range_t_&& range_, output_iterator_t_&& output_)
 	hxrestrict_t<decltype(range_.begin())> src_(range_.begin());
 	const auto end_ = range_.end();
 	hxrestrict_t<output_iterator_t_> output_r_(hxforward<output_iterator_t_>(output_));
+	hxassert_different_iterator(output_r_, src_);
 	for(; src_ != end_; ++src_) {
 		*output_r_ = hxmove(*src_);
 		++output_r_;
@@ -446,6 +452,7 @@ output_iterator_t_ hxmove_range_if(range_t_&& range_, output_iterator_t_&& outpu
 	hxrestrict_t<decltype(range_.begin())> src_(range_.begin());
 	const auto end_ = range_.end();
 	hxrestrict_t<output_iterator_t_> output_r_(hxforward<output_iterator_t_>(output_));
+	hxassert_different_iterator(output_r_, src_);
 	for(; src_ != end_; ++src_) {
 		if(hxforward<callable_t_>(callable_)(*src_)) {
 			*output_r_ = hxmove(*src_);

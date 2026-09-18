@@ -50,10 +50,13 @@ assumption is being made that modifies the interpretation of the prompt then
 that should be output. Otherwise, if you can understand existing context well
 enough to analyze it correctly as is then any analysis should not be output.
 
-When asked to test the build, e.g. by being sent the word "build" on its own,
-run the following scripts in order. Try to preserve the intention of the
-unstaged changes (and possibly earlier breaking commits) while fixing all errors
-found.
+Use `debugbuild.sh --run` exclusively as the entire edit-compile-test cycle.
+Failures that do not surface in that run will be fixed in a session explicitly
+dedicated to fixing the build.
+
+When asked to fix the build, e.g. by being sent the word "build" on its own, run
+the following scripts in order. Try to preserve the intention of the unstaged
+changes (and possibly earlier breaking commits) while fixing all errors found.
 
 ```sh
 debugbuild.sh --run
@@ -62,10 +65,10 @@ teststrip.sh
 testcmake.sh --no-tidy
 ```
 
-When asked to "build all" then use `testall.sh` instead. Only run test scripts
-from the top level directory and only run the test suite in the resulting
-subdirectory symlink `build`. Run `clean.sh` if you think different test runs
-are interacting because that should be impossible.
+When asked to "build all" then use `testall.sh` as your entry point. Only run
+test scripts from the top level directory and only run the test suite in the
+resulting subdirectory symlink `build`. Run `clean.sh` if you think different
+test runs are interacting because that should be impossible.
 
 ## Style Guide
 
@@ -139,9 +142,14 @@ copy may be significant.
 
 ## Detail Files
 
-Do not hide includes in the detail directory and place them in the corresponding
-public header. If a class has a `detail/*.inl` file then it must be used for any
-methods that do not fit on one line in 100 columns for that class.
+All detail includes e.g. `#include "detail/*"` should occur exactly once in the
+public header that uses them e.g. `<hx/*.h>` and `<hx/*.hpp>`. No other code
+should depend on an include with the word "detail" in its include paths for any
+other reason. Detail includes must not contain `#include`s.
+
+If a class has a `detail/*.inl` file available then it must be used to store any
+methods that do not fit on one line in 100 columns for that class. Move code for
+this reason whenever editing it.
 
 ## Naming
 
