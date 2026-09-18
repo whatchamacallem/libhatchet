@@ -243,7 +243,7 @@ than excluding them.
 
 Use `x_` for an arbitrary single parameter and `a_`, `b_`.. for arbitrary double
 parameters and so on. `i_`, `j_`, `k_`.. are for indices. `x_` is for single
-accumulators, `n_`, `m_`.. for alternate or multiple accumulators. However a
+accumulators. `n_`, `m_`.. for alternate indices or accumulators. However a
 result is just a `result_`.
 
 Arbitrary iterator args are named `it_`. The arbitrary
