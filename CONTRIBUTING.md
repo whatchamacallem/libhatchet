@@ -241,11 +241,21 @@ and `// GCOVR_EXCL_BR_LINE` to exclude uncallable lines and branches. Exclusions
 should only be required in test coverage. Deleting unused overloads is better
 than excluding them.
 
-Use `x_` for an arbitrary single parameter and `a_` and `b_` for arbitrary
-double parameters. Arbitrary iterator args are named `it_`. The arbitrary
+Use `x_` for an arbitrary single parameter and `a_`, `b_`.. for arbitrary double
+parameters and so on. `i_`, `j_`, `k_`.. are for indices. `x_` is for single
+accumulators, `n_`, `m_`.. for alternate or multiple accumulators. However a
+result is just a `result_`.
+
+Arbitrary iterator args are named `it_`. The arbitrary
 pointer name is `ptr_`. Do not use 42 in tests. Use a sequence starting with 31
-for arbitrary values. The hashed value of `hxnull`/`hxnil` is also
+for arbitrary values. The hashed value of `hxnull`/`hxnil` is also informally
 `hxhash_t{31u}`.
+
+add i,j,k default indices or it for a single iterator ptr
+n<-count/size,m<-alt-count/size
+“result”. single arg is x, multiple a, b,c…
+
+
 
 ## Debugging
 
