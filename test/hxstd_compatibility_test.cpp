@@ -67,7 +67,7 @@ HX_NS_USE
 // This is expected to be safe because of libhatchet's hx prefix.
 using namespace std;
 
-TEST(hxstd_compatability_test, containers_interoperate) {
+TEST(hxstd_compatibility_test, containers_interoperate) {
 	vector<int> stdvalues;
 	stdvalues.push_back(31);
 	stdvalues.push_back(32);
@@ -81,7 +81,7 @@ TEST(hxstd_compatability_test, containers_interoperate) {
 	EXPECT_TRUE(equal(roundtrip.begin(), roundtrip.end(), stdvalues.begin()));
 }
 
-TEST(hxstd_compatability_test, placement_new_unambiguous) {
+TEST(hxstd_compatibility_test, placement_new_unambiguous) {
 	hxbitset<8> bits;
 	bits.set(3);
 	EXPECT_TRUE(bits.test(3));

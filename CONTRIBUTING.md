@@ -212,7 +212,8 @@ Do a fresh run of all profiling reported on before reporting profiling data.
 Verify a tool's raw output data instead of trusting a prior summary of it.
 
 Do not write test suites until requested as the design may not be finalized. Do
-not write redundant tests. Ignore spell checker errors. Use American English.
+not write redundant tests. Ignore spell checker errors but do fix all bad
+spelling when you see it. Use American English.
 
 All tests go in the `test` directory and are GoogleTest-style tests, written to
 kill off-by-one mutants. Enumerate the mutants an off-by-one introduces:
