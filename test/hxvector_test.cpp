@@ -7,7 +7,7 @@
 #include <hx/hxrange.hpp>
 #include "./hxtest_util.hpp"
 #include <limits.h>
-#if HX_USE_LIBCXX
+#if HX_USE_STD_LIB
 #include <utility>
 #endif
 

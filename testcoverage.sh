@@ -62,7 +62,7 @@ gcc -I"$HX_DIR_"/include $HX_COVERAGE_ -DHX_HARDENING_MODE=HX_HARDENING_MODE_DEB
 
 for HX_FILE_ in "$HX_DIR_"/src/*.cpp "$HX_DIR_"/test/*.cpp; do
 	g++ -I"$HX_DIR_"/include $HX_COVERAGE_CXX_ -DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG   \
-		-DHX_TEST_ERROR_HANDLING=1 -DHX_USE_CONSOLE=2 -DHX_USE_PROFILER=1 -DHX_USE_LIBCXX=0  \
+		-DHX_TEST_ERROR_HANDLING=1 -DHX_USE_CONSOLE=2 -DHX_USE_PROFILER=1 -DHX_USE_STD_LIB=0  \
 		-DHX_USE_INLINING_ATTR=0 -std=c++23 -Wall -Werror -Wextra -Wfatal-errors             \
 		-fno-exceptions -Wno-c2y-extensions -Wno-unknown-warning-option -pthread -nostdinc++ \
 		-c "$HX_FILE_" -o "$(basename "$HX_FILE_" .cpp).o" & HX_PIDS_="$HX_PIDS_ $!"

@@ -38,7 +38,7 @@
 /// | `0xcd` | Allocated.                       |
 /// | `0xdd` | Deallocated.                     |
 ///
-/// Global new and delete are provided when `HX_USE_LIBCXX==0`. This is a
+/// Global new and delete are provided when `HX_USE_STD_LIB==0`. This is a
 /// requirement for running as a stand alone C++ runtime. Otherwise they are not
 /// interfered with. Those default versions do not use the memory manager's
 /// current allocator because it may not be safe to do so. `hxnew` and
@@ -52,7 +52,7 @@
 #error #include <hx/libhatchet.h> instead.
 #endif
 
-#if HX_CPLUSPLUS && (HX_USE_LIBCXX)
+#if HX_CPLUSPLUS && (HX_USE_STD_LIB)
 #include <new>
 #endif
 
@@ -150,7 +150,7 @@ hxinline char* hxstring_duplicate(const char* s_) {
 
 // Memory Manager C++ API
 
-#if !(HX_USE_LIBCXX)
+#if !(HX_USE_STD_LIB)
 // Declare placement new. These are not built into the compiler.
 // HX_PROVIDE_NEW_DELETE is concerned with the other versions of new and delete.
 #if HX_CPLUSPLUS >= 202002L

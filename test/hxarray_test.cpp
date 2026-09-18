@@ -5,7 +5,7 @@
 #include <hx/hxarray.hpp>
 #include <hx/hxrange.hpp>
 #include "./hxtest_util.hpp"
-#if HX_USE_LIBCXX
+#if HX_USE_STD_LIB
 #include <utility>
 #endif
 

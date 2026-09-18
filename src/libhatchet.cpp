@@ -27,13 +27,13 @@ bool (*hxg_assert_handler)(const char* file, size_t line);
 // Exception-handling semantics exist in a few places in case they are enabled,
 // but you are advised to use -fno-exceptions. This library does not provide the
 // exception handling functions expected by the C++ ABI.
-#if !(HX_USE_LIBCXX) && defined __cpp_exceptions && !defined __INTELLISENSE__
+#if !(HX_USE_STD_LIB) && defined __cpp_exceptions && !defined __INTELLISENSE__
 static_assert(0, "Warning: C++ exceptions are not supported");
 #endif
 
 // -- __cxa --------------------------------------------------------------------
 
-#if !(HX_USE_LIBCXX)
+#if !(HX_USE_STD_LIB)
 
 #if defined __arm__ && !defined __aarch64__
 	typedef int guard_t;

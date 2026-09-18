@@ -58,11 +58,11 @@
 /// pthreads and `0` is for no threading.
 #define HX_USE_THREADS 11
 
-/// `HX_USE_LIBCXX`: Indicates whether libstdc++/libc++ are present. Set
-/// `-DHX_USE_LIBCXX=0` to signal the C++ standard library is not in use. The
+/// `HX_USE_STD_LIB`: Indicates whether libstdc++/libc++ are present. Set
+/// `-DHX_USE_STD_LIB=0` to signal the C++ standard library is not in use. The
 /// C++ standard library is not detected automatically because that depends on
 /// header include order.
-#define HX_USE_LIBCXX 1
+#define HX_USE_STD_LIB 1
 
 /// `hxbreakpoint` - Can be conditionally evaluated with the `&&` and `||`
 /// operators. Uses intrinsics when available. (E.g., Clang's.) Raises `SIGTRAP`
@@ -140,8 +140,8 @@
 #define HX_USE_THREADS 11
 #endif
 
-#if !defined HX_USE_LIBCXX
-#define HX_USE_LIBCXX 1
+#if !defined HX_USE_STD_LIB
+#define HX_USE_STD_LIB 1
 #endif
 
 #define hxbreakpoint() (__debugbreak(),true)
@@ -191,9 +191,9 @@
 #endif
 #endif
 
-#if !defined HX_USE_LIBCXX
-#define HX_USE_LIBCXX 1
-#elif !(HX_USE_LIBCXX) && !defined HX_SKIP_LIBCXX_CHECK && __has_include(<new>)
+#if !defined HX_USE_STD_LIB
+#define HX_USE_STD_LIB 1
+#elif !(HX_USE_STD_LIB) && !defined HX_SKIP_LIBCXX_CHECK && __has_include(<new>)
 #error Use -nostdinc++ to use the C headers instead of the C++ ones.
 #endif
 
@@ -352,7 +352,7 @@
 /// `HX_PROVIDE_NEW_DELETE` - Provides a new/delete implementation when the std
 /// library is absent unless overridden. Use HX_PROVIDE_NEW_DELETE=-1 when
 /// compiling a module to prevent declaration.
-#define HX_PROVIDE_NEW_DELETE !(HX_USE_LIBCXX)
+#define HX_PROVIDE_NEW_DELETE !(HX_USE_STD_LIB)
 #endif
 
 /// `HX_KIB` - A KiB, 2^10.
@@ -425,7 +425,7 @@ HX_CHECK_USE_(HX_USE_FILE_IO)
 HX_CHECK_USE_(HX_USE_FLOATING_POINT_TRAPS)
 HX_CHECK_USE_(HX_USE_GOOGLE_TEST)
 HX_CHECK_USE_(HX_USE_INLINING_ATTR)
-HX_CHECK_USE_(HX_USE_LIBCXX)
+HX_CHECK_USE_(HX_USE_STD_LIB)
 HX_CHECK_USE_(HX_USE_LOGGING)
 HX_CHECK_USE_(HX_USE_SLAB_ALLOCATOR)
 HX_CHECK_USE_(HX_USE_MACROS_WITH_MODULE)

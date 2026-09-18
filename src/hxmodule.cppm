@@ -44,8 +44,8 @@ module;
 #include <unistd.h>
 #endif
 
-// HX_USE_LIBCXX defaults to 1.
-#if !defined HX_USE_LIBCXX || (HX_USE_LIBCXX)
+// HX_USE_STD_LIB defaults to 1.
+#if !defined HX_USE_STD_LIB || (HX_USE_STD_LIB)
 #include <new>
 #include <initializer_list>
 #endif

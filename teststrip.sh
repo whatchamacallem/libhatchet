@@ -13,7 +13,7 @@ HX_DIR_=$PWD
 # Proves test suite can run without non-placement ::new() and ::delete. This is
 # because there may be no general purpose allocator at all.
 HX_BUILD_="-DHX_HARDENING_MODE=HX_HARDENING_MODE_NONE -DHX_PROVIDE_NEW_DELETE=0 \
-	-DHX_USE_LIBCXX=0 -DHX_USE_LOGGING=1 -DHX_USE_THREADS=11"
+	-DHX_USE_STD_LIB=0 -DHX_USE_LOGGING=1 -DHX_USE_THREADS=11"
 
 HX_ERRORS_="-Wfatal-errors -Wall -Wextra -pedantic-errors -Werror -Wcast-qual \
 	-Wdisabled-optimization -Wshadow -Wundef -Wconversion -Wdate-time         \

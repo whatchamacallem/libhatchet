@@ -4,7 +4,7 @@
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
 /// \file
-/// Implements or includes std::initializer_list depending on HX_USE_LIBCXX.
+/// Implements or includes std::initializer_list depending on HX_USE_STD_LIB.
 
 #include "libhatchet.h"
 
@@ -13,11 +13,11 @@
 #error Header does not provide macros alone.
 #endif
 
-#if HX_USE_LIBCXX
+#if HX_USE_STD_LIB
 #include <initializer_list>
 #elif defined _MSC_VER
-#error No custom <initializer_list> provided for MSVC. Set HX_USE_LIBCXX.
-#else // !HX_USE_LIBCXX
+#error No custom <initializer_list> provided for MSVC. Set HX_USE_STD_LIB.
+#else // !HX_USE_STD_LIB
 
 /// \cond HIDDEN
 namespace std {
@@ -47,4 +47,4 @@ private:
 
 } // namespace std
 /// \endcond
-#endif // !HX_USE_LIBCXX
+#endif // !HX_USE_STD_LIB
