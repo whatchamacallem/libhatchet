@@ -66,9 +66,8 @@ requires(!hxis_same<hxremove_cvref_t<range_t_>, hxvector<T_, capacity_> >())
 hxinline hxattr_flatten hxvector<T_, capacity_>::hxvector(range_t_&& range_) noexcept : hxvector() {
 	if constexpr(requires(const decltype(range_.begin())& a_,
 			const decltype(range_.begin())& b_) { { b_ - a_ }; }) {
-		const hxsize_t size_ = static_cast<hxsize_t>(range_.end() - range_.begin());
-		if(size_ > this->capacity()) {
-			this->reserve(size_);
+		if(this->capacity() == 0) {
+			this->reserve(static_cast<hxsize_t>(range_.end() - range_.begin()));
 		}
 	}
 	this->add_range(hxforward<range_t_>(range_));
@@ -255,11 +254,12 @@ hxinline hxattr_flatten void hxvector<T_, capacity_>::assign(iterator_t_ begin_,
 		iterator_t_ end_) noexcept {
 	hxassert_hard((end_ - begin_) >= 0, "bad_iter %zd", static_cast<hxsize_t>(end_ - begin_));
 	const hxsize_t size_ = static_cast<hxsize_t>(end_ - begin_);
-	if(size_ > this->capacity()) {
+	if(this->capacity() == 0) {
 		this->reserve(size_);
 	}
+	hxassert_hard(size_ <= this->capacity(), "stack_full %zd %zd", size_, this->capacity());
+	this->destruct_(this->data(), m_end_);
 	T_* hxrestrict it_ = this->data();
-	this->destruct_(it_, m_end_);
 	while(begin_ != end_) {
 		::new(it_++) T_(*begin_++);
 	}
@@ -606,10 +606,12 @@ hxinline hxattr_flatten void hxvector<T_, capacity_>::reserve(hxsize_t size_,
 
 template<hxvector_concept_ T_, hxsize_t capacity_>
 hxinline hxattr_flatten void hxvector<T_, capacity_>::resize(hxsize_t size_) noexcept {
-	if(size_ > this->capacity()) {
-		this->reserve(size_);
+	const hxsize_t previous_size_ = this->size();
+	if(this->capacity() == 0) {
+		this->reserve_storage(size_);
 	}
-	T_* it_ = m_end_;
+	hxassert_hard(size_ <= this->capacity(), "stack_full %zd %zd", size_, this->capacity());
+	T_* it_ = this->data() + previous_size_;
 	T_*const end_ = this->data() + size_;
 	while(it_ < end_) {
 		// Note: "T_()" is not being called. That would default initialize
@@ -623,10 +625,12 @@ hxinline hxattr_flatten void hxvector<T_, capacity_>::resize(hxsize_t size_) noe
 template<hxvector_concept_ T_, hxsize_t capacity_>
 hxinline hxattr_flatten void hxvector<T_, capacity_>::resize(hxsize_t size_,
 		const T_& x_) noexcept {
-	if(size_ > this->capacity()) {
-		this->reserve(size_);
+	const hxsize_t previous_size_ = this->size();
+	if(this->capacity() == 0) {
+		this->reserve_storage(size_);
 	}
-	T_* hxrestrict it_ = m_end_;
+	hxassert_hard(size_ <= this->capacity(), "stack_full %zd %zd", size_, this->capacity());
+	T_* hxrestrict it_ = this->data() + previous_size_;
 	T_*const end_ = this->data() + size_;
 	while(it_ < end_) {
 		::new(it_++) T_(x_);

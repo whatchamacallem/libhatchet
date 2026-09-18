@@ -55,10 +55,11 @@ public:
 	///   When `pow2` is true this is the exponent instead.
 	/// - `allocator` : Ignored.
 	/// - `alignment` : Ignored.
-	hxinline void reserve_storage(hxsize_t size_,
+	hxinline hxconstexpr void reserve_storage(hxsize_t size_,
 			hxslab_allocator_t allocator_=hxslab_allocator_current,
-			hxalignment_t alignment_=hxalignment) {
+			hxalignment_t alignment_=hxalignment) const {
 		(void)allocator_; (void)alignment_;
+		// Expected to compile to nothing.
 		hxassert_always(size_ == fixed_capacity_, "bad_reserve already sized");
 	}
 

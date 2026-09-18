@@ -33,9 +33,7 @@ hxinline hxattr_flatten hxarray<T_, capacity_>::hxarray(const T_& x_) noexcept {
 template<hxarray_concept_ T_, hxsize_t capacity_>
 hxinline hxattr_flatten hxarray<T_, capacity_>::hxarray(const hxarray& x_) noexcept {
 	const hxsize_t c_ = x_.capacity();
-	hxif_constexpr(capacity_ == hxallocator_dynamic_capacity) {
-		this->reserve_storage(c_);
-	}
+	this->reserve_storage(c_);
 	const T_* hxrestrict src_ = x_.data();
 	T_* hxrestrict dst_ = this->data();
 	for(const T_*const end_ = dst_ + c_; dst_ != end_; ++dst_, ++src_) {
@@ -160,22 +158,17 @@ template<hxarray_concept_ T_, hxsize_t capacity_>
 template<typename other_value_t_, hxsize_t array_length_>
 hxinline hxattr_flatten void hxarray<T_, capacity_>::operator=(
 		const other_value_t_(&array_)[array_length_]) noexcept {
-	hxif_constexpr(capacity_ == hxallocator_dynamic_capacity) {
-		if(this->capacity() == 0) {
-			this->reserve_storage(array_length_);
-			const other_value_t_* hxrestrict src_ = +array_;
-			T_* hxrestrict dst_ = this->data();
-			for(const T_*const end_ = dst_ + array_length_; dst_ != end_; ++dst_, ++src_) {
-				::new(dst_) T_(*src_);
-			}
-			return;
-		}
-	}
-	hxassert_hard(this->capacity() == array_length_,
-		"array_size mismatch %zd %zd", this->capacity(), hxsize_t{array_length_});
+	const bool was_unallocated_ = this->capacity() == 0;
+	this->reserve_storage(array_length_);
 	const other_value_t_* hxrestrict src_ = +array_;
 	T_* hxrestrict dst_ = this->data();
-	for(const T_*const end_ = dst_ + this->capacity(); dst_ != end_; ++dst_, ++src_) {
+	if(was_unallocated_) {
+		for(const T_*const end_ = dst_ + array_length_; dst_ != end_; ++dst_, ++src_) {
+			::new(dst_) T_(*src_);
+		}
+		return;
+	}
+	for(const T_*const end_ = dst_ + array_length_; dst_ != end_; ++dst_, ++src_) {
 		*dst_ = *src_;
 	}
 }
@@ -359,13 +352,11 @@ hxinline hxattr_flatten void hxarray<T_, capacity_>::reserve(hxsize_t size_,
 		hxslab_allocator_t allocator_, hxalignment_t alignment_) noexcept {
 	const hxsize_t c_ = this->capacity();
 	this->reserve_storage(size_, allocator_, alignment_);
-	hxif_constexpr(capacity_ == hxallocator_dynamic_capacity) {
-		if(c_ == 0) {
-			T_* it_ = this->data();
-			for(const T_*const end_ = it_ + size_; it_ != end_; ++it_) {
-				// Does not zero-fill.
-				::new(it_) T_;
-			}
+	if(c_ == 0) {
+		T_* it_ = this->data();
+		for(const T_*const end_ = it_ + size_; it_ != end_; ++it_) {
+			// Does not zero-fill.
+			::new(it_) T_;
 		}
 	}
 }

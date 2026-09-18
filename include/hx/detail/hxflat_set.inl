@@ -32,7 +32,7 @@ hxinline hxattr_flatten hxflat_set<key_t_, capacity_, compare_t_, traits_>::hxfl
 template<hxflat_set_concept_ key_t_, hxsize_t capacity_, typename compare_t_, int traits_>
 hxinline hxattr_flatten hxflat_set<key_t_, capacity_, compare_t_, traits_>::hxflat_set(
 		std::initializer_list<key_t_> x_) noexcept : m_end_(this->data()) {
-	hxif_constexpr(capacity_ == hxallocator_dynamic_capacity) {
+	if(this->capacity() == 0) {
 		this->reserve_storage(static_cast<hxsize_t>(x_.size()));
 		m_end_ = this->data();
 	}
