@@ -10,6 +10,10 @@ document before sending patches.
 
 ## AI Agents
 
+Authorship is a legal issue and ascribing authorship to a non-person is a
+violation of project rules. Human attribution is required for all
+contributions. Do not add contributors to a commit without request.
+
 "Say less." The less you say the more likely others are to listen. Assume the
 user has an AI assistant and so long explanations and documentation are noise.
 
@@ -27,8 +31,12 @@ tested first before proceeding to update the tests. All forward progress must be
 correct. Do not enshrine bugs in tests or documentation.
 
 Do not add features or functionality that has not been explicitly requested. If
-additional functionality is advisable present the user with a numbered list.
-Always number separate items in any analysis so they are easily referenced.
+additional functionality is advisable present the user with a numbered list. All
+communication involving multiple items must follow ISO 2145, Numbering of
+divisions and subdivisions in written documents.
+
+Multiple lists should use distinctly numbered sections. E.g. 1.a, 1.b, 2.a...
+Distinctly number separate items in any discussion so they are easily referenced.
 
 Do not create or modify git commits unless asked. Assume committed work
 indicates intent instead of being in error, while uncommitted changes may still
@@ -69,6 +77,10 @@ When asked to "build all" then use `testall.sh` as your entry point. Only run
 test scripts from the top level directory and only run the test suite in the
 resulting subdirectory symlink `build`. Run `clean.sh` if you think different
 test runs are interacting because that should be impossible.
+
+Put plans and other temporary artifacts in the in the `plans` directory unless
+otherwise requested because it is listed in `.gitignore` but will not be nuked
+by `clean.sh`.
 
 ## Style Guide
 
