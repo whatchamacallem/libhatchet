@@ -55,11 +55,19 @@ template<typename T_, typename deleter_t_>
 hxinline hxconstexpr hxptr<T_, deleter_t_>::operator bool(void) const { return m_ptr_ != hxnull; }
 
 template<typename T_, typename deleter_t_>
+hxinline hxconstexpr bool hxptr<T_, deleter_t_>::operator==(const hxptr& x_) const {
+	if(m_ptr_ == hxnull || x_.m_ptr_ == hxnull) {
+		return m_ptr_ == x_.m_ptr_;
+	}
+	return *m_ptr_ == *x_.m_ptr_;
+}
+
+template<typename T_, typename deleter_t_>
 hxinline hxconstexpr bool hxptr<T_, deleter_t_>::operator==(hxnil_t) const {
 	return m_ptr_ == hxnull;
 }
 
-#if HX_CPLUSPLUS < 202002L // C++20 defaults != from ==.
+#if HX_CPLUSPLUS < 202002L
 template<typename T_, typename deleter_t_>
 hxinline hxconstexpr bool hxptr<T_, deleter_t_>::operator!=(const hxptr& x_) const {
 	return !(*this == x_);
@@ -76,9 +84,10 @@ template<typename T_, typename deleter_t_>
 template<typename self_t_, typename callable_t_>
 hxinline hxconstexpr auto hxptr<T_, deleter_t_>::and_then(
 		this self_t_&& self_, callable_t_&& callable_)
-		-> hxremove_cvref_t<decltype(hxforward<callable_t_>(callable_)(hxdeclval<T_&>()))> {
+		-> hxremove_cvref_t<decltype(hxforward<callable_t_>(callable_)(
+			hxforward_like<self_t_, T_>(hxdeclval<T_&>())))> {
 	if(self_.m_ptr_ != hxnull) {
-		return hxforward<callable_t_>(callable_)(*self_.m_ptr_);
+		return hxforward<callable_t_>(callable_)(hxforward_like<self_t_, T_>(*self_.m_ptr_));
 	}
 	return hxnil;
 }
@@ -95,15 +104,10 @@ hxinline hxconstexpr deleter_t_& hxptr<T_, deleter_t_>::deleter(void) {
 }
 
 template<typename T_, typename deleter_t_>
-template<hxsystem_allocator_t allocator_, hxalignment_t alignment_, typename... args_t_>
+template<hxslab_allocator_t allocator_, hxalignment_t alignment_, typename... args_t_>
 hxinline hxattr_flatten T_& hxptr<T_, deleter_t_>::emplace(args_t_&&... args_) noexcept {
 	this->reset(hxnew<T_, allocator_, alignment_>(hxforward<args_t_>(args_)...));
 	return *m_ptr_;
-}
-
-template<typename T_, typename deleter_t_>
-hxinline hxconstexpr bool hxptr<T_, deleter_t_>::equal(const hxptr& x_) const {
-	return m_ptr_ == x_.m_ptr_;
 }
 
 template<typename T_, typename deleter_t_>
@@ -147,23 +151,23 @@ hxinline hxconstexpr void hxptr<T_, deleter_t_>::swap(hxptr& x_) noexcept {
 	hxswap(static_cast<deleter_t_&>(*this), x_.deleter());
 }
 
+template<typename T_, typename deleter_t_>
+hxinline hxconstexpr T_& hxptr<T_, deleter_t_>::value(void) const {
+	hxassertf(m_ptr_ != hxnull, "null_ptr");
+	return *m_ptr_;
+}
+
 #if HX_CPLUSPLUS >= 202302L
 template<typename T_, typename deleter_t_>
 template<typename self_t_, typename... args_t_>
 hxinline hxconstexpr hxremove_cv_t<T_> hxptr<T_, deleter_t_>::value_or(
 		this self_t_&& self_, args_t_&&... args_) {
 	if(self_.m_ptr_ != hxnull) {
-		return static_cast<hxremove_cv_t<T_>>(*self_.m_ptr_);
+		return static_cast<hxremove_cv_t<T_>>(hxforward_like<self_t_, T_>(*self_.m_ptr_));
 	}
 	return hxremove_cv_t<T_>(hxforward<args_t_>(args_)...);
 }
 #endif // HX_CPLUSPLUS >= 202302L
-
-template<typename T_, typename deleter_t_>
-hxinline hxconstexpr T_& hxptr<T_, deleter_t_>::value(void) const {
-	hxassertf(m_ptr_ != hxnull, "null_ptr");
-	return *m_ptr_;
-}
 
 HX_INL_END_
 #endif // HX_DOXYGEN_PARSER

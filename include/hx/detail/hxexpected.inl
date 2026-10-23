@@ -36,7 +36,8 @@ hxinline hxattr_flatten hxexpected<T_, E_>::hxexpected(hxexpected&& x_) noexcept
 template<hxexpected_concept_ T_, hxunexpected_concept_ E_>
 template<typename error_t_, typename... args_t_, hxenable_if_t<
 	!hxis_hxexpected_<hxremove_cvref_t<error_t_>>::value, bool>>
-hxinline hxattr_flatten hxexpected<T_, E_>::hxexpected(error_t_&& error_, args_t_&&... args_) noexcept
+hxinline hxattr_flatten hxexpected<T_, E_>::hxexpected(
+		error_t_&& error_, args_t_&&... args_) noexcept
 		: m_error_(hxforward<error_t_>(error_)) {
 	if(this->has_value()) {
 		::new(static_cast<void*>(this->data())) T_(hxforward<args_t_>(args_)...);
@@ -131,7 +132,7 @@ hxexpected<T_, E_>::operator=(U_&& value_) noexcept {
 }
 
 template<hxexpected_concept_ T_, hxunexpected_concept_ E_>
-hxinline hxattr_flatten bool hxexpected<T_, E_>::equal(const hxexpected& x_) const {
+hxinline hxattr_flatten bool hxexpected<T_, E_>::operator==(const hxexpected& x_) const {
 	if(this->has_value() != x_.has_value()) {
 		return false;
 	}
@@ -142,8 +143,13 @@ hxinline hxattr_flatten bool hxexpected<T_, E_>::equal(const hxexpected& x_) con
 }
 
 template<hxexpected_concept_ T_, hxunexpected_concept_ E_>
-hxinline hxattr_flatten bool hxexpected<T_, E_>::operator==(const T_& value_) const {
-	return this->has_value() && (*this->data() == value_);
+hxinline hxattr_flatten bool hxexpected<T_, E_>::operator==(hxnil_t) const {
+	return static_cast<bool>(m_error_);
+}
+
+template<hxexpected_concept_ T_, hxunexpected_concept_ E_>
+hxinline hxattr_flatten bool hxexpected<T_, E_>::operator==(const T_& x_) const {
+	return this->has_value() && (*this->data() == x_);
 }
 
 template<hxexpected_concept_ T_, hxunexpected_concept_ E_>

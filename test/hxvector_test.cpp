@@ -7,7 +7,7 @@
 #include <hx/hxrange.hpp>
 #include "./hxtest_util.hpp"
 #include <limits.h>
-#if HX_USE_LIBCXX
+#if HX_USE_STD_LIB
 #include <utility>
 #endif
 
@@ -61,7 +61,7 @@ TEST_F(hxvector_test_f, value_or_emplaces_fallback) {
 	EXPECT_EQ(v.value_or(hxsize_t{1}, 14, 17).value(), 31);
 	EXPECT_EQ(v.value_or(v.begin(), 20, 23).value(), 10);
 	EXPECT_EQ(v.value_or(v.end(), 20, 23).value(), 43);
-	EXPECT_TRUE(check_stats(5, 4, 0, 3, 2, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(5, 0, 3, 2, 0, 0, 0, 0, 0, 0));
 }
 #endif // HX_CPLUSPLUS >= 202302L
 
@@ -79,7 +79,7 @@ TEST_F(hxvector_test_f, empty_full) {
 	a.pop_back();
 	EXPECT_TRUE(a.empty());
 	EXPECT_TRUE(!a.full());
-	EXPECT_TRUE(check_stats(2, 2, 1, 0, 0, 1, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(2, 1, 0, 0, 1, 0, 0, 0, 0, 0));
 }
 
 TEST(hxvector_test, empty_boundary) {
@@ -124,7 +124,7 @@ TEST_F(hxvector_test_f, iteration) {
 		EXPECT_EQ(cobjs.front(), nums[0]);
 		EXPECT_EQ(cobjs.back(), nums[2]);
 	}
-	EXPECT_TRUE(check_stats(6, 6, 0, 3, 3, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(6, 0, 3, 3, 0, 0, 0, 0, 0, 0));
 }
 
 TEST(hxvector_test, iteration_visits_first_and_last) {
@@ -170,7 +170,7 @@ TEST_F(hxvector_test_f, modification) {
 		c.reserve(3);
 		hxtest_gdb_break_hxvector_dynamic();
 	}
-	EXPECT_TRUE(check_stats(11, 11, 1, 7, 3, 0, 0, 1, 0, 0));
+	EXPECT_TRUE(check_stats(11, 1, 7, 3, 0, 0, 1, 0, 0, 0));
 }
 
 TEST(hxvector_test, push_heap_preserves_heap_property) {
@@ -300,7 +300,7 @@ TEST_F(hxvector_test_f, erase_if_unordered_then_make_heap_sift_up_required_singl
 	EXPECT_EQ(a.size(), 7);
 	EXPECT_TRUE(hxvector_test_is_max_heap(a));
 	hxtest_gdb_break_hxvector_static();
-	EXPECT_TRUE(check_stats(19, 4, 0, 8, 8, 3, 0, 5, 0, 19));
+	EXPECT_TRUE(check_stats(19, 0, 8, 8, 3, 0, 5, 0, 19, 0));
 }
 
 TEST(hxvector_test, erase_if_unordered_then_make_heap_none_removed_count) {
@@ -384,7 +384,7 @@ TEST_F(hxvector_test_f, emplace_back) {
 		EXPECT_EQ(objs.size(), 3);
 		EXPECT_EQ(objs.back().value(), 77);
 	}
-	EXPECT_TRUE(check_stats(4, 4, 1, 2, 0, 1, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(4, 1, 2, 0, 1, 0, 0, 0, 0, 0));
 }
 
 TEST(hxvector_test, emplace_back_returns_correct_address) {
@@ -545,29 +545,29 @@ TEST(hxvector_test, any_of_single_false_element) {
 	EXPECT_FALSE(v.any_of([](const int& x) { return x > 0; }));
 }
 
-TEST(hxvector_test, binary_search) {
+TEST(hxvector_test, search) {
 	hxvector<int, 5> values{ 1, 3, 5, 7, 9 };
 	const hxvector<int, 5>& const_values = values;
-	const int* const_missing = const_values.binary_search(4);
+	const int* const_missing = const_values.search(4);
 	EXPECT_EQ(const_missing, values.end());
-	const int* mutable_found = values.binary_search(7);
+	const int* mutable_found = values.search(7);
 	EXPECT_EQ(mutable_found, values.begin() + 3);
-	EXPECT_EQ(values.binary_search(2), values.end());
+	EXPECT_EQ(values.search(2), values.end());
 }
 
-TEST(hxvector_test, binary_search_first_and_last_element) {
+TEST(hxvector_test, search_first_and_last_element) {
 	hxvector<int, 5> v{ 2, 4, 6, 8, 10 };
-	EXPECT_EQ(v.binary_search(2), v.begin());
-	EXPECT_EQ(v.binary_search(10), v.begin() + 4);
-	EXPECT_EQ(v.binary_search(1), v.end());
-	EXPECT_EQ(v.binary_search(11), v.end());
+	EXPECT_EQ(v.search(2), v.begin());
+	EXPECT_EQ(v.search(10), v.begin() + 4);
+	EXPECT_EQ(v.search(1), v.end());
+	EXPECT_EQ(v.search(11), v.end());
 }
 
-TEST(hxvector_test, binary_search_single_element) {
+TEST(hxvector_test, search_single_element) {
 	const hxvector<int, 1> v{7};
-	EXPECT_EQ(v.binary_search(7), v.begin());
-	EXPECT_EQ(v.binary_search(6), v.end());
-	EXPECT_EQ(v.binary_search(8), v.end());
+	EXPECT_EQ(v.search(7), v.begin());
+	EXPECT_EQ(v.search(6), v.end());
+	EXPECT_EQ(v.search(8), v.end());
 }
 
 TEST(hxvector_test, find_returns_first_match) {
@@ -685,7 +685,6 @@ TEST_F(hxvector_test_f, resizing) {
 	{
 		static const int32_t nums[5] = { 51, 52, 53, 54, 55 };
 		hxvector<hxtest_object> objs(12);
-		objs.reserve(10);
 		objs.assign(nums, nums + 5);
 		objs.resize(3, hxtest_object());
 		EXPECT_EQ(objs.size(), 3);
@@ -713,7 +712,7 @@ TEST_F(hxvector_test_f, resizing) {
 		EXPECT_TRUE(objs.empty());
 		EXPECT_EQ(objs.capacity(), 12);
 	}
-	EXPECT_TRUE(check_stats(25, 25, 20, 5, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(25, 20, 5, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxvector_test_f, resize_shrink_boundary) {
@@ -723,7 +722,7 @@ TEST_F(hxvector_test_f, resize_shrink_boundary) {
 		EXPECT_EQ(objs.size(), 2);
 		EXPECT_EQ(objs[1].value(), 2);
 	}
-	EXPECT_TRUE(check_stats(7, 7, 1, 3, 3, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(7, 1, 3, 3, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxvector_test_f, resize_grow_boundary) {
@@ -735,7 +734,7 @@ TEST_F(hxvector_test_f, resize_grow_boundary) {
 		EXPECT_EQ(objs.size(), 2);
 		EXPECT_EQ(objs[1].state(), hxtest_object_state::valid);
 	}
-	EXPECT_TRUE(check_stats(2, 2, 1, 1, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(2, 1, 1, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxvector_test_f, assignment) {
@@ -758,8 +757,40 @@ TEST_F(hxvector_test_f, assignment) {
 		EXPECT_EQ(objs4[0].value(), 67);
 		EXPECT_EQ(objs5[0].value(), 67);
 	}
-	EXPECT_TRUE(check_stats(7, 7, 1, 0, 6, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(7, 1, 0, 6, 0, 0, 0, 0, 0, 0));
 }
+
+TEST_F(hxvector_test_f, mixed_capacity_copy_constructor_from_non_const_lvalue) {
+	{
+		hxvector<hxtest_object, 2> src;
+		src.push_back(hxtest_object(31));
+		src.push_back(hxtest_object(32));
+		const hxvector<hxtest_object> dst(src);
+		EXPECT_EQ(dst.size(), 2);
+		EXPECT_EQ(dst[0].value(), 31);
+		EXPECT_EQ(dst[1].value(), 32);
+		EXPECT_EQ(src[0].state(), hxtest_object_state::valid);
+		EXPECT_EQ(src[1].state(), hxtest_object_state::valid);
+	}
+	EXPECT_TRUE(check_stats(6, 0, 2, 2, 2, 0, 0, 0, 0, 0));
+}
+
+#if HX_CPLUSPLUS >= 202002L
+TEST_F(hxvector_test_f, mixed_capacity_range_constructor_moves_from_rvalue) {
+	{
+		hxvector<hxtest_object, 2> src;
+		src.push_back(hxtest_object(31));
+		src.push_back(hxtest_object(32));
+		const hxvector<hxtest_object> dst(hxmove(src));
+		EXPECT_EQ(dst.size(), 2);
+		EXPECT_EQ(dst[0].value(), 31);
+		EXPECT_EQ(dst[1].value(), 32);
+		EXPECT_EQ(src[0].state(), hxtest_object_state::moved);
+		EXPECT_EQ(src[1].state(), hxtest_object_state::moved);
+	}
+	EXPECT_TRUE(check_stats(6, 0, 2, 0, 4, 0, 0, 0, 0, 0));
+}
+#endif
 
 TEST_F(hxvector_test_f, assign_copies_all_elements_including_last) {
 	{
@@ -770,7 +801,7 @@ TEST_F(hxvector_test_f, assign_copies_all_elements_including_last) {
 		EXPECT_EQ(dst.size(), 3);
 		EXPECT_EQ(dst[2].value(), 30);
 	}
-	EXPECT_TRUE(check_stats(3, 3, 0, 3, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(3, 0, 3, 0, 0, 0, 0, 0, 0, 0));
 }
 
 #if HX_CPLUSPLUS >= 202002L
@@ -793,7 +824,7 @@ TEST_F(hxvector_test_f, add_range_from_rvalue) {
 		EXPECT_EQ(elements[i].state(), hxtest_object_state::valid);
 		EXPECT_EQ(source_elements[i].state(), hxtest_object_state::moved);
 	}
-	EXPECT_TRUE(check_stats(6, 0, 0, 3, 0, 3, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(6, 0, 3, 0, 3, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxvector_test_f, add_range_from_const_appends_to_existing) {
@@ -818,7 +849,51 @@ TEST_F(hxvector_test_f, add_range_from_const_appends_to_existing) {
 	for(hxsize_t i = 0; i < assigned_count; ++i) {
 		EXPECT_EQ(assigned_elements[i].state(), hxtest_object_state::valid);
 	}
-	EXPECT_TRUE(check_stats(10, 1, 0, 5, 4, 1, 0, 0, 4, 0));
+	EXPECT_TRUE(check_stats(10, 0, 5, 4, 1, 0, 0, 4, 0, 0));
+}
+
+TEST_F(hxvector_test_f, copy_if_selects_boundary_elements) {
+	const int32_t source_ints[] = { 31, 32, 33, 34 };
+	const hxvector<hxtest_object> source(hxmake_range(source_ints));
+	hxvector<hxtest_object> elements;
+	elements.reserve(4);
+	const hxrange<const hxtest_object*> range(source.begin(), source.end());
+	elements.copy_if(range, [](const hxtest_object& x) { return x.value() % 2 == 0; });
+	EXPECT_EQ(elements.size(), hxsize_t{2});
+	EXPECT_EQ(elements[0].value(), 32);
+	EXPECT_EQ(elements[1].value(), 34);
+	for(hxsize_t i = 0; i < 4; ++i) {
+		EXPECT_EQ(source[i].state(), hxtest_object_state::valid);
+	}
+
+	elements.clear();
+	elements.copy_if(range, [](const hxtest_object& x) { return x.value() > 100; });
+	EXPECT_EQ(elements.size(), hxsize_t{0});
+
+	elements.copy_if(range, [](const hxtest_object& x) { return x.value() > 0; });
+	EXPECT_EQ(elements.size(), hxsize_t{4});
+	EXPECT_EQ(elements[0].value(), 31);
+	EXPECT_EQ(elements[3].value(), 34);
+	EXPECT_TRUE(check_stats(10, 0, 4, 6, 0, 0, 0, 0, 0, 0));
+}
+
+TEST_F(hxvector_test_f, copy_if_moves_from_rvalue_range) {
+	hxtest_object source_elements[] = {
+		hxtest_object(31),
+		hxtest_object(32),
+		hxtest_object(33)
+	};
+	hxvector<hxtest_object> elements;
+	elements.reserve(3);
+	elements.copy_if(hxmake_range(source_elements, source_elements + 3),
+		[](const hxtest_object& x) { return x.value() != 32; });
+	EXPECT_EQ(elements.size(), hxsize_t{2});
+	EXPECT_EQ(elements[0].value(), 31);
+	EXPECT_EQ(elements[1].value(), 33);
+	EXPECT_EQ(source_elements[0].state(), hxtest_object_state::moved);
+	EXPECT_EQ(source_elements[1].state(), hxtest_object_state::valid);
+	EXPECT_EQ(source_elements[2].state(), hxtest_object_state::moved);
+	EXPECT_TRUE(check_stats(5, 0, 3, 0, 2, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxvector_test_f, add_range_from_mutable_range) {
@@ -841,7 +916,7 @@ TEST_F(hxvector_test_f, add_range_from_mutable_range) {
 		EXPECT_EQ(elements[i].state(), hxtest_object_state::valid);
 		EXPECT_EQ(source_elements[i].state(), hxtest_object_state::valid);
 	}
-	EXPECT_TRUE(check_stats(6, 0, 0, 3, 3, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(6, 0, 3, 3, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxvector_test_f, add_range_empty_range_preserves_existing) {
@@ -854,7 +929,7 @@ TEST_F(hxvector_test_f, add_range_empty_range_preserves_existing) {
 	EXPECT_EQ(elements.size(), 1);
 	EXPECT_EQ(elements[0].value(), 31);
 	EXPECT_EQ(elements[0].state(), hxtest_object_state::valid);
-	EXPECT_TRUE(check_stats(2, 1, 0, 1, 0, 1, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(2, 0, 1, 0, 1, 0, 0, 0, 0, 0));
 }
 #endif
 
@@ -874,7 +949,7 @@ TEST_F(hxvector_test_f, push_back_move_tracker) {
 	EXPECT_EQ(elements[0].state(), hxtest_object_state::valid);
 	EXPECT_EQ(elements[1].state(), hxtest_object_state::valid);
 	EXPECT_EQ(x.state(), hxtest_object_state::valid);
-	EXPECT_TRUE(check_stats(4, 0, 0, 2, 1, 1, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(4, 0, 2, 1, 1, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxvector_test_f, plus_equals_move_tracker_element) {
@@ -893,7 +968,7 @@ TEST_F(hxvector_test_f, plus_equals_move_tracker_element) {
 	EXPECT_EQ(elements[0].state(), hxtest_object_state::valid);
 	EXPECT_EQ(elements[1].state(), hxtest_object_state::valid);
 	EXPECT_EQ(x.state(), hxtest_object_state::valid);
-	EXPECT_TRUE(check_stats(4, 0, 0, 2, 1, 1, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(4, 0, 2, 1, 1, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxvector_test_f, plus_equals_move_tracker_array) {
@@ -936,7 +1011,7 @@ TEST_F(hxvector_test_f, plus_equals_move_tracker_array) {
 	for(hxsize_t i = 0; i < copy_source.size(); ++i) {
 		EXPECT_EQ(copy_source[i].state(), hxtest_object_state::valid);
 	}
-	EXPECT_TRUE(check_stats(15, 0, 0, 7, 5, 3, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(15, 0, 7, 5, 3, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxvector_test_f, plus_equals_array_copies_last_element) {
@@ -953,7 +1028,7 @@ TEST_F(hxvector_test_f, plus_equals_array_copies_last_element) {
 		EXPECT_EQ(dst.size(), 4);
 		EXPECT_EQ(dst[3].value(), 3);
 	}
-	EXPECT_TRUE(check_stats(7, 7, 0, 4, 3, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(7, 0, 4, 3, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxvector_test_f, insert_move_tracker_move_and_copy) {
@@ -980,7 +1055,7 @@ TEST_F(hxvector_test_f, insert_move_tracker_move_and_copy) {
 	for(hxsize_t i = 0; i < elements.size(); ++i) {
 		EXPECT_EQ(elements[i].state(), hxtest_object_state::valid);
 	}
-	EXPECT_TRUE(check_stats(6, 0, 0, 3, 2, 1, 0, 1, 0, 0));
+	EXPECT_TRUE(check_stats(6, 0, 3, 2, 1, 0, 1, 0, 0, 0));
 }
 
 TEST_F(hxvector_test_f, insert_at_end_is_push_back) {
@@ -995,7 +1070,7 @@ TEST_F(hxvector_test_f, insert_at_end_is_push_back) {
 		EXPECT_EQ(v[0].state(), hxtest_object_state::valid);
 		EXPECT_EQ(v[1].state(), hxtest_object_state::valid);
 	}
-	EXPECT_TRUE(check_stats(4, 4, 0, 3, 0, 1, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(4, 0, 3, 0, 1, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxvector_test_f, insert_at_begin_shifts_all_elements) {
@@ -1012,7 +1087,7 @@ TEST_F(hxvector_test_f, insert_at_begin_shifts_all_elements) {
 		EXPECT_EQ(v[2].value(), 3);
 		EXPECT_EQ(v[3].value(), 4);
 	}
-	EXPECT_TRUE(check_stats(5, 5, 0, 4, 0, 1, 0, 3, 0, 0));
+	EXPECT_TRUE(check_stats(5, 0, 4, 0, 1, 0, 3, 0, 0, 0));
 }
 
 TEST_F(hxvector_test_f, insert_at_middle_preserves_neighbors) {
@@ -1029,7 +1104,7 @@ TEST_F(hxvector_test_f, insert_at_middle_preserves_neighbors) {
 		EXPECT_EQ(v[2].value(), 3);
 		EXPECT_EQ(v[3].value(), 4);
 	}
-	EXPECT_TRUE(check_stats(5, 5, 0, 4, 0, 1, 0, 2, 0, 0));
+	EXPECT_TRUE(check_stats(5, 0, 4, 0, 1, 0, 2, 0, 0, 0));
 }
 
 TEST_F(hxvector_test_f, emplace_back_move_tracker_forwarding) {
@@ -1048,7 +1123,7 @@ TEST_F(hxvector_test_f, emplace_back_move_tracker_forwarding) {
 	EXPECT_EQ(elements[1].state(), hxtest_object_state::valid);
 	EXPECT_EQ(move_source.state(), hxtest_object_state::moved);
 	EXPECT_EQ(elements.size(), 2);
-	EXPECT_TRUE(check_stats(4, 0, 0, 2, 1, 1, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(4, 0, 2, 1, 1, 0, 0, 0, 0, 0));
 }
 
 TEST(hxvector_test, cbegin_cend) {
@@ -1095,7 +1170,7 @@ TEST_F(hxvector_test_f, plus_equals) {
 		EXPECT_FALSE(hxkey_equal(objs, objs3));
 		EXPECT_TRUE(hxkey_less(objs3, objs));
 	}
-	EXPECT_TRUE(check_stats(22, 22, 0, 14, 4, 4, 0, 0, 30, 1));
+	EXPECT_TRUE(check_stats(22, 0, 14, 4, 4, 0, 0, 30, 1, 0));
 }
 
 TEST_F(hxvector_test_f, erase) {
@@ -1110,7 +1185,7 @@ TEST_F(hxvector_test_f, erase) {
 		EXPECT_TRUE(hxkey_equal(objs[0], 3));
 		EXPECT_EQ(objs.size(), 1);
 	}
-	EXPECT_TRUE(check_stats(8, 8, 0, 8, 0, 0, 0, 6, 3, 0));
+	EXPECT_TRUE(check_stats(8, 0, 8, 0, 0, 0, 6, 3, 0, 0));
 }
 
 TEST_F(hxvector_test_f, insert) {
@@ -1132,7 +1207,7 @@ TEST_F(hxvector_test_f, insert) {
 			EXPECT_EQ(objs[i].state(), hxtest_object_state::valid);
 		}
 	}
-	EXPECT_TRUE(check_stats(18, 18, 0, 13, 0, 5, 0, 4, 8, 0));
+	EXPECT_TRUE(check_stats(18, 0, 13, 0, 5, 0, 4, 8, 0, 0));
 }
 #endif
 
@@ -1147,7 +1222,7 @@ TEST_F(hxvector_test_f, erase_last_element_by_pointer) {
 		EXPECT_EQ(v.size(), 2);
 		EXPECT_EQ(v[1].value(), 2);
 	}
-	EXPECT_TRUE(check_stats(3, 3, 0, 3, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(3, 0, 3, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxvector_test_f, erase_first_element_shifts_remainder) {
@@ -1162,7 +1237,7 @@ TEST_F(hxvector_test_f, erase_first_element_shifts_remainder) {
 		EXPECT_EQ(v[0].value(), 20);
 		EXPECT_EQ(v[1].value(), 30);
 	}
-	EXPECT_TRUE(check_stats(3, 3, 0, 3, 0, 0, 0, 2, 0, 0));
+	EXPECT_TRUE(check_stats(3, 0, 3, 0, 0, 0, 2, 0, 0, 0));
 }
 
 TEST_F(hxvector_test_f, erase_unordered_non_last_moves_end) {
@@ -1177,7 +1252,7 @@ TEST_F(hxvector_test_f, erase_unordered_non_last_moves_end) {
 		EXPECT_EQ(v[0].value(), 3);
 		EXPECT_EQ(v[1].value(), 2);
 	}
-	EXPECT_TRUE(check_stats(3, 3, 0, 3, 0, 0, 0, 1, 0, 0));
+	EXPECT_TRUE(check_stats(3, 0, 3, 0, 0, 0, 1, 0, 0, 0));
 }
 
 TEST_F(hxvector_test_f, erase_unordered_last_element_no_swap) {
@@ -1190,44 +1265,44 @@ TEST_F(hxvector_test_f, erase_unordered_last_element_no_swap) {
 		EXPECT_EQ(v.size(), 1);
 		EXPECT_EQ(v[0].value(), 5);
 	}
-	EXPECT_TRUE(check_stats(2, 2, 0, 2, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(2, 0, 2, 0, 0, 0, 0, 0, 0, 0));
 }
 
 #if HX_CPLUSPLUS >= 202002L
-TEST(hxvector_test, less_equal_vectors_not_less) {
+TEST(hxvector_test, operator_less_equal_vectors_not_less) {
 	static const int vals[] = { 1, 2, 3 };
 	const hxvector<int, 3> a(hxmake_range(vals));
 	const hxvector<int, 3> b(hxmake_range(vals));
-	EXPECT_FALSE(a.less(b));
-	EXPECT_FALSE(b.less(a));
+	EXPECT_FALSE(a < b);
+	EXPECT_FALSE(b < a);
 }
 #endif
 
-TEST(hxvector_test, less_shorter_prefix_is_less) {
+TEST(hxvector_test, operator_less_shorter_prefix_is_less) {
 	const hxvector<int, 2> a{ 1, 2 };
 	const hxvector<int, 3> b{ 1, 2, 3 };
-	EXPECT_TRUE(a.less(b));
-	EXPECT_FALSE(b.less(a));
+	EXPECT_TRUE(a < b);
+	EXPECT_FALSE(b < a);
 }
 
-TEST(hxvector_test, equal_different_sizes_not_equal) {
+TEST(hxvector_test, operator_equal_different_sizes_not_equal) {
 	const hxvector<int, 3> a{1, 2};
 	const hxvector<int, 3> b{1};
-	EXPECT_FALSE(a.equal(b));
+	EXPECT_FALSE(a == b);
 }
 
-TEST(hxvector_test, equal_differs_at_last_element) {
+TEST(hxvector_test, operator_equal_differs_at_last_element) {
 	const hxvector<int, 3> a{ 1, 2, 3 };
 	const hxvector<int, 3> b{ 1, 2, 4 };
-	EXPECT_FALSE(a.equal(b));
+	EXPECT_FALSE(a == b);
 }
 
 #if HX_CPLUSPLUS >= 202002L
-TEST(hxvector_test, equal_same_content_returns_true) {
+TEST(hxvector_test, operator_equal_same_content_returns_true) {
 	static const int vals[] = { 5, 10, 15 };
 	const hxvector<int, 3> a(hxmake_range(vals));
 	const hxvector<int, 3> b(hxmake_range(vals));
-	EXPECT_TRUE(a.equal(b));
+	EXPECT_TRUE(a == b);
 }
 #endif
 

@@ -32,6 +32,7 @@ hxtest_object_fixture::hxtest_object_fixture(void) :
 		m_equal_to(0),
 		m_less_than(0),
 		m_value_construct(0),
+		m_three_way(0),
 		m_check_stats_called(false),
 		m_next_ticket(100u) {
 	hxassertf(hxs_object_current == hxnull, "sys_err");
@@ -44,11 +45,9 @@ hxtest_object_fixture::~hxtest_object_fixture(void) {
 	hxs_object_current = hxnull;
 }
 
-bool hxtest_object_fixture::check_stats(int constructed, int destructed,
-		int default_construct, int value_construct,
-		int copy_construct, int move_construct,
-		int copy_assign, int move_assign,
-		int equal_to, int less_than) {
+bool hxtest_object_fixture::check_stats(int constructed, int default_construct, int value_construct,
+		int copy_construct, int move_construct, int copy_assign, int move_assign,
+		int equal_to, int less_than, int three_way) {
 	m_check_stats_called = true;
 	bool ok = true;
 	if(!hxs_check_stats) {
@@ -57,10 +56,6 @@ bool hxtest_object_fixture::check_stats(int constructed, int destructed,
 	// GCOVR_EXCL_START
 	if(m_constructed != constructed) {
 		hxlog_warning("constructed: expected %d found %d", constructed, m_constructed);
-		ok = false;
-	}
-	if(m_destructed != destructed) {
-		hxlog_warning("destructed: expected %d found %d", destructed, m_destructed);
 		ok = false;
 	}
 	if(m_copy_construct != copy_construct) {
@@ -97,6 +92,12 @@ bool hxtest_object_fixture::check_stats(int constructed, int destructed,
 			value_construct, m_value_construct);
 		ok = false;
 	}
+	if(m_three_way != three_way) {
+		hxlog_warning("three_way: expected %d found %d", three_way, m_three_way);
+		ok = false;
+	}
+	m_default_construct = m_value_construct = m_copy_construct = m_move_construct =
+		m_copy_assign = m_move_assign = m_equal_to = m_less_than = m_three_way = 0;
 	return ok;
 	// GCOVR_EXCL_STOP
 }
@@ -217,6 +218,22 @@ bool hxtest_object::operator<(const hxtest_object& x) const {
 	return this->value() < x.value();
 }
 
+#if HX_CPLUSPLUS >= 202002L
+int32_t hxtest_object::operator<=>(const hxtest_object& x) const {
+	hxassert_always(this->m_state == hxtest_object_state::valid, "bad_compare");
+	hxassert_always(x.m_state == hxtest_object_state::valid, "bad_compare");
+	++hxtest_object_fixture::get().m_three_way;
+	return this->value() - x.value();
+}
+#else
+int32_t hxtest_object::operator-(const hxtest_object& x) const {
+	hxassert_always(this->m_state == hxtest_object_state::valid, "bad_compare");
+	hxassert_always(x.m_state == hxtest_object_state::valid, "bad_compare");
+	++hxtest_object_fixture::get().m_three_way;
+	return this->value() - x.value();
+}
+#endif
+
 hxtest_object_state hxtest_object::state(void) const {
 	hxassert_always(this->m_state == hxtest_object_state::valid
 		|| this->m_state == hxtest_object_state::moved
@@ -256,18 +273,10 @@ hxtest_bidirectional_iterator_api_t& hxtest_bidirectional_iterator_api_t::operat
 	--m_pointer; return *this;
 }
 
-hxtest_bidirectional_iterator_api_t hxtest_bidirectional_iterator_api_t::operator--(int) {
-	hxtest_bidirectional_iterator_api_t it(*this); --m_pointer; return it;
-}
-
 // -- hxtest_rand_iterator_api_t -------------------------------------------------------
 
 hxtest_rand_iterator_api_t& hxtest_rand_iterator_api_t::operator--(void) {
 	--m_pointer; return *this;
-}
-
-hxtest_rand_iterator_api_t hxtest_rand_iterator_api_t::operator--(int) {
-	hxtest_rand_iterator_api_t it(*this); --m_pointer; return it;
 }
 
 hxtest_rand_iterator_api_t hxtest_rand_iterator_api_t::operator+(ptrdiff_t offset) const {

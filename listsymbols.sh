@@ -13,7 +13,7 @@ if [ ! -f build/hxtest ]; then
 	exit 2; # File not found.
 fi
 
-HX_USAGE_="usage: $0 [--verbose] [--] [destination-file]"
+HX_USAGE_="usage_error: $0 [--verbose] [--] [destination-file]"
 
 HX_VERBOSE_=0
 HX_DEST_FILE_=

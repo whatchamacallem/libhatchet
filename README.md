@@ -93,7 +93,7 @@ unused except when initializing system allocators.
   memory and 30% performance improvements overall from adding just a few RAII
   scopes. Complex applications can use an array of variable sized stacks. To use
   tools like heaptrack, disable the memory manager with
-  `-DHX_USE_MEMORY_MANAGER=0`. Leak tracking is provided.
+  `-DHX_USE_SLAB_ALLOCATOR=0`. Leak tracking is provided.
 
 - **Testing Framework**: A non-allocating, lighter, debuggable reimplementation
   of the core Google Test functionality.
@@ -120,9 +120,8 @@ unused except when initializing system allocators.
   reader provided.
 
 - **Profiling System**: Samples processor cycles to build a hierarchical
-  timeline capture compatible with Chrome's `chrome://tracing` viewer. Navigate
-  the capture with the W, A, S and D keys. Uncommon hardware may need one line
-  of assembly.
+  timeline capture compatible with Chrome Trace Event JSON. `speedscope` is
+  recommended.
 
 - **Task Queue**: An unopinionated task queue with priorities and a worker pool.
   An execution graph is also available as a layer on top.
@@ -139,7 +138,7 @@ unused except when initializing system allocators.
   `ptrdiff_t`, but could be made 32-bit on a 64-bit platform if desired.
 
 - **constexpr Ready**: C++11 `constexpr` is used where possible. Asserts, the
-  algorithms, `hxconstexpr_list`, `hxbitset` and `hxrandom` support `consteval`
+  algorithms, `hxlist_constexpr`, `hxbitset` and `hxrandom` support `consteval`
   in C++23.
 
 ## Documentation
@@ -211,20 +210,20 @@ are also available.
 
 - `libhatchet.h` is the entry point. It is also the header to use from C code.
   It provides the core macros, the assert family, memory management and feature
-  detection, and it pulls in `hxsettings.h` and `hxmemory_manager.h`, which
+  detection, and it pulls in `hxsettings.h` and `hxslab_allocator.h`, which
   cannot be included directly.
 - Choose an `HX_HARDENING_MODE` on the compile line. `hxassert` and
   `hxassertf` are active only at `DEBUG`, `hxassert_hard` at `STANDARD` and
   above, and `hxassert_always` in every mode. Null pointer checks only happen in
   `DEBUG`.
-- Log through `hxlog`, `hxlog_warning`, `hxlog_release` and `hxlog_console`.
+- Log through `hxlog_verbose`, `hxlog_warning`, `hxlog_console` and `hxlog_always`.
   They all route through `hxlog_handler`, which can be replaced.
 - `hxsettings.h` handles compiler detection and polyfills and documents the
   default for every compile-line option.
-- `hxmemory_manager.h` allocates by allocator ID. `hxsystem_allocator_heap` is
-  the normal heap, `hxsystem_allocator_permanent` is only freed at shutdown, and
-  `hxsystem_allocator_stack_0 + n` selects a temporary stack that resets when
-  the enclosing RAII `hxsystem_allocator_scope` closes. `hxmalloc_ext` takes an
+- `hxslab_allocator.h` allocates by allocator ID. `hxslab_allocator_heap` is
+  the normal heap, `hxslab_allocator_permanent` is only freed at shutdown, and
+  `hxslab_allocator_stack_0 + n` selects a temporary stack that resets when
+  the enclosing RAII `hxslab_allocator_scope` closes. `hxmalloc_ext` takes an
   explicit ID, while plain `hxmalloc` uses the current scope.
 - `hxutility.h` provides the metaprogramming basics: `hxmove`, `hxforward` and
   the type traits.
@@ -256,7 +255,7 @@ error values and returned together, instead of ad hoc error checking.
   Unlike `std::bitset` it exposes the underlying words via `data` and `bytes`.
   Shifts and bitwise operators are provided.
 - `hxlist` is an intrusive doubly linked XOR list at half the size of a
-  conventional one. `hxconstexpr_list` has the same interface but uses normal
+  conventional one. `hxlist_constexpr` has the same interface but uses normal
   pointers so it works in constexpr code. Nodes are owned through a
   configurable deleter, and subclasses of the node type may be stored
   heterogeneously. `extract`, `pop_front` and `pop_back` return an owning
@@ -284,8 +283,9 @@ error values and returned together, instead of ad hoc error checking.
   owning pointer with a monadic `and_then` and a deleter that may decline
   deletion, e.g. `hxdo_not_delete`.
 - Every keyed container and sort compares keys through the free functions
-  `hxkey_equal`, `hxkey_less` and `hxkey_hash` in `hxkey.hpp`. Overload them for
-  custom key types. The defaults require only `==` and `<`.
+  `hxkey_equal`, `hxkey_less`, `hxkey_three_way` and `hxkey_hash` in
+  `hxkey.hpp`. `char*` is treated as an unowned UTF-8 object. `hxpair.hpp`
+  provides a pair of public fields that works as a key.
 - Containers with dynamic capacity move and `hxswap` in O(1) without touching
   elements.
 
@@ -308,9 +308,9 @@ Differences from the standard versions are listed.
 - All of `hxexpected`, `hxptr`, `hxref` and `hxvector` should be able to
   masquerade as a pointer. Although ranges are preferred and support for
   `add_range` is near universal.
-- Every comparison routes through the `hxkey_less` and `hxkey_equal` free
-  functions or an explicit callable, so custom key types overload two free
-  functions once instead of passing comparators everywhere.
+- Every comparison routes through the `hxkey_less`, `hxkey_equal` and
+  `hxkey_three_way` free functions or an explicit callable, so custom key types
+  overload the free functions once instead of passing comparators everywhere.
 - For scalar keys up to 32 bits, `hxradix_sort` sorts in O(n) time. Its
   implementation is in `src/hxradix_sort.cpp`. It sorts
   `hxradix_sort_key<key_t, value_t>` pairs and handles signed and `float`

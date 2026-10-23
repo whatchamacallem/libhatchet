@@ -11,15 +11,82 @@
 HX_INL_BEGIN_
 
 template<hxdeque_concept_ T_, hxsize_t capacity_>
+hxinline hxattr_flatten typename hxdeque<T_, capacity_>::const_iterator
+hxdeque<T_, capacity_>::const_iterator::operator+(hxsize_t n_) const {
+	return const_iterator(m_deque_, m_index_ + n_);
+}
+
+template<hxdeque_concept_ T_, hxsize_t capacity_>
+hxinline hxattr_flatten typename hxdeque<T_, capacity_>::const_iterator
+hxdeque<T_, capacity_>::const_iterator::operator-(hxsize_t n_) const {
+	return const_iterator(m_deque_, m_index_ - n_);
+}
+
+template<hxdeque_concept_ T_, hxsize_t capacity_>
+hxinline hxattr_flatten bool hxdeque<T_, capacity_>::const_iterator::operator==(
+		const const_iterator& x_) const {
+	return m_index_ == x_.m_index_;
+}
+
+template<hxdeque_concept_ T_, hxsize_t capacity_>
+hxinline hxattr_flatten bool hxdeque<T_, capacity_>::const_iterator::operator<(
+		const const_iterator& x_) const {
+	return m_index_ < x_.m_index_;
+}
+
+template<hxdeque_concept_ T_, hxsize_t capacity_>
+hxinline hxattr_flatten hxdeque<T_, capacity_>::const_iterator::const_iterator(
+		const hxdeque* deque_, hxsize_t index_)
+	: m_deque_(deque_), m_index_(index_) { }
+
+template<hxdeque_concept_ T_, hxsize_t capacity_>
+hxinline hxattr_flatten T_& hxdeque<T_, capacity_>::iterator::operator*(void) const {
+	return (*const_cast<hxdeque*>(this->m_deque_))[this->m_index_];
+}
+
+template<hxdeque_concept_ T_, hxsize_t capacity_>
+hxinline hxattr_flatten typename hxdeque<T_, capacity_>::iterator
+hxdeque<T_, capacity_>::iterator::operator+(hxsize_t n_) const {
+	return iterator(const_cast<hxdeque*>(this->m_deque_), this->m_index_ + n_);
+}
+
+template<hxdeque_concept_ T_, hxsize_t capacity_>
+hxinline hxattr_flatten typename hxdeque<T_, capacity_>::iterator
+hxdeque<T_, capacity_>::iterator::operator-(hxsize_t n_) const {
+	return iterator(const_cast<hxdeque*>(this->m_deque_), this->m_index_ - n_);
+}
+
+template<hxdeque_concept_ T_, hxsize_t capacity_>
 hxinline hxattr_flatten hxdeque<T_, capacity_>::hxdeque(hxsize_t dynamic_capacity_)
 	: m_head_(0u), m_tail_(0u)
 {
 	static_assert(capacity_ == 0 || (capacity_ & (capacity_ - 1)) == 0,
-		"bad_capacity need pow2");
+		"bad_capacity not pow2");
 	hxassert_hard(dynamic_capacity_ == 0 || (dynamic_capacity_ & (dynamic_capacity_ - 1)) == 0,
-		"bad_capacity need pow2");
+		"bad_capacity not pow2");
 	hxif_constexpr(capacity_ == hxallocator_dynamic_capacity) {
 		this->reserve_storage(dynamic_capacity_);
+	}
+}
+
+template<hxdeque_concept_ T_, hxsize_t capacity_>
+template<typename other_value_t_>
+hxinline hxattr_flatten hxdeque<T_, capacity_>::hxdeque(
+		std::initializer_list<other_value_t_> x_) noexcept
+	: m_head_(0u), m_tail_(0u)
+{
+	hxif_constexpr(capacity_ == hxallocator_dynamic_capacity) {
+		hxassert_hard((static_cast<size_t>(x_.size())
+				& (static_cast<size_t>(x_.size()) - 1u)) == 0u,
+			"bad_capacity not pow2");
+		this->reserve_storage(static_cast<hxsize_t>(x_.size()));
+	}
+	else {
+		hxassert_hard(static_cast<hxsize_t>(x_.size()) <= capacity_, "bad_capacity not pow2");
+	}
+	const other_value_t_* hxrestrict src_ = x_.begin();
+	for(const other_value_t_*const end_ = x_.end(); src_ != end_; ++src_) {
+		this->push_back(*src_);
 	}
 }
 
@@ -41,30 +108,34 @@ hxinline hxattr_flatten T_& hxdeque<T_, capacity_>::operator[](hxsize_t index_) 
 }
 
 template<hxdeque_concept_ T_, hxsize_t capacity_>
-hxinline hxattr_flatten bool hxdeque<T_, capacity_>::operator==(const hxdeque& x_) const {
+template<hxsize_t capacity_x_>
+hxinline hxattr_flatten bool hxdeque<T_, capacity_>::operator==(
+		const hxdeque<T_, capacity_x_>& x_) const {
 	return hxequal_range(*this, x_);
 }
 
+#if HX_CPLUSPLUS < 202002L
 template<hxdeque_concept_ T_, hxsize_t capacity_>
-hxinline hxattr_flatten bool hxdeque<T_, capacity_>::operator<(const hxdeque& x_) const {
+template<hxsize_t capacity_x_>
+hxinline hxattr_flatten bool hxdeque<T_, capacity_>::operator!=(
+		const hxdeque<T_, capacity_x_>& x_) const {
+	return !(*this == x_);
+}
+#endif
+
+template<hxdeque_concept_ T_, hxsize_t capacity_>
+template<hxsize_t capacity_x_>
+hxinline hxattr_flatten bool hxdeque<T_, capacity_>::operator<(
+		const hxdeque<T_, capacity_x_>& x_) const {
 	return hxless_range(*this, x_);
 }
 
 template<hxdeque_concept_ T_, hxsize_t capacity_>
 template<hxrange_concept_ range_t_>
-hxinline hxattr_flatten void hxdeque<T_, capacity_>::add_range(range_t_& range_) noexcept {
-	hxrestrict_t<decltype(range_.begin())> it_(range_.begin());
-	for(const auto end_ = range_.end(); it_ != end_; ++it_) {
-		this->push_back(*it_);
-	}
-}
-
-template<hxdeque_concept_ T_, hxsize_t capacity_>
-template<hxrange_concept_ range_t_, hxenable_if_t<!hxis_lvalue_reference<range_t_>(), int> >
 hxinline hxattr_flatten void hxdeque<T_, capacity_>::add_range(range_t_&& range_) noexcept {
 	hxrestrict_t<decltype(range_.begin())> it_(range_.begin());
 	for(const auto end_ = range_.end(); it_ != end_; ++it_) {
-		this->push_back(hxmove(*it_));
+		this->push_back(hxforward_like<range_t_>(*it_));
 	}
 }
 
@@ -101,18 +172,50 @@ hxinline hxattr_flatten void hxdeque<T_, capacity_>::clear(void) noexcept {
 template<hxdeque_concept_ T_, hxsize_t capacity_>
 template<typename... args_t_>
 hxinline hxattr_flatten void hxdeque<T_, capacity_>::emplace_back(args_t_&&... args_) noexcept {
-	this->push_back(hxforward<args_t_>(args_)...);
+	hxassert_hard(m_tail_ - m_head_ < static_cast<size_t>(this->capacity()), "deque_full");
+	const size_t mask_ = static_cast<size_t>(this->capacity()) - 1u;
+	T_* const slot_ = this->data() + (m_tail_ & mask_);
+	++m_tail_;
+	::new(slot_) T_(hxforward<args_t_>(args_)...);
 }
 
 template<hxdeque_concept_ T_, hxsize_t capacity_>
 template<typename... args_t_>
 hxinline hxattr_flatten void hxdeque<T_, capacity_>::emplace_front(args_t_&&... args_) noexcept {
-	this->push_front(hxforward<args_t_>(args_)...);
+	hxassert_hard(m_tail_ - m_head_ < static_cast<size_t>(this->capacity()), "deque_full");
+	const size_t mask_ = static_cast<size_t>(this->capacity()) - 1u;
+	--m_head_;
+	T_* const slot_ = this->data() + (m_head_ & mask_);
+	::new(slot_) T_(hxforward<args_t_>(args_)...);
 }
 
 template<hxdeque_concept_ T_, hxsize_t capacity_>
 hxinline hxattr_flatten bool hxdeque<T_, capacity_>::empty(void) const {
 	return m_tail_ == m_head_;
+}
+
+template<hxdeque_concept_ T_, hxsize_t capacity_>
+hxinline hxattr_flatten typename hxdeque<T_, capacity_>::const_iterator
+hxdeque<T_, capacity_>::find(const T_& value_) const {
+	const const_iterator end_ = this->end();
+	for(const_iterator it_ = this->begin(); it_ != end_; ++it_) {
+		if(hxkey_equal(*it_, value_)) {
+			return it_;
+		}
+	}
+	return end_;
+}
+
+template<hxdeque_concept_ T_, hxsize_t capacity_>
+hxinline hxattr_flatten typename hxdeque<T_, capacity_>::iterator
+hxdeque<T_, capacity_>::find(const T_& value_) {
+	const iterator end_ = this->end();
+	for(iterator it_ = this->begin(); it_ != end_; ++it_) {
+		if(hxkey_equal(*it_, value_)) {
+			return it_;
+		}
+	}
+	return end_;
 }
 
 template<hxdeque_concept_ T_, hxsize_t capacity_>
@@ -151,36 +254,44 @@ hxinline hxattr_flatten void hxdeque<T_, capacity_>::pop_front(void) noexcept {
 }
 
 template<hxdeque_concept_ T_, hxsize_t capacity_>
-template<typename... args_t_>
-hxinline hxattr_flatten void hxdeque<T_, capacity_>::push_back(args_t_&&... args_) noexcept {
+template<typename ref_t_>
+hxinline hxattr_flatten void hxdeque<T_, capacity_>::push_back(ref_t_&& x_) noexcept {
 	hxassert_hard(m_tail_ - m_head_ < static_cast<size_t>(this->capacity()), "deque_full");
 	const size_t mask_ = static_cast<size_t>(this->capacity()) - 1u;
 	T_* const slot_ = this->data() + (m_tail_ & mask_);
 	++m_tail_;
-	::new(slot_) T_(hxforward<args_t_>(args_)...);
+	::new(slot_) T_(hxforward<ref_t_>(x_));
 }
 
 template<hxdeque_concept_ T_, hxsize_t capacity_>
-template<typename... args_t_>
-hxinline hxattr_flatten void hxdeque<T_, capacity_>::push_front(args_t_&&... args_) noexcept {
+template<typename ref_t_>
+hxinline hxattr_flatten void hxdeque<T_, capacity_>::push_front(ref_t_&& x_) noexcept {
 	hxassert_hard(m_tail_ - m_head_ < static_cast<size_t>(this->capacity()), "deque_full");
 	const size_t mask_ = static_cast<size_t>(this->capacity()) - 1u;
 	--m_head_;
 	T_* const slot_ = this->data() + (m_head_ & mask_);
-	::new(slot_) T_(hxforward<args_t_>(args_)...);
+	::new(slot_) T_(hxforward<ref_t_>(x_));
 }
 
 template<hxdeque_concept_ T_, hxsize_t capacity_>
-hxinline hxattr_flatten void hxdeque<T_, capacity_>::reserve(hxsize_t dynamic_capacity_) {
-	hxassert_hard(dynamic_capacity_ > hxallocator_dynamic_capacity
-		&& (dynamic_capacity_ & (dynamic_capacity_ - 1)) == 0,
-		"bad_capacity needs pow2");
-	this->reserve_storage(dynamic_capacity_);
+hxinline hxattr_flatten void hxdeque<T_, capacity_>::reserve(hxsize_t size_,
+		hxslab_allocator_t allocator_, hxalignment_t alignment_) {
+	hxassert_hard(size_ > hxallocator_dynamic_capacity
+		&& (size_ & (size_ - 1)) == 0,
+		"bad_capacity not pow2");
+	this->reserve_storage(size_, allocator_, alignment_);
 }
 
 template<hxdeque_concept_ T_, hxsize_t capacity_>
 hxinline hxattr_flatten hxsize_t hxdeque<T_, capacity_>::size(void) const {
 	return static_cast<hxsize_t>(m_tail_ - m_head_);
+}
+
+template<hxdeque_concept_ T_, hxsize_t capacity_>
+hxinline hxattr_flatten void hxdeque<T_, capacity_>::swap(hxdeque& x_) noexcept {
+	static_assert(capacity_ == hxallocator_dynamic_capacity,
+		"Dynamic capacity required for hxdeque::swap");
+	hxswap_memcpy(*this, x_);
 }
 
 HX_INL_END_

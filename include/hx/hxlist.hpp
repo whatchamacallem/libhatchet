@@ -5,7 +5,7 @@
 
 /// \file
 /// An embedded doubly linked list with intrusive node linkage. This is the same
-/// as `hxconstexpr_list` except that it does not work with `constexpr` as it
+/// as `hxlist_constexpr` except that it does not work with `constexpr` as it
 /// uses pointer arithmetic to save one pointer per-node.
 
 #include "libhatchet.h"
@@ -50,10 +50,7 @@ public:
 
 	/// Assigns nothing. List linkage of either node is not affected.
 	/// - `x` : The other node.
-	hxlist_node& operator=(const hxlist_node& x_) {
-		hxassertf(this != &x_, "self_assignment"); (void)x_;
-		return *this;
-	}
+	hxlist_node& operator=(const hxlist_node& x_);
 
 private:
 	/// \cond HIDDEN
@@ -89,7 +86,7 @@ private:
 
 /// `hxlist` - An intrusive doubly linked list that takes ownership of nodes via
 /// a `deleter_t` callable, defaulting to `hxdefault_delete`. This is the same
-/// as `hxconstexpr_list` except that it does not work with `constexpr` as it
+/// as `hxlist_constexpr` except that it does not work with `constexpr` as it
 /// uses pointer arithmetic to save one pointer per-node. `T` must derive from
 /// `hxlist_node`. The destructor calls `clear()` which invokes the deleter on
 /// all remaining nodes. Subclasses of `T` may be inserted heterogeneously.
@@ -125,11 +122,7 @@ public:
 	class const_iterator {
 	public:
 		/// Constructs an iterator that must not be incremented or dereferenced.
-		const_iterator(void) : m_prev_(hxnull), m_current_node_(hxnull)
-#if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
-			, m_sentinel_(hxnull)
-#endif
-		{ }
+		const_iterator(void);
 		/// Advances to the next node and returns this iterator.
 		const_iterator& operator++(void);
 		/// Post-increment: advances to the next node and returns the prior
@@ -140,35 +133,22 @@ public:
 		/// Post-decrement: retreats to the previous node and returns the prior
 		/// position.
 		const_iterator operator--(int);
-		/// Returns `true` if both iterators point to the same node.
+		/// Returns `true` if this iterator points to the same node as `x`.
 		/// - `x` : The iterator to compare against.
 		bool operator==(const const_iterator& x_) const;
-#if HX_CPLUSPLUS < 202002L // C++20 defaults != from ==.
+#if HX_CPLUSPLUS < 202002L
 		/// Returns `true` if the iterators point to different nodes.
 		/// - `x` : The iterator to compare against.
-		bool operator!=(const const_iterator& x_) const { return !(*this == x_); }
+		hxattr_nodiscard bool operator!=(const const_iterator& x_) const { return !(*this == x_); }
 #endif
 		/// Returns a const reference to the current node.
-		const T_& operator*(void) const {
-			hxassertf(this->m_current_node_ != hxnull
-				&& this->m_current_node_ != this->m_sentinel_, "bad_iter");
-			return *static_cast<const T_*>(m_current_node_);
-		}
+		const T_& operator*(void) const;
 		/// Returns a const pointer to the current node.
-		const T_* operator->(void) const {
-			hxassertf(this->m_current_node_ != hxnull
-				&& this->m_current_node_ != this->m_sentinel_, "bad_iter");
-			return static_cast<const T_*>(m_current_node_);
-		}
+		const T_* operator->(void) const;
 	protected:
 		/// \cond HIDDEN
 		template<hxlist_concept_, typename> friend class hxlist;
-		const_iterator(hxlist_node* prev_, hxlist_node* current_, const hxlist_node* sentinel_)
-			: m_prev_(prev_), m_current_node_(current_)
-#if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
-			, m_sentinel_(sentinel_)
-#endif
-		{ (void)sentinel_; }
+		const_iterator(hxlist_node* prev_, hxlist_node* current_, const hxlist_node* sentinel_);
 		hxlist_node* m_prev_;
 		hxlist_node* m_current_node_;
 #if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
@@ -193,22 +173,13 @@ public:
 		/// position.
 		iterator operator--(int);
 		/// Returns a mutable reference to the current node.
-		T_& operator*(void) const {
-			hxassertf(this->m_current_node_ != hxnull
-				&& this->m_current_node_ != this->m_sentinel_, "bad_iter");
-			return *static_cast<T_*>(this->m_current_node_);
-		}
+		T_& operator*(void) const;
 		/// Returns a mutable pointer to the current node.
-		T_* operator->(void) const {
-			hxassertf(this->m_current_node_ != hxnull
-				&& this->m_current_node_ != this->m_sentinel_, "bad_iter");
-			return static_cast<T_*>(this->m_current_node_);
-		}
+		T_* operator->(void) const;
 	private:
 		/// \cond HIDDEN
 		template<hxlist_concept_, typename> friend class hxlist;
-		iterator(hxlist_node* prev_, hxlist_node* current_, const hxlist_node* sentinel_)
-			: const_iterator(prev_, current_, sentinel_) { }
+		iterator(hxlist_node* prev_, hxlist_node* current_, const hxlist_node* sentinel_);
 		iterator(const const_iterator& x_) : const_iterator(x_) { }
 		/// \endcond
 	};
@@ -221,15 +192,24 @@ public:
 	/// every remaining node.
 	~hxlist(void) { this->clear(this->deleter()); }
 
-	/// Returns `true` if this list and `x` contain the same nodes in the same
-	/// order, using `T`'s `operator==`.
+	/// Returns `true` if this list contains the same nodes as `x` in the same
+	/// order using `hxkey_equal`.
 	/// - `x` : The list to compare against.
-	hxattr_nodiscard bool operator==(const hxlist& x_) const;
+	template<typename deleter_x_>
+	hxattr_nodiscard bool operator==(const hxlist<T_, deleter_x_>& x_) const;
 
-	/// Returns `true` if this list compares less than `x` lexicographically,
-	/// using `T`'s `operator==` and `operator<`.
+#if HX_CPLUSPLUS < 202002L
+	/// Returns `true` if `x` contains different nodes or a different order.
 	/// - `x` : The list to compare against.
-	hxattr_nodiscard bool operator<(const hxlist& x_) const;
+	template<typename deleter_x_>
+	hxattr_nodiscard bool operator!=(const hxlist<T_, deleter_x_>& x_) const;
+#endif
+
+	/// Returns `true` if this list compares less than `x` lexicographically
+	/// using `hxkey_equal` and `hxkey_less`. Sorts `[1]` before `[1, 2]`.
+	/// - `x` : The list to compare against.
+	template<typename deleter_x_>
+	hxattr_nodiscard bool operator<(const hxlist<T_, deleter_x_>& x_) const;
 
 	/// Links each `T` from a temporary range into this list by address, exactly
 	/// as `push_back(T*)` would. The range's nodes are threaded into the list

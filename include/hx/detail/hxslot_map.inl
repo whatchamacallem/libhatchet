@@ -89,7 +89,7 @@ template<typename... args_t_>
 hxinline hxattr_flatten hxhandle_t hxslot_map<T_, table_size_bits_>::emplace(
 		args_t_&&... args_) noexcept {
 	const uint32_t value_ = m_size_;
-	hxassert_hard(value_ != m_mask_.get_mask_(), "table_full %#x", m_mask_.get_mask_());
+	hxassert_hard(value_ < m_mask_.get_mask_(), "table_full %#x", m_mask_.get_mask_());
 	const slot_t_* const hxrestrict slots_ = m_slots_.data();
 	const hxhandle_t handle_ = slots_[slots_[value_].m_backref_].m_handle_;
 	m_size_ = value_ + 1u;

@@ -23,7 +23,7 @@ static_assert(hxtest_consteval_delete_deletes_and_is_true(),
 } // namespace
 #endif // HX_CPLUSPLUS >= 202302L
 
-TEST(hxmemory_manager_test, hxnew_forward_move_count_is_exactly_one) {
+TEST(hxslab_allocator_test, hxnew_forward_move_count_is_exactly_one) {
 	struct hxtest_count_moves {
 		explicit hxtest_count_moves(int v) : value(v), move_count(0) { }
 		hxtest_count_moves(hxtest_count_moves&& x) noexcept
@@ -33,21 +33,21 @@ TEST(hxmemory_manager_test, hxnew_forward_move_count_is_exactly_one) {
 		int move_count;
 	};
 	hxtest_count_moves src(7);
-	hxtest_count_moves* p = hxnew<hxtest_count_moves, hxsystem_allocator_heap>(hxmove(src));
+	hxtest_count_moves* p = hxnew<hxtest_count_moves, hxslab_allocator_heap>(hxmove(src));
 	ASSERT_EQ(p->move_count, 1);
 	ASSERT_NE(p->move_count, 0);
 	ASSERT_EQ(p->value, 7);
 	hxdelete(p);
 }
 
-TEST(hxmemory_manager_test, hxdelete_null_is_no_op) {
+TEST(hxslab_allocator_test, hxdelete_null_is_no_op) {
 	int* p = hxnull;
 	hxdelete(p);
 	SUCCEED();
 }
 
 #if (HX_PROVIDE_NEW_DELETE) == 1
-TEST(hxmemory_manager_test, new_delete) {
+TEST(hxslab_allocator_test, new_delete) {
 	unsigned int* t = new unsigned int(3);
 	hxassert_always(t, "new");
 	*t = 0xdeadbeefu;
@@ -66,43 +66,43 @@ TEST(hxmemory_manager_test, new_delete) {
 }
 #endif
 
-TEST(hxmemory_manager_test, hxmalloc_allocator_alignment_args_heap) {
-#if HX_USE_MEMORY_MANAGER
-	void* aligned = hxmalloc(8u, hxsystem_allocator_heap, 64u);
+TEST(hxslab_allocator_test, hxmalloc_allocator_alignment_args_heap) {
+#if HX_USE_SLAB_ALLOCATOR
+	void* aligned = hxmalloc(8u, hxslab_allocator_heap, 64u);
 	hxassert_always(aligned, "hxmalloc");
 	EXPECT_EQ(reinterpret_cast<uintptr_t>(aligned) & 63u, 0u);
 	hxfree(aligned);
 #endif
 
-	void* defaulted = hxmalloc(8u, hxsystem_allocator_heap);
+	void* defaulted = hxmalloc(8u, hxslab_allocator_heap);
 	hxassert_always(defaulted, "hxmalloc");
 	EXPECT_EQ(reinterpret_cast<uintptr_t>(defaulted)
 		& (static_cast<uintptr_t>(hxalignment) - 1u), 0u);
 	hxfree(defaulted);
 }
 
-TEST(hxmemory_manager_test, hxfree_null_is_no_op) {
+TEST(hxslab_allocator_test, hxfree_null_is_no_op) {
 	hxfree(hxnull);
 	SUCCEED();
 }
 
-TEST(hxmemory_manager_test, hxmalloc_allocator_alignment_args_stack) {
-	const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
-#if HX_USE_MEMORY_MANAGER
-	void* aligned = hxmalloc(8u, hxsystem_allocator_stack_0, 64u);
+TEST(hxslab_allocator_test, hxmalloc_allocator_alignment_args_stack) {
+	const hxslab_allocator_scope temporary_stack_scope(hxslab_allocator_stack_0);
+#if HX_USE_SLAB_ALLOCATOR
+	void* aligned = hxmalloc(8u, hxslab_allocator_stack_0, 64u);
 	hxassert_always(aligned, "hxmalloc");
 	EXPECT_EQ(reinterpret_cast<uintptr_t>(aligned) & 63u, 0u);
 	hxfree(aligned);
 #endif
 
-	void* defaulted = hxmalloc(8u, hxsystem_allocator_stack_0);
+	void* defaulted = hxmalloc(8u, hxslab_allocator_stack_0);
 	hxassert_always(defaulted, "hxmalloc");
 	EXPECT_EQ(reinterpret_cast<uintptr_t>(defaulted)
 		& (static_cast<uintptr_t>(hxalignment) - 1u), 0u);
 	hxfree(defaulted);
 }
 
-TEST(hxmemory_manager_test, placement_new_array_returns_buffer) {
+TEST(hxslab_allocator_test, placement_new_array_returns_buffer) {
 	alignas(unsigned int) unsigned char buffer[4u * sizeof(unsigned int)];
 	unsigned int* p = static_cast<unsigned int*>(
 		operator new[](sizeof(buffer), static_cast<void*>(buffer)));
@@ -113,8 +113,8 @@ TEST(hxmemory_manager_test, placement_new_array_returns_buffer) {
 	EXPECT_EQ(p[3], 0xfeedface);
 }
 
-TEST(hxmemory_manager_test, bytes) {
-const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
+TEST(hxslab_allocator_test, bytes) {
+const hxslab_allocator_scope temporary_stack_scope(hxslab_allocator_stack_0);
 	hxlog_warning("EXPECTING_TEST_WARNINGS");
 	for(size_t i=10u; i != 0u; --i) {
 		void* p = hxmalloc(i);
@@ -124,56 +124,56 @@ const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0)
 	}
 }
 
-TEST(hxmemory_manager_test, bytes_single_byte) {
-const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
+TEST(hxslab_allocator_test, bytes_single_byte) {
+const hxslab_allocator_scope temporary_stack_scope(hxslab_allocator_stack_0);
 	void* p = hxmalloc(1u);
 	ASSERT_NE(p, hxnil);
 	::memset(p, 0x66, 1u);
 	hxfree(p);
 }
 
-TEST(hxmemory_manager_test, string_duplicate) {
-const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
+TEST(hxslab_allocator_test, string_duplicate) {
+const hxslab_allocator_scope temporary_stack_scope(hxslab_allocator_stack_0);
 	char* p = hxstring_duplicate("str");
 	ASSERT_NE(p, hxnil);
 	ASSERT_STREQ(p, "str");
 	hxfree(p);
 }
 
-TEST(hxmemory_manager_test, string_duplicate_empty) {
-const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
+TEST(hxslab_allocator_test, string_duplicate_empty) {
+const hxslab_allocator_scope temporary_stack_scope(hxslab_allocator_stack_0);
 	char* p = hxstring_duplicate("");
 	ASSERT_NE(p, hxnil);
 	ASSERT_STREQ(p, "");
 	hxfree(p);
 }
 
-TEST(hxmemory_manager_test, string_duplicate_single_char) {
-const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
+TEST(hxslab_allocator_test, string_duplicate_single_char) {
+const hxslab_allocator_scope temporary_stack_scope(hxslab_allocator_stack_0);
 	char* p = hxstring_duplicate("x");
 	ASSERT_NE(p, hxnil);
 	ASSERT_STREQ(p, "x");
 	hxfree(p);
 }
 
-TEST(hxmemory_manager_test, temp_overflow) {
+TEST(hxslab_allocator_test, temp_overflow) {
 	hxlog_warning("EXPECTING_TEST_WARNINGS");
 	const size_t temp_stack_size = 1u * HX_MIB;
-	void* p = hxmalloc_ext(temp_stack_size + 1, hxsystem_allocator_stack_0, 1u);
+	void* p = hxmalloc_ext(temp_stack_size + 1, hxslab_allocator_stack_0, 1u);
 	ASSERT_NE(p, hxnil);
 	hxfree(p);
 	// This time without alignment.
-	const hxsystem_allocator_scope temp(hxsystem_allocator_stack_0);
+	const hxslab_allocator_scope temp(hxslab_allocator_stack_0);
 	p = hxmalloc(temp_stack_size + 1);
 	ASSERT_NE(p, hxnil);
 	hxfree(p);
 }
 
-TEST(hxmemory_manager_test, additional_stacks_addressable) {
-	const hxsystem_allocator_t stack_1 = hxsystem_allocator_stack_0 + 1;
-	const hxsystem_allocator_t stack_2 = hxsystem_allocator_stack_0 + 2;
-	const hxsystem_allocator_scope scope_1(stack_1);
-	const hxsystem_allocator_scope scope_2(stack_2);
+TEST(hxslab_allocator_test, additional_stacks_addressable) {
+	const hxslab_allocator_t stack_1 = hxslab_allocator_stack_0 + 1;
+	const hxslab_allocator_t stack_2 = hxslab_allocator_stack_0 + 2;
+	const hxslab_allocator_scope scope_1(stack_1);
+	const hxslab_allocator_scope scope_2(stack_2);
 	void* p1 = hxmalloc_ext(64u, stack_1, hxalignment);
 	void* p2 = hxmalloc_ext(64u, stack_2, hxalignment);
 	ASSERT_NE(p1, hxnil);
@@ -185,23 +185,23 @@ TEST(hxmemory_manager_test, additional_stacks_addressable) {
 	hxfree(p2);
 }
 
-TEST(hxmemory_manager_test, additional_stacks_scope_current) {
-	const hxsystem_allocator_t stack_1 = hxsystem_allocator_stack_0 + 1;
-	const hxsystem_allocator_scope temporary_stack_scope(stack_1);
+TEST(hxslab_allocator_test, additional_stacks_scope_current) {
+	const hxslab_allocator_t stack_1 = hxslab_allocator_stack_0 + 1;
+	const hxslab_allocator_scope temporary_stack_scope(stack_1);
 	void* p = hxmalloc(128u);
 	ASSERT_NE(p, hxnil);
 	::memset(p, 0x66, 128u);
 	hxfree(p);
 }
 
-#if HX_USE_MEMORY_MANAGER
+#if HX_USE_SLAB_ALLOCATOR
 
-TEST(hxmemory_manager_test, additional_stacks_reset_on_scope_close) {
-	const hxsystem_allocator_t stack_1 = hxsystem_allocator_stack_0 + 1;
+TEST(hxslab_allocator_test, additional_stacks_reset_on_scope_close) {
+	const hxslab_allocator_t stack_1 = hxslab_allocator_stack_0 + 1;
 	size_t baseline_bytes = 0u;
 	size_t baseline_count = 0u;
 	{
-		const hxsystem_allocator_scope temporary_stack_scope(stack_1);
+		const hxslab_allocator_scope temporary_stack_scope(stack_1);
 		baseline_bytes = temporary_stack_scope.get_current_bytes_allocated();
 		baseline_count = temporary_stack_scope.get_current_allocation_count();
 		void* p = hxmalloc(16u);
@@ -210,30 +210,30 @@ TEST(hxmemory_manager_test, additional_stacks_reset_on_scope_close) {
 		ASSERT_GT(temporary_stack_scope.get_current_bytes_allocated(), baseline_bytes);
 		hxfree(p);
 	}
-	const hxsystem_allocator_scope temporary_stack_scope(stack_1);
+	const hxslab_allocator_scope temporary_stack_scope(stack_1);
 	ASSERT_EQ(temporary_stack_scope.get_current_allocation_count(), baseline_count);
 	ASSERT_EQ(temporary_stack_scope.get_current_bytes_allocated(), baseline_bytes);
 }
 
-TEST(hxmemory_manager_test, utilization_reports_outstanding_without_log) {
-	const hxsystem_allocator_t stack_1 = hxsystem_allocator_stack_0 + 1;
-	const hxsystem_allocator_scope temporary_stack_scope(stack_1);
+TEST(hxslab_allocator_test, utilization_reports_outstanding_without_log) {
+	const hxslab_allocator_t stack_1 = hxslab_allocator_stack_0 + 1;
+	const hxslab_allocator_scope temporary_stack_scope(stack_1);
 	void* p = hxmalloc(16u);
 	ASSERT_NE(p, hxnil);
-	const hxmemory_manager_stats stats = hxmemory_manager_utilization(true, false);
+	const hxslab_allocator_stats stats = hxslab_allocator_utilization(true, false);
 	ASSERT_GE(stats.allocations_outstanding, 1u);
 	hxfree(p);
 }
 
-TEST(hxmemory_manager_test, additional_stacks_are_independent) {
-	const hxsystem_allocator_t stack_1 = hxsystem_allocator_stack_0 + 1;
-	const hxsystem_allocator_t stack_2 = hxsystem_allocator_stack_0 + 2;
-	const hxsystem_allocator_scope scope_1(stack_1);
+TEST(hxslab_allocator_test, additional_stacks_are_independent) {
+	const hxslab_allocator_t stack_1 = hxslab_allocator_stack_0 + 1;
+	const hxslab_allocator_t stack_2 = hxslab_allocator_stack_0 + 2;
+	const hxslab_allocator_scope scope_1(stack_1);
 	void* p1 = hxmalloc(16u);
 	ASSERT_NE(p1, hxnil);
 	ASSERT_EQ(scope_1.get_current_allocation_count(), 1u);
 	{
-		const hxsystem_allocator_scope scope_2(stack_2);
+		const hxslab_allocator_scope scope_2(stack_2);
 		ASSERT_EQ(scope_2.get_current_allocation_count(), 0u);
 		void* p2 = hxmalloc(16u);
 		ASSERT_NE(p2, hxnil);
@@ -244,27 +244,27 @@ TEST(hxmemory_manager_test, additional_stacks_are_independent) {
 	hxfree(p1);
 }
 
-TEST(hxmemory_manager_test, free_permanent_without_flag_warns) {
+TEST(hxslab_allocator_test, free_permanent_without_flag_warns) {
 	hxlog_warning("EXPECTING_TEST_WARNINGS");
-	void* p = hxmalloc(16u, hxsystem_allocator_permanent);
+	void* p = hxmalloc(16u, hxslab_allocator_permanent);
 	ASSERT_NE(p, hxnil);
 	hxg_settings.deallocate_permanent = false;
 	hxfree(p);
 }
 
-class hxmemory_manager_test_f :
+class hxslab_allocator_test_f :
 	public testing::Test
 {
 public:
-	static void test_memory_allocator_normal(hxsystem_allocator_t id) {
+	static void test_memory_allocator_normal(hxslab_allocator_t id) {
 		uintptr_t start_count = 0;
 		uintptr_t start_bytes = 0;
 	{
-		const hxsystem_allocator_scope allocator_scope(id);
+		const hxslab_allocator_scope allocator_scope(id);
 			start_count = allocator_scope.get_initial_allocation_count();
 			start_bytes = allocator_scope.get_initial_bytes_allocated();
 			{
-				const hxsystem_allocator_scope gtest_spam_guard(hxsystem_allocator_heap);
+				const hxslab_allocator_scope gtest_spam_guard(hxslab_allocator_heap);
 				ASSERT_EQ(allocator_scope.get_current_allocation_count(), start_count);
 				ASSERT_EQ(allocator_scope.get_current_bytes_allocated(), start_bytes);
 			}
@@ -273,7 +273,7 @@ public:
 			::memset(ptr1, 0x33, 100);
 			::memset(ptr2, 0x33, 200);
 			{
-				const hxsystem_allocator_scope gtest_spam_guard(hxsystem_allocator_heap);
+				const hxslab_allocator_scope gtest_spam_guard(hxslab_allocator_heap);
 				ASSERT_EQ(allocator_scope.get_initial_allocation_count(), start_count);
 				ASSERT_EQ(allocator_scope.get_current_allocation_count(), 2u + start_count);
 				if(allocator_scope.get_current_bytes_allocated() != 0) {
@@ -289,9 +289,9 @@ public:
 			hxfree(ptr2);
 			hxg_settings.deallocate_permanent = false;
 		}
-		if(id != hxsystem_allocator_permanent) {
-			const hxsystem_allocator_scope allocator_scope(id);
-			const hxsystem_allocator_scope gtest_spam_guard(hxsystem_allocator_heap);
+		if(id != hxslab_allocator_permanent) {
+			const hxslab_allocator_scope allocator_scope(id);
+			const hxslab_allocator_scope gtest_spam_guard(hxslab_allocator_heap);
 			ASSERT_EQ(allocator_scope.get_initial_allocation_count(), start_count);
 			ASSERT_EQ(allocator_scope.get_initial_bytes_allocated(), start_bytes);
 		}
@@ -302,7 +302,7 @@ public:
 		{
 			const hxtest_skip_asserts skip(1);
 			{
-				const hxsystem_allocator_scope allocator_scope(hxsystem_allocator_stack_0);
+				const hxslab_allocator_scope allocator_scope(hxslab_allocator_stack_0);
 				ASSERT_EQ(0u, allocator_scope.get_initial_allocation_count());
 				ASSERT_EQ(0u, allocator_scope.get_initial_bytes_allocated());
 				ASSERT_EQ(0u, allocator_scope.get_current_allocation_count());
@@ -318,7 +318,7 @@ public:
 		{
 			const hxtest_skip_asserts skip(1);
 			{
-				const hxsystem_allocator_scope allocator_scope(hxsystem_allocator_stack_0);
+				const hxslab_allocator_scope allocator_scope(hxslab_allocator_stack_0);
 				ASSERT_EQ(allocator_scope.get_initial_allocation_count(), 1);
 				ASSERT_EQ(allocator_scope.get_initial_bytes_allocated(), 0);
 				hxfree(ptr2);
@@ -329,11 +329,11 @@ public:
 	}
 };
 
-TEST_F(hxmemory_manager_test_f, execute) {
-	for(size_t i = 0; i <= hxsystem_allocator_stack_0; ++i) {
-		test_memory_allocator_normal(static_cast<hxsystem_allocator_t>(i));
+TEST_F(hxslab_allocator_test_f, execute) {
+	for(size_t i = 0; i <= hxslab_allocator_stack_0; ++i) {
+		test_memory_allocator_normal(static_cast<hxslab_allocator_t>(i));
 	}
 	hxlog_warning("EXPECTING_TEST_FAILURE");
 	test_memory_allocator_leak();
 }
-#endif // HX_USE_MEMORY_MANAGER
+#endif // HX_USE_SLAB_ALLOCATOR

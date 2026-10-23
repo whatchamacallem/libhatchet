@@ -10,6 +10,10 @@
 #ifndef HX_DOXYGEN_PARSER
 HX_INL_BEGIN_
 
+hxinline bool hxtask_queue::record_t::operator<(const record_t& x_) const {
+	return this->priority < x_.priority;
+}
+
 template<typename callable_t_>
 hxinline hxattr_flatten bool hxtask_queue::all_of(callable_t_&& callable_) const noexcept {
 	hxtask_queue_lock_;

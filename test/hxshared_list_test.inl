@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-// This file is used for hxlist and hxconstexpr_list to show they have identical
+// This file is used for hxlist and hxlist_constexpr to show they have identical
 // APIs.
 
 namespace {
@@ -93,7 +93,7 @@ TEST_F(hxlist_test_f, push_back) {
 	}
 	EXPECT_EQ(expected, 4);
 	list.release_all();
-	EXPECT_TRUE(check_stats(6, 3, 0, 3, 3, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(6, 0, 3, 3, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxlist_test_f, operator_equal) {
@@ -111,7 +111,7 @@ TEST_F(hxlist_test_f, operator_equal) {
 	EXPECT_TRUE(a == b);
 	a.release_all();
 	b.release_all();
-	EXPECT_TRUE(check_stats(8, 4, 0, 4, 4, 0, 0, 0, 3, 0));
+	EXPECT_TRUE(check_stats(8, 0, 4, 4, 0, 0, 0, 3, 0, 0));
 }
 
 TEST_F(hxlist_test_f, operator_equal_detects_shared_prefix_length_mismatch) {
@@ -126,7 +126,7 @@ TEST_F(hxlist_test_f, operator_equal_detects_shared_prefix_length_mismatch) {
 	EXPECT_FALSE(b == a);
 	a.release_all();
 	b.release_all();
-	EXPECT_TRUE(check_stats(6, 3, 0, 3, 3, 0, 0, 0, 2, 0));
+	EXPECT_TRUE(check_stats(6, 0, 3, 3, 0, 0, 0, 2, 0, 0));
 }
 
 TEST_F(hxlist_test_f, operator_less) {
@@ -147,7 +147,34 @@ TEST_F(hxlist_test_f, operator_less) {
 	EXPECT_FALSE(b < a);
 	a.release_all();
 	b.release_all();
-	EXPECT_TRUE(check_stats(6, 3, 0, 3, 3, 0, 0, 0, 4, 0));
+	EXPECT_TRUE(check_stats(6, 0, 3, 3, 0, 0, 0, 4, 0, 0));
+}
+
+TEST_F(hxlist_test_f, operator_equal_and_operator_less_mixed_deleter) {
+	hxlist<hxtest_list_object_node_t> a;
+	hxlist<hxtest_list_object_node_t, hxdo_not_delete> b;
+	hxtest_list_object_node_t a1(hxtest_object(31)), a2(hxtest_object(32));
+	hxtest_list_object_node_t b1(hxtest_object(31)), b2(hxtest_object(32));
+	EXPECT_TRUE(a == b);
+	EXPECT_FALSE(a != b);
+	a.push_back(&a1);
+	EXPECT_FALSE(a == b);
+	EXPECT_TRUE(a != b);
+	EXPECT_FALSE(a < b);
+	EXPECT_TRUE(b < a);
+	b.push_back(&b1);
+	EXPECT_TRUE(a == b);
+	EXPECT_FALSE(a < b);
+	EXPECT_FALSE(b < a);
+	b.push_back(&b2);
+	EXPECT_TRUE(a < b);
+	EXPECT_FALSE(b < a);
+	a.push_back(&a2);
+	EXPECT_TRUE(a == b);
+	EXPECT_FALSE(a != b);
+	a.release_all();
+	b.release_all();
+	EXPECT_TRUE(check_stats(8, 0, 4, 4, 0, 0, 0, 9, 0, 0));
 }
 
 TEST_F(hxlist_test_f, operator_less_smaller_element_is_less) {
@@ -161,7 +188,7 @@ TEST_F(hxlist_test_f, operator_less_smaller_element_is_less) {
 	EXPECT_FALSE(b < a);
 	a.release_all();
 	b.release_all();
-	EXPECT_TRUE(check_stats(4, 2, 0, 2, 2, 0, 0, 0, 2, 2));
+	EXPECT_TRUE(check_stats(4, 0, 2, 2, 0, 0, 0, 2, 2, 0));
 }
 
 TEST(hxlist_test, front_and_back_const) {

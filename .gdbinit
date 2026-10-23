@@ -8,7 +8,7 @@ set debuginfod enabled off
 source gdb/hxallocator_printer.py
 source gdb/hxarray_printer.py
 source gdb/hxbitset_printer.py
-source gdb/hxconstexpr_list_printer.py
+source gdb/hxlist_constexpr_printer.py
 source gdb/hxdeque_printer.py
 source gdb/hxexpected_printer.py
 source gdb/hxflat_map_printer.py

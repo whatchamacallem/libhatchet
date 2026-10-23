@@ -34,9 +34,10 @@ public:
 		hxtask* task;
 		int priority;
 
-		/// Orders records by `priority` so the highest priority sorts last.
+		/// Returns true if this record has a lower `priority` than `x` so the
+		/// highest priority sorts last.
 		/// - `x` : The record to compare against.
-		bool operator<(const record_t& x_) const { return this->priority < x_.priority; }
+		bool operator<(const record_t& x_) const;
 
 #if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
 		const char* label;

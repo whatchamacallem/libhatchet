@@ -62,21 +62,28 @@ void hxinsertion_sort(iterator_t_ begin_, iterator_t_ end_) {
 /// heapsort algorithm. The `less` callable defines the less-than ordering
 /// relationship. Requires a `random-iterator`.
 template<hxrandom_iterator_concept_ iterator_t_, typename less_t_>
-hxinline hxconstexpr void hxheapsort(iterator_t_ begin_, iterator_t_ end_, const less_t_& less_) {
-	if(begin_ == end_) { return; } // Prevents UB.
-	hxdetail_::hxmake_heap_<iterator_t_>(begin_, end_, less_);
-	const hxrestrict_t<iterator_t_> begin_r_(begin_);
-	for(iterator_t_ it_ = end_ - ptrdiff_t{1}; begin_r_ < it_; --it_) {
-		hxswap(*begin_r_, *it_);
-		hxdetail_::hxheapsort_heapify_<iterator_t_>(begin_r_, begin_r_, it_, less_);
+hxinline hxconstexpr hxattr_flatten
+void hxheapsort(iterator_t_ begin_, iterator_t_ end_, const less_t_& less_) {
+	// This is the cutoff checked entry point and is well defined for null in C++
+	// not C.
+	if((end_ - begin_) <= hxdetail_::hxheapsort_cutoff_) {
+		hxinsertion_sort<iterator_t_>(begin_, end_, less_);
+		return;
 	}
+	hxdetail_::hxheapsort_<iterator_t_>(begin_, end_, less_);
 }
 
 /// `hxheapsort` (specialization) - An overload of `hxheapsort` over the range
 /// `[begin, end)` that uses `hxkey_less`. Requires a `random-iterator`.
 template<hxsorted_iterator_concept_ iterator_t_>
 hxinline hxconstexpr void hxheapsort(iterator_t_ begin_, iterator_t_ end_) {
-	hxheapsort<iterator_t_>(begin_, end_, hxkey_less_t<decltype(*begin_)>{});
+	// This is the cutoff checked entry point and is well defined for null in C++
+	// not C.
+	if((end_ - begin_) <= hxdetail_::hxheapsort_cutoff_) {
+		hxinsertion_sort<iterator_t_>(begin_, end_, hxkey_less_t<decltype(*begin_)>{});
+		return;
+	}
+	hxdetail_::hxheapsort_<iterator_t_>(begin_, end_, hxkey_less_t<decltype(*begin_)>{});
 }
 
 /// `hxsort` - A general purpose sort routine using `T::T(&&)`, `T::~T()`,

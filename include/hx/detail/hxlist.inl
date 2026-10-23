@@ -10,7 +10,24 @@
 #ifndef HX_DOXYGEN_PARSER
 HX_INL_BEGIN_
 
+// hxlist_node
+
+hxinline hxlist_node& hxlist_node::operator=(const hxlist_node& x_) {
+	hxassertf(this != &x_, "self_assignment");
+	(void)x_;
+	return *this;
+}
+
 // const_iterator
+
+template<hxlist_concept_ T_, typename deleter_t_>
+hxinline hxlist<T_, deleter_t_>::const_iterator::const_iterator(void)
+		: m_prev_(hxnull), m_current_node_(hxnull)
+#if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
+		, m_sentinel_(hxnull)
+#endif
+{
+}
 
 template<hxlist_concept_ T_, typename deleter_t_>
 hxinline auto hxlist<T_, deleter_t_>::const_iterator::operator++(void)
@@ -52,8 +69,34 @@ hxinline hxattr_flatten auto hxlist<T_, deleter_t_>::const_iterator::operator--(
 }
 
 template<hxlist_concept_ T_, typename deleter_t_>
-hxinline bool hxlist<T_, deleter_t_>::const_iterator::operator==(const const_iterator& x_) const {
-	return m_current_node_ == x_.m_current_node_;
+hxinline bool hxlist<T_, deleter_t_>::const_iterator::operator==(
+		const const_iterator& x_) const {
+	return this->m_current_node_ == x_.m_current_node_;
+}
+
+template<hxlist_concept_ T_, typename deleter_t_>
+hxinline const T_& hxlist<T_, deleter_t_>::const_iterator::operator*(void) const {
+	hxassertf(this->m_current_node_ != hxnull
+		&& this->m_current_node_ != this->m_sentinel_, "bad_iter");
+	return *static_cast<const T_*>(this->m_current_node_);
+}
+
+template<hxlist_concept_ T_, typename deleter_t_>
+hxinline const T_* hxlist<T_, deleter_t_>::const_iterator::operator->(void) const {
+	hxassertf(this->m_current_node_ != hxnull
+		&& this->m_current_node_ != this->m_sentinel_, "bad_iter");
+	return static_cast<const T_*>(this->m_current_node_);
+}
+
+template<hxlist_concept_ T_, typename deleter_t_>
+hxinline hxlist<T_, deleter_t_>::const_iterator::const_iterator(hxlist_node* prev_,
+		hxlist_node* current_, const hxlist_node* sentinel_)
+		: m_prev_(prev_), m_current_node_(current_)
+#if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
+		, m_sentinel_(sentinel_)
+#endif
+{
+	(void)sentinel_;
 }
 
 // iterator
@@ -72,6 +115,26 @@ hxinline hxattr_flatten auto hxlist<T_, deleter_t_>::iterator::operator--(int) -
 	return t_;
 }
 
+template<hxlist_concept_ T_, typename deleter_t_>
+hxinline T_& hxlist<T_, deleter_t_>::iterator::operator*(void) const {
+	hxassertf(this->m_current_node_ != hxnull
+		&& this->m_current_node_ != this->m_sentinel_, "bad_iter");
+	return *static_cast<T_*>(this->m_current_node_);
+}
+
+template<hxlist_concept_ T_, typename deleter_t_>
+hxinline T_* hxlist<T_, deleter_t_>::iterator::operator->(void) const {
+	hxassertf(this->m_current_node_ != hxnull
+		&& this->m_current_node_ != this->m_sentinel_, "bad_iter");
+	return static_cast<T_*>(this->m_current_node_);
+}
+
+template<hxlist_concept_ T_, typename deleter_t_>
+hxinline hxlist<T_, deleter_t_>::iterator::iterator(hxlist_node* prev_, hxlist_node* current_,
+		const hxlist_node* sentinel_)
+		: const_iterator(prev_, current_, sentinel_) {
+}
+
 // hxlist
 
 template<hxlist_concept_ T_, typename deleter_t_>
@@ -80,12 +143,25 @@ hxinline hxattr_flatten hxlist<T_, deleter_t_>::hxlist(deleter_t_ deleter_)
 }
 
 template<hxlist_concept_ T_, typename deleter_t_>
-hxinline hxattr_flatten bool hxlist<T_, deleter_t_>::operator==(const hxlist& x_) const {
+template<typename deleter_x_>
+hxinline hxattr_flatten bool hxlist<T_, deleter_t_>::operator==(
+		const hxlist<T_, deleter_x_>& x_) const {
 	return hxequal_range(*this, x_);
 }
 
+#if HX_CPLUSPLUS < 202002L
 template<hxlist_concept_ T_, typename deleter_t_>
-hxinline hxattr_flatten bool hxlist<T_, deleter_t_>::operator<(const hxlist& x_) const {
+template<typename deleter_x_>
+hxinline hxattr_flatten bool hxlist<T_, deleter_t_>::operator!=(
+		const hxlist<T_, deleter_x_>& x_) const {
+	return !(*this == x_);
+}
+#endif
+
+template<hxlist_concept_ T_, typename deleter_t_>
+template<typename deleter_x_>
+hxinline hxattr_flatten bool hxlist<T_, deleter_t_>::operator<(
+		const hxlist<T_, deleter_x_>& x_) const {
 	return hxless_range(*this, x_);
 }
 
@@ -122,17 +198,6 @@ hxinline hxattr_flatten auto hxlist<T_, deleter_t_>::begin(void) -> iterator {
 }
 
 template<hxlist_concept_ T_, typename deleter_t_>
-hxinline hxattr_flatten auto hxlist<T_, deleter_t_>::end(void) const -> const_iterator {
-	hxlist_node* const sentinel_ = &const_cast<hxlist_base_&>(m_base_).m_sentinel_;
-	return const_iterator(m_base_.m_tail_, sentinel_, sentinel_);
-}
-
-template<hxlist_concept_ T_, typename deleter_t_>
-hxinline hxattr_flatten auto hxlist<T_, deleter_t_>::end(void) -> iterator {
-	return iterator(m_base_.m_tail_, &m_base_.m_sentinel_, &m_base_.m_sentinel_);
-}
-
-template<hxlist_concept_ T_, typename deleter_t_>
 template<typename deleter_u_>
 hxattr_flatten void hxlist<T_, deleter_t_>::clear(deleter_u_&& deleter_) noexcept {
 	if(m_base_.m_size_ != 0) {
@@ -153,8 +218,20 @@ hxattr_flatten void hxlist<T_, deleter_t_>::clear(deleter_u_&& deleter_) noexcep
 }
 
 template<hxlist_concept_ T_, typename deleter_t_>
+hxinline hxattr_flatten auto hxlist<T_, deleter_t_>::end(void) const -> const_iterator {
+	hxlist_node* const sentinel_ = &const_cast<hxlist_base_&>(m_base_).m_sentinel_;
+	return const_iterator(m_base_.m_tail_, sentinel_, sentinel_);
+}
+
+template<hxlist_concept_ T_, typename deleter_t_>
+hxinline hxattr_flatten auto hxlist<T_, deleter_t_>::end(void) -> iterator {
+	return iterator(m_base_.m_tail_, &m_base_.m_sentinel_, &m_base_.m_sentinel_);
+}
+
+template<hxlist_concept_ T_, typename deleter_t_>
 template<typename deleter_u_>
-hxinline hxattr_flatten void hxlist<T_, deleter_t_>::erase(const_iterator it_, deleter_u_&& deleter_) noexcept {
+hxinline hxattr_flatten void hxlist<T_, deleter_t_>::erase(const_iterator it_,
+		deleter_u_&& deleter_) noexcept {
 	T_* ptr_ = static_cast<T_*>(it_.m_current_node_);
 	m_base_.extract_(it_.m_prev_, it_.m_current_node_);
 	if(deleter_) {
@@ -168,7 +245,8 @@ hxinline hxattr_flatten void hxlist<T_, deleter_t_>::erase(const_iterator it_) n
 }
 
 template<hxlist_concept_ T_, typename deleter_t_>
-hxinline hxattr_flatten hxptr<T_, deleter_t_> hxlist<T_, deleter_t_>::extract(const_iterator it_) {
+hxinline hxattr_flatten hxptr<T_, deleter_t_> hxlist<T_, deleter_t_>::extract(
+		const_iterator it_) {
 	T_* const node_ = static_cast<T_*>(it_.m_current_node_);
 	m_base_.extract_(it_.m_prev_, it_.m_current_node_);
 	return hxptr<T_, deleter_t_>(node_, static_cast<deleter_t_&>(*this));
@@ -176,7 +254,8 @@ hxinline hxattr_flatten hxptr<T_, deleter_t_> hxlist<T_, deleter_t_>::extract(co
 
 template<hxlist_concept_ T_, typename deleter_t_>
 template<typename callable_t_>
-hxinline hxattr_flatten auto hxlist<T_, deleter_t_>::find_if(callable_t_&& callable_) const -> const_iterator {
+hxinline hxattr_flatten auto hxlist<T_, deleter_t_>::find_if(callable_t_&& callable_) const
+		-> const_iterator {
 	const const_iterator end_ = this->end();
 	for(const_iterator it_ = this->begin(); it_ != end_; ++it_) {
 		if(hxforward<callable_t_>(callable_)(*it_)) {
@@ -188,7 +267,8 @@ hxinline hxattr_flatten auto hxlist<T_, deleter_t_>::find_if(callable_t_&& calla
 
 template<hxlist_concept_ T_, typename deleter_t_>
 template<typename callable_t_>
-hxinline hxattr_flatten auto hxlist<T_, deleter_t_>::find_if(callable_t_&& callable_) -> iterator {
+hxinline hxattr_flatten auto hxlist<T_, deleter_t_>::find_if(callable_t_&& callable_)
+		-> iterator {
 	const iterator end_ = this->end();
 	for(iterator it_ = this->begin(); it_ != end_; ++it_) {
 		if(hxforward<callable_t_>(callable_)(*it_)) {
@@ -246,7 +326,8 @@ hxinline hxattr_flatten auto hxlist<T_, deleter_t_>::insert_after(
 }
 
 template<hxlist_concept_ T_, typename deleter_t_>
-hxinline hxattr_flatten auto hxlist<T_, deleter_t_>::insert_after(const_iterator it_, T_* ptr_) -> iterator {
+hxinline hxattr_flatten auto hxlist<T_, deleter_t_>::insert_after(const_iterator it_, T_* ptr_)
+		-> iterator {
 	m_base_.insert_after_(it_.m_prev_, it_.m_current_node_, ptr_);
 	return iterator(it_.m_current_node_, ptr_, &m_base_.m_sentinel_);
 }
@@ -267,17 +348,20 @@ hxinline hxattr_flatten auto hxlist<T_, deleter_t_>::insert(
 
 template<hxlist_concept_ T_, typename deleter_t_>
 hxinline hxattr_flatten hxptr<T_, deleter_t_> hxlist<T_, deleter_t_>::pop_back(void) {
-	return hxptr<T_, deleter_t_>(static_cast<T_*>(m_base_.pop_back_()), static_cast<deleter_t_&>(*this));
+	return hxptr<T_, deleter_t_>(static_cast<T_*>(m_base_.pop_back_()),
+		static_cast<deleter_t_&>(*this));
 }
 
 template<hxlist_concept_ T_, typename deleter_t_>
 hxinline hxattr_flatten hxptr<T_, deleter_t_> hxlist<T_, deleter_t_>::pop_front(void) {
-	return hxptr<T_, deleter_t_>(static_cast<T_*>(m_base_.pop_front_()), static_cast<deleter_t_&>(*this));
+	return hxptr<T_, deleter_t_>(static_cast<T_*>(m_base_.pop_front_()),
+		static_cast<deleter_t_&>(*this));
 }
 
 template<hxlist_concept_ T_, typename deleter_t_>
 template<typename deleter_u_>
-hxinline hxattr_flatten auto hxlist<T_, deleter_t_>::push_back(hxptr<T_, deleter_u_>&& ptr_) -> iterator {
+hxinline hxattr_flatten auto hxlist<T_, deleter_t_>::push_back(hxptr<T_, deleter_u_>&& ptr_)
+		-> iterator {
 	return this->push_back(ptr_.release());
 }
 
@@ -290,7 +374,8 @@ hxinline hxattr_flatten auto hxlist<T_, deleter_t_>::push_back(T_* ptr_) -> iter
 
 template<hxlist_concept_ T_, typename deleter_t_>
 template<typename deleter_u_>
-hxinline hxattr_flatten auto hxlist<T_, deleter_t_>::push_front(hxptr<T_, deleter_u_>&& ptr_) -> iterator {
+hxinline hxattr_flatten auto hxlist<T_, deleter_t_>::push_front(hxptr<T_, deleter_u_>&& ptr_)
+		-> iterator {
 	return this->push_front(ptr_.release());
 }
 
@@ -333,8 +418,10 @@ hxattr_flatten hxsize_t hxlist<T_, deleter_t_>::remove_if(callable_t_&& callable
 
 template<hxlist_concept_ T_, typename deleter_t_>
 template<typename callable_t_>
-hxinline hxattr_flatten hxsize_t hxlist<T_, deleter_t_>::remove_if(callable_t_&& callable_) noexcept {
-	return this->remove_if(hxforward<callable_t_>(callable_), static_cast<const deleter_t_&>(*this));
+hxinline hxattr_flatten hxsize_t hxlist<T_, deleter_t_>::remove_if(callable_t_&& callable_)
+		noexcept {
+	return this->remove_if(hxforward<callable_t_>(callable_),
+		static_cast<const deleter_t_&>(*this));
 }
 
 template<hxlist_concept_ T_, typename deleter_t_>

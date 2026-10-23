@@ -17,6 +17,9 @@
 #include "hxallocator.hpp"
 #include "hxrange.hpp"
 #include "hxinitializer_list.hpp"
+#include "hxkey.hpp"
+#include "hxpair.hpp"
+#include "hxsort.hpp"
 
 HX_NS_BEGIN_
 
@@ -32,74 +35,15 @@ concept hxflat_map_concept_ = requires(T_& x_) {
 #define hxflat_map_concept_ typename
 #endif
 
-/// `hxflat_map_const_value_t` - A proxy referencing the key and mapped
-/// value at a fixed position, returned by dereferencing an `hxflat_map`'s
-/// `const_iterator`.
+/// `hxflat_map_const_value_t` - A proxy referencing the key and mapped value at
+/// a fixed position. The key is field `a` and the mapped value is field `b`.
 template<typename key_t_, typename mapped_t_>
-class hxflat_map_const_value_t {
-public:
-	/// Compares the referenced key and value for equality with `x`, using
-	/// `hxkey_equal` on both.
-	/// - `x` : The element to compare against.
-	bool operator==(const hxflat_map_const_value_t& x_) const {
-		return hxkey_equal(key, x_.key) && hxkey_equal(value, x_.value);
-	}
+using hxflat_map_const_value_t = hxpair<const key_t_&, const mapped_t_&>;
 
-	/// Returns true when this element is ordered before `x`, comparing keys
-	/// first and then values with `hxkey_equal` and `hxkey_less`.
-	/// - `x` : The element to compare against.
-	bool operator<(const hxflat_map_const_value_t& x_) const {
-		if(!hxkey_equal(key, x_.key)) { return hxkey_less(key, x_.key); }
-		return hxkey_less(value, x_.value);
-	}
-
-	/// The referenced key.
-	const key_t_& key;
-
-	/// The referenced mapped value.
-	const mapped_t_& value;
-
-protected:
-	/// \cond HIDDEN
-	template<hxflat_map_concept_, hxflat_map_concept_, typename, bool, hxsize_t> friend class hxflat_map;
-	hxflat_map_const_value_t(const key_t_& key_, const mapped_t_& mapped_)
-		: key(key_), value(mapped_) { }
-	/// \endcond
-};
-
-/// `hxflat_map_value_t` - A proxy referencing the key and mapped value at
-/// a fixed position, returned by dereferencing an `hxflat_map`'s `iterator`.
+/// `hxflat_map_value_t` - A proxy referencing the key and mapped value at a
+/// fixed position. The key is field `a` and the mapped value is field `b`.
 template<typename key_t_, typename mapped_t_>
-class hxflat_map_value_t {
-public:
-	/// Compares the referenced key and value for equality with `x`, using
-	/// `hxkey_equal` on both.
-	/// - `x` : The element to compare against.
-	bool operator==(const hxflat_map_value_t& x_) const {
-		return hxkey_equal(key, x_.key) && hxkey_equal(value, x_.value);
-	}
-
-	/// Returns true when this element is ordered before `x`, comparing keys
-	/// first and then values with `hxkey_equal` and `hxkey_less`.
-	/// - `x` : The element to compare against.
-	bool operator<(const hxflat_map_value_t& x_) const {
-		if(!hxkey_equal(key, x_.key)) { return hxkey_less(key, x_.key); }
-		return hxkey_less(value, x_.value);
-	}
-
-	/// The referenced key.
-	const key_t_& key;
-
-	/// The referenced mapped value, allowing mutation.
-	mapped_t_& value;
-
-protected:
-	/// \cond HIDDEN
-	template<hxflat_map_concept_, hxflat_map_concept_, typename, bool, hxsize_t> friend class hxflat_map;
-	hxflat_map_value_t(const key_t_& key_, mapped_t_& mapped_)
-		: key(key_), value(mapped_) { }
-	/// \endcond
-};
+using hxflat_map_value_t = hxpair<const key_t_&, mapped_t_&>;
 
 /// `hxflat_map` - A sorted associative container that stores keys and mapped
 /// values in two parallel arrays. Lookup is O(log n) via binary search. Insert
@@ -107,11 +51,17 @@ protected:
 /// design keeps keys and values cache-friendly and avoids heap overhead per
 /// element.
 ///
-/// When `multi_t` is `false` duplicate keys are rejected and `insert` returns
-/// an iterator to the existing element. When `multi_t` is `true` duplicate keys
-/// are always inserted. `compare_t` must be a callable with signature
-/// `bool(const key_t_&, const key_t_&)` returning true when the first argument
-/// is ordered before the second. It defaults to `hxkey_less_t`.
+/// When `traits & hxtrait_multi` is unset duplicate keys are rejected and
+/// `insert` returns an iterator to the existing element. When set, duplicate
+/// keys are always inserted. When `key_t` is integral or floating point
+/// `compare_t` defaults to `hxkey_less_t` and `traits` defaults to `0` because
+/// a single `<` is cheaper than `a - b`, which may also overflow. Otherwise
+/// `compare_t` defaults to `hxkey_three_way_t`, a callable with signature
+/// returning a value less than, equal to, or greater than zero, and `traits`
+/// defaults to `hxtrait_three_way`. Passing `hxkey_less_t` and clearing
+/// `hxtrait_three_way` in `traits` selects a strict weak order `compare_t`,
+/// with signature `bool(const key_t_&, const key_t_&)` returning true when the
+/// first argument is ordered before the second.
 ///
 /// When `capacity` is `hxallocator_dynamic_capacity` storage must be allocated
 /// by calling `reserve` before inserting elements. Otherwise the arrays are
@@ -121,18 +71,20 @@ protected:
 /// E.g.:
 /// ```
 /// // A static flat map of 64 integer keys to string pointers.
-/// hxflat_map<int, const char*, hxkey_less_t<int>, false, 64> lookup;
+/// hxflat_map<int, const char*, 64> lookup;
 /// ```
 /// - `key_t` : Key type.
 /// - `T` : Mapped value type.
-/// - `compare_t` : Callable implementing a strict weak order on `key_t`.
-/// - `multi_t` : When `true` duplicate keys are allowed.
 /// - `capacity` : Fixed element count or `hxallocator_dynamic_capacity`.
+/// - `compare_t` : Callable implementing a strict weak order or a three-way
+///   comparison on `key_t`, depending on `hxtrait_three_way` in `traits`.
+/// - `traits` : A bitmask of `hxtrait_multi` and `hxtrait_three_way`.
 template<hxflat_map_concept_ key_t_,
 	hxflat_map_concept_ mapped_t_,
-	typename compare_t_=hxkey_less_t<key_t_>,
-	bool multi_t_=true,
-	hxsize_t capacity_=hxallocator_dynamic_capacity>
+	hxsize_t capacity_=hxallocator_dynamic_capacity,
+	typename compare_t_=hxkey_default_compare_t<key_t_>,
+	int traits_=((hxis_integral<key_t_>() || hxis_floating_point<key_t_>())
+		? 0 : hxtrait_three_way)>
 class hxflat_map {
 public:
 	using key_t = key_t_;
@@ -148,9 +100,7 @@ public:
 
 		/// Returns a `hxflat_map_const_value_t` proxy referencing the key and
 		/// value at the current position.
-		hxflat_map_const_value_t<key_t_, mapped_t_> operator*(void) const {
-			return hxflat_map_const_value_t<key_t_, mapped_t_>(this->key(), this->value());
-		}
+		hxflat_map_const_value_t<key_t_, mapped_t_> operator*(void) const;
 
 		/// Advances the iterator by `n` positions.
 		/// - `n` : The number of positions to advance.
@@ -162,11 +112,11 @@ public:
 
 		/// Returns an iterator advanced by `n` positions.
 		/// - `n` : The number of positions to advance.
-		const_iterator operator+(hxsize_t n_) const { const_iterator t_(*this); t_ += n_; return t_; }
+		const_iterator operator+(hxsize_t n_) const;
 
 		/// Returns an iterator retreated by `n` positions.
 		/// - `n` : The number of positions to retreat.
-		const_iterator operator-(hxsize_t n_) const { const_iterator t_(*this); t_ -= n_; return t_; }
+		const_iterator operator-(hxsize_t n_) const;
 
 		/// Returns the signed distance between two iterators.
 		/// - `x` : The iterator to subtract.
@@ -175,7 +125,7 @@ public:
 		/// Returns a `hxflat_map_const_value_t` proxy referencing the key and
 		/// value `n` positions ahead of this one.
 		/// - `n` : The offset from this position.
-		hxflat_map_const_value_t<key_t_, mapped_t_> operator[](hxsize_t n_) const { return *operator+(n_); }
+		hxflat_map_const_value_t<key_t_, mapped_t_> operator[](hxsize_t n_) const;
 
 		/// Advances the iterator to the next element.
 		const_iterator& operator++(void) { return operator+=(1); }
@@ -189,7 +139,7 @@ public:
 		/// Retreats the iterator to the previous element (post-decrement).
 		const_iterator operator--(int) { const_iterator t_(*this); operator--(); return t_; }
 
-		/// Compares two iterators for equality.
+		/// Returns true when this iterator and `x` refer to the same position.
 		/// - `x` : The iterator to compare against.
 		bool operator==(const const_iterator& x_) const;
 
@@ -210,9 +160,9 @@ public:
 		bool operator>=(const const_iterator& x_) const { return !(*this < x_); }
 
 #if HX_CPLUSPLUS < 202002L
-		/// Compares two iterators for inequality.
+		/// Returns true when this iterator and `x` refer to different positions.
 		/// - `x` : The iterator to compare against.
-		bool operator!=(const const_iterator& x_) const;
+		hxattr_nodiscard bool operator!=(const const_iterator& x_) const;
 #endif
 
 		/// Returns the key at the current position. This is simple so the
@@ -220,14 +170,13 @@ public:
 		const key_t_& key(void) const;
 
 		/// Returns the mapped value at the current position. This is simple so
- 		/// the compiler errors are simple.
- 		const mapped_t_& value(void) const;
+		/// the compiler errors are simple.
+		const mapped_t_& value(void) const;
 
 	protected:
 		/// \cond HIDDEN
 		friend class hxflat_map;
-		const_iterator(const hxflat_map* map_, hxsize_t index_)
-			: m_map_(map_), m_index_(index_) { }
+		const_iterator(const hxflat_map* map_, hxsize_t index_);
 		const hxflat_map* m_map_;
 		hxsize_t m_index_;
 		/// \endcond
@@ -242,9 +191,7 @@ public:
 
 		/// Returns a `hxflat_map_value_t` proxy referencing the key and value
 		/// at the current position, allowing mutation of the value.
-		hxflat_map_value_t<key_t_, mapped_t_> operator*(void) const {
-			return hxflat_map_value_t<key_t_, mapped_t_>(this->key(), this->value());
-		}
+		hxflat_map_value_t<key_t_, mapped_t_> operator*(void) const;
 
 		/// Advances the iterator by `n` positions.
 		/// - `n` : The number of positions to advance.
@@ -269,7 +216,7 @@ public:
 		/// Returns a `hxflat_map_value_t` proxy referencing the key and value
 		/// `n` positions ahead of this one.
 		/// - `n` : The offset from this position.
-		hxflat_map_value_t<key_t_, mapped_t_> operator[](hxsize_t n_) const { return *operator+(n_); }
+		hxflat_map_value_t<key_t_, mapped_t_> operator[](hxsize_t n_) const;
 
 		/// Advances the iterator to the next element.
 		iterator& operator++(void) { const_iterator::operator++(); return *this; }
@@ -295,35 +242,35 @@ public:
 		/// \endcond
 	};
 
-	/// \cond HIDDEN
-	class pair_t_ {
-	public:
-		key_t_ key_;
-		mapped_t_ mapped_;
-	};
-	/// \endcond
-
 	/// Constructs an empty map. Requires `reserve` before inserting when
 	/// `capacity` is `hxallocator_dynamic_capacity`.
 	explicit hxflat_map(void);
 
 	/// Copy constructs from another `hxflat_map`. Requires `x.size()` ≤
 	/// `capacity()`.
-	/// - `x` : A non-temporary `hxflat_map<key_t, mapped_t, compare_t, multi_t,
-	///   capacity>`.
+	/// - `x` : A non-temporary `hxflat_map<key_t, mapped_t, capacity,
+	///   compare_t, traits>`.
 	hxflat_map(const hxflat_map& x_) noexcept;
+
+	/// Copy constructs from an `hxflat_map` of a different capacity. Requires
+	/// `x.size()` <= `capacity()`.
+	/// - `x` : A non-temporary `hxflat_map<key_t, mapped_t, capacity_x, compare_t, traits>`.
+	template<hxsize_t capacity_x_>
+	hxflat_map(const hxflat_map<key_t_, mapped_t_, capacity_x_, compare_t_,
+		traits_>& x_) noexcept;
 
 	/// Move constructs from a temporary `hxflat_map`. Requires
 	/// `hxallocator_dynamic_capacity`.
-	/// - `x` : A temporary `hxflat_map<key_t, mapped_t, compare_t, multi_t,
-	///   hxallocator_dynamic_capacity>`.
+	/// - `x` : A temporary `hxflat_map<key_t, mapped_t,
+	///   hxallocator_dynamic_capacity, compare_t, traits>`.
 	hxflat_map(hxflat_map&& x_) noexcept;
 
-	/// Constructs a map by inserting every key-value pair from `x` in order
-	/// using `insert`. Requires `x.size()` <= `capacity` when `capacity` is
-	/// fixed.
-	/// - `x` : A `std::initializer_list<pair_t_>`.
-	hxflat_map(std::initializer_list<pair_t_> x_) noexcept;
+	/// Constructs a map by appending every key-value pair from `x` with
+	/// `add_range`. Requires `x` to be sorted by key and requires `x.size()`
+	/// <= `capacity` when `capacity` is fixed. Presort data that may be
+	/// unordered, e.g. by copying it into a `hxarray` and calling `sort`.
+	/// - `x` : A sorted `std::initializer_list<hxpair<key_t, mapped_t>>`.
+	hxflat_map(std::initializer_list<hxpair<key_t_, mapped_t_> > x_) noexcept;
 
 	/// Destructs the map and destroys all key-value pairs.
 	~hxflat_map(void) noexcept;
@@ -361,8 +308,8 @@ public:
 	/// Requires `x.size()` ≤ `capacity()`.
 	/// - `x` : The map to copy from.
 	template<hxsize_t capacity_x_>
-	void operator=(const hxflat_map<key_t_, mapped_t_, compare_t_, multi_t_,
-		capacity_x_>& x_) noexcept;
+	void operator=(const hxflat_map<key_t_, mapped_t_, capacity_x_, compare_t_,
+		traits_>& x_) noexcept;
 
 	/// Move assigns from a temporary map using `swap`. Requires
 	/// `hxallocator_dynamic_capacity`.
@@ -380,15 +327,37 @@ public:
 	/// the same order using `hxkey_equal` on both keys and values.
 	/// - `x` : The map to compare against.
 	template<hxsize_t capacity_x_>
-	hxattr_nodiscard bool operator==(const hxflat_map<key_t_, mapped_t_, compare_t_,
-		multi_t_, capacity_x_>& x_) const;
+	hxattr_nodiscard bool operator==(const hxflat_map<key_t_, mapped_t_, capacity_x_,
+		compare_t_, traits_>& x_) const;
+
+#if HX_CPLUSPLUS < 202002L
+	/// Returns `true` if this map and `x` differ in size or in any key-value
+	/// pair, using `hxkey_equal` on both keys and values.
+	/// - `x` : The map to compare against.
+	template<hxsize_t capacity_x_>
+	hxattr_nodiscard bool operator!=(const hxflat_map<key_t_, mapped_t_, capacity_x_,
+		compare_t_, traits_>& x_) const;
+#endif
 
 	/// Returns `true` if this map compares less than `x` lexicographically,
 	/// using `hxkey_equal` and `hxkey_less` on keys and values.
 	/// - `x` : The map to compare against.
 	template<hxsize_t capacity_x_>
-	hxattr_nodiscard bool operator<(const hxflat_map<key_t_, mapped_t_, compare_t_,
-		multi_t_, capacity_x_>& x_) const;
+	hxattr_nodiscard bool operator<(const hxflat_map<key_t_, mapped_t_, capacity_x_,
+		compare_t_, traits_>& x_) const;
+
+	/// Appends every key-value pair from `range` to the end of the arrays and
+	/// sorts the arrays afterward. Equivalent to `add_range(false, range)`.
+	/// - `range` : The range to move key-value pairs from.
+	template<hxrange_concept_ range_t_>
+	void add_range(range_t_&& range_) noexcept;
+
+	/// Appends every key-value pair from `range` to the end of the arrays. When
+	/// `is_correct` is false the arrays are sorted afterward.
+	/// - `is_correct` : True when `range` is sorted after the map's keys, strictly unless `traits & hxtrait_multi` is set.
+	/// - `range` : The range to move key-value pairs from.
+	template<hxrange_concept_ range_t_>
+	void add_range(bool is_correct_, range_t_&& range_) noexcept;
 
 	/// Returns a const iterator pointing to the first element.
 	const_iterator begin(void) const { return const_iterator(this, 0); }
@@ -420,6 +389,13 @@ public:
 	template<typename... args_t_>
 	iterator emplace(const key_t_& key_, args_t_&&... args_) noexcept;
 
+	/// Returns an iterator to the new or existing element. Appends a mapped
+	/// value when `key` is ordered after the last key, else calls `insert`.
+	/// - `key` : The key of the new element.
+	/// - `args` : Arguments forwarded to the mapped value constructor.
+	template<typename... args_t_>
+	iterator emplace_back(const key_t_& key_, args_t_&&... args_) noexcept;
+
 	/// Checks if the map contains no elements.
 	hxattr_nodiscard bool empty(void) const { return m_size_ == 0; }
 
@@ -440,7 +416,7 @@ public:
 	iterator erase(const_iterator it_) noexcept;
 
 	/// Returns a const iterator to `key`, or `end()` if the key is not found.
-	/// When `multi_t` is `true` the first match is returned.
+	/// When `traits & hxtrait_multi` is set the first match is returned.
 	/// - `key` : The key to search for.
 	hxattr_nodiscard const_iterator find(const key_t_& key_) const;
 
@@ -453,18 +429,14 @@ public:
 	/// - `key` : The key to search for.
 	hxattr_nodiscard bool has_value(const key_t_& key_) const;
 
-	/// Inserts a key-value pair. When `multi_t` is `false` and a matching key
-	/// already exists, returns an iterator to the existing element without
-	/// inserting. Otherwise inserts in sorted order and returns an iterator to
-	/// the new element.
+	/// Inserts a key-value pair. When `traits & hxtrait_multi` is unset and a
+	/// matching key already exists, returns an iterator to the existing element
+	/// without inserting. Otherwise inserts in sorted order and returns an
+	/// iterator to the new element. Both arguments are forwarded into storage.
 	/// - `key` : The key of the new element.
 	/// - `value` : The mapped value of the new element.
-	iterator insert(const key_t_& key_, const mapped_t_& mapped_) noexcept;
-
-	/// Move-value overload of `insert`.
-	/// - `key` : The key of the new element.
-	/// - `value` : The mapped value forwarded into storage.
-	iterator insert(const key_t_& key_, mapped_t_&& mapped_) noexcept;
+	template<typename key_u_, typename mapped_u_>
+	iterator insert(key_u_&& key_, mapped_u_&& mapped_) noexcept;
 
 	/// Returns a const pointer to the underlying key storage. Only the first
 	/// `size()` elements are constructed.
@@ -501,15 +473,22 @@ public:
 		-> decltype(self_.end());
 #endif // HX_CPLUSPLUS >= 202302L
 
-	/// Allocates storage for `cap` keys and values. When `capacity` is fixed,
-	/// `cap` must equal `capacity`. Reallocation is not allowed.
+	/// Returns an iterator to the new or existing element. Appends the pair
+	/// when `key` is ordered after the last key, otherwise calls `insert`.
+	/// - `key` : The key of the new element.
+	/// - `value` : The mapped value of the new element.
+	template<typename key_u_, typename mapped_u_>
+	iterator push_back(key_u_&& key_, mapped_u_&& mapped_) noexcept;
+
+	/// Forwards `size`, `allocator` and `alignment` unchanged to
+	/// `reserve_storage` for each of the keys and values allocators.
 	/// - `cap` : The number of elements to allocate storage for.
 	/// - `allocator` : The memory manager ID to use for allocation (default:
-	///   `hxsystem_allocator_current`)
+	///   `hxslab_allocator_current`)
 	/// - `alignment` : The alignment for the allocation. (default:
 	///   `hxalignment`)
-	void reserve(hxsize_t cap_,
-			hxsystem_allocator_t allocator_=hxsystem_allocator_current,
+	void reserve(hxsize_t size_,
+			hxslab_allocator_t allocator_=hxslab_allocator_current,
 			hxalignment_t alignment_=hxalignment) noexcept;
 
 	/// Returns the number of elements in the map.
@@ -551,17 +530,82 @@ public:
 
 private:
 	/// \cond HIDDEN
-	template<hxflat_map_concept_, hxflat_map_concept_, typename, bool, hxsize_t>
+	template<hxflat_map_concept_, hxflat_map_concept_, hxsize_t, typename, int>
 	friend class hxflat_map;
 
-	template<typename mapped_u_>
-	iterator insert_at_(hxsize_t index_, const key_t_& key_, mapped_u_&& mapped_) noexcept;
+	// Internal. Not using hxswap with temporaries is an internal contract the
+	// heapsort code relies on.
+	class sort_value_ {
+	public:
+		// Refers to the pointed-to key and mapped value in place. m_key_val_
+		// and m_mapped_val_ remain raw memory.
+		sort_value_(key_t_* key_, mapped_t_* mapped_);
+		sort_value_(const sort_value_&) = default;
+
+		// Detaches into owned storage and takes over as the live instance.
+		sort_value_(sort_value_&& sv_) noexcept;
+
+		~sort_value_(void);
+
+		void operator=(sort_value_&& sv_) noexcept;
+		bool operator<(const sort_value_& x_) const;
+
+		friend void hxswap(const sort_value_& a_, const sort_value_& b_) {
+			hxswap(*a_.m_key_, *b_.m_key_);
+			hxswap(*a_.m_mapped_, *b_.m_mapped_);
+		}
+
+	private:
+		// Raw storage unless m_key_ and m_mapped_ point at it.
+		union { key_t_ m_key_val_; };
+		union { mapped_t_ m_mapped_val_; };
+		key_t_* m_key_;
+		mapped_t_* m_mapped_;
+	};
+
+	class sort_iterator_ {
+	public:
+		sort_iterator_(key_t_* key_, mapped_t_* mapped_) : m_key_(key_), m_mapped_(mapped_) { }
+		friend bool operator==(const sort_iterator_& a_, const sort_iterator_& b_) { return a_.m_key_ == b_.m_key_; }
+		friend bool operator!=(const sort_iterator_& a_, const sort_iterator_& b_) { return a_.m_key_ != b_.m_key_; }
+		friend bool operator<(const sort_iterator_& a_, const sort_iterator_& b_) { return a_.m_key_ < b_.m_key_; }
+		sort_value_ operator*(void) const { return sort_value_(m_key_, m_mapped_); }
+		sort_iterator_ operator+(hxsize_t n_) const { return sort_iterator_(m_key_ + n_, m_mapped_ + n_); }
+		sort_iterator_ operator-(hxsize_t n_) const { return sort_iterator_(m_key_ - n_, m_mapped_ - n_); }
+		hxsize_t operator-(const sort_iterator_& x_) const { return m_key_ - x_.m_key_; }
+		sort_iterator_& operator++(void) { ++m_key_; ++m_mapped_; return *this; }
+		sort_iterator_& operator--(void) { --m_key_; --m_mapped_; return *this; }
+		sort_iterator_ operator++(int) { sort_iterator_ t_(*this); operator++(); return t_; }
+		sort_iterator_ operator--(int) { sort_iterator_ t_(*this); operator--(); return t_; }
+
+		key_t_* m_key_;
+		mapped_t_* m_mapped_;
+	};
+
+#if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
+	// Returns true if keys [original_size, size) are sorted after any key
+	// [original_size - 1], strictly unless traits & hxtrait_multi is set.
+	static bool correct_(const key_t_* k_, hxsize_t original_size_, hxsize_t size_) noexcept;
+#endif
+
+	template<typename key_u_, typename mapped_u_>
+	iterator insert_at_(hxsize_t index_, key_u_&& key_, mapped_u_&& mapped_) noexcept;
 
 	hxsize_t m_size_;
 	hxallocator<key_t_, capacity_> m_keys_;
 	hxallocator<mapped_t_, capacity_> m_values_;
 	/// \endcond
 };
+
+/// `hxflat_multimap` - A `hxflat_map` with `hxtrait_multi` set in `traits`,
+/// allowing multiple elements with equal keys.
+template<hxflat_map_concept_ key_t_, hxflat_map_concept_ mapped_t_,
+	hxsize_t capacity_=hxallocator_dynamic_capacity,
+	typename compare_t_=hxkey_default_compare_t<key_t_>,
+	int traits_=((hxis_integral<key_t_>() || hxis_floating_point<key_t_>())
+		? 0 : hxtrait_three_way)>
+using hxflat_multimap = hxflat_map<key_t_, mapped_t_, capacity_, compare_t_,
+	traits_ | hxtrait_multi>;
 
 #include "detail/hxflat_map.inl"
 HX_NS_END_

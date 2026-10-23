@@ -23,6 +23,7 @@
 #endif
 
 #include "hxkey.hpp"
+#include "detail/hxrange_detail.hpp"
 
 HX_NS_BEGIN_
 
@@ -34,28 +35,31 @@ template<typename T_>
 concept hxforward_iterator_concept_ = requires(T_& x_, const T_& y_) {
 	*x_;
 	{ ++x_ } -> hxsame_as<T_&>;
-	{ x_++ } -> hxsame_as<T_>;
 	{ x_ == y_ } -> hxconvertible_to<bool>;
 	{ x_ != y_ } -> hxconvertible_to<bool>;
 };
 template<typename T_>
-concept hxbidirectional_iterator_concept_ = hxforward_iterator_concept_<T_> && requires(T_& x_) {
+concept hxbidirectional_iterator_concept_ = hxforward_iterator_concept_<T_>
+&& requires(T_& x_) {
 	{ --x_ } -> hxsame_as<T_&>;
-	{ x_-- } -> hxsame_as<T_>;
 };
 template<typename T_>
-concept hxrandom_iterator_concept_ = hxbidirectional_iterator_concept_<T_> && requires(
-		const T_& x_, const T_& y_, ptrdiff_t n_) {
+concept hxrandom_iterator_concept_ = hxbidirectional_iterator_concept_<T_>
+&& requires(const T_& x_, ptrdiff_t n_) {
 	{ x_ + n_ } -> hxsame_as<T_>;
 	{ x_ - n_ } -> hxsame_as<T_>;
-	{ x_ - y_ } -> hxsame_as<ptrdiff_t>;
-	{ x_ < y_ } -> hxconvertible_to<bool>;
+	{ x_ - x_ } -> hxsame_as<ptrdiff_t>;
+	{ x_ < x_ } -> hxconvertible_to<bool>;
 };
 template<typename T_>
-concept hxsorted_iterator_concept_ = hxrandom_iterator_concept_<T_> && requires(const T_& x_) {
-	{ x_ < x_ } -> hxconvertible_to<bool>;
-	{ x_ == x_ } -> hxconvertible_to<bool>;
-};
+concept hxsorted_iterator_concept_ = hxrandom_iterator_concept_<T_>
+&& (requires(const T_& x_) {
+		{ hxkey_less(*x_, *x_) } -> hxconvertible_to<bool>;
+		{ hxkey_equal(*x_, *x_) } -> hxconvertible_to<bool>;
+	} || requires(const T_& x_) {
+		hxkey_three_way(*x_, *x_);
+	}
+);
 template<typename T_>
 concept hxrange_concept_ = requires(T_& x_) {
 	{ x_.begin() } -> hxforward_iterator_concept_;
@@ -76,9 +80,9 @@ concept hxsorted_range_concept_ = requires(T_& x_) {
 #define hxforward_iterator_concept_ typename
 #define hxbidirectional_iterator_concept_ typename
 #define hxrandom_iterator_concept_ typename
+#define hxsorted_iterator_concept_ typename
 #define hxrange_concept_ typename
 #define hxrandom_range_concept_ typename
-#define hxsorted_iterator_concept_ typename
 #define hxsorted_range_concept_ typename
 #endif
 
@@ -152,7 +156,7 @@ hxattr_nodiscard hxinline hxconstexpr hxattr_flatten
 bool hxall_of(range_t_&& range_, callable_t_&& callable_) {
 	hxrestrict_t<decltype(range_.begin())> it_(range_.begin());
 	for(const auto end_ = range_.end(); it_ != end_; ++it_) {
-		if(!hxforward<callable_t_>(callable_)(*it_)) {
+		if(!hxforward<callable_t_>(callable_)(hxforward_like<range_t_>(*it_))) {
 			return false;
 		}
 	}
@@ -167,47 +171,46 @@ hxattr_nodiscard hxinline hxconstexpr hxattr_flatten
 bool hxany_of(range_t_&& range_, callable_t_&& callable_) {
 	hxrestrict_t<decltype(range_.begin())> it_(range_.begin());
 	for(const auto end_ = range_.end(); it_ != end_; ++it_) {
-		if(hxforward<callable_t_>(callable_)(*it_)) {
+		if(hxforward<callable_t_>(callable_)(hxforward_like<range_t_>(*it_))) {
 			return true;
 		}
 	}
 	return false;
 }
 
-/// `hxbinary_search` - Performs a binary search for `value` in the sorted
-/// range `[begin, end)`. Returns `end` if the value is not found. Unsorted
-/// data will lead to errors. The first of non-unique values is returned. The
-/// `less` callable returns true if the first argument is ordered before
-/// (i.e., is less than) the second. Requires a `random-iterator`.
-template<hxrandom_iterator_concept_ iterator_t_, typename value_t_, typename less_t_>
-hxattr_nodiscard hxinline hxconstexpr hxattr_flatten
-iterator_t_ hxbinary_search(iterator_t_ begin_, iterator_t_ end_, const value_t_& value_,
-		const less_t_& less_) {
-	const hxrestrict_t<iterator_t_> it_ = hxlower_bound(hxmake_range(begin_, end_), value_, less_);
-	return (it_ != end_ && !less_(value_, *it_)) ? it_ : end_;
+/// `hxcopy_range` - Returns `output` advanced past copy-assigning every
+/// element of `range` into it. The ranges must not overlap.
+template<hxrange_concept_ range_t_, typename output_iterator_t_>
+hxinline hxconstexpr hxattr_flatten
+output_iterator_t_ hxcopy_range(const range_t_& range_, output_iterator_t_&& output_) noexcept {
+	hxrestrict_t<decltype(range_.begin())> src_(range_.begin());
+	const auto end_ = range_.end();
+	hxrestrict_t<output_iterator_t_> output_r_(hxforward<output_iterator_t_>(output_));
+	hxassert_different_iterator(output_r_, src_);
+	for(; src_ != end_; ++src_) {
+		*output_r_ = *src_;
+		++output_r_;
+	}
+	return output_r_;
 }
 
-/// `hxbinary_search` - An overload of `hxbinary_search` over `range`.
-/// Requires a `random-iterator`.
-template<hxrandom_range_concept_ range_t_, typename value_t_, typename less_t_>
-hxattr_nodiscard hxinline hxconstexpr hxattr_flatten
-auto hxbinary_search(range_t_&& range_, const value_t_& value_, const less_t_& less_)
-		-> decltype(range_.begin()) {
+/// `hxcopy_range_if` - Like `hxcopy_range` but only copies the elements of
+/// `range` for which `callable` returns true.
+template<hxrange_concept_ range_t_, typename output_iterator_t_, typename callable_t_>
+hxinline hxconstexpr hxattr_flatten
+output_iterator_t_ hxcopy_range_if(const range_t_& range_, output_iterator_t_&& output_,
+		callable_t_&& callable_) noexcept {
+	hxrestrict_t<decltype(range_.begin())> src_(range_.begin());
 	const auto end_ = range_.end();
-	const hxrestrict_t<decltype(end_)> it_ = hxlower_bound(hxforward<range_t_>(range_), value_, less_);
-	return (it_ != end_ && !less_(value_, *it_)) ? it_ : end_;
-}
-
-/// `hxbinary_search` (specialization) - An overload of `hxbinary_search` that
-/// searches for `value` in the sorted `range` using `hxkey_less`. Requires a
-/// `sorted-iterator`.
-template<hxsorted_range_concept_ range_t_, typename value_t_>
-hxattr_nodiscard hxinline hxconstexpr hxattr_flatten
-auto hxbinary_search(range_t_&& range_, const value_t_& value_) -> decltype(range_.begin()) {
-	using less_t_ = hxkey_less_t<decltype(*range_.begin())>;
-	const auto end_ = range_.end();
-	const hxrestrict_t<decltype(end_)> it_ = hxlower_bound(hxforward<range_t_>(range_), value_, less_t_{});
-	return (it_ != end_ && !less_t_{}(value_, *it_)) ? it_ : end_;
+	hxrestrict_t<output_iterator_t_> output_r_(hxforward<output_iterator_t_>(output_));
+	hxassert_different_iterator(output_r_, src_);
+	for(; src_ != end_; ++src_) {
+		if(hxforward<callable_t_>(callable_)(*src_)) {
+			*output_r_ = *src_;
+			++output_r_;
+		}
+	}
+	return output_r_;
 }
 
 /// `hxcount_if` - Returns the number of elements of `range` for which the
@@ -218,7 +221,7 @@ hxsize_t hxcount_if(range_t_&& range_, callable_t_&& callable_) {
 	hxrestrict_t<decltype(range_.begin())> it_(range_.begin());
 	hxsize_t count_ = hxsize_t{0};
 	for(const auto end_ = range_.end(); it_ != end_; ++it_) {
-		if(hxforward<callable_t_>(callable_)(*it_)) {
+		if(hxforward<callable_t_>(callable_)(hxforward_like<range_t_>(*it_))) {
 			++count_;
 		}
 	}
@@ -286,7 +289,7 @@ auto hxfind_if(range_t_&& range_, callable_t_&& callable_) -> decltype(range_.be
 	hxrestrict_t<decltype(range_.begin())> it_(range_.begin());
 	const auto end_ = range_.end();
 	for(; it_ != end_; ++it_) {
-		if(hxforward<callable_t_>(callable_)(*it_)) {
+		if(hxforward<callable_t_>(callable_)(hxforward_like<range_t_>(*it_))) {
 			return it_;
 		}
 	}
@@ -301,9 +304,45 @@ hxinline hxconstexpr hxattr_flatten
 callable_t_ hxfor_each(range_t_&& range_, callable_t_&& callable_) {
 	hxrestrict_t<decltype(range_.begin())> it_(range_.begin());
 	for(const auto end_ = range_.end(); it_ != end_; ++it_) {
-		hxforward<callable_t_>(callable_)(*it_);
+		hxforward<callable_t_>(callable_)(hxforward_like<range_t_>(*it_));
 	}
 	return hxforward<callable_t_>(callable_);
+}
+
+/// `hxforward_range` - Returns `output` advanced past assigning every element
+/// of `range` into it with the value category of `range`. Must not overlap.
+template<hxrange_concept_ range_t_, typename output_iterator_t_>
+hxinline hxconstexpr hxattr_flatten
+output_iterator_t_ hxforward_range(range_t_&& range_, output_iterator_t_&& output_) noexcept {
+	hxrestrict_t<decltype(range_.begin())> src_(range_.begin());
+	const auto end_ = range_.end();
+	hxrestrict_t<output_iterator_t_> output_r_(hxforward<output_iterator_t_>(output_));
+	hxassert_different_iterator(output_r_, src_);
+	for(; src_ != end_; ++src_) {
+		*output_r_ = hxforward_like<range_t_>(*src_);
+		++output_r_;
+	}
+	return output_r_;
+}
+
+/// `hxforward_range_if` - Like `hxforward_range` but only assigns the elements
+/// of `range` for which `callable` returns true.
+template<hxrange_concept_ range_t_, typename output_iterator_t_, typename callable_t_>
+hxinline hxconstexpr hxattr_flatten
+output_iterator_t_ hxforward_range_if(range_t_&& range_, output_iterator_t_&& output_,
+		callable_t_&& callable_) noexcept {
+	hxrestrict_t<decltype(range_.begin())> src_(range_.begin());
+	const auto end_ = range_.end();
+	hxrestrict_t<output_iterator_t_> output_r_(hxforward<output_iterator_t_>(output_));
+	hxassert_different_iterator(output_r_, src_);
+	for(; src_ != end_; ++src_) {
+		const auto& value_ = *src_;
+		if(hxforward<callable_t_>(callable_)(value_)) {
+			*output_r_ = hxforward_like<range_t_>(*src_);
+			++output_r_;
+		}
+	}
+	return output_r_;
 }
 
 /// `hxless_range` - Returns true if `range0` is lexicographically less than
@@ -374,6 +413,77 @@ auto hxlower_bound(range_t_&& range_, const value_t_& value_) -> decltype(range_
 	const auto begin_ = range_.begin();
 	return hxlower_bound(hxforward<range_t_>(range_), value_,
 		hxkey_less_t<decltype(*begin_)>{});
+}
+
+/// `hxmove_range` - Returns `output` advanced past move-assigning every
+/// element of `range` into it. The ranges must not overlap.
+template<hxrange_concept_ range_t_, typename output_iterator_t_>
+hxinline hxconstexpr hxattr_flatten
+output_iterator_t_ hxmove_range(range_t_&& range_, output_iterator_t_&& output_) noexcept {
+	hxrestrict_t<decltype(range_.begin())> src_(range_.begin());
+	const auto end_ = range_.end();
+	hxrestrict_t<output_iterator_t_> output_r_(hxforward<output_iterator_t_>(output_));
+	hxassert_different_iterator(output_r_, src_);
+	for(; src_ != end_; ++src_) {
+		*output_r_ = hxmove(*src_);
+		++output_r_;
+	}
+	return output_r_;
+}
+
+/// `hxmove_range_if` - Like `hxmove_range` but only moves the elements of
+/// `range` for which `callable` returns true.
+template<hxrange_concept_ range_t_, typename output_iterator_t_, typename callable_t_>
+hxinline hxconstexpr hxattr_flatten
+output_iterator_t_ hxmove_range_if(range_t_&& range_, output_iterator_t_&& output_,
+		callable_t_&& callable_) noexcept {
+	hxrestrict_t<decltype(range_.begin())> src_(range_.begin());
+	const auto end_ = range_.end();
+	hxrestrict_t<output_iterator_t_> output_r_(hxforward<output_iterator_t_>(output_));
+	hxassert_different_iterator(output_r_, src_);
+	for(; src_ != end_; ++src_) {
+		if(hxforward<callable_t_>(callable_)(*src_)) {
+			*output_r_ = hxmove(*src_);
+			++output_r_;
+		}
+	}
+	return output_r_;
+}
+
+/// `hxsearch` - Performs a binary search for `value` in the sorted
+/// range `[begin, end)`. Returns `end` if the value is not found. Unsorted
+/// data will lead to errors. The first of non-unique values is returned. The
+/// `less` callable returns true if the first argument is ordered before
+/// (i.e., is less than) the second. Requires a `random-iterator`.
+template<hxrandom_iterator_concept_ iterator_t_, typename value_t_, typename less_t_>
+hxattr_nodiscard hxinline hxconstexpr hxattr_flatten
+iterator_t_ hxsearch(iterator_t_ begin_, iterator_t_ end_, const value_t_& value_,
+		const less_t_& less_) {
+	const hxrestrict_t<iterator_t_> it_ = hxlower_bound(hxmake_range(begin_, end_), value_, less_);
+	return (it_ != end_ && !less_(value_, *it_)) ? it_ : end_;
+}
+
+/// `hxsearch` - An overload of `hxsearch` over `range`.
+/// Requires a `random-iterator`.
+template<hxrandom_range_concept_ range_t_, typename value_t_, typename less_t_>
+hxattr_nodiscard hxinline hxconstexpr hxattr_flatten
+auto hxsearch(range_t_&& range_, const value_t_& value_, const less_t_& less_)
+		-> decltype(range_.begin()) {
+	const auto end_ = range_.end();
+	const hxrestrict_t<decltype(end_)> it_ = hxlower_bound(hxforward<range_t_>(range_), value_, less_);
+	return (it_ != end_ && !less_(value_, *it_)) ? it_ : end_;
+}
+
+/// `hxsearch` (specialization) - An overload of `hxsearch` that
+/// searches for `value` in the sorted `range` using `hxkey_less`. Requires a
+/// `sorted-iterator`.
+template<hxsorted_range_concept_ range_t_, typename value_t_>
+hxattr_nodiscard hxinline hxconstexpr hxattr_flatten
+auto hxsearch(range_t_&& range_, const value_t_& value_) -> decltype(range_.begin()) {
+	using less_t_ = hxkey_less_t<decltype(*range_.begin())>;
+	const auto end_ = range_.end();
+	const hxrestrict_t<decltype(end_)> it_ = hxlower_bound(hxforward<range_t_>(range_), value_, less_t_{});
+	return (it_ != end_ && !less_t_{}(value_, *it_)) ? it_ : end_;
 }
 
 /// `hxupper_bound` - Returns the first position in the sorted `range` whose

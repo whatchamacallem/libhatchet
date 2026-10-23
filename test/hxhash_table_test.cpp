@@ -33,7 +33,7 @@ public:
 	hxtest_object value;
 };
 
-class hxtest_string : public hxhash_table_node_string<hxsystem_allocator_stack_0> {
+class hxtest_string : public hxhash_table_node_string<hxslab_allocator_stack_0> {
 public:
 	hxtest_string(const char* k, int32_t v) :
 		hxhash_table_node_string(k), value(v) { }
@@ -52,7 +52,7 @@ struct hxtest_set_node_t : hxhash_table_set_node<int32_t> {
 
 TEST_F(hxhash_table_test_f, null) {
 	{
-		using table_t = hxhash_table<hxtest_integer, hxdefault_delete, false, 4>;
+		using table_t = hxhash_table<hxtest_integer, hxdefault_delete, 4, 0>;
 		table_t table;
 		EXPECT_EQ(table.size(), 0);
 		const table_t& const_table = table;
@@ -67,7 +67,7 @@ TEST_F(hxhash_table_test_f, null) {
 		EXPECT_EQ(table.load_factor(), 0.0f);
 	}
 	{
-		using table_dynamic_t = hxhash_table<hxtest_integer, hxdefault_delete, false>;
+		using table_dynamic_t = hxhash_table<hxtest_integer, hxdefault_delete, hxallocator_dynamic_capacity, 0>;
 		const table_dynamic_t dynamic_table;
 		EXPECT_EQ(dynamic_table.bucket_count(), 0);
 		EXPECT_EQ(dynamic_table.load_factor(), 0.0f);
@@ -78,7 +78,7 @@ TEST_F(hxhash_table_test_f, null) {
 TEST_F(hxhash_table_test_f, single) {
 	static const int k = 77;
 	{
-		using table_t = hxhash_table<hxtest_integer, hxdefault_delete, false, 4>;
+		using table_t = hxhash_table<hxtest_integer, hxdefault_delete, 4, 0>;
 		table_t table;
 		const table_t& const_table = table;
 		hxtest_integer* node = hxnew<hxtest_integer>(k, 0);
@@ -113,11 +113,11 @@ TEST_F(hxhash_table_test_f, single) {
 		EXPECT_EQ(table.size(), 1);
 		hxdelete(node);
 	}
-	EXPECT_TRUE(check_stats(3, 3, 0, 3, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(3, 0, 3, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhash_table_test_f, raw_pointer_insert_duplicate_invokes_deleter) {
-	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, false, 4>;
+	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, 4, 0>;
 	{
 		table_t table;
 		hxtest_integer* node = hxnew<hxtest_integer>(55, 55);
@@ -133,9 +133,9 @@ TEST_F(hxhash_table_test_f, raw_pointer_insert_duplicate_invokes_deleter) {
 		EXPECT_EQ(table.size(), 2);
 		EXPECT_EQ(&*table.find(55), node);
 	}
-	EXPECT_TRUE(check_stats(3, 3, 0, 3, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(3, 0, 3, 0, 0, 0, 0, 0, 0, 0));
 	{
-		using no_delete_table_t = hxhash_table<hxtest_integer, hxdo_not_delete, false, 4>;
+		using no_delete_table_t = hxhash_table<hxtest_integer, hxdo_not_delete, 4, 0>;
 		no_delete_table_t table;
 		hxtest_integer* node = hxnew<hxtest_integer>(55, 55);
 		// Shares 55's bucket at table_size_bits 4.
@@ -151,7 +151,7 @@ TEST_F(hxhash_table_test_f, raw_pointer_insert_duplicate_invokes_deleter) {
 		hxdelete(colliding);
 	}
 	{
-		using single_bucket_table_t = hxhash_table<hxtest_integer, hxdo_not_delete, false, 1>;
+		using single_bucket_table_t = hxhash_table<hxtest_integer, hxdo_not_delete, 1, 0>;
 		single_bucket_table_t table;
 		hxtest_integer* original = hxnew<hxtest_integer>(0, 0);
 		hxtest_integer* nonmatching = hxnew<hxtest_integer>(2, 2);
@@ -166,12 +166,12 @@ TEST_F(hxhash_table_test_f, raw_pointer_insert_duplicate_invokes_deleter) {
 		hxdelete(original);
 		hxdelete(nonmatching);
 	}
-	EXPECT_TRUE(check_stats(9, 9, 0, 9, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(9, 0, 6, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhash_table_test_f, map_node_usage) {
 	using map_node_t = hxhash_table_map_node<int32_t, hxtest_object>;
-	using table_t = hxhash_table<map_node_t, hxdefault_delete, false, 4>;
+	using table_t = hxhash_table<map_node_t, hxdefault_delete, 4, 0>;
 	{
 		table_t table;
 		map_node_t* n10 = hxnew<map_node_t>(10);
@@ -198,13 +198,13 @@ TEST_F(hxhash_table_test_f, map_node_usage) {
 		}
 		EXPECT_EQ(table.size(), 2);
 	}
-	EXPECT_TRUE(check_stats(2, 2, 2, 0, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(2, 2, 0, 0, 0, 0, 0, 0, 0, 0));
 }
 
 #if HX_CPLUSPLUS >= 202302L
 TEST(hxhash_table_test, expected_lookup) {
 	using node_t = hxhash_table_map_node<int, int>;
-	using table_t = hxhash_table<node_t, hxdefault_delete, false, 4>;
+	using table_t = hxhash_table<node_t, hxdefault_delete, 4, 0>;
 	table_t table;
 	table.try_emplace(1, 1, 10);
 	table.try_emplace(2, 2, 20);
@@ -317,7 +317,7 @@ TEST_F(hxhash_table_test_f, multiple) {
 	static const int size_i = 78;
 	static const unsigned int size_u = 78u;
 	{
-		using table_t = hxhash_table<hxtest_object_node, hxdefault_delete, true>;
+		using table_t = hxhash_table<hxtest_object_node, hxdefault_delete, hxallocator_dynamic_capacity, hxtrait_multi>;
 		table_t table;
 		const table_t& const_table = table;
 		table.set_size_bits(5);
@@ -414,9 +414,9 @@ TEST_F(hxhash_table_test_f, multiple) {
 		hxtest_gdb_break_hxhash_table();
 	}
 #if (HX_HARDENING_MODE) == HX_HARDENING_MODE_NONE
-	EXPECT_TRUE(check_stats(1365, 1365, 0, 1053, 312, 0, 0, 0, 1801, 0));
+	EXPECT_TRUE(check_stats(1365, 0, 1053, 312, 0, 0, 0, 1801, 0, 0));
 #else
-	EXPECT_TRUE(check_stats(1365, 1365, 0, 1053, 312, 0, 0, 0, 2419, 0));
+	EXPECT_TRUE(check_stats(1365, 0, 1053, 312, 0, 0, 0, 2419, 0, 0));
 #endif
 }
 
@@ -427,8 +427,8 @@ TEST_F(hxhash_table_test_f, strings) {
 		"Indigo","Violet" };
 	const hxsize_t sz = hxsize(colors);
 	{
-		const hxsystem_allocator_scope stack_scope(hxsystem_allocator_stack_0);
-		using table_t = hxhash_table<hxtest_string, hxdefault_delete, false, 4>;
+		const hxslab_allocator_scope stack_scope(hxslab_allocator_stack_0);
+		using table_t = hxhash_table<hxtest_string, hxdefault_delete, 4, 0>;
 		table_t table;
 		for(hxsize_t i = sz; i-- != 0;) {
 			hxtest_string* n = hxnew<hxtest_string>(colors[i], static_cast<int32_t>(i));
@@ -438,15 +438,15 @@ TEST_F(hxhash_table_test_f, strings) {
 		EXPECT_NE(table.find("Cyan"), table.end());
 		EXPECT_EQ(table.find("Pink"), table.end());
 	}
-	EXPECT_TRUE(check_stats(static_cast<int>(sz), static_cast<int>(sz),
-		0, static_cast<int>(sz), 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(static_cast<int>(sz),
+		0, static_cast<int>(sz), 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST(hxhash_table_test, string_literal_nodes) {
 	static const char* const literals[] = {
 		"Crimson", "Teal", "Magenta", "Gold"
 	};
-	using table_t = hxhash_table<hxtest_string_literal, hxdefault_delete, false, 4>;
+	using table_t = hxhash_table<hxtest_string_literal, hxdefault_delete, 4, 0>;
 	table_t table;
 	for(hxsize_t i = 0; i < hxsize(literals); ++i) {
 		hxtest_string_literal* n = hxnew<hxtest_string_literal>(literals[i]);
@@ -472,7 +472,7 @@ TEST(hxhash_table_set_node_test, operator_equal_and_less) {
 #if HX_CPLUSPLUS >= 202002L
 TEST(hxhash_table_map_node_test, hash_next_type) {
 	using node_t = hxhash_table_map_node<int32_t, int32_t>;
-	using table_t = hxhash_table<node_t, hxdo_not_delete, true, 4>;
+	using table_t = hxhash_table<node_t, hxdo_not_delete, 4, hxtrait_multi>;
 	// d shares 1's bucket at table_size_bits 4.
 	node_t nodes[] = { node_t(1, 10), node_t(4, 40), node_t(1, 20), node_t(2, 30) };
 	table_t table;
@@ -499,7 +499,7 @@ struct hxtest_map_node_t : hxhash_table_map_node<int32_t, int32_t> {
 
 #if HX_CPLUSPLUS >= 202002L
 TEST(hxhash_table_map_node_test, subclass_hash_next_type) {
-	using table_t = hxhash_table<hxtest_map_node_t, hxdo_not_delete, false, 4>;
+	using table_t = hxhash_table<hxtest_map_node_t, hxdo_not_delete, 4, 0>;
 	hxtest_map_node_t nodes[] = {
 		hxtest_map_node_t(1, 10), hxtest_map_node_t(2, 20), hxtest_map_node_t(3, 30) };
 	table_t table;
@@ -516,7 +516,7 @@ TEST(hxhash_table_map_node_test, subclass_hash_next_type) {
 
 TEST(hxhash_table_map_node_test, add_range_empty_range_leaves_table_empty) {
 	using node_t = hxhash_table_map_node<int32_t, int32_t>;
-	using table_t = hxhash_table<node_t, hxdo_not_delete, false, 4>;
+	using table_t = hxhash_table<node_t, hxdo_not_delete, 4, 0>;
 	node_t* const empty_begin = hxnull;
 	table_t table;
 	table.add_range(hxmake_range(empty_begin, empty_begin));
@@ -526,7 +526,7 @@ TEST(hxhash_table_map_node_test, add_range_empty_range_leaves_table_empty) {
 
 TEST(hxhash_table_map_node_test, add_range_appends_to_nonempty_table) {
 	using node_t = hxhash_table_map_node<int32_t, int32_t>;
-	using table_t = hxhash_table<node_t, hxdo_not_delete, false, 4>;
+	using table_t = hxhash_table<node_t, hxdo_not_delete, 4, 0>;
 	node_t first(31, 310);
 	node_t more[] = { node_t(32, 320), node_t(33, 330) };
 	table_t table;
@@ -557,7 +557,7 @@ TEST(hxhash_table_map_node_test, operator_equal_and_less) {
 }
 
 TEST_F(hxhash_table_test_f, iterator_traverses_all_nodes_exactly_once) {
-	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, true, 4>;
+	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, 4, hxtrait_multi>;
 	table_t table;
 	static const int keys[] = { 1, 2, 3, 4, 5 };
 	static const int n = static_cast<int>(sizeof(keys) / sizeof(keys[0]));
@@ -570,18 +570,18 @@ TEST_F(hxhash_table_test_f, iterator_traverses_all_nodes_exactly_once) {
 		++visited;
 	}
 	EXPECT_EQ(visited, n);
-	EXPECT_TRUE(check_stats(n, 0, 0, n, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(n, 0, n, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST(hxhash_table_test, iterator_begin_equals_end_on_empty_table) {
-	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, false, 4>;
+	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, 4, 0>;
 	table_t table;
 	EXPECT_EQ(table.begin(), table.end());
 	EXPECT_EQ(table.cbegin(), table.cend());
 }
 
 TEST_F(hxhash_table_test_f, default_constructed_iterators_equal_end) {
-	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, false, 4>;
+	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, 4, 0>;
 	table_t table;
 	table.insert(hxptr<hxtest_integer>(hxnew<hxtest_integer>(10, 10)));
 	const table_t::const_iterator cd;
@@ -590,32 +590,32 @@ TEST_F(hxhash_table_test_f, default_constructed_iterators_equal_end) {
 	const table_t::iterator d;
 	EXPECT_EQ(d, table.end());
 	EXPECT_FALSE(d == table.begin());
-	EXPECT_TRUE(check_stats(1, 0, 0, 1, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(1, 0, 1, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST(hxhash_table_test, bucket_count_matches_table_size_bits) {
-	using table_static_t = hxhash_table<hxtest_integer, hxdefault_delete, false, 4>;
+	using table_static_t = hxhash_table<hxtest_integer, hxdefault_delete, 4, 0>;
 	const table_static_t static_table;
 	EXPECT_EQ(static_table.bucket_count(), 16);
-	using table_dynamic_t = hxhash_table<hxtest_integer, hxdefault_delete, false>;
+	using table_dynamic_t = hxhash_table<hxtest_integer, hxdefault_delete, hxallocator_dynamic_capacity, 0>;
 	table_dynamic_t dynamic_table;
 	dynamic_table.set_size_bits(5);
 	EXPECT_EQ(dynamic_table.bucket_count(), 32);
 }
 
 TEST_F(hxhash_table_test_f, const_iterator_post_increment_returns_prior) {
-	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, false, 4>;
+	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, 4, 0>;
 	table_t table;
 	table.insert(hxptr<hxtest_integer>(hxnew<hxtest_integer>(10, 10)));
 	table_t::const_iterator it = table.cbegin();
 	const table_t::const_iterator prior = it++;
 	EXPECT_EQ(prior, table.cbegin());
 	EXPECT_EQ(it, table.cend());
-	EXPECT_TRUE(check_stats(1, 0, 0, 1, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(1, 0, 1, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhash_table_test_f, emplace_constructs_and_inserts_node) {
-	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, true, 4>;
+	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, 4, hxtrait_multi>;
 	table_t table;
 	const table_t::iterator a = table.emplace(7, 7);
 	EXPECT_EQ(a->hash_key(), 7);
@@ -625,11 +625,11 @@ TEST_F(hxhash_table_test_f, emplace_constructs_and_inserts_node) {
 	EXPECT_EQ(b->hash_key(), 7);
 	EXPECT_EQ(table.size(), 2);
 	EXPECT_EQ(table.count(7), 2);
-	EXPECT_TRUE(check_stats(2, 0, 0, 2, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(2, 0, 2, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhash_table_test_f, try_emplace_inserts_then_returns_existing) {
-	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, false, 4>;
+	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, 4, 0>;
 	table_t table;
 	const table_t::iterator a = table.try_emplace(7, 7, 7);
 	EXPECT_EQ(a->hash_key(), 7);
@@ -637,29 +637,29 @@ TEST_F(hxhash_table_test_f, try_emplace_inserts_then_returns_existing) {
 	const table_t::iterator b = table.try_emplace(7, 7, 7);
 	EXPECT_EQ(a, b);
 	EXPECT_EQ(table.size(), 1);
-	EXPECT_TRUE(check_stats(1, 0, 0, 1, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(1, 0, 1, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhash_table_test_f, count_returns_zero_for_absent_key) {
-	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, false, 4>;
+	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, 4, 0>;
 	table_t table;
 	table.insert(hxptr<hxtest_integer>(hxnew<hxtest_integer>(10, 10)));
 	EXPECT_EQ(table.count(10), 1);
 	EXPECT_EQ(table.count(99), 0);
-	EXPECT_TRUE(check_stats(1, 0, 0, 1, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(1, 0, 1, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhash_table_test_f, count_multi_two_same_key) {
-	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, true, 4>;
+	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, 4, hxtrait_multi>;
 	table_t table;
 	table.insert(hxptr<hxtest_integer>(hxnew<hxtest_integer>(7, 7)));
 	table.insert(hxptr<hxtest_integer>(hxnew<hxtest_integer>(7, 7)));
 	EXPECT_EQ(table.count(7), 2);
-	EXPECT_TRUE(check_stats(2, 0, 0, 2, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(2, 0, 2, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhash_table_test_f, find_second_duplicate_via_previous) {
-	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, true, 4>;
+	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, 4, hxtrait_multi>;
 	table_t table;
 	hxtest_integer* n1 = hxnew<hxtest_integer>(34, 34);
 	// Shares 34's bucket at table_size_bits 4.
@@ -676,7 +676,7 @@ TEST_F(hxhash_table_test_f, find_second_duplicate_via_previous) {
 	EXPECT_NE(second, first);
 	EXPECT_EQ(table.find(34, second), table.end());
 
-	using single_bucket_table_t = hxhash_table<hxtest_integer, hxdefault_delete, true, 1>;
+	using single_bucket_table_t = hxhash_table<hxtest_integer, hxdefault_delete, 1, hxtrait_multi>;
 	single_bucket_table_t single_bucket_table;
 	hxtest_integer* tail_match = hxnew<hxtest_integer>(0, 0);
 	hxtest_integer* middle_other = hxnew<hxtest_integer>(2, 2);
@@ -691,11 +691,11 @@ TEST_F(hxhash_table_test_f, find_second_duplicate_via_previous) {
 	EXPECT_EQ(single_bucket_table.find(0, found_tail), single_bucket_table.end());
 	const single_bucket_table_t::iterator found_middle = single_bucket_table.find(2);
 	EXPECT_EQ(single_bucket_table.find(2, found_middle), single_bucket_table.end());
-	EXPECT_TRUE(check_stats(6, 0, 0, 6, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(6, 0, 6, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhash_table_test_f, find_with_previous_skips_colliding_key_in_single_table) {
-	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, false, 4>;
+	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, 4, 0>;
 	table_t table;
 	// Shares 77's bucket at table_size_bits 4.
 	hxtest_integer* const node_17 = hxnew<hxtest_integer>(17, 17);
@@ -704,11 +704,11 @@ TEST_F(hxhash_table_test_f, find_with_previous_skips_colliding_key_in_single_tab
 	table.insert(hxptr<hxtest_integer>(node_77));
 	const table_t::iterator found = table.find(77);
 	EXPECT_EQ(table.find(77, found), table.end());
-	EXPECT_TRUE(check_stats(2, 0, 0, 2, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(2, 0, 2, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhash_table_test_f, find_absent_key_in_nonempty_bucket_chain) {
-	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, true>;
+	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, hxallocator_dynamic_capacity, hxtrait_multi>;
 	table_t table;
 	table.set_size_bits(1);
 	table.insert(hxptr<hxtest_integer>(hxnew<hxtest_integer>(1, 1)));
@@ -716,11 +716,11 @@ TEST_F(hxhash_table_test_f, find_absent_key_in_nonempty_bucket_chain) {
 	table.insert(hxptr<hxtest_integer>(hxnew<hxtest_integer>(5, 5)));
 	EXPECT_EQ(table.find(99), table.end());
 	EXPECT_NE(table.find(1), table.end());
-	EXPECT_TRUE(check_stats(3, 0, 0, 3, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(3, 0, 3, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhash_table_test_f, insert_two_keys_same_bucket_both_findable) {
-	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, true>;
+	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, hxallocator_dynamic_capacity, hxtrait_multi>;
 	table_t table;
 	table.set_size_bits(1);
 	table.insert(hxptr<hxtest_integer>(hxnew<hxtest_integer>(1, 1)));
@@ -728,11 +728,11 @@ TEST_F(hxhash_table_test_f, insert_two_keys_same_bucket_both_findable) {
 	EXPECT_NE(table.find(1), table.end());
 	EXPECT_NE(table.find(3), table.end());
 	EXPECT_EQ(table.size(), 2u);
-	EXPECT_TRUE(check_stats(2, 0, 0, 2, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(2, 0, 2, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhash_table_test_f, erase_head_node_updates_size) {
-	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, false, 4>;
+	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, 4, 0>;
 	table_t table;
 	table.insert(hxptr<hxtest_integer>(hxnew<hxtest_integer>(5, 5)));
 	hxtest_integer* const node_6 = hxnew<hxtest_integer>(6, 6);
@@ -746,7 +746,7 @@ TEST_F(hxhash_table_test_f, erase_head_node_updates_size) {
 	EXPECT_EQ(table.size(), 0u);
 	EXPECT_EQ(table.find(5), table.end());
 
-	using single_bucket_table_t = hxhash_table<hxtest_integer, hxdefault_delete, false, 1>;
+	using single_bucket_table_t = hxhash_table<hxtest_integer, hxdefault_delete, 1, 0>;
 	single_bucket_table_t single_bucket_table;
 	single_bucket_table.insert(hxptr<hxtest_integer>(hxnew<hxtest_integer>(1, 1)));
 	hxtest_integer* const node_2 = hxnew<hxtest_integer>(2, 2);
@@ -757,17 +757,17 @@ TEST_F(hxhash_table_test_f, erase_head_node_updates_size) {
 	EXPECT_NE(single_bucket_table.find(1), single_bucket_table.end());
 	hxdelete(node_2);
 
-	using fn_deleter_table_t = hxhash_table<hxtest_integer, hxdefault_delete, false, 4>;
+	using fn_deleter_table_t = hxhash_table<hxtest_integer, hxdefault_delete, 4, 0>;
 	fn_deleter_table_t fn_deleter_table;
 	fn_deleter_table.insert(hxptr<hxtest_integer>(hxnew<hxtest_integer>(9, 9)));
 	EXPECT_EQ(fn_deleter_table.erase(9, &hxdelete<hxtest_integer>), 1u);
 	EXPECT_EQ(fn_deleter_table.size(), 0u);
 	EXPECT_EQ(fn_deleter_table.find(9), fn_deleter_table.end());
-	EXPECT_TRUE(check_stats(5, 4, 0, 5, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(5, 0, 5, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhash_table_test_f, erase_interior_node_in_bucket_chain) {
-	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, true>;
+	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, hxallocator_dynamic_capacity, hxtrait_multi>;
 	table_t table;
 	table.set_size_bits(1);
 	table.insert(hxptr<hxtest_integer>(hxnew<hxtest_integer>(1, 1)));
@@ -780,7 +780,7 @@ TEST_F(hxhash_table_test_f, erase_interior_node_in_bucket_chain) {
 	EXPECT_NE(table.find(1), table.end());
 	EXPECT_NE(table.find(5), table.end());
 
-	using single_bucket_table_t = hxhash_table<hxtest_integer, hxdefault_delete, true, 1>;
+	using single_bucket_table_t = hxhash_table<hxtest_integer, hxdefault_delete, 1, hxtrait_multi>;
 	{
 		single_bucket_table_t all_matching_table;
 		hxtest_integer* const all_first = hxnew<hxtest_integer>(0, 0);
@@ -845,20 +845,20 @@ TEST_F(hxhash_table_test_f, erase_interior_node_in_bucket_chain) {
 		hxdelete(interior_head);
 		hxdelete(interior_tail);
 	}
-	EXPECT_TRUE(check_stats(17, 15, 0, 17, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(17, 0, 17, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhash_table_test_f, erase_returns_zero_for_absent_key) {
-	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, false, 4>;
+	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, 4, 0>;
 	table_t table;
 	table.insert(hxptr<hxtest_integer>(hxnew<hxtest_integer>(10, 10)));
 	EXPECT_EQ(table.erase(99), 0u);
 	EXPECT_EQ(table.size(), 1u);
-	EXPECT_TRUE(check_stats(1, 0, 0, 1, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(1, 0, 1, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhash_table_test_f, extract_head_node_removes_from_table) {
-	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, false, 4>;
+	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, 4, 0>;
 	table_t table;
 	hxtest_integer* node = hxnew<hxtest_integer>(55, 55);
 	table.insert(hxptr<hxtest_integer>(node));
@@ -866,11 +866,11 @@ TEST_F(hxhash_table_test_f, extract_head_node_removes_from_table) {
 	EXPECT_EQ(extracted.get(), node);
 	EXPECT_EQ(table.find(55), table.end());
 	EXPECT_EQ(table.size(), 0u);
-	EXPECT_TRUE(check_stats(1, 0, 0, 1, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(1, 0, 1, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhash_table_test_f, extract_interior_node_keeps_others) {
-	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, true>;
+	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, hxallocator_dynamic_capacity, hxtrait_multi>;
 	table_t table;
 	table.set_size_bits(1);
 	table.insert(hxptr<hxtest_integer>(hxnew<hxtest_integer>(1, 1)));
@@ -883,11 +883,11 @@ TEST_F(hxhash_table_test_f, extract_interior_node_keeps_others) {
 	EXPECT_NE(table.find(1), table.end());
 	EXPECT_NE(table.find(5), table.end());
 	EXPECT_EQ(table.find(3), table.end());
-	EXPECT_TRUE(check_stats(3, 0, 0, 3, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(3, 0, 3, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhash_table_test_f, erase_iterator_head_node_returns_next) {
-	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, true, 1>;
+	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, 1, hxtrait_multi>;
 	table_t table;
 	hxtest_integer* const node_2 = hxnew<hxtest_integer>(2, 2);
 	table.insert(hxptr<hxtest_integer>(node_2));
@@ -900,11 +900,11 @@ TEST_F(hxhash_table_test_f, erase_iterator_head_node_returns_next) {
 	EXPECT_EQ(table.size(), 1u);
 	EXPECT_EQ(table.find(0), table.end());
 	EXPECT_NE(table.find(2), table.end());
-	EXPECT_TRUE(check_stats(2, 1, 0, 2, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(2, 0, 2, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhash_table_test_f, erase_iterator_interior_node_returns_next) {
-	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, true, 1>;
+	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, 1, hxtrait_multi>;
 	table_t table;
 	hxtest_integer* const node_10 = hxnew<hxtest_integer>(10, 10);
 	table.insert(hxptr<hxtest_integer>(node_10));
@@ -922,11 +922,11 @@ TEST_F(hxhash_table_test_f, erase_iterator_interior_node_returns_next) {
 	EXPECT_EQ(&*next, node_10);
 	EXPECT_EQ(table.size(), 3u);
 	EXPECT_EQ(table.find(9), table.end());
-	EXPECT_TRUE(check_stats(4, 1, 0, 4, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(4, 0, 4, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhash_table_test_f, erase_iterator_tail_node_returns_end) {
-	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, true, 1>;
+	using table_t = hxhash_table<hxtest_integer, hxdefault_delete, 1, hxtrait_multi>;
 	table_t table;
 	hxtest_integer* const node_2 = hxnew<hxtest_integer>(2, 2);
 	table.insert(hxptr<hxtest_integer>(node_2));
@@ -941,11 +941,11 @@ TEST_F(hxhash_table_test_f, erase_iterator_tail_node_returns_end) {
 	EXPECT_EQ(table.size(), 1u);
 	EXPECT_EQ(table.find(2), table.end());
 	EXPECT_NE(table.find(0), table.end());
-	EXPECT_TRUE(check_stats(2, 1, 0, 2, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(2, 0, 2, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhash_table_test_f, erase_iterator_do_not_delete_skips_deleter) {
-	using table_t = hxhash_table<hxtest_integer, hxdo_not_delete, false, 4>;
+	using table_t = hxhash_table<hxtest_integer, hxdo_not_delete, 4, 0>;
 	table_t table;
 	hxtest_integer node_31(31, 31);
 	table.insert(hxptr<hxtest_integer, hxdo_not_delete>(&node_31));
@@ -953,11 +953,11 @@ TEST_F(hxhash_table_test_f, erase_iterator_do_not_delete_skips_deleter) {
 	const table_t::iterator next = table.erase(it);
 	EXPECT_EQ(next, table.end());
 	EXPECT_EQ(table.size(), 0u);
-	EXPECT_TRUE(check_stats(1, 0, 0, 1, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(1, 0, 1, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhash_table_test_f, replace_no_match_inserts_new_node) {
-	using table_t = hxhash_table<hxtest_integer, hxdo_not_delete, false, 4>;
+	using table_t = hxhash_table<hxtest_integer, hxdo_not_delete, 4, 0>;
 	table_t table;
 	hxtest_integer* const node_1 = hxnew<hxtest_integer>(1, 1);
 	const hxptr<hxtest_integer, hxdo_not_delete> replaced = table.replace(node_1);
@@ -965,11 +965,11 @@ TEST_F(hxhash_table_test_f, replace_no_match_inserts_new_node) {
 	EXPECT_EQ(table.size(), 1u);
 	EXPECT_EQ(&*table.find(1), node_1);
 	hxdelete(node_1);
-	EXPECT_TRUE(check_stats(1, 1, 0, 1, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(1, 0, 1, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhash_table_test_f, replace_head_match_keeps_size_and_swaps_node) {
-	using table_t = hxhash_table<hxtest_integer, hxdo_not_delete, false, 1>;
+	using table_t = hxhash_table<hxtest_integer, hxdo_not_delete, 1, 0>;
 	table_t table;
 	hxtest_integer* const node_2 = hxnew<hxtest_integer>(2, 2);
 	table.insert(hxptr<hxtest_integer>(node_2));
@@ -984,11 +984,11 @@ TEST_F(hxhash_table_test_f, replace_head_match_keeps_size_and_swaps_node) {
 	hxdelete(node_0a);
 	hxdelete(node_0b);
 	hxdelete(node_2);
-	EXPECT_TRUE(check_stats(3, 3, 0, 3, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(3, 0, 3, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxhash_table_test_f, replace_interior_match_keeps_size_and_swaps_node) {
-	using table_t = hxhash_table<hxtest_integer, hxdo_not_delete, false, 1>;
+	using table_t = hxhash_table<hxtest_integer, hxdo_not_delete, 1, 0>;
 	table_t table;
 	hxtest_integer* const node_9 = hxnew<hxtest_integer>(9, 9);
 	table.insert(hxptr<hxtest_integer>(node_9));
@@ -1007,11 +1007,11 @@ TEST_F(hxhash_table_test_f, replace_interior_match_keeps_size_and_swaps_node) {
 	hxdelete(node_0b);
 	hxdelete(node_2);
 	hxdelete(node_9);
-	EXPECT_TRUE(check_stats(4, 4, 0, 4, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(4, 0, 4, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST(hxhash_table_test, gdb_printer_edge_cases) {
-	using dynamic_set_table_t = hxhash_table<hxtest_set_node_t, hxdo_not_delete, false>;
+	using dynamic_set_table_t = hxhash_table<hxtest_set_node_t, hxdo_not_delete, hxallocator_dynamic_capacity, 0>;
 	const dynamic_set_table_t a;
 	EXPECT_EQ(a.bucket_count(), 0);
 
@@ -1021,7 +1021,7 @@ TEST(hxhash_table_test, gdb_printer_edge_cases) {
 	b.insert(&node_b);
 	EXPECT_EQ(b.size(), 1u);
 
-	using map_table_t = hxhash_table<hxtest_map_node_t, hxdo_not_delete, false, 1>;
+	using map_table_t = hxhash_table<hxtest_map_node_t, hxdo_not_delete, 1, 0>;
 	hxtest_map_node_t node_c(31, 32);
 	map_table_t c;
 	c.insert(&node_c);
@@ -1035,7 +1035,7 @@ TEST(hxhash_table_test, gdb_printer_edge_cases) {
 
 #if HX_CPLUSPLUS >= 202002L
 TEST(hxhash_table_node_integer_test, conforms_to_forward_iterator_api) {
-	using table_t = hxhash_table<hxhash_table_node_integer<int32_t>, hxdo_not_delete, false, 4>;
+	using table_t = hxhash_table<hxhash_table_node_integer<int32_t>, hxdo_not_delete, 4, 0>;
 	hxhash_table_node_integer<int32_t> nodes[] = { 1, 2, 3 };
 	table_t table;
 	table.add_range(hxmake_range(nodes, nodes + hxsize(nodes)));

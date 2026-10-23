@@ -5,10 +5,12 @@
 
 set -eu
 
+cd "$(dirname "$(readlink -f "$0")")"
+
 rm -rf "$(readlink -f build)"
 
 # Nukes the files in .gitignore.
-git clean -Xdf
+git clean -Xdf -e '!plans/' -e '!plans/**'
 
 # ccache is only for debugbuild.sh. Clearing it prevents stale binaries. It is
 # also worthwhile resetting the cache stats to keep them from getting stale.

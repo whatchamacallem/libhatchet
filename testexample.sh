@@ -12,13 +12,13 @@ HX_VERBOSE_=""
 if [ "${1:-}" = "--verbose" ]; then
 	HX_VERBOSE_="--verbose"
 elif [ -n "${1:-}" ]; then
-	echo "usage: $0 [--verbose]"
+	echo "usage_error: $0 [--verbose]"
 	exit 1
 fi
 
 # Builds a module that uses MUSL lic headers only.
 HX_C_FLAGS_="-DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG -m32 -ggdb3"
-HX_CPP_FLAGS_="$HX_C_FLAGS_ -DHX_USE_LIBCXX=0 -DHX_USE_NAMESPACE=hx -DHX_USE_CONSOLE=2 \
+HX_CPP_FLAGS_="$HX_C_FLAGS_ -DHX_USE_STD_LIB=0 -DHX_USE_NAMESPACE=hx -DHX_USE_CONSOLE=2 \
 	-std=c++23 -nostdinc++ -fno-exceptions -fno-rtti"
 HX_LINK_FLAGS_="-m32 -nodefaultlibs -lc -lpthread -lm"
 

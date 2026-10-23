@@ -40,7 +40,7 @@ public:
 };
 
 using hxtest_hash_pool_t = hxfree_list<hxtest_hash_node, 8>;
-using hxtest_hash_table_t = hxhash_table<hxtest_hash_node, hxtest_hash_pool_t::deleter_t, false, 2>;
+using hxtest_hash_table_t = hxhash_table<hxtest_hash_node, hxtest_hash_pool_t::deleter_t, 2, 0>;
 
 } // namespace
 
@@ -67,7 +67,7 @@ TEST_F(hxfree_list_test_f, allocate) {
 	hxfree_list<hxtest_object, 2>::ptr_t b = pool.allocate(34);
 	EXPECT_EQ(b->value(), (int32_t)34);
 	EXPECT_EQ(pool.size(), hxsize_t{0});
-	EXPECT_TRUE(check_stats(2, 0, 0, 2, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(2, 0, 2, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxfree_list_test_f, try_allocate) {
@@ -80,7 +80,7 @@ TEST_F(hxfree_list_test_f, try_allocate) {
 	const hxfree_list<hxtest_object, 1>::ptr_t b = pool.try_allocate(6);
 	EXPECT_FALSE((bool)b);
 	EXPECT_EQ(pool.size(), hxsize_t{0});
-	EXPECT_TRUE(check_stats(1, 0, 0, 1, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(1, 0, 1, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxfree_list_test_f, release_raw_pointer) {
@@ -88,20 +88,19 @@ TEST_F(hxfree_list_test_f, release_raw_pointer) {
 	hxfree_list<hxtest_object, 2>::ptr_t p = pool.allocate(5);
 	hxtest_object* const raw = p.release();
 	EXPECT_EQ(pool.size(), hxsize_t{1});
-	EXPECT_TRUE(check_stats(1, 0, 0, 1, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(1, 0, 1, 0, 0, 0, 0, 0, 0, 0));
 	pool.release(raw);
 	EXPECT_EQ(pool.size(), hxsize_t{2});
-	EXPECT_TRUE(check_stats(1, 1, 0, 1, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(1, 0, 0, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxfree_list_test_f, release_hxptr) {
 	hxfree_list<hxtest_object, 1> pool;
 	hxfree_list<hxtest_object, 1>::ptr_t p = pool.allocate(8);
-	EXPECT_TRUE(check_stats(1, 0, 0, 1, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(1, 0, 1, 0, 0, 0, 0, 0, 0, 0));
 	pool.release(hxmove(p));
-	EXPECT_TRUE(check_stats(1, 1, 0, 1, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(1, 0, 0, 0, 0, 0, 0, 0, 0, 0));
 	EXPECT_EQ(pool.size(), hxsize_t{1});
-	EXPECT_TRUE(check_stats(1, 1, 0, 1, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxfree_list_test_f, deleter_ignores_null) {
@@ -117,11 +116,10 @@ TEST_F(hxfree_list_test_f, deleter_releases_on_ptr_destruction) {
 	{
 		const hxfree_list<hxtest_object, 1>::ptr_t p = pool.allocate(11);
 		EXPECT_EQ(pool.size(), hxsize_t{0});
-		EXPECT_TRUE(check_stats(1, 0, 0, 1, 0, 0, 0, 0, 0, 0));
+		EXPECT_TRUE(check_stats(1, 0, 1, 0, 0, 0, 0, 0, 0, 0));
 	}
-	EXPECT_TRUE(check_stats(1, 1, 0, 1, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(1, 0, 0, 0, 0, 0, 0, 0, 0, 0));
 	EXPECT_EQ(pool.size(), hxsize_t{1});
-	EXPECT_TRUE(check_stats(1, 1, 0, 1, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxfree_list_test_f, is_allocator_raw_pointer) {
@@ -131,7 +129,7 @@ TEST_F(hxfree_list_test_f, is_allocator_raw_pointer) {
 	EXPECT_FALSE(pool.is_allocator(&external));
 	const hxfree_list<hxtest_object, 1>::ptr_t p = pool.allocate(9);
 	EXPECT_TRUE(pool.is_allocator(p.get()));
-	EXPECT_TRUE(check_stats(2, 0, 0, 2, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(2, 0, 2, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxfree_list_test_f, is_allocator_hxptr) {
@@ -140,7 +138,7 @@ TEST_F(hxfree_list_test_f, is_allocator_hxptr) {
 	const hxfree_list<hxtest_object, 2>::ptr_t p = pool_a.allocate(3);
 	EXPECT_TRUE(pool_a.is_allocator(p));
 	EXPECT_FALSE(pool_b.is_allocator(p));
-	EXPECT_TRUE(check_stats(1, 0, 0, 1, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(1, 0, 1, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxfree_list_test_f, reserve) {
@@ -156,7 +154,7 @@ TEST_F(hxfree_list_test_f, reserve) {
 	EXPECT_EQ(pool.size(), hxsize_t{0});
 	pool.release(hxmove(a));
 	EXPECT_EQ(pool.size(), hxsize_t{1});
-	EXPECT_TRUE(check_stats(2, 1, 0, 2, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(2, 0, 2, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxfree_list_test_f, move_construct) {
@@ -168,7 +166,7 @@ TEST_F(hxfree_list_test_f, move_construct) {
 	const hxfree_list<hxtest_object> dest(hxmove(source));
 	EXPECT_EQ(dest.size(), hxsize_t{2});
 	EXPECT_EQ(dest.capacity(), hxsize_t{2});
-	EXPECT_TRUE(check_stats(1, 1, 0, 1, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(1, 0, 1, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxfree_list_test_f, size_across_allocate_and_release) {
@@ -182,7 +180,7 @@ TEST_F(hxfree_list_test_f, size_across_allocate_and_release) {
 	EXPECT_EQ(pool.size(), hxsize_t{1});
 	pool.release(hxmove(b));
 	EXPECT_EQ(pool.size(), hxsize_t{2});
-	EXPECT_TRUE(check_stats(2, 2, 0, 2, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(2, 0, 2, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxfree_list_test_f, reallocate_slot_after_release) {
@@ -195,7 +193,7 @@ TEST_F(hxfree_list_test_f, reallocate_slot_after_release) {
 	hxfree_list<hxtest_object, 1>::ptr_t q = pool.allocate(2);
 	EXPECT_EQ(q.get(), addr_first);
 	EXPECT_EQ(q->value(), (int32_t)2);
-	EXPECT_TRUE(check_stats(2, 1, 0, 2, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(2, 0, 2, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxfree_list_test_f, deleter_with_hxdo_not_delete) {
@@ -207,12 +205,11 @@ TEST_F(hxfree_list_test_f, deleter_with_hxdo_not_delete) {
 		EXPECT_TRUE(pool.is_allocator(unowned));
 		EXPECT_EQ(pool.size(), hxsize_t{0});
 	}
-	EXPECT_TRUE(check_stats(1, 0, 0, 1, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(1, 0, 1, 0, 0, 0, 0, 0, 0, 0));
 	EXPECT_EQ(pool.size(), hxsize_t{0});
 	pool.release(raw);
-	EXPECT_TRUE(check_stats(1, 1, 0, 1, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(1, 0, 0, 0, 0, 0, 0, 0, 0, 0));
 	EXPECT_EQ(pool.size(), hxsize_t{1});
-	EXPECT_TRUE(check_stats(1, 1, 0, 1, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxfree_list_test_f, hxlist_with_free_list_deleter_push_and_clear) {
@@ -224,10 +221,10 @@ TEST_F(hxfree_list_test_f, hxlist_with_free_list_deleter_push_and_clear) {
 	EXPECT_EQ(list.size(), hxsize_t{3});
 	EXPECT_EQ(pool.size(), hxsize_t{1});
 	list.clear();
-	EXPECT_TRUE(check_stats(3, 3, 0, 3, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(3, 0, 3, 0, 0, 0, 0, 0, 0, 0));
 	EXPECT_EQ(pool.size(), hxsize_t{4});
 	EXPECT_TRUE(list.empty());
-	EXPECT_TRUE(check_stats(3, 3, 0, 3, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(3, 0, 0, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxfree_list_test_f, hxlist_with_free_list_deleter_erase) {
@@ -236,15 +233,14 @@ TEST_F(hxfree_list_test_f, hxlist_with_free_list_deleter_erase) {
 	list.push_back(pool.allocate(1));
 	list.push_back(pool.allocate(2));
 	list.erase(list.begin());
-	EXPECT_TRUE(check_stats(2, 1, 0, 2, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(2, 0, 2, 0, 0, 0, 0, 0, 0, 0));
 	EXPECT_EQ(pool.size(), hxsize_t{3});
 	EXPECT_EQ(list.size(), hxsize_t{1});
 	EXPECT_EQ(list.front().obj.value(), (int32_t)2);
 	list.erase(list.begin());
-	EXPECT_TRUE(check_stats(2, 2, 0, 2, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(2, 0, 0, 0, 0, 0, 0, 0, 0, 0));
 	EXPECT_EQ(pool.size(), hxsize_t{4});
 	EXPECT_TRUE(list.empty());
-	EXPECT_TRUE(check_stats(2, 2, 0, 2, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxfree_list_test_f, hxlist_with_free_list_deleter_pop_front) {
@@ -255,12 +251,11 @@ TEST_F(hxfree_list_test_f, hxlist_with_free_list_deleter_pop_front) {
 	{
 		hxptr<hxtest_free_list_node, hxtest_node_pool_t::deleter_t> p = list.pop_front();
 		EXPECT_EQ(p->obj.value(), (int32_t)7);
-		EXPECT_TRUE(check_stats(2, 0, 0, 2, 0, 0, 0, 0, 0, 0));
+		EXPECT_TRUE(check_stats(2, 0, 2, 0, 0, 0, 0, 0, 0, 0));
 		EXPECT_EQ(pool.size(), hxsize_t{2});
 	}
-	EXPECT_TRUE(check_stats(2, 1, 0, 2, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(2, 0, 0, 0, 0, 0, 0, 0, 0, 0));
 	EXPECT_EQ(pool.size(), hxsize_t{3});
-	EXPECT_TRUE(check_stats(2, 1, 0, 2, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxfree_list_test_f, hxhash_table_with_free_list_deleter_insert_and_find) {
@@ -272,7 +267,7 @@ TEST_F(hxfree_list_test_f, hxhash_table_with_free_list_deleter_insert_and_find) 
 	EXPECT_NE(table.find(10), table.end());
 	EXPECT_NE(table.find(20), table.end());
 	EXPECT_EQ(table.find(30), table.end());
-	EXPECT_TRUE(check_stats(2, 0, 0, 2, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(2, 0, 2, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxfree_list_test_f, hxhash_table_with_free_list_deleter_clear) {
@@ -283,10 +278,10 @@ TEST_F(hxfree_list_test_f, hxhash_table_with_free_list_deleter_clear) {
 	table.insert(pool.allocate(3));
 	EXPECT_EQ(pool.size(), hxsize_t{5});
 	table.clear();
-	EXPECT_TRUE(check_stats(3, 3, 0, 3, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(3, 0, 3, 0, 0, 0, 0, 0, 0, 0));
 	EXPECT_EQ(pool.size(), hxsize_t{8});
 	EXPECT_TRUE(table.empty());
-	EXPECT_TRUE(check_stats(3, 3, 0, 3, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(3, 0, 0, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxfree_list_test_f, hxhash_table_with_free_list_deleter_erase) {
@@ -295,14 +290,13 @@ TEST_F(hxfree_list_test_f, hxhash_table_with_free_list_deleter_erase) {
 	table.insert(pool.allocate(10));
 	table.insert(pool.allocate(20));
 	EXPECT_EQ(table.erase(99), hxsize_t{0});
-	EXPECT_TRUE(check_stats(2, 0, 0, 2, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(2, 0, 2, 0, 0, 0, 0, 0, 0, 0));
 	const hxsize_t removed = table.erase(10);
 	EXPECT_EQ(removed, hxsize_t{1});
-	EXPECT_TRUE(check_stats(2, 1, 0, 2, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(2, 0, 0, 0, 0, 0, 0, 0, 0, 0));
 	EXPECT_EQ(pool.size(), hxsize_t{7});
 	EXPECT_EQ(table.size(), hxsize_t{1});
 	EXPECT_EQ(table.find(10), table.end());
-	EXPECT_TRUE(check_stats(2, 1, 0, 2, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxfree_list_test_f, hxhash_table_with_free_list_deleter_extract) {
@@ -314,19 +308,18 @@ TEST_F(hxfree_list_test_f, hxhash_table_with_free_list_deleter_extract) {
 		hxptr<hxtest_hash_node, hxtest_hash_pool_t::deleter_t> p = table.extract(10);
 		EXPECT_TRUE((bool)p);
 		EXPECT_EQ(p->hash_key(), (int32_t)10);
-		EXPECT_TRUE(check_stats(2, 0, 0, 2, 0, 0, 0, 0, 0, 0));
+		EXPECT_TRUE(check_stats(2, 0, 2, 0, 0, 0, 0, 0, 0, 0));
 		EXPECT_EQ(pool.size(), hxsize_t{6});
 	}
-	EXPECT_TRUE(check_stats(2, 1, 0, 2, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(2, 0, 0, 0, 0, 0, 0, 0, 0, 0));
 	EXPECT_EQ(pool.size(), hxsize_t{7});
-	EXPECT_TRUE(check_stats(2, 1, 0, 2, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxfree_list_test_f, hxhash_table_with_hxdo_not_delete_does_not_release_slots) {
 	hxtest_hash_pool_t pool;
 	hxtest_hash_node* raws[2] = { hxnull, hxnull };
 	{
-		hxhash_table<hxtest_hash_node, hxdo_not_delete, false, 2> table;
+		hxhash_table<hxtest_hash_node, hxdo_not_delete, 2, 0> table;
 		hxtest_hash_pool_t::ptr_t a = pool.allocate(1);
 		hxtest_hash_pool_t::ptr_t b = pool.allocate(2);
 		raws[0] = a.get();
@@ -335,11 +328,10 @@ TEST_F(hxfree_list_test_f, hxhash_table_with_hxdo_not_delete_does_not_release_sl
 		table.insert(hxmove(b));
 		EXPECT_EQ(pool.size(), hxsize_t{6});
 	}
-	EXPECT_TRUE(check_stats(2, 0, 0, 2, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(2, 0, 2, 0, 0, 0, 0, 0, 0, 0));
 	EXPECT_EQ(pool.size(), hxsize_t{6});
 	pool.release(raws[0]);
 	pool.release(raws[1]);
-	EXPECT_TRUE(check_stats(2, 2, 0, 2, 0, 0, 0, 0, 0, 0));
+	EXPECT_TRUE(check_stats(2, 0, 0, 0, 0, 0, 0, 0, 0, 0));
 	EXPECT_EQ(pool.size(), hxsize_t{8});
-	EXPECT_TRUE(check_stats(2, 2, 0, 2, 0, 0, 0, 0, 0, 0));
 }

@@ -63,22 +63,12 @@ hxinline hxattr_flatten hxvector<T_, capacity_>::hxvector(
 template<hxvector_concept_ T_, hxsize_t capacity_>
 template<hxrange_concept_ range_t_>
 requires(!hxis_same<hxremove_cvref_t<range_t_>, hxvector<T_, capacity_> >())
-hxinline hxattr_flatten hxvector<T_, capacity_>::hxvector(range_t_& range_) noexcept : hxvector() {
-	if constexpr(requires(const decltype(range_.begin())& a_,
-			const decltype(range_.begin())& b_) { { b_ - a_ }; }) {
-		this->reserve(static_cast<hxsize_t>(range_.end() - range_.begin()));
-	}
-	this->add_range(range_);
-}
-
-template<hxvector_concept_ T_, hxsize_t capacity_>
-template<hxrange_concept_ range_t_>
-requires(!hxis_lvalue_reference<range_t_>()
-		&& !hxis_same<hxremove_cvref_t<range_t_>, hxvector<T_, capacity_> >())
 hxinline hxattr_flatten hxvector<T_, capacity_>::hxvector(range_t_&& range_) noexcept : hxvector() {
 	if constexpr(requires(const decltype(range_.begin())& a_,
 			const decltype(range_.begin())& b_) { { b_ - a_ }; }) {
-		this->reserve(static_cast<hxsize_t>(range_.end() - range_.begin()));
+		if(this->capacity() == 0) {
+			this->reserve(static_cast<hxsize_t>(range_.end() - range_.begin()));
+		}
 	}
 	this->add_range(hxforward<range_t_>(range_));
 }
@@ -161,6 +151,29 @@ hxinline hxattr_flatten T_& hxvector<T_, capacity_>::operator[](hxsize_t index_)
 }
 
 template<hxvector_concept_ T_, hxsize_t capacity_>
+template<hxsize_t capacity_x_>
+hxinline hxattr_flatten bool hxvector<T_, capacity_>::operator==(
+		const hxvector<T_, capacity_x_>& x_) const {
+	return hxequal_range(*this, x_);
+}
+
+#if HX_CPLUSPLUS < 202002L
+template<hxvector_concept_ T_, hxsize_t capacity_>
+template<hxsize_t capacity_x_>
+hxinline hxattr_flatten bool hxvector<T_, capacity_>::operator!=(
+		const hxvector<T_, capacity_x_>& x_) const {
+	return !(*this == x_);
+}
+#endif
+
+template<hxvector_concept_ T_, hxsize_t capacity_>
+template<hxsize_t capacity_x_>
+hxinline hxattr_flatten bool hxvector<T_, capacity_>::operator<(
+		const hxvector<T_, capacity_x_>& x_) const {
+	return hxless_range(*this, x_);
+}
+
+template<hxvector_concept_ T_, hxsize_t capacity_>
 hxinline hxattr_flatten void hxvector<T_, capacity_>::operator+=(const T_& x_) noexcept {
 	::new(this->push_back_unconstructed_()) T_(x_);
 }
@@ -210,20 +223,8 @@ hxvector<T_, capacity_>::operator*(void) {
 
 template<hxvector_concept_ T_, hxsize_t capacity_>
 template<hxrange_concept_ range_t_>
-hxinline hxattr_flatten void hxvector<T_, capacity_>::add_range(range_t_& range_) noexcept {
-	hxrestrict_t<decltype(range_.begin())> it_(range_.begin());
-	for(const auto end_ = range_.end(); it_ != end_; ++it_) {
-		this->push_back(*it_);
-	}
-}
-
-template<hxvector_concept_ T_, hxsize_t capacity_>
-template<hxrange_concept_ range_t_, hxenable_if_t<!hxis_lvalue_reference<range_t_>(), int> >
 hxinline hxattr_flatten void hxvector<T_, capacity_>::add_range(range_t_&& range_) noexcept {
-	hxrestrict_t<decltype(range_.begin())> it_(range_.begin());
-	for(const auto end_ = range_.end(); it_ != end_; ++it_) {
-		this->push_back(hxmove(*it_));
-	}
+	hxforward_range(hxforward<range_t_>(range_), *this);
 }
 
 template<hxvector_concept_ T_, hxsize_t capacity_>
@@ -275,9 +276,13 @@ template<typename iterator_t_>
 hxinline hxattr_flatten void hxvector<T_, capacity_>::assign(iterator_t_ begin_,
 		iterator_t_ end_) noexcept {
 	hxassert_hard((end_ - begin_) >= 0, "bad_iter %zd", static_cast<hxsize_t>(end_ - begin_));
-	this->reserve(static_cast<hxsize_t>(end_ - begin_));
+	const hxsize_t size_ = static_cast<hxsize_t>(end_ - begin_);
+	if(this->capacity() == 0) {
+		this->reserve(size_);
+	}
+	hxassert_hard(size_ <= this->capacity(), "stack_full %zd %zd", size_, this->capacity());
+	this->destruct_(this->data(), m_end_);
 	T_* hxrestrict it_ = this->data();
-	this->destruct_(it_, m_end_);
 	while(begin_ != end_) {
 		::new(it_++) T_(*begin_++);
 	}
@@ -297,16 +302,6 @@ hxinline hxattr_flatten T_& hxvector<T_, capacity_>::back(void) {
 }
 
 template<hxvector_concept_ T_, hxsize_t capacity_>
-hxinline const T_* hxvector<T_, capacity_>::binary_search(const T_& value_) const {
-	return hxbinary_search(*this, value_, hxkey_less_t<const T_&>{});
-}
-
-template<hxvector_concept_ T_, hxsize_t capacity_>
-hxinline T_* hxvector<T_, capacity_>::binary_search(const T_& value_) {
-	return hxbinary_search(*this, value_, hxkey_less_t<const T_&>{});
-}
-
-template<hxvector_concept_ T_, hxsize_t capacity_>
 hxinline hxattr_flatten hxsize_t hxvector<T_, capacity_>::capacity(void) const {
 	return hxallocator<T_, capacity_>::capacity();
 }
@@ -318,26 +313,17 @@ hxinline hxattr_flatten void hxvector<T_, capacity_>::clear(void) noexcept {
 }
 
 template<hxvector_concept_ T_, hxsize_t capacity_>
+template<hxrange_concept_ range_t_, typename callable_t_>
+hxinline hxattr_flatten void hxvector<T_, capacity_>::copy_if(
+		range_t_&& range_, callable_t_&& callable_) noexcept {
+	hxforward_range_if(hxforward<range_t_>(range_), *this, hxforward<callable_t_>(callable_));
+}
+
+template<hxvector_concept_ T_, hxsize_t capacity_>
 template<typename... args_t_>
 hxinline hxattr_flatten T_& hxvector<T_, capacity_>::emplace_back(args_t_&&... args_) noexcept {
 	hxassert_hard(!this->full(), "stack_full %zd", this->capacity());
 	return *::new(m_end_++) T_(hxforward<args_t_>(args_)...);
-}
-
-template<hxvector_concept_ T_, hxsize_t capacity_>
-template<hxsize_t capacity_x_>
-hxinline hxattr_flatten bool hxvector<T_, capacity_>::equal(
-		const hxvector<T_, capacity_x_>& x_) const {
-	if(this->size() != x_.size()) {
-		return false;
-	}
-	for(const T_*it0_ = this->data(), *it1_ = x_.data(), *const end_ = m_end_;
-			it0_ != end_; ++it0_, ++it1_) {
-		if(!hxkey_equal(*it0_, *it1_)) {
-			return false;
-		}
-	}
-	return true;
 }
 
 template<hxvector_concept_ T_, hxsize_t capacity_>
@@ -480,10 +466,10 @@ hxinline hxattr_flatten void hxvector<T_, capacity_>::generate_n(hxsize_t size_,
 
 template<hxvector_concept_ T_, hxsize_t capacity_>
 hxinline hxattr_flatten hxhash_t hxvector<T_, capacity_>::hash(void) const {
-	hxhash_t h_ = hxhash_prime5_;
+	hxhash_t h_ = hxhash_k5_;
 	for(const T_& element_ : *this) {
-		h_ += hxkey_hash(element_) * hxhash_prime5_;
-		h_ = ((h_ << 11u) | (h_ >> 21u)) * hxhash_prime1_;
+		h_ += hxkey_hash(element_) * hxhash_k5_;
+		h_ = ((h_ << 11u) | (h_ >> 21u)) * hxhash_k1_;
 	}
 	return hxhash_avalanche_(h_);
 }
@@ -521,22 +507,6 @@ hxinline hxattr_flatten void hxvector<T_, capacity_>::insert(hxsize_t index_,
 template<hxvector_concept_ T_, hxsize_t capacity_>
 hxinline hxattr_flatten void hxvector<T_, capacity_>::insertion_sort(void) noexcept {
 	hxinsertion_sort<T_*>(this->data(), m_end_, hxkey_less_t<T_>{});
-}
-
-template<hxvector_concept_ T_, hxsize_t capacity_>
-template<hxsize_t capacity_x_>
-hxinline hxattr_flatten bool hxvector<T_, capacity_>::less(
-		const hxvector<T_, capacity_x_>& x_) const {
-	const hxsize_t size_ = hxmin(this->size(), x_.size());
-	for(const T_* it0_ = this->data(), *it1_ = x_.data(), *const end_ = it0_ + size_;
-			it0_ != end_; ++it0_, ++it1_) {
-		// Use `a == b` instead of `a < b && b < a` for performance.
-		if(!hxkey_equal(*it0_, *it1_)) {
-			return hxkey_less(*it0_, *it1_);
-		}
-	}
-	// Order the prefix before the other.
-	return this->size() < x_.size();
 }
 
 template<hxvector_concept_ T_, hxsize_t capacity_>
@@ -597,16 +567,16 @@ inline hxattr_flatten void hxvector<T_, capacity_>::pop_heap(void) noexcept {
 		begin_->T_::~T_();
 		return;
 	}
-	*begin_ = hxmove(*end_);
+	auto value_ = hxmove(*end_);
 	end_->T_::~T_();
-	hxdetail_::hxheapsort_heapify_(begin_, begin_, end_, hxkey_less_t<T_>{});
+	hxdetail_::hxheapsort_heapify_(begin_, begin_, end_, value_, hxkey_less_t<T_>{});
 }
 
 template<hxvector_concept_ T_, hxsize_t capacity_>
-template<typename... args_t_>
-hxinline hxattr_flatten T_& hxvector<T_, capacity_>::push_back(args_t_&&... args_) noexcept {
+template<typename ref_t_>
+hxinline hxattr_flatten T_& hxvector<T_, capacity_>::push_back(ref_t_&& x_) noexcept {
 	hxassert_hard(!this->full(), "stack_full %zd", this->capacity());
-	return *::new(m_end_++) T_(hxforward<args_t_>(args_)...);
+	return *::new(m_end_++) T_(hxforward<ref_t_>(x_));
 }
 
 // Fixes gcc + optimizer + sanitizer -Wmaybe-uninitialized bug.
@@ -652,19 +622,19 @@ inline hxattr_flatten T_& hxvector<T_, capacity_>::push_heap(ref_t_&& arg_) noex
 
 template<hxvector_concept_ T_, hxsize_t capacity_>
 hxinline hxattr_flatten void hxvector<T_, capacity_>::reserve(hxsize_t size_,
-		hxsystem_allocator_t allocator_, hxalignment_t alignment_) {
-	if(size_ > this->capacity()) {
-		// reserve_storage asserts unallocated or size is equivalent.
-		this->reserve_storage(size_, allocator_, alignment_);
-		hxassertf(m_end_ == hxnull, "sys_err");
-		m_end_ = this->data();
-	}
+		hxslab_allocator_t allocator_, hxalignment_t alignment_) {
+	this->reserve_storage(size_, allocator_, alignment_);
+	m_end_ = this->data();
 }
 
 template<hxvector_concept_ T_, hxsize_t capacity_>
 hxinline hxattr_flatten void hxvector<T_, capacity_>::resize(hxsize_t size_) noexcept {
-	this->reserve(size_);
-	T_* it_ = m_end_;
+	const hxsize_t previous_size_ = this->size();
+	if(this->capacity() == 0) {
+		this->reserve_storage(size_);
+	}
+	hxassert_hard(size_ <= this->capacity(), "stack_full %zd %zd", size_, this->capacity());
+	T_* it_ = this->data() + previous_size_;
 	T_*const end_ = this->data() + size_;
 	while(it_ < end_) {
 		// Note: "T_()" is not being called. That would default initialize
@@ -678,14 +648,28 @@ hxinline hxattr_flatten void hxvector<T_, capacity_>::resize(hxsize_t size_) noe
 template<hxvector_concept_ T_, hxsize_t capacity_>
 hxinline hxattr_flatten void hxvector<T_, capacity_>::resize(hxsize_t size_,
 		const T_& x_) noexcept {
-	this->reserve(size_);
-	T_* hxrestrict it_ = m_end_;
+	const hxsize_t previous_size_ = this->size();
+	if(this->capacity() == 0) {
+		this->reserve_storage(size_);
+	}
+	hxassert_hard(size_ <= this->capacity(), "stack_full %zd %zd", size_, this->capacity());
+	T_* hxrestrict it_ = this->data() + previous_size_;
 	T_*const end_ = this->data() + size_;
 	while(it_ < end_) {
 		::new(it_++) T_(x_);
 	}
 	this->destruct_(end_, it_);
 	m_end_ = end_;
+}
+
+template<hxvector_concept_ T_, hxsize_t capacity_>
+hxinline const T_* hxvector<T_, capacity_>::search(const T_& value_) const {
+	return hxsearch(*this, value_, hxkey_less_t<const T_&>{});
+}
+
+template<hxvector_concept_ T_, hxsize_t capacity_>
+hxinline T_* hxvector<T_, capacity_>::search(const T_& value_) {
+	return hxsearch(*this, value_, hxkey_less_t<const T_&>{});
 }
 
 template<hxvector_concept_ T_, hxsize_t capacity_>

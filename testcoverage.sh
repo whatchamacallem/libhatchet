@@ -14,7 +14,7 @@ HX_GCOV_=gcov-$(gcc -dumpversion)
 HX_COVERAGE_="--coverage -O0 -g -fprofile-update=atomic -fno-inline -fkeep-static-functions"
 HX_COVERAGE_CXX_="$HX_COVERAGE_ -fno-elide-constructors -fkeep-inline-functions"
 
-HX_USAGE_="usage: $0 [--verbose] [--] [destination-directory]"
+HX_USAGE_="usage_error: $0 [--verbose] [--] [destination-directory]"
 
 HX_VERBOSE_=
 HX_DEST_DIR_=
@@ -60,16 +60,29 @@ gcc -I"$HX_DIR_"/include $HX_COVERAGE_ -DHX_HARDENING_MODE=HX_HARDENING_MODE_DEB
 	-DHX_USE_INLINING_ATTR=0 -std=c99 -Wall -Werror -Wfatal-errors -pthread -c     \
 	"$HX_DIR_"/test/*.c & HX_PIDS_="$!"
 
-for HX_FILE_ in "$HX_DIR_"/src/*.cpp "$HX_DIR_"/test/*.cpp; do
+for HX_FILE_ in "$HX_DIR_"/test/*.cpp "$HX_DIR_"/src/*.cpp; do
 	g++ -I"$HX_DIR_"/include $HX_COVERAGE_CXX_ -DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG   \
-		-DHX_TEST_ERROR_HANDLING=1 -DHX_USE_CONSOLE=2 -DHX_USE_PROFILER=1 -DHX_USE_LIBCXX=0  \
+		-DHX_TEST_ERROR_HANDLING=1 -DHX_USE_CONSOLE=2 -DHX_USE_PROFILER=1 -DHX_USE_STD_LIB=0  \
 		-DHX_USE_INLINING_ATTR=0 -std=c++23 -Wall -Werror -Wextra -Wfatal-errors             \
 		-fno-exceptions -Wno-c2y-extensions -Wno-unknown-warning-option -pthread -nostdinc++ \
 		-c "$HX_FILE_" -o "$(basename "$HX_FILE_" .cpp).o" & HX_PIDS_="$HX_PIDS_ $!"
 done
 for HX_PID_ in $HX_PIDS_; do wait "$HX_PID_" || exit 1; done
 
-g++ --coverage *.o -lpthread -o hxtest
+# Sort the object files so that the test objects are listed first. This is
+# being done to ensure the counter data ends up in the right place.
+HX_TEST_OBJS_=
+for HX_FILE_ in "$HX_DIR_"/test/*.c "$HX_DIR_"/test/*.cpp; do
+	HX_FILE_=${HX_FILE_##*/}
+	HX_TEST_OBJS_="$HX_TEST_OBJS_ ${HX_FILE_%.*}.o"
+done
+HX_SRC_OBJS_=
+for HX_FILE_ in "$HX_DIR_"/src/*.cpp; do
+	HX_FILE_=${HX_FILE_##*/}
+	HX_SRC_OBJS_="$HX_SRC_OBJS_ ${HX_FILE_%.*}.o"
+done
+
+g++ --coverage $HX_TEST_OBJS_ $HX_SRC_OBJS_ -lpthread -o hxtest
 
 if [ -n "$HX_VERBOSE_" ]; then
 	echo runtests | ./hxtest help execstdin
@@ -100,14 +113,9 @@ gcovr --gcov-executable $HX_GCOV_ --gcov-object-directory . --exclude-throw-bran
 # callees they have in the include directory. Calls from the test harness do not
 # generate branch coverage. Branch coverage is only required in the include directory.
 mkdir branches_only
-for HX_SRC_ in "$HX_DIR_"/test/*.cpp "$HX_DIR_"/test/*.c; do
-	HX_BASE_=$(basename "$HX_SRC_")
-	HX_BASE_=${HX_BASE_%.*}
-	for HX_GCDA_ in *"$HX_BASE_".gcda; do
-		[ -e "$HX_GCDA_" ] && ln -s "../$HX_GCDA_" "branches_only/$HX_GCDA_"
-		HX_GCNO_=${HX_GCDA_%.gcda}.gcno
-		[ -e "$HX_GCNO_" ] && ln -s "../$HX_GCNO_" "branches_only/$HX_GCNO_"
-	done
+for HX_OBJ_ in $HX_TEST_OBJS_; do
+	ln -s "../${HX_OBJ_%.o}.gcda" "branches_only/${HX_OBJ_%.o}.gcda"
+	ln -s "../${HX_OBJ_%.o}.gcno" "branches_only/${HX_OBJ_%.o}.gcno"
 done
 
 gcovr --gcov-executable "$HX_GCOV_" --gcov-object-directory branches_only              \
@@ -138,17 +146,53 @@ EOF
 fi
 
 # Branch coverage. Post-processing is required to merge multiple instantiations.
-# This is load bearing.
-python3 - coverage_test_branches.json <<'HX_EOF_' || HX_STATUS_=$?
-import json, sys
+# gcov numbers the calls and the conditional branches on a line in one sequence
+# and gcovr merges branches by that number, so instantiations with a different
+# number of calls on a line never merge. Merging by the ordinal of the
+# conditional branch on the line counts a branch as covered when any
+# instantiation takes it. gcovr still decides which lines have branches and
+# which are excluded.
+python3 - coverage_test_branches.json branches_only "$HX_GCOV_" "$HX_DIR_" <<'HX_EOF_' || HX_STATUS_=$?
+import glob, json, os, subprocess, sys
+taken = {}
+for gcda in sorted(glob.glob(os.path.join(sys.argv[2], "*.gcda"))):
+	report = subprocess.run([sys.argv[3], "--json-format", "--branch-probabilities",
+		"--stdout", "--object-directory", sys.argv[2], gcda],
+		capture_output=True, text=True, check=True)
+	for f in json.loads(report.stdout)["files"]:
+		path = f["file"]
+		if os.path.isabs(path):
+			path = os.path.relpath(path, sys.argv[4])
+		for l in f["lines"]:
+			ordinal = 0
+			for b in l["branches"]:
+				if b.get("throw"):
+					continue
+				key = (path, l["line_number"], ordinal)
+				taken[key] = taken.get(key, 0) + b["count"]
+				ordinal += 1
 files = json.load(open(sys.argv[1]))["files"]
 missing = False
 for f in sorted(files, key=lambda x: x["file"]):
 	if "/include/" not in ("/" + f["file"]):
 		continue
-	numbers = sorted(l["line_number"] for l in f["lines"]
-				if not l.get("gcovr/excluded")
-				and any(b["count"] == 0 for b in l.get("branches", [])))
+	numbers = []
+	for l in f["lines"]:
+		if l.get("gcovr/excluded") or not l.get("branches"):
+			continue
+		# A line without gcov branch data is reported instead of passing silently.
+		ordinal = 0
+		while True:
+			key = (f["file"], l["line_number"], ordinal)
+			if key not in taken:
+				if ordinal == 0:
+					numbers.append(l["line_number"])
+				break
+			if taken[key] == 0:
+				numbers.append(l["line_number"])
+				break
+			ordinal += 1
+	numbers = sorted(set(numbers))
 	if not numbers:
 		continue
 	missing = True
@@ -168,7 +212,7 @@ if [ "$HX_STATUS_" -ne 0 ]; then
 	exit 1
 fi
 
-# Launch Chrome if it is installed.
+# Launch Google Chrome if it is installed.
 if [ -n "$HX_VERBOSE_" ] && which google-chrome; then
 	set -o xtrace
 	google-chrome "${HX_DEST_DIR_}coverage_details.html" >/dev/null 2>&1;

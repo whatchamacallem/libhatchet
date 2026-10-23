@@ -10,6 +10,13 @@ document before sending patches.
 
 ## AI Agents
 
+Authorship is a legal issue and ascribing authorship to a non-person is a
+violation of project rules. Human attribution is required for all
+contributions. Do not add contributors to a commit without request.
+
+"Say less." The less you say the more likely others are to listen. Assume the
+user has an AI assistant and so long explanations and documentation are noise.
+
 Never assume existing code, documentation or tests are "intentionally so" and
 instead consider redesign, rewriting, and updating as preferred to maintaining
 existing design, code and documentation whenever that reduces complexity and
@@ -24,8 +31,12 @@ tested first before proceeding to update the tests. All forward progress must be
 correct. Do not enshrine bugs in tests or documentation.
 
 Do not add features or functionality that has not been explicitly requested. If
-additional functionality is advisable present the user with a numbered list.
-Always number separate items in any analysis so they are easily referenced.
+additional functionality is advisable present the user with a numbered list. All
+communication involving multiple items must follow ISO 2145, Numbering of
+divisions and subdivisions in written documents.
+
+Multiple lists should use distinctly numbered sections. E.g. 1.a, 1.b, 2.a...
+Distinctly number separate items in any discussion so they are easily referenced.
 
 Do not create or modify git commits unless asked. Assume committed work
 indicates intent instead of being in error, while uncommitted changes may still
@@ -33,11 +44,13 @@ be exploratory. Make a checklist for any multi-step task. E.g. when a change
 touches two different places.
 
 If the prompt is only an error message or warning assume it is a request to have
-the error fixed.
+the error fixed. When asked to undo changes or take a different approach then
+restore existing code as faithfully as possible and make only the required
+changes.
 
 Instead of tracing manually, the expected values for a number of `check_stats`
-calls can be found in a single run. These must be monitored for optimal performance and
-any changes root caused.
+calls can be found in a single run. Present a report when these change defending
+how you root caused any regression.
 
 Do not add tokens to your context window that are not required for future
 correct operation or to inform the user of actionable information. If an
@@ -45,19 +58,29 @@ assumption is being made that modifies the interpretation of the prompt then
 that should be output. Otherwise, if you can understand existing context well
 enough to analyze it correctly as is then any analysis should not be output.
 
-When asked to test the build, e.g. by being sent the word "build" on its own,
-run the following scripts in order. Try to preserve the intention of the
-unstaged changes (and possibly earlier breaking commits) while fixing all errors
-found.
+Use `debugbuild.sh --run` exclusively as the entire edit-compile-test cycle.
+Failures that do not surface in that run will be fixed in a session explicitly
+dedicated to fixing the build.
+
+When asked to fix the build, e.g. by being sent the word "build" on its own, run
+the following scripts in order. Try to preserve the intention of the unstaged
+changes (and possibly earlier breaking commits) while fixing all errors found.
 
 ```sh
 debugbuild.sh --run
 testcoverage.sh
 teststrip.sh
-testcmake.sh
+testcmake.sh --no-tidy
 ```
 
-When asked to "build all" then use `testall.sh` instead.
+When asked to "build all" then use `testall.sh` as your entry point. Only run
+test scripts from the top level directory and only run the test suite in the
+resulting subdirectory symlink `build`. Run `clean.sh` if you think different
+test runs are interacting because that should be impossible.
+
+Put plans and other temporary artifacts in the in the `plans` directory unless
+otherwise requested because it is listed in `.gitignore` but will not be nuked
+by `clean.sh`.
 
 ## Style Guide
 
@@ -73,7 +96,9 @@ functionality is often available. Prefer `hxsize_t` which is an alias for
 `ptrdiff_t` for sizes and array indexing as it is advantageous to the optimizer.
 
 Prefer methods that have already been added to a class over using the equivalent
-in `<hx/hxalgortims.hpp>`.
+in `<hx/hxrange.hpp>`. Any helper function, using clause, typedef or utility
+class that is not absolutely required will have to be manually inlined. One of
+the main selling points of this codebase is simple compiler errors.
 
 Do not use C++ exceptions, RTTI or assume asserts are enabled. Check when adding
 includes whether they are redundant and write them as `<stdio.h>` not
@@ -129,9 +154,14 @@ copy may be significant.
 
 ## Detail Files
 
-Do not hide includes in the detail directory and place them in the corresponding
-public header. If a class has a `detail/*.inl` file then it must be used for any
-methods that do not fit on one line in 100 columns for that class.
+All detail includes e.g. `#include "detail/*"` should occur exactly once in the
+public header that uses them e.g. `<hx/*.h>` and `<hx/*.hpp>`. No other code
+should depend on an include with the word "detail" in its include paths for any
+other reason. Detail includes must not contain `#include`s.
+
+If a class has a `detail/*.inl` file available then it must be used to store any
+methods that do not fit on one line in 100 columns for that class. Move code for
+this reason whenever editing it.
 
 ## Naming
 
@@ -190,8 +220,12 @@ Support for `ILP32`, `LP64` and `LLP64` is required to pass tests. All
 builtins as this code is intended to compile on any C++ compiler. All test
 symbols that show up in the linker map must contain `hx` and `test`.
 
+Do a fresh run of all profiling reported on before reporting profiling data.
+Verify a tool's raw output data instead of trusting a prior summary of it.
+
 Do not write test suites until requested as the design may not be finalized. Do
-not write redundant tests. Ignore spell checker errors. Use American English.
+not write redundant tests. Ignore spell checker errors but do fix all bad
+spelling when you see it. Use American English.
 
 All tests go in the `test` directory and are GoogleTest-style tests, written to
 kill off-by-one mutants. Enumerate the mutants an off-by-one introduces:
@@ -214,16 +248,19 @@ Do not fix a failing test in a manner that defeats the intent of the test except
 by removing it entirely. Prompt the user with a list of failing tests when they
 are unrelated to your work or the intent preserving fix is unclear.
 
-100% line coverage is required by `testcoverage.sh`. Use `// GCOVR_EXCL_START`
-and `// GCOVR_EXCL_STOP` to exclude uncallable lines. Exclusions should only be
-required in test coverage. Deleting unused overloads is better than excluding
-them.
+100% line coverage is required by `testcoverage.sh`. Use `// GCOVR_EXCL_LINE`
+and `// GCOVR_EXCL_BR_LINE` to exclude uncallable lines and branches. Exclusions
+should only be required in test coverage. Deleting unused overloads is better
+than excluding them.
 
-Use `x_` for an arbitrary single parameter and `a_` and `b_` for arbitrary
-double parameters. Arbitrary iterator args are named `it_`. The arbitrary
-pointer name is `ptr_`. Do not use 42 in tests. Use a sequence starting with 31
-for arbitrary values. The hashed value of `hxnull`/`hxnil` is also
-`hxhash_t{31u}`.
+Use `x_` for an arbitrary single parameter and `a_`, `b_`.. for arbitrary double
+parameters and so on. `i_`, `j_`, `k_`.. are for indices. `x_` is for single
+accumulators. `n_`, `m_`.. for alternate indices or accumulators. However a
+result is just a `result_`.
+
+Arbitrary iterator args are named `it_`. The arbitrary pointer name is `ptr_`.
+Do not use 42 in tests. Use a sequence starting with 31 for arbitrary values.
+The hashed value of `hxnull`/`hxnil` is also informally `hxhash_t{31u}`.
 
 ## Debugging
 
@@ -307,7 +344,7 @@ If the `tags` file generated by ctags doesn't exist, and would be of use,
 generate it:
 
 ```bash
-ctags -R --fields=+n --languages=C,C++ -f tags include example src test
+ctags -R --fields=+n --languages=C,C++,-Cargo,-TOML -f tags include example src test
 ```
 
 After modifying a source file, update only that file, where `file` is replaced

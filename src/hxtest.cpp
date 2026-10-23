@@ -7,6 +7,7 @@
 #include "../include/hx/hxprofiler.hpp"
 
 #include <math.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 HX_NS_BEGIN_
@@ -150,60 +151,133 @@ void hxtest_::condition_check_(bool condition, const char* file, int line,
 	}
 }
 
-// hxtest_pattern_match_ - Internal. Matches "Suite.*" against a test case's
-// suite name, otherwise matches "Suite.Case" exactly. pattern_end is one past
-// the last character of the pattern, which is not null terminated.
+// hxtest_pattern_match_ - Internal. See hxtest::run_all_tests_ usage message.
+// Matches "*" as a wildcard for any run of characters, anywhere in a glob
+// pattern, against the target string.
 static bool hxtest_pattern_match_(const char* pattern, const char* pattern_end,
-		const hxtest_case_* test_case) {
-	const hxsize_t pattern_length = static_cast<hxsize_t>(pattern_end - pattern);
-	const hxsize_t suite_length = static_cast<hxsize_t>(::strlen(test_case->m_suite_));
-	if(pattern_length == suite_length + 2
-			&& pattern[suite_length] == '.' && pattern[suite_length + 1] == '*') {
-		return ::strncmp(pattern, test_case->m_suite_, static_cast<size_t>(suite_length)) == 0;
-	}
-	const hxsize_t case_length = static_cast<hxsize_t>(::strlen(test_case->m_case_));
-	if(pattern_length != suite_length + 1 + case_length || pattern[suite_length] != '.') {
+		const char* target) {
+	const char* star_pattern = hxnull;
+	const char* star_target = hxnull;
+	for(;;) {
+		if(pattern != pattern_end && *pattern == '*') {
+			star_pattern = ++pattern;
+			star_target = target;
+			continue;
+		}
+		if(*target != 0 && pattern != pattern_end && *pattern == *target) {
+			++pattern;
+			++target;
+			continue;
+		}
+		if(*target == 0) {
+			return pattern == pattern_end;
+		}
+		if(star_pattern != hxnull) {
+			pattern = star_pattern;
+			target = ++star_target;
+			continue;
+		}
 		return false;
 	}
-	return ::strncmp(pattern, test_case->m_suite_, static_cast<size_t>(suite_length)) == 0
-		&& ::strncmp(pattern + suite_length + 1, test_case->m_case_, static_cast<size_t>(case_length)) == 0;
 }
 
-// hxtest_pattern_list_match_ - Internal. Matches any ':'-separated pattern in
-// pattern_list against a test case.
-static bool hxtest_pattern_list_match_(const char* pattern_list, const hxtest_case_* test_case) {
-	for(const char* pattern = pattern_list; *pattern != 0; ) {
-		const char* pattern_end = ::strchr(pattern, ':');
-		pattern_end = pattern_end ? pattern_end : (pattern + ::strlen(pattern));
-		if(hxtest_pattern_match_(pattern, pattern_end, test_case)) {
+// hxtest_pattern_list_valid_ - Internal. A ':'-separated list of patterns in
+// [list, list_end) is valid when list is non-empty and every ':'-separated
+// pattern in it is non-empty. A spurious ':' with an empty pattern on either
+// side is a parse error.
+static bool hxtest_pattern_list_valid_(const char* list, const char* list_end) {
+	if(list == list_end) {
+		return false;
+	}
+	for(const char* pattern = list; ; ) {
+		const char* pattern_end = static_cast<const char*>(::memchr(pattern, ':',
+			static_cast<size_t>(list_end - pattern)));
+		pattern_end = pattern_end ? pattern_end : list_end;
+		if(pattern == pattern_end) {
+			return false;
+		}
+		if(pattern_end == list_end) {
 			return true;
 		}
-		pattern = pattern_end + (*pattern_end == ':' ? 1 : 0);
+		pattern = pattern_end + 1;
 	}
-	return false;
 }
 
-bool hxtest_::filter_(const char* filter, test_cases_t_& test_cases) {
-	if(filter[0] == '-') {
-		const char* const pattern_list = filter + 1;
-		test_cases.erase_if_unordered([&](hxtest_case_* test_case) -> bool {
-			return hxtest_pattern_list_match_(pattern_list, test_case);
-		});
+// hxtest_pattern_list_match_ - Internal. Checks a valid ':'-separated list of
+// glob patterns in [list, list_end) against target.
+static bool hxtest_pattern_list_match_(const char* list, const char* list_end,
+		const char* target) {
+	for(const char* pattern = list; ; ) {
+		const char* pattern_end = static_cast<const char*>(::memchr(pattern, ':',
+			static_cast<size_t>(list_end - pattern)));
+		pattern_end = pattern_end ? pattern_end : list_end;
+		if(hxtest_pattern_match_(pattern, pattern_end, target)) {
+			return true;
+		}
+		if(pattern_end == list_end) {
+			return false;
+		}
+		pattern = pattern_end + 1;
 	}
-	else {
-		test_cases.erase_if_unordered([&](hxtest_case_* test_case) -> bool {
-			return !hxtest_pattern_list_match_(filter, test_case);
-		});
+}
+
+hxtest_case_** hxtest_::filter_(const char* filter, hxtest_case_** begin, hxtest_case_** end) {
+	// See the test case for examples of this subset of Google Test.
+	const char* const dash = static_cast<const char*>(::memchr(filter, '-', ::strlen(filter)));
+	const char* const positive = filter;
+	const char* const positive_end = dash ? dash : (filter + ::strlen(filter));
+	const char* const negative = dash ? dash + 1 : hxnull;
+	const char* const negative_end = dash ? (negative + ::strlen(negative)) : hxnull;
+
+	const bool positive_is_empty = positive == positive_end;
+	const bool positive_is_valid = positive_is_empty || hxtest_pattern_list_valid_(positive, positive_end);
+	const bool negative_is_valid = negative && hxtest_pattern_list_valid_(negative, negative_end);
+
+	if(!positive_is_valid || (negative && !negative_is_valid)) {
+		return begin;
 	}
-	return !test_cases.empty();
+
+	for(hxtest_case_** it = begin; it != end; ) {
+		char target[HX_MAX_LINE];
+		const int written = ::snprintf(target, HX_MAX_LINE, "%s.%s",
+			(*it)->m_suite_, (*it)->m_case_);
+
+			hxassert_always(written >= 0 && written < HX_MAX_LINE, "test_name_size %s", filter);
+
+		const bool positive_match = positive_is_empty ||
+			hxtest_pattern_list_match_(positive, positive_end, target);
+		const bool negative_match = negative &&
+			hxtest_pattern_list_match_(negative, negative_end, target);
+
+		if(!(positive_match && !negative_match)) {
+			*it = *--end;
+			continue;
+		}
+		++it;
+	}
+	return end;
 }
 
 int hxtest_::run_all_tests_(void) {
 	hxinit(); // GCOVR_EXCL_LINE. RUN_ALL_TESTS could be called first.
 
 	if(hxg_settings.test_filter != hxnull) { // GCOVR_EXCL_LINE
-		hxassert_hard(hxtest_::filter_(hxg_settings.test_filter, m_test_cases_),
-			"gtest_filter no matches %s", hxg_settings.test_filter);
+		// GCOVR_EXCL_START
+		hxtest_case_** const new_end = hxtest_::filter_(
+			hxg_settings.test_filter, m_test_cases_.begin(), m_test_cases_.end());
+		m_test_cases_.resize(static_cast<hxsize_t>(new_end - m_test_cases_.begin()));
+		if(m_test_cases_.empty()) {
+			hxlog_warning(
+				"usage_error: --gtest_filter=\"...\" where ... is a ':'-separated list\n"
+				"of positive patterns optionally followed by '-' and a ':'-separated\n"
+				"list of negative patterns. A test matches if it matches any positive\n"
+				"pattern (or the positive list is empty) and no negative pattern. '*'\n"
+				"matches any substring. Examples: suite*, suite.*, suite.case*,\n"
+				"suite.case, -suite*, -suite.*, suite.*-suite.case\n");
+			hxassert_always(false, "gtest_filter no matches %s", hxg_settings.test_filter);
+			return 1;
+		}
+		// GCOVR_EXCL_STOP
 	}
 
 	hxlog_console("[==========] Running tests: %s\n", // GCOVR_EXCL_LINE
@@ -224,7 +298,7 @@ int hxtest_::run_all_tests_(void) {
 		});
 
 	// Starting point. Expected to reset to zero after each test.
-	hxassert_always(hxmemory_manager_utilization(true, false).allocations_outstanding == 0u,
+	hxassert_always(hxslab_allocator_utilization(true, false).allocations_outstanding == 0u,
 		"test_leak temp stacks not empty");
 
 	for(hxtest_case_** it = m_test_cases_.begin(); it != m_test_cases_.end(); ++it) {
@@ -240,11 +314,11 @@ int hxtest_::run_all_tests_(void) {
 			// Tests default onto stack 0. A test that opens another scope
 			// is expected to reset it before returning.
 			{
-				const hxsystem_allocator_scope temporary_stack_scope(hxsystem_allocator_stack_0);
+				const hxslab_allocator_scope temporary_stack_scope(hxslab_allocator_stack_0);
 				(*it)->m_run_();
 			}
 
-			hxmemory_manager_stats stats = hxmemory_manager_utilization(true, false);
+			hxslab_allocator_stats stats = hxslab_allocator_utilization(true, false);
 			// GCOVR_EXCL_START
 			if(stats.allocations_outstanding != 0u || stats.bytes_outstanding != 0u) {
 				this->condition_check_(false, (*it)->m_file_, (*it)->m_line_,
@@ -271,7 +345,7 @@ int hxtest_::run_all_tests_(void) {
 	}
 	m_current_test_ = hxnull;
 
-	hxmemory_manager_utilization(false, true);
+	hxslab_allocator_utilization(false, true);
 
 	hxlog_console("[==========] skipped %d tests. failed %d assertions.\n",
 		(int)m_test_cases_.size() - m_pass_count_ - m_fail_count_, m_total_assert_count_);

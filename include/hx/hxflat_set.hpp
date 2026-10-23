@@ -17,6 +17,7 @@
 #include "hxrange.hpp"
 #include "hxinitializer_list.hpp"
 #include "hxkey.hpp"
+#include "hxsort.hpp"
 
 HX_NS_BEGIN_
 
@@ -37,11 +38,17 @@ concept hxflat_set_concept_ = requires(T_& x_) {
 /// because elements are shifted to maintain order. This design keeps keys
 /// cache-friendly and avoids heap overhead per element.
 ///
-/// When `multi_t` is `false` duplicate keys are rejected and `insert` returns a
-/// pointer to the existing element. When `multi_t` is `true` duplicate keys are
-/// always inserted. `compare_t` must be a callable with signature `bool(const
-/// key_t_&, const key_t_&)` returning true when the first argument is ordered
-/// before the second. It defaults to `hxkey_less_t`.
+/// When `traits & hxtrait_multi` is unset duplicate keys are rejected and
+/// `insert` returns a pointer to the existing element. When set, duplicate keys
+/// are always inserted. When `key_t` is integral or floating point `compare_t`
+/// defaults to `hxkey_less_t` and `traits` defaults to `0` because a single `<`
+/// is cheaper than `a - b`, which may also overflow. Otherwise `compare_t`
+/// defaults to `hxkey_three_way_t`, a callable with signature returning a value
+/// less than, equal to, or greater than zero, and `traits` defaults to
+/// `hxtrait_three_way`. Passing `hxkey_less_t` and clearing `hxtrait_three_way`
+/// in `traits` selects a strict weak order `compare_t`, with signature
+/// `bool(const key_t_&, const key_t_&)` returning true when the first argument
+/// is ordered before the second.
 ///
 /// When `capacity` is `hxallocator_dynamic_capacity` storage must be allocated
 /// by calling `reserve` before inserting elements. Otherwise the array is
@@ -51,16 +58,18 @@ concept hxflat_set_concept_ = requires(T_& x_) {
 /// E.g.:
 /// ```
 /// // A static flat set of 64 integers.
-/// hxflat_set<int, hxkey_less_t<int>, false, 64> lookup;
+/// hxflat_set<int, 64> lookup;
 /// ```
 /// - `key_t` : Key type.
-/// - `compare_t` : Callable implementing a strict weak order on `key_t`.
-/// - `multi_t` : When `true` duplicate keys are allowed.
 /// - `capacity` : Fixed element count or `hxallocator_dynamic_capacity`.
+/// - `compare_t` : Callable implementing a strict weak order or a three-way
+///   comparison on `key_t`, depending on `hxtrait_three_way` in `traits`.
+/// - `traits` : A bitmask of `hxtrait_multi` and `hxtrait_three_way`.
 template<hxflat_set_concept_ key_t_,
-	typename compare_t_=hxkey_less_t<key_t_>,
-	bool multi_t_=true,
-	hxsize_t capacity_=hxallocator_dynamic_capacity>
+	hxsize_t capacity_=hxallocator_dynamic_capacity,
+	typename compare_t_=hxkey_default_compare_t<key_t_>,
+	int traits_=((hxis_integral<key_t_>() || hxis_floating_point<key_t_>())
+		? 0 : hxtrait_three_way)>
 class hxflat_set : private hxallocator<key_t_, capacity_> {
 public:
 	using key_t = key_t_;
@@ -78,19 +87,27 @@ public:
 
 	/// Copy constructs from another `hxflat_set`. Requires `x.size()` ≤
 	/// `capacity()`.
-	/// - `x` : A non-temporary `hxflat_set<key_t, compare_t, multi_t,
-	///   capacity>`.
+	/// - `x` : A non-temporary `hxflat_set<key_t, capacity, compare_t,
+	///   traits>`.
 	hxflat_set(const hxflat_set& x_) noexcept;
+
+	/// Copy constructs from an `hxflat_set` of a different capacity. Requires
+	/// `x.size()` <= `capacity()`.
+	/// - `x` : A non-temporary `hxflat_set<key_t, capacity_x, compare_t, traits>`.
+	template<hxsize_t capacity_x_>
+	hxflat_set(const hxflat_set<key_t_, capacity_x_, compare_t_, traits_>& x_) noexcept;
 
 	/// Move constructs from a temporary `hxflat_set`. Requires
 	/// `hxallocator_dynamic_capacity`.
-	/// - `x` : A temporary `hxflat_set<key_t, compare_t, multi_t,
-	///   hxallocator_dynamic_capacity>`.
+	/// - `x` : A temporary `hxflat_set<key_t,
+	///   hxallocator_dynamic_capacity, compare_t, traits>`.
 	hxflat_set(hxflat_set&& x_) noexcept;
 
-	/// Constructs a set by inserting every key from `x` in order using
-	/// `insert`. Requires `x.size()` <= `capacity` when `capacity` is fixed.
-	/// - `x` : A `std::initializer_list<key_t>`.
+	/// Constructs a set by appending every key from `x` with `add_range`.
+	/// Requires `x` to be sorted and requires `x.size()` <= `capacity` when
+	/// `capacity` is fixed. Presort data that may be unordered, e.g. by
+	/// copying it into a `hxarray` and calling `sort`.
+	/// - `x` : A sorted `std::initializer_list<key_t>`.
 	hxflat_set(std::initializer_list<key_t_> x_) noexcept;
 
 	/// Destructs the set and destroys all keys.
@@ -129,7 +146,7 @@ public:
 	/// set. Requires `x.size()` ≤ `capacity()`.
 	/// - `x` : The set to copy from.
 	template<hxsize_t capacity_x_>
-	void operator=(const hxflat_set<key_t_, compare_t_, multi_t_, capacity_x_>& x_) noexcept;
+	void operator=(const hxflat_set<key_t_, capacity_x_, compare_t_, traits_>& x_) noexcept;
 
 	/// Move assigns from a temporary set using `swap`. Requires
 	/// `hxallocator_dynamic_capacity`.
@@ -145,27 +162,36 @@ public:
 	/// order using `hxkey_equal`.
 	/// - `x` : The set to compare against.
 	template<hxsize_t capacity_x_>
-	hxattr_nodiscard bool operator==(const hxflat_set<key_t_, compare_t_, multi_t_, capacity_x_>& x_) const;
+	hxattr_nodiscard bool operator==(
+		const hxflat_set<key_t_, capacity_x_, compare_t_, traits_>& x_) const;
+
+#if HX_CPLUSPLUS < 202002L
+	/// Returns `true` if this set and `x` differ in size or in any key, using
+	/// `hxkey_equal`.
+	/// - `x` : The set to compare against.
+	template<hxsize_t capacity_x_>
+	hxattr_nodiscard bool operator!=(const hxflat_set<key_t_, capacity_x_, compare_t_, traits_>& x_) const;
+#endif
 
 	/// Returns `true` if this set compares less than `x` lexicographically,
 	/// using `hxkey_equal` and `hxkey_less` on keys.
 	/// - `x` : The set to compare against.
 	template<hxsize_t capacity_x_>
-	hxattr_nodiscard bool operator<(const hxflat_set<key_t_, compare_t_, multi_t_, capacity_x_>& x_) const;
+	hxattr_nodiscard bool operator<(
+		const hxflat_set<key_t_, capacity_x_, compare_t_, traits_>& x_) const;
 
-	/// Inserts every key from a range referenced by an lvalue by copying each
-	/// key with `insert`.
-	/// - `range` : The range to copy keys from.
-	template<hxrange_concept_ range_t_>
-	void add_range(range_t_& range_) noexcept;
-
-	/// Inserts every key from a temporary range by moving each key with
-	/// `insert`. This overload enables moving the range keys into the set
-	/// when forwarding rvalues.
+	/// Appends every key from `range` to the end of the array and sorts the
+	/// array afterward. Equivalent to `add_range(false, range)`.
 	/// - `range` : The range to move keys from.
-	template<hxrange_concept_ range_t_,
-		hxenable_if_t<!hxis_lvalue_reference<range_t_>(), int> = 0>
+	template<hxrange_concept_ range_t_>
 	void add_range(range_t_&& range_) noexcept;
+
+	/// Appends every key from `range` to the end of the array. When
+	/// `is_correct` is false the array is sorted afterward.
+	/// - `is_correct` : True when `range` is sorted after the set's keys, strictly unless `traits & hxtrait_multi` is set.
+	/// - `range` : The range to move keys from.
+	template<hxrange_concept_ range_t_>
+	void add_range(bool is_correct_, range_t_&& range_) noexcept;
 
 	/// Returns a const pointer to the first element.
 	const key_t_* begin(void) const { return this->data(); }
@@ -195,6 +221,12 @@ public:
 	template<typename... args_t_>
 	const key_t_* emplace(args_t_&&... args_) noexcept;
 
+	/// Returns a const pointer to the new or existing key. Appends a key from
+	/// `args` when it is ordered after the last key, else calls `insert`.
+	/// - `args` : Arguments forwarded to the key constructor.
+	template<typename... args_t_>
+	const key_t_* emplace_back(args_t_&&... args_) noexcept;
+
 	/// Checks if the set contains no elements.
 	hxattr_nodiscard bool empty(void) const { return m_end_ == this->data(); }
 
@@ -212,7 +244,7 @@ public:
 	const key_t_* erase(const key_t_* it_) noexcept;
 
 	/// Returns a const pointer to the key if found, or `end()` if not present.
-	/// When `multi_t` is `true` the first match is returned.
+	/// When `traits & hxtrait_multi` is set the first match is returned.
 	/// - `key` : The key to search for.
 	hxattr_nodiscard const key_t_* find(const key_t_& key_) const;
 
@@ -223,7 +255,7 @@ public:
 	/// - `key` : The key to search for.
 	hxattr_nodiscard bool has_value(const key_t_& key_) const;
 
-	/// Inserts a key. When `multi_t` is `false` and a matching key already
+	/// Inserts a key. When `traits & hxtrait_multi` is unset and a matching key already
 	/// exists, returns a const pointer to the existing element without
 	/// inserting. Otherwise inserts in sorted order and returns a const pointer
 	/// to the new element.
@@ -265,15 +297,21 @@ public:
 		-> decltype(self_.end());
 #endif // HX_CPLUSPLUS >= 202302L
 
-	/// Allocates storage for `cap` keys. When `capacity` is fixed, `cap` must
-	/// equal `capacity`. Reallocation is not allowed.
+	/// Returns a const pointer to the new or existing key. Appends `key` when
+	/// it is ordered after the last key, otherwise calls `insert`.
+	/// - `key` : The key to insert.
+	template<typename key_u_>
+	const key_t_* push_back(key_u_&& key_) noexcept;
+
+	/// Forwards `size`, `allocator` and `alignment` unchanged to
+	/// `reserve_storage`.
 	/// - `cap` : The number of elements to allocate storage for.
 	/// - `allocator` : The memory manager ID to use for allocation (default:
-	///   `hxsystem_allocator_current`)
+	///   `hxslab_allocator_current`)
 	/// - `alignment` : The alignment for the allocation. (default:
 	///   `hxalignment`)
-	void reserve(hxsize_t cap_,
-			hxsystem_allocator_t allocator_=hxsystem_allocator_current,
+	void reserve(hxsize_t size_,
+			hxslab_allocator_t allocator_=hxslab_allocator_current,
 			hxalignment_t alignment_=hxalignment);
 
 	/// Returns the number of elements in the set.
@@ -307,7 +345,13 @@ public:
 
 private:
 	/// \cond HIDDEN
-	template<hxflat_set_concept_, typename, bool, hxsize_t> friend class hxflat_set;
+	template<hxflat_set_concept_, hxsize_t, typename, int> friend class hxflat_set;
+
+#if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
+	// Returns true if keys [original_end, end) are sorted after any key
+	// before original_end, strictly unless traits & hxtrait_multi is set.
+	static bool correct_(const key_t_* data_, const key_t_* original_end_, const key_t_* end_) noexcept;
+#endif
 
 	template<typename key_u_>
 	const key_t_* insert_at_(key_t_* it_, key_u_&& key_) noexcept;
@@ -315,6 +359,14 @@ private:
 	key_t_* m_end_;
 	/// \endcond
 };
+
+/// `hxflat_multiset` - A `hxflat_set` with `hxtrait_multi` set in `traits`,
+/// allowing multiple elements with equal keys.
+template<hxflat_set_concept_ key_t_, hxsize_t capacity_=hxallocator_dynamic_capacity,
+	typename compare_t_=hxkey_default_compare_t<key_t_>,
+	int traits_=((hxis_integral<key_t_>() || hxis_floating_point<key_t_>())
+		? 0 : hxtrait_three_way)>
+using hxflat_multiset = hxflat_set<key_t_, capacity_, compare_t_, traits_ | hxtrait_multi>;
 
 #include "detail/hxflat_set.inl"
 HX_NS_END_

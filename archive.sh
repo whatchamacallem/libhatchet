@@ -12,7 +12,7 @@ HX_ARCHIVE_="$HX_PROJECT_-$HX_DATE_.git.txz"
 
 # Print help if there is more than one arg or the first arg starts with a -.
 if [ "$#" -gt 1 ] || { [ "$#" -eq 1 ] && [ "${1#-}" != "$1" ]; }; then
-	echo "usage: $0 [destination-directory]"
+	echo "usage_error: $0 [destination-directory]"
 	echo "Will create $HX_ARCHIVE_ in the destination-directory if"
 	echo "provided, otherwise ~/Backups/ if it exists and in ~/ otherwise. Restores all"
 	echo "files if $HX_SCRIPT_NAME_ is the only file in the directory."

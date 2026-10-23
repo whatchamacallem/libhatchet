@@ -19,6 +19,13 @@ hxinline HX_NS_PREFIX_ hxcycles_t HX_NS_PREFIX_ hxtime_sample_cycles(void) { ret
 #else // HX_USE_PROFILER
 #define HX_PROFILE_ONLY_(x_) x_
 
+// HX_APPEND_COUNTER_* - Generates unique identifiers. This is weird because the
+// ## operator happens before macro arg evaluation and both happen before
+// general macro evaluation.
+#define HX_APPEND_COUNTER_3_(x_, y_) x_ ## y_
+#define HX_APPEND_COUNTER_2_(x_, y_) HX_APPEND_COUNTER_3_(x_, y_)
+#define HX_APPEND_COUNTER_(x_) HX_APPEND_COUNTER_2_(x_, __COUNTER__)
+
 #if !(HX_USE_MACROS_WITH_MODULE)
 
 HX_NS_BEGIN_
@@ -44,12 +51,13 @@ extern class hxprofiler_internal_ hxg_profiler_;
 // hxprofiler_internal_ - Manager object for internal use.
 class hxprofiler_internal_ {
 public:
-	hxprofiler_internal_() : m_is_started_(false) { };
-
+	hxprofiler_internal_();
 	void start_();
 	void stop_();
 	void log_();
+	size_t size_(void) const;
 #if HX_USE_FILE_IO
+	void write_(hxfile& file_);
 	void write_to_chrome_tracing_(const char* filename) hxattr_nonnull(2);
 #endif
 

@@ -30,7 +30,7 @@ template<typename T_, typename deleter_t_=hxdefault_delete>
 class hxptr : private deleter_t_ {
 public:
 	// No arrays allowed because there is no delete[] equivalent. Use hxref for
-	// pointer and reference types..
+	// pointer and reference types.
 	static_assert(!hxis_array<T_>(), "hxptr does not support array types");
 	static_assert(!hxis_reference<T_>(), "hxptr does not support reference types");
 	static_assert(!hxis_pointer<T_>(), "hxptr does not support pointer types");
@@ -45,7 +45,7 @@ public:
 	hxconstexpr explicit hxptr(T_* ptr_=hxnull, deleter_t_ deleter_=deleter_t_()) noexcept;
 
 	/// Constructs a null `hxptr` from `hxnil`.
-	/// - `hxnil` : The error sentinel.
+	/// - `hxnil` : The null sentinel.
 	hxconstexpr hxptr(hxnil_t) noexcept : hxptr(hxnull) { } // GCOVR_EXCL_LINE. Constant folded.
 
 	/// Move constructor. Transfers ownership from `x` to this. `x` is
@@ -71,20 +71,28 @@ public:
 	/// Returns `true` if the owned pointer is non-null.
 	hxattr_nodiscard hxconstexpr explicit operator bool(void) const;
 
-	/// Returns `true` if this and `x` point to the same object.
+	/// Returns `true` if this `hxptr` and `x` are both null or both own equal
+	/// values.
 	/// - `x` : The `hxptr` to compare against.
-	hxattr_nodiscard hxconstexpr bool operator==(const hxptr& x_) const { return this->equal(x_); }
+	hxattr_nodiscard hxconstexpr bool operator==(const hxptr& x_) const;
 
 	/// Returns `true` if the owned pointer is null.
+	/// - `hxnil` : The null sentinel.
 	hxattr_nodiscard hxconstexpr bool operator==(hxnil_t) const;
 
-#if HX_CPLUSPLUS < 202002L // C++20 defaults != from ==.
-	/// Returns `true` if this and `x` point to different objects.
+#if HX_CPLUSPLUS < 202002L
+	/// Returns `true` if exactly one `hxptr` is null or the owned values differ.
 	/// - `x` : The `hxptr` to compare against.
 	hxattr_nodiscard hxconstexpr bool operator!=(const hxptr& x_) const;
 
 	/// Returns `true` if the owned pointer is non-null.
 	hxattr_nodiscard hxconstexpr bool operator!=(hxnil_t) const;
+
+	/// Returns `true` if the pointer owned by `x` is null.
+	/// - `hxnil` : The null sentinel.
+	/// - `x` : The `hxptr` to compare against.
+	hxattr_nodiscard friend hxconstexpr
+	bool operator==(hxnil_t, const hxptr& x_) { return x_ == hxnil; }
 #endif
 
 #if HX_CPLUSPLUS >= 202302L
@@ -94,7 +102,8 @@ public:
 	/// - `callable` : The function to call with the referenced value.
 	template<typename self_t_, typename callable_t_>
 	hxattr_nodiscard hxconstexpr auto and_then(this self_t_&& self_, callable_t_&& callable_)
-		-> hxremove_cvref_t<decltype(hxforward<callable_t_>(callable_)(hxdeclval<T_&>()))>;
+		-> hxremove_cvref_t<decltype(hxforward<callable_t_>(callable_)(
+			hxforward_like<self_t_, T_>(hxdeclval<T_&>())))>;
 #endif // HX_CPLUSPLUS >= 202302L
 
 	/// Returns a const reference to the stored deleter.
@@ -105,13 +114,9 @@ public:
 	/// Replaces the owned object with one constructed from `args` and returns a
 	/// reference to it.
 	/// - `args` : Arguments forwarded to the object constructor.
-	template<hxsystem_allocator_t allocator_=hxsystem_allocator_current,
+	template<hxslab_allocator_t allocator_=hxslab_allocator_current,
 		hxalignment_t alignment_=hxalignment, typename... args_t_>
 	T_& emplace(args_t_&&... args_) noexcept;
-
-	/// Returns `true` if this and `x` point to the same object.
-	/// - `x` : The `hxptr` to compare against.
-	hxattr_nodiscard hxconstexpr bool equal(const hxptr& x_) const;
 
 	/// Returns the owned pointer without releasing ownership.
 	hxattr_nodiscard hxconstexpr T_* get(void) const { return m_ptr_; }
@@ -169,28 +174,24 @@ private:
 /// `hxmake_ptr<T, deleter, allocator, align>(value)` - Allocates and
 /// constructs an object of type `T` from `value` and returns it wrapped in an
 /// `hxptr`. Will not return on failure.
-/// - `deleter` : The deleter type invoked on destruction. Defaults to
-///    `hxdefault_delete`.
-/// - `allocator` : The memory manager ID to use for allocation. Defaults to
-///    `hxsystem_allocator_current`.
-/// - `align` : Alignment to use when allocating. Defaults to `hxalignment`.
 /// - `value` : The value used to construct `T`.
 template<typename T_, typename deleter_t_=hxdefault_delete,
-	hxsystem_allocator_t allocator_=hxsystem_allocator_current,
+	hxslab_allocator_t allocator_=hxslab_allocator_current,
 	hxalignment_t align_=hxalignment, typename U_=T_>
 hxattr_nodiscard hxptr<T_, deleter_t_> hxmake_ptr(const U_& value_) noexcept {
 	return hxptr<T_, deleter_t_>(::new(hxmalloc_ext(sizeof(T_), allocator_, align_)) T_(value_));
 }
 
-/// `hxkey_equal_t<hxptr<T>>` - Compares `x` and `y` for equivalence.
-template<typename T_, typename deleter_t_>
-class hxkey_equal_t<hxptr<T_, deleter_t_> > {
-public:
-	hxattr_nodiscard hxinline hxattr_flatten bool operator()(
-			const hxptr<T_, deleter_t_>& x_, const hxptr<T_, deleter_t_>& y_) const {
-		return x_.equal(y_);
-	}
-};
+/// `hxemplace_ptr<T, deleter, allocator, align>(args...)` - Returns an `hxptr`
+/// owning a new `T` constructed in place from `args`.
+/// - `args` : Arguments forwarded to the constructor of `T`.
+template<typename T_, typename deleter_t_=hxdefault_delete,
+	hxslab_allocator_t allocator_=hxslab_allocator_current,
+	hxalignment_t align_=hxalignment, typename... args_t_>
+hxattr_nodiscard hxptr<T_, deleter_t_> hxemplace_ptr(args_t_&&... args_) noexcept {
+	return hxptr<T_, deleter_t_>(::new(hxmalloc_ext(sizeof(T_), allocator_, align_))
+		T_(hxforward<args_t_>(args_)...));
+}
 
 /// `hxkey_hash_t<hxptr<T>>` - Returns the hash of the owned value if
 /// non-null, otherwise `31u`.

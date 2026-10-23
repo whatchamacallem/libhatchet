@@ -27,13 +27,13 @@ bool (*hxg_assert_handler)(const char* file, size_t line);
 // Exception-handling semantics exist in a few places in case they are enabled,
 // but you are advised to use -fno-exceptions. This library does not provide the
 // exception handling functions expected by the C++ ABI.
-#if !(HX_USE_LIBCXX) && defined __cpp_exceptions && !defined __INTELLISENSE__
+#if !(HX_USE_STD_LIB) && defined __cpp_exceptions && !defined __INTELLISENSE__
 static_assert(0, "Warning: C++ exceptions are not supported");
 #endif
 
 // -- __cxa --------------------------------------------------------------------
 
-#if !(HX_USE_LIBCXX)
+#if !(HX_USE_STD_LIB)
 
 #if defined __arm__ && !defined __aarch64__
 	typedef int guard_t;
@@ -115,14 +115,14 @@ hxattr_weak void hxinit_internal(int version) {
 		::feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 #endif
 
-		hxmemory_manager_init_();
+		hxslab_allocator_init_();
 		hxg_init_ver_ = LIBHATCHET_VER;
 	}
 }
 
 hxattr_weak void hxshutdown(void) {
 	if(hxg_init_ver_ == LIBHATCHET_VER) {
-		hxmemory_manager_shut_down_();
+		hxslab_allocator_shut_down_();
 
 #if HX_USE_FLOATING_POINT_TRAPS
 		::feenableexcept(0);
@@ -143,7 +143,7 @@ hxattr_weak hxattr_noexcept bool hxassert_handler(const char* file, size_t line)
 		return hxg_assert_handler(file, line);
 	}
 	if(hxg_settings.test_break_on_failure) {
-		hxwarn(false, "BREAKPOINT %s(%zu)", file, line);
+		hxlog_handler(hxlog_level_assert, "BREAKPOINT %s(%zu)", file, line);
 		return false;
 	}
 

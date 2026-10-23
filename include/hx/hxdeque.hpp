@@ -14,6 +14,7 @@
 #endif
 
 #include "hxallocator.hpp"
+#include "hxinitializer_list.hpp"
 #include "hxrange.hpp"
 #include "hxutility.h"
 
@@ -53,11 +54,11 @@ public:
 
 		/// Returns an iterator advanced by `n` positions.
 		/// - `n` : The number of positions to advance.
-		const_iterator operator+(hxsize_t n_) const { return const_iterator(m_deque_, m_index_ + n_); }
+		const_iterator operator+(hxsize_t n_) const;
 
 		/// Returns an iterator retreated by `n` positions.
 		/// - `n` : The number of positions to retreat.
-		const_iterator operator-(hxsize_t n_) const { return const_iterator(m_deque_, m_index_ - n_); }
+		const_iterator operator-(hxsize_t n_) const;
 
 		/// Returns the signed distance between two iterators.
 		/// - `x` : The iterator to subtract.
@@ -80,25 +81,24 @@ public:
 		/// Retreats the iterator to the previous element (post-decrement).
 		const_iterator operator--(int) { const_iterator t_(*this); operator--(); return t_; }
 
-		/// Compares two iterators for equality.
+		/// Returns true if this iterator compares equal to `x`.
 		/// - `x` : The iterator to compare against.
-		bool operator==(const const_iterator& x_) const { return m_index_ == x_.m_index_; }
+		bool operator==(const const_iterator& x_) const;
 
-		/// Returns true when this iterator is ordered before `x`.
+		/// Returns true if this iterator is ordered before `x`.
 		/// - `x` : The iterator to compare against.
-		bool operator<(const const_iterator& x_) const { return m_index_ < x_.m_index_; }
+		bool operator<(const const_iterator& x_) const;
 
 #if HX_CPLUSPLUS < 202002L
 		/// Compares two iterators for inequality.
 		/// - `x` : The iterator to compare against.
-		bool operator!=(const const_iterator& x_) const { return m_index_ != x_.m_index_; }
+		hxattr_nodiscard bool operator!=(const const_iterator& x_) const { return !(*this == x_); }
 #endif
 
 	protected:
 		/// \cond HIDDEN
 		friend class hxdeque;
-		const_iterator(const hxdeque* deque_, hxsize_t index_)
-			: m_deque_(deque_), m_index_(index_) { }
+		const_iterator(const hxdeque* deque_, hxsize_t index_);
 		const hxdeque* m_deque_;
 		hxsize_t m_index_;
 		/// \endcond
@@ -111,15 +111,15 @@ public:
 		iterator(void) { }
 
 		/// Returns a reference to the element at the current position.
-		T_& operator*(void) const { return (*const_cast<hxdeque*>(this->m_deque_))[this->m_index_]; }
+		T_& operator*(void) const;
 
 		/// Returns an iterator advanced by `n` positions.
 		/// - `n` : The number of positions to advance.
-		iterator operator+(hxsize_t n_) const { return iterator(const_cast<hxdeque*>(this->m_deque_), this->m_index_ + n_); }
+		iterator operator+(hxsize_t n_) const;
 
 		/// Returns an iterator retreated by `n` positions.
 		/// - `n` : The number of positions to retreat.
-		iterator operator-(hxsize_t n_) const { return iterator(const_cast<hxdeque*>(this->m_deque_), this->m_index_ - n_); }
+		iterator operator-(hxsize_t n_) const;
 
 		/// Returns the signed distance from `x` to this position.
 		/// - `x` : The iterator to subtract.
@@ -154,6 +154,11 @@ public:
 	/// - `dynamic_capacity` : Element capacity for dynamic storage.
 	explicit hxdeque(hxsize_t dynamic_capacity_=0);
 
+	/// Construct with an `std::initializer_list`.
+	/// - `x` : A `std::initializer_list<other_value_t>` to copy from.
+	template<typename other_value_t_>
+	hxdeque(std::initializer_list<other_value_t_> x_) noexcept;
+
 	/// Destroys all elements in the deque.
 	~hxdeque(void);
 
@@ -166,30 +171,33 @@ public:
 	/// Returns `true` if this deque and `x` contain the same elements in the
 	/// same order, using `hxkey_equal`.
 	/// - `x` : The deque to compare against.
-	hxattr_nodiscard bool operator==(const hxdeque& x_) const;
+	template<hxsize_t capacity_x_>
+	hxattr_nodiscard bool operator==(const hxdeque<T_, capacity_x_>& x_) const;
+
+#if HX_CPLUSPLUS < 202002L
+	/// Returns `true` if this deque and `x` differ in length or in any element,
+	/// using `hxkey_equal`.
+	/// - `x` : The deque to compare against.
+	template<hxsize_t capacity_x_>
+	hxattr_nodiscard bool operator!=(const hxdeque<T_, capacity_x_>& x_) const;
+#endif
 
 	/// Returns `true` if this deque compares less than `x` lexicographically,
 	/// using `hxkey_equal` and `hxkey_less`.
 	/// - `x` : The deque to compare against.
-	hxattr_nodiscard bool operator<(const hxdeque& x_) const;
+	template<hxsize_t capacity_x_>
+	hxattr_nodiscard bool operator<(const hxdeque<T_, capacity_x_>& x_) const;
 
 	/// Returns a const iterator pointing to the first element.
 	const_iterator begin(void) const { return const_iterator(this, 0); }
 
 	iterator begin(void) { return iterator(this, 0); }
 
-	/// Appends elements from a range referenced by an lvalue, copying each
-	/// element with `push_back`.
-	/// - `range` : The range to copy elements from.
-	template<hxrange_concept_ range_t_>
-	void add_range(range_t_& range_) noexcept;
-
 	/// Appends elements from a temporary range, moving each element with
 	/// `push_back`. This overload enables moving the range elements into the
 	/// deque when forwarding rvalues.
 	/// - `range` : The range to move elements from.
-	template<hxrange_concept_ range_t_,
-		hxenable_if_t<!hxis_lvalue_reference<range_t_>(), int> = 0>
+	template<hxrange_concept_ range_t_>
 	void add_range(range_t_&& range_) noexcept;
 
 	/// Returns a reference to the back element. The deque must not be empty.
@@ -211,13 +219,13 @@ public:
 	void clear(void) noexcept;
 
 	/// Constructs an element in place at the back using forwarded arguments.
-	/// Exactly the same as `push_back`.
+	/// `args_t` may be any types that can be used to construct `T`.
 	/// - `args` : Arguments forwarded to `T`'s constructor.
 	template<typename... args_t_>
 	void emplace_back(args_t_&&... args_) noexcept;
 
 	/// Constructs an element in place at the front using forwarded arguments.
-	/// Exactly the same as `push_front`.
+	/// `args_t` may be any types that can be used to construct `T`.
 	/// - `args` : Arguments forwarded to `T`'s constructor.
 	template<typename... args_t_>
 	void emplace_front(args_t_&&... args_) noexcept;
@@ -229,6 +237,13 @@ public:
 	const_iterator end(void) const { return const_iterator(this, this->size()); }
 
 	iterator end(void) { return iterator(this, this->size()); }
+
+	/// Returns a `const_iterator` to the first element equal to `value`, or
+	/// `end()`.
+	/// - `value` : The value to search for.
+	hxattr_nodiscard const_iterator find(const T_& value_) const;
+
+	hxattr_nodiscard iterator find(const T_& value_);
 
 	/// Returns a reference to the front element. The deque must not be empty.
 	hxattr_nodiscard T_& front(void);
@@ -247,25 +262,34 @@ public:
 	/// Removes and destroys the front element. The deque must not be empty.
 	void pop_front(void) noexcept;
 
-	/// Appends an element at the back using forwarded arguments. Exactly the
-	/// same as `emplace_back`.
-	/// - `args` : Arguments forwarded to `T`'s constructor.
-	template<typename... args_t_>
-	void push_back(args_t_&&... args_) noexcept;
+	/// Appends `x` at the back. Use `emplace_back` to construct the new
+	/// element in place.
+	/// - `x` : The element to add.
+	template<typename ref_t_>
+	void push_back(ref_t_&& x_) noexcept;
 
-	/// Prepends an element at the front using forwarded arguments. Exactly the
-	/// same as `emplace_front`.
-	/// - `args` : Arguments forwarded to `T`'s constructor.
-	template<typename... args_t_>
-	void push_front(args_t_&&... args_) noexcept;
+	/// Prepends `x` at the front. Use `emplace_front` to construct the new
+	/// element in place.
+	/// - `x` : The element to add.
+	template<typename ref_t_>
+	void push_front(ref_t_&& x_) noexcept;
 
-	/// Allocates storage for a dynamic deque. May only be called once and only
-	/// when the deque has no storage.
-	/// - `dynamic_capacity` : Element capacity to allocate.
-	void reserve(hxsize_t dynamic_capacity_);
+	/// Requires `size` be a power of two, since indexing masks against
+	/// `capacity() - 1`, then forwards `size`, `allocator` and `alignment`
+	/// unchanged to `reserve_storage`.
+	/// - `size` : The number of elements to allocate storage for.
+	/// - `allocator` : The memory manager ID to use for allocation.
+	/// - `alignment` : The alignment to use for the allocation.
+	void reserve(hxsize_t size_,
+			hxslab_allocator_t allocator_=hxslab_allocator_current,
+			hxalignment_t alignment_=hxalignment);
 
 	/// Returns the number of elements currently in the deque.
 	hxattr_nodiscard hxsize_t size(void) const;
+
+	/// Swaps the contents with `x` when dynamically allocated.
+	/// - `x` : The `hxdeque` to swap with.
+	void swap(hxdeque& x_) noexcept;
 
 private:
 	// This is raw underlying data and would not be what was expected.

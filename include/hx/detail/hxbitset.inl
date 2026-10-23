@@ -35,7 +35,8 @@ hxinline hxconstexpr hxbitset<bit_count_>::hxbitset(std::initializer_list<int_t_
 	static_assert(sizeof(size_t) % sizeof(int_t_) == 0u,
 		"sizeof(size_t) must be a multiple of sizeof(int_t_)");
 	hxassertf(x_.size() == s_words_ * (sizeof(size_t) / sizeof(int_t_)),
-		"initializer_list size %zu want %zu", x_.size(), s_words_ * (sizeof(size_t) / sizeof(int_t_)));
+		"initializer_list size %zu want %zu", x_.size(),
+		s_words_ * (sizeof(size_t) / sizeof(int_t_)));
 	const int_t_* hxrestrict src_ = x_.begin();
 	hxif_constexpr(sizeof(int_t_) == sizeof(size_t)) {
 		for(size_t* hxrestrict dst_ = m_data_, *const end_ = m_data_ + s_words_;
@@ -171,16 +172,18 @@ inline hxconstexpr hxbitset<bit_count_>& hxbitset<bit_count_>::operator>>=(size_
 template<size_t bit_count_>
 hxinline hxconstexpr bool hxbitset<bit_count_>::operator==(const hxbitset& x_) const {
 	hxassertf(static_cast<const void*>(this) != static_cast<const void*>(&x_), "bad_ref");
-	size_t difference_ = 0u;
-	const size_t* hxrestrict src_ = x_.m_data_;
-	for(const size_t* hxrestrict dst_ = m_data_, *const end_ = m_data_ + s_words_;
-			dst_ != end_; ++dst_, ++src_) {
-		difference_ |= *dst_ ^ *src_;
+#if HX_CPLUSPLUS >= 202302L
+	if consteval {
+		for(size_t i_ = 0u; i_ != s_words_; ++i_) {
+			if(m_data_[i_] != x_.m_data_[i_]) { return false; }
+		}
+		return true;
 	}
-	return difference_ == 0u;
+#endif
+	return ::memcmp(m_data_, x_.m_data_, this->bytes()) == 0;
 }
 
-#if HX_CPLUSPLUS < 202002L // C++20 defaults != from ==.
+#if HX_CPLUSPLUS < 202002L
 template<size_t bit_count_>
 hxinline hxconstexpr bool hxbitset<bit_count_>::operator!=(const hxbitset& x_) const {
 	return !(*this == x_);
@@ -207,6 +210,11 @@ hxinline hxconstexpr bool hxbitset<bit_count_>::any(void) const {
 		bits_ |= *dst_;
 	}
 	return bits_ != 0u;
+}
+
+template<size_t bit_count_>
+hxinline constexpr size_t hxbitset<bit_count_>::bytes(void) {
+	return s_words_ * sizeof(size_t);
 }
 
 template<size_t bit_count_>

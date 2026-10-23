@@ -27,6 +27,11 @@ concept hxarray_concept_ = requires(T_& x_) {
 	sizeof(T_);
 	x_.~T_();
 };
+
+template<hxarray_concept_ T_, hxsize_t capacity_> class hxarray;
+template<typename T_> struct hxis_hxarray_ : public hxfalse_t { };
+template<typename T_, hxsize_t capacity_>
+struct hxis_hxarray_<hxarray<T_, capacity_> > : public hxtrue_t { };
 /// \endcond
 #else
 #define hxarray_concept_ typename
@@ -71,6 +76,9 @@ public:
 	/// - `x` : An `hxarray<T, capacity>`.
 	hxarray(const hxarray& x_) noexcept;
 
+	template<hxsize_t capacity_x_>
+	hxarray(const hxarray<T_, capacity_x_>& x_) noexcept = delete;
+
 	/// Move constructs from a temporary `hxarray`. Requires
 	/// `hxallocator_dynamic_capacity`.
 	/// - `x` : A temporary `hxarray<T, hxallocator_dynamic_capacity>`.
@@ -93,19 +101,11 @@ public:
 	hxarray(std::initializer_list<other_value_t_> x_) noexcept;
 
 #if HX_CPLUSPLUS >= 202002L
-	/// Constructs by copying elements from a range referenced by an lvalue.
+	/// Constructs by copying or moving elements from a range of exactly
+	/// `capacity` elements. Elements are moved when `range` is an rvalue.
 	/// - `range` : A range of exactly `capacity` elements.
 	template<hxrange_concept_ range_t_>
-	requires(!hxis_same<hxremove_cvref_t<range_t_>, hxarray<T_, capacity_> >())
-	explicit hxarray(range_t_& range_) noexcept;
-
-	/// Constructs by moving elements from a temporary range. This overload
-	/// enables moving the range elements into the array when forwarding
-	/// rvalues.
-	/// - `range` : A temporary range of exactly `capacity` elements.
-	template<hxrange_concept_ range_t_>
-	requires(!hxis_lvalue_reference<range_t_>()
-			&& !hxis_same<hxremove_cvref_t<range_t_>, hxarray<T_, capacity_> >())
+	requires(!hxis_hxarray_<hxremove_cvref_t<range_t_> >::value)
 	explicit hxarray(range_t_&& range_) noexcept;
 #endif
 
@@ -140,6 +140,9 @@ public:
 	/// - `x` : A non-temporary `hxarray<T, capacity>`.
 	void operator=(const hxarray& x_) noexcept;
 
+	template<hxsize_t capacity_x_>
+	void operator=(const hxarray<T_, capacity_x_>& x_) noexcept = delete;
+
 	/// Move assigns from a temporary `hxarray`. Requires
 	/// `hxallocator_dynamic_capacity`.
 	/// - `x` : A temporary `hxarray<T, hxallocator_dynamic_capacity>`.
@@ -160,6 +163,29 @@ public:
 	const T_& operator[](hxsize_t index_) const;
 
 	T_& operator[](hxsize_t index_);
+
+	/// Returns true if this array compares equivalent to `x` using `hxkey_equal`.
+	/// - `x` : The other array.
+	hxattr_nodiscard bool operator==(const hxarray& x_) const;
+
+#if HX_CPLUSPLUS < 202002L
+	/// Returns true if the arrays do not compare equivalent using `hxkey_equal`.
+	/// - `x` : The other array.
+	hxattr_nodiscard bool operator!=(const hxarray& x_) const;
+
+	/// Returns true if the C array `a` compares equivalent to `b` using
+	/// `hxkey_equal`.
+	/// - `a` : A C array of exactly `capacity` elements.
+	/// - `b` : An array.
+	template<typename other_t_, hxsize_t length_> hxattr_nodiscard friend bool
+	operator==(const other_t_(&a_)[length_], const hxarray& b_) { return b_ == hxarray(a_); }
+#endif
+
+	/// Returns true if this array compares less than `x` using `hxkey_equal` and
+	/// `hxkey_less`.
+	/// - `x` : The other array.
+	template<hxsize_t capacity_x_>
+	hxattr_nodiscard bool operator<(const hxarray<T_, capacity_x_>& x_) const;
 
 	/// Returns true if the predicate returns true for every element and false
 	/// otherwise. Will stop iterating when the predicate returns false. e.g.,
@@ -196,13 +222,6 @@ public:
 
 	T_* begin(void) { return this->data(); }
 
-	/// Performs a binary search using `hxkey_less`. Returns `end()` when not
-	/// found.
-	/// - `value` : The value to locate.
-	hxattr_nodiscard const T_* binary_search(const T_& value_) const;
-
-	hxattr_nodiscard T_* binary_search(const T_& value_);
-
 	/// Returns the capacity of the array.
 	hxattr_nodiscard hxsize_t capacity(void) const;
 
@@ -222,11 +241,6 @@ public:
 	const T_* end(void) const { return this->data() + this->capacity(); }
 
 	T_* end(void) { return this->data() + this->capacity(); }
-
-	/// Returns true if the arrays compare equivalent using `hxkey_equal`.
-	/// Callers must check the return value to detect mismatches.
-	/// - `x` : The other array.
-	hxattr_nodiscard bool equal(const hxarray& x_) const;
 
 	/// Finds the first occurrence of `value` using `hxkey_equal`. Returns
 	/// `end()` if no element matches.
@@ -262,12 +276,6 @@ public:
 	/// Sorts the array with insertion sort using `hxkey_less`.
 	void insertion_sort(void) noexcept;
 
-	/// Returns true if this array compares less than `x` using `hxkey_equal`
-	/// and `hxkey_less`.
-	/// Callers must check the return value to observe the ordering result.
-	/// - `x` : The other array.
-	hxattr_nodiscard bool less(const hxarray& x_) const;
-
 	/// Returns the capacity of the array.
 	hxinline hxattr_nodiscard hxsize_t max_size(void) const { return this->capacity(); }
 
@@ -300,24 +308,29 @@ public:
 		-> decltype(self_.end());
 #endif // HX_CPLUSPLUS >= 202302L
 
-	/// Allocates storage for `size` elements and default constructs them when
-	/// `capacity` is `hxallocator_dynamic_capacity`. The current capacity
-	/// becomes `size` elements. Reallocation is not allowed. When `capacity` is
-	/// fixed, `size` must equal `capacity`.
+	/// Forwards `size`, `allocator` and `alignment` unchanged to
+	/// `reserve_storage`, then default constructs the newly backed elements
+	/// when `capacity` is `hxallocator_dynamic_capacity` and this is the first
+	/// call.
 	/// - `size` : The number of elements to allocate and construct.
 	/// - `allocator` : The memory manager ID to use for allocation.
 	/// - `alignment` : The alignment to use for the allocation.
 	void reserve(hxsize_t size_,
-			hxsystem_allocator_t allocator_=hxsystem_allocator_current,
+			hxslab_allocator_t allocator_=hxslab_allocator_current,
 			hxalignment_t alignment_=hxalignment) noexcept;
+
+	/// Performs a binary search using `hxkey_less`. Returns `end()` when not
+	/// found.
+	/// - `value` : The value to locate.
+	hxattr_nodiscard const T_* search(const T_& value_) const;
+
+	hxattr_nodiscard T_* search(const T_& value_);
 
 	/// Returns the number of elements in the array.
 	hxinline hxattr_nodiscard hxsize_t size(void) const { return this->capacity(); }
 
 	/// Returns the number of bytes in the array. (Non-standard.)
-	hxinline hxattr_nodiscard hxsize_t size_bytes(void) const {
-		return hxsizeof<T_>() * this->capacity();
-	}
+	hxattr_nodiscard hxsize_t size_bytes(void) const;
 
 	/// Sorts the array using `hxkey_less`.
 	void sort(void) noexcept;
@@ -347,30 +360,6 @@ public:
 
 private:
 	void destruct_(T_* begin_, T_* end_) noexcept;
-};
-
-/// `hxkey_equal_t<hxarray<T, N>>` - Compares the contents of `x` and `y` for
-/// equivalence.
-template<typename T_, hxsize_t capacity_>
-class hxkey_equal_t<hxarray<T_, capacity_> > {
-public:
-	hxattr_nodiscard hxinline hxattr_flatten
-	bool operator()(
-			const hxarray<T_, capacity_>& x_, const hxarray<T_, capacity_>& y_) const {
-		return x_.equal(y_);
-	}
-};
-
-/// `hxkey_less_t<hxarray<T, N>>` - Compares the contents of `x` and `y`
-/// lexicographically using `hxkey_equal_t` and `hxkey_less_t` on each element.
-template<typename T_, hxsize_t capacity_>
-class hxkey_less_t<hxarray<T_, capacity_> > {
-public:
-	hxattr_nodiscard hxinline hxattr_flatten
-	bool operator()(
-			const hxarray<T_, capacity_>& x_, const hxarray<T_, capacity_>& y_) const {
-		return x_.less(y_);
-	}
 };
 
 /// `hxkey_hash_t<hxarray<T, N>>` - Returns a hash mixing the hashes of every

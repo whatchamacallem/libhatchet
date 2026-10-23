@@ -33,23 +33,21 @@ template<typename U_> struct hxis_hxref_<hxref<U_>> : hxtrue_t { };
 /// to `hxnil`. Assignment rebinds the reference instead of assigning through to
 /// the referent, matching pointer semantics. Use `hxref<const T>` where write
 /// through should be prevented.
-/// - `T` : The referenced value type. Must not be an array, reference or
-///   pointer type.
+/// - `T` : The referenced value type. Must not be a reference type.
 template<typename T_>
 class hxref {
 public:
 	// Use hxremove_reference_t<T> if needed.
 	static_assert(!hxis_reference<T_>(), "hxref does not support reference types");
 
-	/// `value_type` - Publishes the referenced value type. Doesn't end with
-	/// `_t` because of the standard.
+	/// `value_t` - Publishes the referenced value type.
 	using value_t = T_&;
 
 	/// Constructs a null `hxref`.
 	hxref(void) : m_value_(hxnull) { }
 
 	/// Constructs a null `hxref` from `hxnil`.
-	/// - `hxnil` : The error sentinel.
+	/// - `hxnil` : The null sentinel.
 	hxref(hxnil_t) : m_value_(hxnull) { }
 
 	/// Binds a reference to `value`. `U&` must bind to `T&` without creating a
@@ -61,7 +59,7 @@ public:
 		hxbinds_directly<T_, U_>(), bool> = true>
 	hxref(U_& value_);
 
-	/// Binds a reference to the value of `x`. Accepts an non-null or
+	/// Binds a reference to the value of `x`. Accepts a non-null or
 	/// erroneous `hxexpected<T, E>`.
 	/// - `x` : The `hxexpected` whose value to bind.
 	template<typename E_>
@@ -79,7 +77,7 @@ public:
 	hxattr_nodiscard explicit operator bool(void) const { return m_value_ != hxnull; }
 
 	/// Nulls the reference. The referent is not affected.
-	/// - `hxnil` : The error sentinel.
+	/// - `hxnil` : The null sentinel.
 	hxref& operator=(hxnil_t) { m_value_ = hxnull; return *this; }
 
 	/// Rebinds the reference to `value`.
@@ -90,19 +88,18 @@ public:
 		hxbinds_directly<T_, U_>(), bool> = true>
 	hxref& operator=(U_& value_);
 
-	/// Returns `true` if both references are null or both reference equal
-	/// values.
-	/// - `x` : Right-hand side reference.
-	hxattr_nodiscard bool operator==(const hxref& x_) const { return this->equal(x_); }
+	/// Returns `true` if this reference and `x` are both null or both reference
+	/// equal values.
+	/// - `x` : The reference to compare against.
+	hxattr_nodiscard bool operator==(const hxref& x_) const;
 
 	/// Returns `true` if this reference is null.
-	/// - `hxnil` : The error sentinel.
-	hxattr_nodiscard bool operator==(hxnil_t) const { return m_value_ == hxnull; }
+	/// - `hxnil` : The null sentinel.
+	hxattr_nodiscard bool operator==(hxnil_t) const;
 
-	/// Returns `true` if this reference is non-null and its referent equals
-	/// `value`.
-	/// - `value` : The value to compare against.
-	hxattr_nodiscard bool operator==(const T_& value_) const;
+	/// Returns `true` if this reference is non-null and its referent equals `x`.
+	/// - `x` : The value to compare against.
+	hxattr_nodiscard bool operator==(const T_& x_) const;
 
 	/// Returns the result of calling `callable` with the referenced value if
 	/// non-null, otherwise returns `hxnil`. Use `and_then` to return `hxptr`,
@@ -111,11 +108,6 @@ public:
 	template<typename self_t_, typename callable_t_>
 	hxattr_nodiscard auto and_then(this self_t_&& self_, callable_t_&& callable_)
 		-> hxremove_cvref_t<decltype(hxforward<callable_t_>(callable_)(hxdeclval<T_&>()))>;
-
-	/// Returns `true` if both references are null or both reference equal
-	/// values.
-	/// - `x` : The `hxref` to compare against.
-	hxattr_nodiscard bool equal(const hxref& x_) const;
 
 	/// Returns `true` if the reference is non-null.
 	hxattr_nodiscard bool has_value(void) const { return m_value_ != hxnull; }
@@ -157,17 +149,6 @@ private:
 /// - `value` : The lvalue to reference.
 template<typename T_, typename U_=T_, hxenable_if_t<hxbinds_directly<T_, U_>(), bool> = true>
 hxattr_nodiscard hxref<T_> hxmake_ref(U_& value_) { return hxref<T_>(value_); }
-
-/// `hxkey_equal_t<hxref<T>>` - Compares `x` and `y` for equivalence.
-template<typename T_>
-class hxkey_equal_t<hxref<T_> > {
-public:
-	hxattr_nodiscard hxinline hxattr_flatten
-	bool operator()(
-			const hxref<T_>& x_, const hxref<T_>& y_) const {
-		return x_.equal(y_);
-	}
-};
 
 /// `hxkey_hash_t<hxref<T>>` - Returns the hash of the referenced value if
 /// non-null, otherwise `31u`.

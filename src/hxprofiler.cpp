@@ -25,11 +25,12 @@ hxconsole_command_named(*+[](const char* filename) -> bool {
 } // namespace {
 namespace hxdetail_ {
 
-// -- Variables ----------------------------------------------------------------
+// -- hxprofiler_internal_ -----------------------------------------------------
 
 hxprofiler_internal_ hxg_profiler_;
 
-// -- hxprofiler_internal_ -----------------------------------------------------
+
+hxprofiler_internal_::hxprofiler_internal_() : m_is_started_(false) { }
 
 void hxprofiler_internal_::start_(void) {
 #if HX_USE_THREADS
@@ -66,10 +67,45 @@ void hxprofiler_internal_::log_(void) {
 	hxlog_handler(hxlog_level_console, " ]\n");
 }
 
+size_t hxprofiler_internal_::size_(void) const {
+	return sizeof(hxprofiler_header) + sizeof(hxprofiler_sample) * static_cast<size_t>(m_records.size());
+}
+
 #if HX_USE_FILE_IO
-// ###
-// ### WARNING: Only https://ui.perfetto.dev/ is working at the moment.
-// ###
+void hxprofiler_internal_::write_(hxfile& file) {
+#if HX_USE_THREADS
+	const hxunique_lock profiler_lock(hxg_profiler_.m_mutex_);
+#endif
+	m_is_started_ = false;
+
+	const hxprofiler_header header = {
+		hxc_profiler_header64, hxc_profiler_version, static_cast<uint32_t>(m_records.size()) };
+	file.write(&header, sizeof header);
+
+	hxprofiler_sample samples[16];
+	hxsize_t batch_size = 0;
+
+	const hxprofiler_record_* const end = m_records.end();
+	for(const hxprofiler_record_* hxrestrict rec = m_records.begin(); rec != end; ++rec) {
+		hxprofiler_sample& sample = samples[batch_size];
+		::memset(&sample, 0x00, sizeof sample);
+		::strncpy(sample.sample_label, rec->m_label_, hxc_profiler_label_max_size);
+		sample.sample_begin = rec->m_begin_;
+		sample.sample_end = rec->m_end_;
+		sample.sample_thread_id = rec->m_thread_id_;
+
+		if(++batch_size == 16) {
+			file.write(samples, sizeof samples);
+			batch_size = 0;
+		}
+	}
+
+	if(batch_size != 0) {
+		file.write(samples, sizeof(hxprofiler_sample) * static_cast<size_t>(batch_size));
+	}
+}
+
+// https://ui.perfetto.dev/
 void hxprofiler_internal_::write_to_chrome_tracing_(const char* filename) {
 #if HX_USE_THREADS
 	const hxunique_lock profiler_lock(hxg_profiler_.m_mutex_);
@@ -85,8 +121,6 @@ void hxprofiler_internal_::write_to_chrome_tracing_(const char* filename) {
 		for(hxsize_t i = 0; i < m_records.size(); ++i) {
 			const hxprofiler_record_& rec = m_records[i];
 
-			// Register wrapping can cause bad samples. Meanwhile Chrome has been
-			// updated to generate exceptions when any sample has end < begin.
 			if(rec.m_end_ < rec.m_begin_) { continue; } // GCOV_EXCL_LINE
 
 			if(!first) { f.print(",\n"); }

@@ -111,12 +111,12 @@ hxattr_cold bool hxconsole_command_::execute_(const char* str) const {
 	return false;
 }
 
-hxattr_cold void hxconsole_command_::usage_(const char* id) const {
-	hxlog_handler(hxlog_level_console, "%s", (id != hxnull) ? id : "usage:");
+hxattr_cold void hxconsole_command_::usage_(const char* name) const {
+	hxlog_console("%s", (name != hxnull) ? name : "usage_error:"); (void)name;
 	for(const char* const* label = m_labels_; *label != hxnull; ++label) {
-		hxlog_handler(hxlog_level_console, " %s", *label);
+		hxlog_console(" %s", *label);
 	}
-	hxlog_handler(hxlog_level_console, "\n");
+	hxlog_console("\n");
 }
 
 } // hxdetail_
@@ -135,7 +135,7 @@ public:
 };
 
 class hxconsole_command_table
-	: public hxhash_table<hxdetail_::hxconsole_hash_table_node_, hxdo_not_delete, false, 3> {
+	: public hxhash_table<hxdetail_::hxconsole_hash_table_node_, hxdo_not_delete, 3, 0> {
 };
 
 // Local static to enforce construction-order. Destruction is no-op.
@@ -152,7 +152,7 @@ hxattr_cold void hxdetail_::hxconsole_register_(hxconsole_hash_table_node_* node
 	hxconsole_command_table& commands = hxconsole_commands_();
 	hxassertf(node->hash_key().str_, "bad_arg");
 	if(commands.replace(node)) {
-		hxlog_handler(hxlog_level_warning, "command_reregistered %s\n", node->hash_key().str_);
+		hxlog_warning("command_reregistered %s", node->hash_key().str_);
 	}
 }
 
@@ -176,7 +176,7 @@ hxattr_cold bool hxconsole_exec_line(const char* command) {
 	const hxconsole_command_table::const_iterator node =
 		hxconsole_commands_().find(hxdetail_::hxconsole_hash_table_key_(pos));
 	if(node == hxconsole_commands_().end()) {
-		hxwarn(0, "unknown_command %s", command);
+		hxlog_warning("unknown_command %s", command);
 		return false;
 	}
 
@@ -195,7 +195,7 @@ hxattr_cold bool hxconsole_exec_line(const char* command) {
 	}
 #ifdef __cpp_exceptions
 	catch (...) {
-		hxwarn(0, "unexpected_exception %s", command);
+		hxlog_warning("unexpected_exception %s", command);
 		return false;
 	}
 #endif
@@ -204,7 +204,7 @@ hxattr_cold bool hxconsole_exec_line(const char* command) {
 // Lists variables and commands in order.
 hxattr_cold bool hxconsole_help(void) {
 	hxinit(); // GCOVR_EXCL_LINE
-	const hxsystem_allocator_scope temp_mem(hxsystem_allocator_heap);
+	const hxslab_allocator_scope temp_mem(hxslab_allocator_heap);
 	const hxconsole_command_table& commands = hxconsole_commands_();
 	hxvector<const hxdetail_::hxconsole_hash_table_node_*> cmds;
 	cmds.reserve(commands.size());
@@ -238,7 +238,7 @@ hxattr_cold bool hxconsole_exec_file(hxfile& file) {
 	bool result = true;
 	size_t carried = 0u;
 
-	while(result) {
+	while(result && !file.fail()) {
 		const size_t want = HX_MAX_LINE - 1u - carried;
 		const size_t got = file.read(line_buf + carried, want, want);
 		hxassertf(got <= want, "read_overrun got %zu want %zu", got, want);
@@ -260,12 +260,12 @@ hxattr_cold bool hxconsole_exec_file(hxfile& file) {
 		}
 
 		carried = static_cast<size_t>(end - line_begin);
-		if(file.eof() || carried >= (HX_MAX_LINE - 1u)) {
+		if(file.fail() || carried >= (HX_MAX_LINE - 1u)) {
 			if(result && carried != 0u) {
 				*end = '\0';
 				result = hxconsole_exec_line(line_begin);
 			}
-			if(file.eof()) {
+			if(file.fail()) {
 				break;
 			}
 			carried = 0u;
@@ -281,9 +281,9 @@ hxattr_cold bool hxconsole_exec_filename(const char* filename) {
 	hxfile file(hxfile::open_mode_in, "%s", filename);
 	hxwarn(file, "cannot open: %s", filename);
 	if(file) {
-		const bool is_ok = hxconsole_exec_file(file);
-		hxwarn(is_ok, "encountering errors: %s", filename);
-		return is_ok;
+		const bool result = hxconsole_exec_file(file);
+		hxwarn(result, "bad_file errors in: %s", filename);
+		return result;
 	}
 	return false;
 }

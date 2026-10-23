@@ -58,11 +58,11 @@
 /// pthreads and `0` is for no threading.
 #define HX_USE_THREADS 11
 
-/// `HX_USE_LIBCXX`: Indicates whether libstdc++/libc++ are present. Set
-/// `-DHX_USE_LIBCXX=0` to signal the C++ standard library is not in use. The
+/// `HX_USE_STD_LIB`: Indicates whether libstdc++/libc++ are present. Set
+/// `-DHX_USE_STD_LIB=0` to signal the C++ standard library is not in use. The
 /// C++ standard library is not detected automatically because that depends on
 /// header include order.
-#define HX_USE_LIBCXX 1
+#define HX_USE_STD_LIB 1
 
 /// `hxbreakpoint` - Can be conditionally evaluated with the `&&` and `||`
 /// operators. Uses intrinsics when available. (E.g., Clang's.) Raises `SIGTRAP`
@@ -140,8 +140,8 @@
 #define HX_USE_THREADS 11
 #endif
 
-#if !defined HX_USE_LIBCXX
-#define HX_USE_LIBCXX 1
+#if !defined HX_USE_STD_LIB
+#define HX_USE_STD_LIB 1
 #endif
 
 #define hxbreakpoint() (__debugbreak(),true)
@@ -191,9 +191,9 @@
 #endif
 #endif
 
-#if !defined HX_USE_LIBCXX
-#define HX_USE_LIBCXX 1
-#elif !(HX_USE_LIBCXX) && !defined HX_SKIP_LIBCXX_CHECK && __has_include(<new>)
+#if !defined HX_USE_STD_LIB
+#define HX_USE_STD_LIB 1
+#elif !(HX_USE_STD_LIB) && !defined HX_SKIP_LIBCXX_CHECK && __has_include(<new>)
 #error Use -nostdinc++ to use the C headers instead of the C++ ones.
 #endif
 
@@ -280,6 +280,10 @@
 #define hxif_constexpr if
 #endif
 
+#define HX_QUOTE_(x_) #x_
+/// Converts its arg into a string.
+#define HX_QUOTE(x_) HX_QUOTE_(x_)
+
 #if !defined HX_USE_MACROS_WITH_MODULE
 /// `HX_USE_MACROS_WITH_MODULE` - Setting `-DHX_USE_MACROS_WITH_MODULE=1` when
 /// using modules (e.g. `import hx;`) will allow the macros in
@@ -306,8 +310,8 @@
 #if !defined HX_USE_LOGGING
 /// `HX_USE_LOGGING` - Control whether logging statements are included in the
 /// build. Note: `hxlog_handler` is always available and is used by the asserts.
-/// `0` - Disables the logging macros. `1` - All logging except `hxlog`. `2` -
-/// All logging including `hxlog`. This is the default.
+/// `0` - Disables the logging macros. `1` - All logging except `hxlog_verbose`. `2` -
+/// All logging including `hxlog_verbose`. This is the default.
 #define HX_USE_LOGGING 2
 #endif
 
@@ -336,19 +340,19 @@
 #define HX_PROFILER_MAX_RECORDS 4096
 #endif
 
-#if !defined HX_USE_MEMORY_MANAGER
-/// `HX_USE_MEMORY_MANAGER` - Used to disable memory management for debugging
+#if !defined HX_USE_SLAB_ALLOCATOR
+/// `HX_USE_SLAB_ALLOCATOR` - Used to disable memory management for debugging
 /// and for platforms like wasm where extra system allocations are probably
 /// cheaper than code size. - `0` : normal target operation - `1` : remove code
 /// entirely
-#define HX_USE_MEMORY_MANAGER 1
+#define HX_USE_SLAB_ALLOCATOR 1
 #endif
 
 #if !defined HX_PROVIDE_NEW_DELETE
 /// `HX_PROVIDE_NEW_DELETE` - Provides a new/delete implementation when the std
 /// library is absent unless overridden. Use HX_PROVIDE_NEW_DELETE=-1 when
 /// compiling a module to prevent declaration.
-#define HX_PROVIDE_NEW_DELETE !(HX_USE_LIBCXX)
+#define HX_PROVIDE_NEW_DELETE !(HX_USE_STD_LIB)
 #endif
 
 /// `HX_KIB` - A KiB, 2^10.
@@ -360,17 +364,17 @@
 /// `HX_GIB` - A GiB, 2^30.
 #define HX_GIB (1 << 30)
 
-#if !defined HX_MEMORY_BUDGET_PERMANENT
-/// `HX_MEMORY_BUDGET_PERMANENT` - Pool sizes. Defaults to 4 KiB if not defined.
+#if !defined HX_SLAB_BUDGET_PERMANENT
+/// `HX_SLAB_BUDGET_PERMANENT` - Pool sizes. Defaults to 4 KiB if not defined.
 /// Set to 0 to disable.
-#define HX_MEMORY_BUDGET_PERMANENT		(4u * HX_KIB)
+#define HX_SLAB_BUDGET_PERMANENT		(4u * HX_KIB)
 #endif
 
-#if !defined HX_MEMORY_MAX_STACKS
-/// `HX_MEMORY_MAX_STACKS` - The maximum number of temporary stacks that
-/// `hxmemory_manager_allocate_stacks` may allocate. Set to 3 for triple
+#if !defined HX_SLAB_MAX_STACKS
+/// `HX_SLAB_MAX_STACKS` - The maximum number of temporary stacks that
+/// `hxslab_allocator_allocate_stacks` may allocate. Set to 3 for triple
 /// buffering if not defined.
-#define HX_MEMORY_MAX_STACKS 3u
+#define HX_SLAB_MAX_STACKS 3u
 #endif
 
 #if !defined HX_RADIX_SORT_MIN_SIZE
@@ -403,9 +407,6 @@
 #define HX_USE_FLOATING_POINT_TRAPS 0
 #endif
 
-/// Converts its arg into a string.
-#define HX_QUOTE(x_) #x_
-
 /// \cond HIDDEN
 // `HX_TEST_ERROR_HANDLING` - Tests that the failure of tests is handled
 // correctly. Set to `0` if not defined. Set by `testerrorhandling.sh` and
@@ -416,7 +417,7 @@
 
 #if HX_CPLUSPLUS
 // HX_USE_* feature test flags must not be empty as that is evaluated as 0.
-#define HX_CHECK_USE_(x_) static_assert(HX_QUOTE(x_)[0] != 0, #x_ " must not be empty");
+#define HX_CHECK_USE_(x_) static_assert(static_cast<signed>(HX_QUOTE(x_)[0]) >= '!', "bad_define not an expression: " #x_);
 HX_CHECK_USE_(HX_PROVIDE_NEW_DELETE)
 HX_CHECK_USE_(HX_TEST_ERROR_HANDLING)
 HX_CHECK_USE_(HX_USE_CONSOLE)
@@ -424,20 +425,13 @@ HX_CHECK_USE_(HX_USE_FILE_IO)
 HX_CHECK_USE_(HX_USE_FLOATING_POINT_TRAPS)
 HX_CHECK_USE_(HX_USE_GOOGLE_TEST)
 HX_CHECK_USE_(HX_USE_INLINING_ATTR)
-HX_CHECK_USE_(HX_USE_LIBCXX)
+HX_CHECK_USE_(HX_USE_STD_LIB)
 HX_CHECK_USE_(HX_USE_LOGGING)
-HX_CHECK_USE_(HX_USE_MEMORY_MANAGER)
+HX_CHECK_USE_(HX_USE_SLAB_ALLOCATOR)
 HX_CHECK_USE_(HX_USE_MACROS_WITH_MODULE)
 HX_CHECK_USE_(HX_USE_PROFILER)
 HX_CHECK_USE_(HX_USE_THREADS)
 #endif
-
-// HX_APPEND_COUNTER - Used to generate unique identifiers. This is weird
-// because the ## operator happens before macro arg evaluation and both happen
-// before general macro evaluation.
-#define HX_APPEND_COUNTER2_(x_, y_) x_ ## y_
-#define HX_APPEND_COUNTER_(x_, y_) HX_APPEND_COUNTER2_(x_, y_)
-#define HX_APPEND_COUNTER(x_) HX_APPEND_COUNTER_(x_, __COUNTER__)
 
 // HX_INL_BEGIN_/HX_INL_END_ - These allow excluding .inl files from the module
 // export block. See hxmodule.cppm for details.
@@ -449,7 +443,7 @@ HX_CHECK_USE_(HX_USE_THREADS)
 // HX_USE_NAMESPACE - Wraps the entire library in a namespace when HX_USE_NAMESPACE is
 // defined as a valid namespace identifier.
 #if HX_CPLUSPLUS && defined HX_USE_NAMESPACE
-HX_CHECK_USE_(HX_USE_NAMESPACE)
+static_assert(static_cast<signed>(HX_QUOTE(HX_USE_NAMESPACE)[0]) >= 'A', "bad_define not a name: HX_USE_NAMESPACE");
 #define HX_NS_BEGIN_  namespace HX_USE_NAMESPACE {
 #define HX_NS_END_    }
 #define HX_NS_PREFIX_ HX_USE_NAMESPACE::

@@ -4,13 +4,12 @@
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
 /// \file
-/// User-specializable key-equal, key-less, and key-hash callables. By default
-/// these compare with `==` and `<`, which works with a defaulted `<=>`
-/// operator, and hash with an xxhash32-derived mix. Override key operations
-/// for a type by explicitly specializing `hxkey_equal_t`, `hxkey_less_t`, or
-/// `hxkey_hash_t`, the same way `std::hash` is specialized. Specializations
-/// are evaluated when and where the derived container is instantiated and
-/// must be consistently available.
+/// User-specializable key-equal, key-less, key-hash, and key-three-way
+/// callables. Override key operations for a type by explicitly specializing
+/// `hxkey_equal_t`, `hxkey_less_t`, `hxkey_three_way_t`, or `hxkey_hash_t`, the
+/// same way `std::hash` is specialized. Specializations are evaluated when and
+/// where the derived container is instantiated and must be consistently
+/// available.
 
 #include "libhatchet.h"
 
@@ -26,18 +25,9 @@ HX_NS_BEGIN_
 /// \cond HIDDEN
 // UTF-8 string detection. Does not match signed/unsigned char.
 template<typename T_> struct hxis_string_ : public hxfalse_t { };
-template<> struct hxis_string_<char*> : public hxtrue_t { };
-template<> struct hxis_string_<const char*> : public hxtrue_t { };
-template<> struct hxis_string_<volatile char*> : public hxtrue_t { };
-template<> struct hxis_string_<const volatile char*> : public hxtrue_t { };
-template<size_t size_> struct hxis_string_<char[size_]> : public hxtrue_t { };
-template<size_t size_> struct hxis_string_<const char[size_]> : public hxtrue_t { };
-template<size_t size_> struct hxis_string_<volatile char[size_]> : public hxtrue_t { };
-template<size_t size_> struct hxis_string_<const volatile char[size_]> : public hxtrue_t { };
-template<> struct hxis_string_<char[]> : public hxtrue_t { };
-template<> struct hxis_string_<const char[]> : public hxtrue_t { };
-template<> struct hxis_string_<volatile char[]> : public hxtrue_t { };
-template<> struct hxis_string_<const volatile char[]> : public hxtrue_t { };
+template<typename T_> struct hxis_string_<T_*> : public hxis_same_<hxremove_cv_t<T_>, char> { };
+template<typename T_, size_t size_> struct hxis_string_<T_[size_]> : public hxis_same_<hxremove_cv_t<T_>, char> { };
+template<typename T_> struct hxis_string_<T_[]> : public hxis_same_<hxremove_cv_t<T_>, char> { };
 /// \endcond
 
 /// `hxis_string<T>` - Checks if T is some kind of `char*` or `char` array,
@@ -71,11 +61,23 @@ public:
 	}
 };
 
+/// `hxkey_equal_t<T>` for a raw pointer `T` that is not a C string - Deleted.
+/// Comparing unrelated raw pointers is likely UB and not a key operation.
+template<typename T_>
+class hxkey_equal_t<T_, hxenable_if_t<hxis_pointer<T_>() && !hxis_string<T_>()>> {
+public:
+	template<typename A_, typename B_>
+	bool operator()(const A_& a_, const B_& b_) const = delete;
+};
+
 /// `hxkey_equal` - Returns true if `a` and `b` are equivalent, deducing `A`
 /// and invoking `hxkey_equal_t<A>`.
 /// - `a` : The first value to compare.
 /// - `b` : The second value to compare.
 template<typename A_, typename B_>
+#if HX_CPLUSPLUS >= 202002L
+	requires requires(const A_& a_, const B_& b_) { { hxkey_equal_t<A_>{}(a_, b_) } -> hxconvertible_to<bool>; }
+#endif
 hxattr_nodiscard hxinline hxconstexpr hxattr_flatten
 bool hxkey_equal(const A_& a_, const B_& b_) {
 	return hxkey_equal_t<A_>{}(a_, b_);
@@ -106,32 +108,43 @@ public:
 	}
 };
 
+/// `hxkey_less_t<T>` for a raw pointer `T` that is not a C string - Deleted.
+/// Comparing unrelated raw pointers is likely UB and not a key operation.
+template<typename T_>
+class hxkey_less_t<T_, hxenable_if_t<hxis_pointer<T_>() && !hxis_string<T_>()>> {
+public:
+	template<typename A_, typename B_>
+	bool operator()(const A_& a_, const B_& b_) const = delete;
+};
+
 /// `hxkey_less` - Returns true if `a` is less than `b`, deducing `A` and
 /// invoking `hxkey_less_t<A>`.
 /// - `a` : The first value to compare.
 /// - `b` : The second value to compare.
 template<typename A_, typename B_>
+#if HX_CPLUSPLUS >= 202002L
+	requires requires(const A_& a_, const B_& b_) { { hxkey_less_t<A_>{}(a_, b_) } -> hxconvertible_to<bool>; }
+#endif
 hxattr_nodiscard hxinline hxconstexpr hxattr_flatten
 bool hxkey_less(const A_& a_, const B_& b_) {
 	return hxkey_less_t<A_>{}(a_, b_);
 }
 
 /// \cond HIDDEN
-// xxhash32 prime constants and avalanche mixing. Useful when hashing sequential
-// data. These are used by hxkey_hash_t specializations below.
-hxinline_constexpr hxhash_t hxhash_prime1_ = hxhash_t{0x9E3779B1u};
-hxinline_constexpr hxhash_t hxhash_prime2_ = hxhash_t{0x85EBCA77u};
-hxinline_constexpr hxhash_t hxhash_prime3_ = hxhash_t{0xC2B2AE3Du};
-hxinline_constexpr hxhash_t hxhash_prime4_ = hxhash_t{0x27D4EB2Fu};
-hxinline_constexpr hxhash_t hxhash_prime5_ = hxhash_t{0x165667B1u};
+// xxhash32 prime constants and avalanche mixing.
+hxinline_constexpr hxhash_t hxhash_k1_ = hxhash_t{0x9E3779B1u};
+hxinline_constexpr hxhash_t hxhash_k2_ = hxhash_t{0x85EBCA77u};
+hxinline_constexpr hxhash_t hxhash_k3_ = hxhash_t{0xC2B2AE3Du};
+hxinline_constexpr hxhash_t hxhash_k4_ = hxhash_t{0x27D4EB2Fu};
+hxinline_constexpr hxhash_t hxhash_k5_ = hxhash_t{0x165667B1u};
 
-// xxhash32 avalanche: x ^= x >> 15, x *= prime2, x ^= x >> 13, x *= prime3, x ^= x >> 16.
+// xxhash32 avalanche.
 hxattr_nodiscard hxinline hxconstexpr
 hxhash_t hxhash_avalanche_(hxhash_t x_) {
 	x_ ^= x_ >> 15u;
-	x_ *= hxhash_prime2_;
+	x_ *= hxhash_k2_;
 	x_ ^= x_ >> 13u;
-	x_ *= hxhash_prime3_;
+	x_ *= hxhash_k3_;
 	x_ ^= x_ >> 16u;
 	return x_;
 }
@@ -147,10 +160,10 @@ class hxkey_hash_t {
 public:
 	hxattr_nodiscard hxinline hxhash_t operator()(const T_& x_) const {
 		// xxhash32 short-input path: seed=0, length=4, single 4-byte word.
-		hxhash_t h_ = hxhash_prime5_ + hxhash_t{4u};
+		hxhash_t h_ = hxhash_k5_ + hxhash_t{4u};
 		// Did you write a custom hxkey_hash_t specialization?
-		h_ += static_cast<hxhash_t>(x_) * hxhash_prime3_;
-		h_  = ((h_ << 17u) | (h_ >> 15u)) * hxhash_prime4_;
+		h_ += static_cast<hxhash_t>(x_) * hxhash_k3_;
+		h_  = ((h_ << 17u) | (h_ >> 15u)) * hxhash_k4_;
 		return hxhash_avalanche_(h_);
 	}
 };
@@ -162,11 +175,11 @@ template<typename T_>
 class hxkey_hash_t<T_, hxenable_if_t<hxis_string<T_>()>> {
 public:
 	hxattr_nodiscard hxinline hxhash_t operator()(const volatile char* s_) const {
-		const char* t_ = const_cast<const char*>(s_);
-		hxhash_t h_ = hxhash_prime5_;
-		while(*t_ != '\0') {
-			h_ += static_cast<hxhash_t>(static_cast<unsigned char>(*t_++)) * hxhash_prime5_;
-			h_ = ((h_ << 11u) | (h_ >> 21u)) * hxhash_prime1_;
+		const char* str_ = const_cast<const char*>(s_);
+		hxhash_t h_ = hxhash_k5_;
+		while(*str_ != '\0') {
+			h_ += static_cast<hxhash_t>(static_cast<unsigned char>(*str_++)) * hxhash_k5_;
+			h_ = ((h_ << 11u) | (h_ >> 21u)) * hxhash_k1_;
 		}
 		return hxhash_avalanche_(h_);
 	}
@@ -179,5 +192,72 @@ template<typename T_>
 hxattr_nodiscard hxinline hxattr_flatten hxhash_t hxkey_hash(const T_& x_) {
 	return hxkey_hash_t<T_>{}(x_);
 }
+
+/// `hxkey_three_way_t<T>` - By default returns `a - b`, which avoids
+/// `<compare>` but is only suitable when the subtraction cannot overflow.
+/// - `T` : The type to compare.
+template<typename T_=void, typename enabled_t=void>
+class hxkey_three_way_t {
+public:
+	template<typename A_, typename B_>
+	hxattr_nodiscard hxinline hxconstexpr hxattr_flatten
+	auto operator()(const A_& a_, const B_& b_) const -> decltype(a_ - b_) { return a_ - b_; }
+};
+
+/// `hxkey_three_way_t<T>` for a C string pointer `T` - Returns the sign of
+/// `strcmp(a, b)`. With UTF-8 this is code point order preserving.
+template<typename T_>
+class hxkey_three_way_t<T_, hxenable_if_t<hxis_string<T_>()>> {
+public:
+	hxattr_nodiscard hxinline int32_t operator()(const volatile char* a_, const volatile char* b_) const {
+		return ::strcmp(const_cast<const char*>(a_), const_cast<const char*>(b_));
+	}
+};
+
+/// `hxkey_three_way_t<T>` for a raw pointer `T` that is not a C string -
+/// Deleted. Comparing unrelated raw pointers is likely UB.
+template<typename T_>
+class hxkey_three_way_t<T_, hxenable_if_t<hxis_pointer<T_>() && !hxis_string<T_>()>> {
+public:
+	template<typename A_, typename B_>
+	int32_t operator()(const A_& a_, const B_& b_) const = delete;
+};
+
+#if HX_CPLUSPLUS >= 202002L
+/// `hxkey_three_way_t<T>` for a `T` with its own `operator<=>`.
+template<typename T_>
+       requires(!hxis_integral<T_>() && !hxis_floating_point<T_>() && !hxis_pointer<T_>())
+	&& requires(const T_& a_) { a_ <=> a_; }
+class hxkey_three_way_t<T_> {
+public:
+	hxattr_nodiscard hxinline hxconstexpr hxattr_flatten
+	auto operator()(const T_& a_, const T_& b_) const -> decltype(a_ <=> b_) { return a_ <=> b_; }
+};
+#endif // HX_CPLUSPLUS >= 202002L
+
+/// `hxkey_three_way` - Returns the three-way comparison of `a` and `b`,
+/// deducing `A` and invoking `hxkey_three_way_t<A>`.
+/// - `a` : The first value to compare.
+/// - `b` : The second value to compare.
+template<typename A_, typename B_>
+#if HX_CPLUSPLUS >= 202002L
+	requires requires(const A_& a_, const B_& b_) { hxkey_three_way_t<A_>{}(a_, b_); }
+#endif
+hxattr_nodiscard hxinline hxconstexpr hxattr_flatten
+auto hxkey_three_way(const A_& a_, const B_& b_) -> decltype(hxkey_three_way_t<A_>{}(a_, b_)) {
+	return hxkey_three_way_t<A_>{}(a_, b_);
+}
+
+/// \cond HIDDEN
+template<typename T_, bool arithmetic_> struct hxkey_default_compare_ { using type = hxkey_three_way_t<T_>; };
+template<typename T_> struct hxkey_default_compare_<T_, true> { using type = hxkey_less_t<T_>; };
+/// \endcond
+
+/// `hxkey_default_compare_t<T>` - Selects `hxkey_less_t<T>` when `T` is
+/// integral or floating point and `hxkey_three_way_t<T>` otherwise.
+/// - `T` : The key type.
+template<typename T_>
+using hxkey_default_compare_t = typename hxkey_default_compare_<T_,
+	hxis_integral<T_>() || hxis_floating_point<T_>()>::type;
 
 HX_NS_END_

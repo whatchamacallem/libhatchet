@@ -75,11 +75,12 @@ public:
 	/// - `count` : Number of positions to shift right.
 	hxconstexpr hxbitset& operator>>=(size_t count_);
 
-	/// Returns `true` if all bits compare equal to those of `x`.
+	/// Returns `true` if all bits of this `hxbitset` compare equal to those of
+	/// `x`.
 	/// - `x` : The `hxbitset` to compare with.
-	hxattr_nodiscard hxconstexpr bool operator==(const hxbitset& x_) const;
+	hxattr_nodiscard hxinline hxconstexpr bool operator==(const hxbitset& x_) const;
 
-#if HX_CPLUSPLUS < 202002L // C++20 defaults != from ==.
+#if HX_CPLUSPLUS < 202002L
 	/// Returns `true` if any bits differ from those of `x`.
 	/// - `x` : The `hxbitset` to compare with.
 	hxattr_nodiscard hxinline hxconstexpr bool operator!=(const hxbitset& x_) const;
@@ -92,7 +93,7 @@ public:
 	hxattr_nodiscard hxconstexpr bool any(void) const;
 
 	/// Returns the size of the underlying storage in bytes.
-	hxattr_nodiscard static hxinline constexpr size_t bytes(void) { return s_words_ * sizeof(size_t); }
+	hxattr_nodiscard static hxinline constexpr size_t bytes(void);
 
 	/// Returns a const pointer to the underlying word storage.
 	hxattr_nodiscard hxinline hxconstexpr const size_t* data(void) const { return m_data_; }

@@ -117,14 +117,13 @@ public:
 	template<typename deleter_t_>
 	void release(hxptr<T_, deleter_t_>&& ptr_) noexcept;
 
-	/// Allocates storage for `size` slots and enqueues them. Only usable when
-	/// `capacity` is `hxallocator_dynamic_capacity`. The current capacity
-	/// becomes `size` slots. Reallocation is not allowed.
+	/// Forwards `size`, `allocator` and `alignment` unchanged to
+	/// `reserve_storage`, then enqueues the newly backed slots.
 	/// - `size` : The number of slots to allocate.
 	/// - `allocator` : The memory manager ID to use for allocation.
 	/// - `alignment` : The alignment to use for the allocation.
 	void reserve(hxsize_t size_,
-			hxsystem_allocator_t allocator_=hxsystem_allocator_current,
+			hxslab_allocator_t allocator_=hxslab_allocator_current,
 			hxalignment_t alignment_=hxalignment) noexcept;
 
 	/// Returns the number of unallocated `T` available.

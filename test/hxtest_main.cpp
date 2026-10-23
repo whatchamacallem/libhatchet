@@ -5,6 +5,7 @@
 #include <hx/libhatchet.h>
 #include <hx/hxconsole.hpp>
 #include <hx/hxfile.hpp>
+#include <hx/hxpair.hpp>
 #include <hx/hxtest.hpp>
 
 HX_NS_USE
@@ -86,72 +87,45 @@ TEST(hxconsole_test, register_command_replaces_duplicate) {
 
 #if !(HX_USE_GOOGLE_TEST)
 TEST(hxtest_main, filter) {
-	const hxdetail_::hxtest_::test_cases_t_& all_cases =
-		hxdetail_::hxtest_::dispatcher_().test_cases_();
+	EXPECT_TRUE(true);
+}
 
-	hxdetail_::hxtest_case_* self_ = hxnull;
-	int suite_count = 0;
-	for(hxdetail_::hxtest_case_* const* it = all_cases.begin(); it != all_cases.end(); ++it) {
-		if(::strcmp((*it)->m_suite_, "hxtest_main") == 0) {
-			++suite_count;
-			if(::strcmp((*it)->m_case_, "filter") == 0) {
-				self_ = *it;
-			}
-		}
-	}
-	ASSERT_TRUE(self_ != hxnull);
-	EXPECT_GT(all_cases.size(), suite_count);
+TEST(hxtest_main, gtest_filter) {
+	const hxsize_t total = hxdetail_::hxtest_::dispatcher_().test_cases_().size();
 
-	{
-		hxdetail_::hxtest_::test_cases_t_ copy(all_cases);
-		EXPECT_TRUE(hxdetail_::hxtest_::filter_("hxtest_main.filter", copy));
-		EXPECT_EQ(copy.size(), 1);
-		EXPECT_EQ(copy[0], self_);
-	}
-	{
-		hxdetail_::hxtest_::test_cases_t_ copy(all_cases);
-		EXPECT_TRUE(hxdetail_::hxtest_::filter_("hxtest_main.*", copy));
-		EXPECT_EQ(copy.size(), suite_count);
-		EXPECT_EQ(copy.find(self_) != copy.end(), true);
-	}
-	{
-		hxdetail_::hxtest_::test_cases_t_ copy(all_cases);
-		EXPECT_TRUE(hxdetail_::hxtest_::filter_(
-			"hxtest_no_such_suite.*:hxtest_main.filter", copy));
-		EXPECT_EQ(copy.size(), 1);
-		EXPECT_EQ(copy[0], self_);
-	}
-	{
-		hxdetail_::hxtest_::test_cases_t_ copy(all_cases);
-		EXPECT_TRUE(hxdetail_::hxtest_::filter_("-hxtest_main.*", copy));
-		EXPECT_EQ(copy.size(), all_cases.size() - suite_count);
-		EXPECT_EQ(copy.find(self_) == copy.end(), true);
-	}
-	{
-		hxdetail_::hxtest_::test_cases_t_ copy(all_cases);
-		EXPECT_FALSE(hxdetail_::hxtest_::filter_("hxtest_no_such_suite_at_all.*", copy));
-		EXPECT_TRUE(copy.empty());
-	}
-	{
-		hxdetail_::hxtest_::test_cases_t_ copy(1, self_);
-		EXPECT_FALSE(hxdetail_::hxtest_::filter_("-hxtest_no_such_suite.*:hxtest_main.filter", copy));
-		EXPECT_TRUE(copy.empty());
-	}
-	{
-		hxdetail_::hxtest_::test_cases_t_ copy(1, self_);
-		EXPECT_FALSE(hxdetail_::hxtest_::filter_("hxtest_mainxy", copy));
-	}
-	{
-		hxdetail_::hxtest_::test_cases_t_ copy(1, self_);
-		EXPECT_FALSE(hxdetail_::hxtest_::filter_("hxtest_main.y", copy));
-	}
-	{
-		hxdetail_::hxtest_::test_cases_t_ copy(1, self_);
-		EXPECT_FALSE(hxdetail_::hxtest_::filter_("hxtest_main.filte1", copy));
+	const hxpair<hxsize_t, const char*> cases[] = {
+		{ 1, "hxtest_main.filter" },
+		{ 0, "hxtest_main.filte1" },
+		{ 1, "hxtest_main.filter*" },
+		{ 0, "hxtest_main.filterx*" },
+		{ 1, "hxtest_main.f*r" },
+		{ 0, "hxtest_main.f*x" },
+		{ total, "*" }, // GCOVR_EXCL_LINE
+		{ 1, "suite47:hxtest_main.filter" },
+		{ 0, "hxtest_main.filte1:suite47" },
+		{ total, "-suite47" }, // GCOVR_EXCL_LINE
+		{ 1, "hxtest_main.filter*-suite47*" },
+		{ 0, "hxtest_main.filter-*" },
+		{ 0, "hxtest_main.filter::suite47" },
+		{ 0, "hxtest_main.filter-suite47:" },
+		{ 0, "hxtest_main.filter-" },
+		{ 0, "x*:" },
+		{ 0, ":x*" },
+		{ 0, ":" },
+	};
+
+	const hxslab_allocator_scope stack_1(hxslab_allocator_stack_0);
+	hxvector<hxdetail_::hxtest_case_*> copy; copy.reserve(HX_TEST_MAX_CASES);
+
+	for(hxsize_t i = 0; i < hxsize(cases); ++i) {
+		copy = hxdetail_::hxtest_::dispatcher_().test_cases_();
+		hxdetail_::hxtest_case_** const new_end = hxdetail_::hxtest_::filter_(
+			cases[i].b, copy.begin(), copy.end());
+		EXPECT_EQ(static_cast<hxsize_t>(new_end - copy.begin()), cases[i].a);
 	}
 }
 
-TEST(hxtest_main, hxtest_strip_g_args) {
+TEST(hxtest_main, strip_gtest_args) {
 	const bool break_on_failure = hxg_settings.test_break_on_failure;
 	const char* const filter = hxg_settings.test_filter;
 	hxg_settings.test_break_on_failure = false;
@@ -259,9 +233,9 @@ int test_main(int argc, char**argv) {
 	hxinit();
 
 	// Allocate the temporary stacks used by the tests. That 335u is actually
-	// very precise. See TEST(hxmemory_manager_test, temp_overflow);
+	// very precise. See TEST(hxslab_allocator_test, temp_overflow);
 	const size_t stack_sizes[] = { 335u * HX_KIB, 2u * HX_KIB, 1u * HX_KIB };
-	hxmemory_manager_allocate_stacks(stack_sizes);
+	hxslab_allocator_allocate_stacks(stack_sizes);
 
 	bool is_ok = true;
 #if HX_USE_CONSOLE
@@ -280,10 +254,10 @@ int test_main(int argc, char**argv) {
 	is_ok = run_all_tests();
 #endif
 
-#if HX_USE_MEMORY_MANAGER
+#if HX_USE_SLAB_ALLOCATOR
 	// Two tests are designed to test allocator overflow. Anything else is a
-	// bug. See: TEST(hxmemory_manager_test, temp_overflow).
-	const hxmemory_manager_stats stats = hxmemory_manager_utilization(true, false);
+	// bug. See: TEST(hxslab_allocator_test, temp_overflow).
+	const hxslab_allocator_stats stats = hxslab_allocator_utilization(true, false);
 	hxassert_always(hxg_settings.test_filter != hxnull || stats.allocator_overflows == 2,
 		"allocator_overflow count %zu", stats.allocator_overflows);
 #endif

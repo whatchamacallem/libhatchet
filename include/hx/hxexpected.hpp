@@ -126,7 +126,7 @@ public:
 	/// - `x` : The `hxexpected` to move from.
 	hxexpected& operator=(hxexpected&& x_) noexcept;
 
-	/// Assigns a default error using `T(true)`.
+	/// Assigns a default error using `E(true)`.
 	/// - `hxnil` : The error sentinel.
 	hxexpected& operator=(hxnil_t) { this->reset(); return *this; }
 
@@ -137,18 +137,18 @@ public:
 		!hxis_same<hxremove_cvref_t<U_>, E_>(), bool> = true>
 	hxexpected& operator=(U_&& value_) noexcept;
 
-	/// Returns `true` if both expected values contain equal values or equal
+	/// Returns `true` if this expected value and `x` contain equal values or equal
 	/// errors.
-	/// - `x` : Right hand side expected value.
-	hxattr_nodiscard bool operator==(const hxexpected& x_) const { return this->equal(x_); }
+	/// - `x` : The expected value to compare against.
+	hxattr_nodiscard bool operator==(const hxexpected& x_) const;
 
 	/// Returns `true` if this expected value contains an error.
 	/// - `hxnil` : The error sentinel.
-	hxattr_nodiscard bool operator==(hxnil_t) const { return static_cast<bool>(m_error_); }
+	hxattr_nodiscard bool operator==(hxnil_t) const;
 
-	/// Returns `true` if this expected value contains a value equal to `value`.
-	/// - `value` : The value to compare against.
-	hxattr_nodiscard bool operator==(const T_& value_) const;
+	/// Returns `true` if this expected value contains a value equal to `x`.
+	/// - `x` : The value to compare against.
+	hxattr_nodiscard bool operator==(const T_& x_) const;
 
 	/// Returns the result of calling `callable` with the contained value when
 	/// there is no error, otherwise returns `hxnil`. Use `and_then` to return
@@ -163,11 +163,6 @@ public:
 	/// - `args` : Arguments forwarded to the constructor of `T`.
 	template<typename... args_t_>
 	T_& emplace(args_t_&&... args_) noexcept;
-
-	/// Returns `true` if both expected values contain equal values or equal
-	/// errors.
-	/// - `x` : The `hxexpected` to compare against.
-	hxattr_nodiscard bool equal(const hxexpected& x_) const;
 
 	/// Returns a reference to the error with the constness and value category
 	/// of `self`. The expected value must contain an error.
@@ -216,15 +211,23 @@ private:
 	E_ m_error_;
 };
 
-/// `hxmake_expected<T>` - Returns an non-null `hxexpected<T>` constructed by
-/// copying `value`.
-/// - `value` : The value to copy into the expected value.
+/// `hxmake_expected<T>` - Returns a non-null `hxexpected<T>` constructed by
+/// copying `arg`.
+/// - `arg` : The value to copy.
 template<typename T_>
-hxattr_nodiscard hxexpected<T_> hxmake_expected(const T_& value_) {
-	return hxexpected<T_>(false, value_);
+hxattr_nodiscard hxexpected<T_> hxmake_expected(const T_& arg_) {
+	return hxexpected<T_>(false, arg_);
 }
 
-/// `hxmake_expected<T, E>` - Returns an non-null `hxexpected<T, E>` constructed
+/// `hxemplace_expected<T>` - Returns a non-null `hxexpected<T>` constructed in
+/// place by forwarding `args` to the constructor of `T`.
+/// - `args` : Arguments forwarded to the constructor of `T`.
+template<typename T_, typename... args_t_>
+hxattr_nodiscard hxexpected<T_> hxemplace_expected(args_t_&&... args_) {
+	return hxexpected<T_>(false, hxforward<args_t_>(args_)...);
+}
+
+/// `hxmake_expected<T, E>` - Returns a non-null `hxexpected<T, E>` constructed
 /// in place by forwarding `args` to the constructor of `T`.
 /// - `args` : Arguments forwarded to the constructor of `T`.
 template<typename T_, typename E_, typename... args_t_>
@@ -233,17 +236,6 @@ hxattr_nodiscard hxexpected<T_, E_> hxmake_expected(args_t_&&... args_) {
 	result_.emplace(hxforward<args_t_>(args_)...);
 	return result_;
 }
-
-/// `hxkey_equal_t<hxexpected<T, E>>` - Compares `x` and `y` for equivalence.
-template<typename T_, typename E_>
-class hxkey_equal_t<hxexpected<T_, E_> > {
-public:
-	hxattr_nodiscard hxinline hxattr_flatten
-	bool operator()(
-			const hxexpected<T_, E_>& x_, const hxexpected<T_, E_>& y_) const {
-		return x_.equal(y_);
-	}
-};
 
 /// `hxkey_hash_t<hxexpected<T, E>>` - Returns the hash of the contained value
 /// if non-null, otherwise `31u`.

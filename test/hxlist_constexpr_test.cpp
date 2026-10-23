@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-#include <hx/hxconstexpr_list.hpp>
+#include <hx/hxlist_constexpr.hpp>
 #include <hx/hxtest.hpp>
 #include <hx/hxarray.hpp>
 #include <hx/hxvector.hpp>
@@ -13,30 +13,30 @@ HX_NS_USE
 
 #if !defined _MSC_VER && !defined __wasm__
 static_assert(sizeof(size_t) != 4 || (
-		sizeof(hxconstexpr_list_node) == 8u),
-	"hxconstexpr_list_node must pack its prev and next pointers with no padding");
+		sizeof(hxlist_constexpr_node) == 8u),
+	"hxlist_constexpr_node must pack its prev and next pointers with no padding");
 static_assert(sizeof(size_t) != 8 || (
-		sizeof(hxconstexpr_list_node) == 16u),
-	"hxconstexpr_list_node must pack its prev and next pointers with no padding");
+		sizeof(hxlist_constexpr_node) == 16u),
+	"hxlist_constexpr_node must pack its prev and next pointers with no padding");
 
 static_assert(sizeof(size_t) != 4 || (
-		sizeof(hxconstexpr_list<hxconstexpr_list_node, hxdo_not_delete>) == 12u),
-	"hxconstexpr_list must pack its size and sentinel with no padding");
+		sizeof(hxlist_constexpr<hxlist_constexpr_node, hxdo_not_delete>) == 12u),
+	"hxlist_constexpr must pack its size and sentinel with no padding");
 static_assert(sizeof(size_t) != 8 || (
-		sizeof(hxconstexpr_list<hxconstexpr_list_node, hxdo_not_delete>) == 24u),
-	"hxconstexpr_list must pack its size and sentinel with no padding");
+		sizeof(hxlist_constexpr<hxlist_constexpr_node, hxdo_not_delete>) == 24u),
+	"hxlist_constexpr must pack its size and sentinel with no padding");
 #endif
 
 #if HX_CPLUSPLUS >= 202302L
 namespace {
 
 // GCOVR_EXCL_START
-consteval bool hxtest_hxconstexpr_list_consteval_integration(void) {
-	struct hxtest_node_t : hxconstexpr_list_node {
+consteval bool hxtest_hxlist_constexpr_consteval_integration(void) {
+	struct hxtest_node_t : hxlist_constexpr_node {
 		constexpr explicit hxtest_node_t(int v) : value(v) { }
 		int value;
 	};
-	using list_t = hxconstexpr_list<hxtest_node_t, hxconsteval_delete>;
+	using list_t = hxlist_constexpr<hxtest_node_t, hxconsteval_delete>;
 	list_t list;
 	const list_t::iterator i1 = list.push_back(::new hxtest_node_t(1));
 	list.push_back(::new hxtest_node_t(2));
@@ -135,21 +135,21 @@ consteval bool hxtest_hxconstexpr_list_consteval_integration(void) {
 }
 // GCOVR_EXCL_STOP
 
-static_assert(hxtest_hxconstexpr_list_consteval_integration(),
-	"hxconstexpr_list consteval: integration test must pass");
+static_assert(hxtest_hxlist_constexpr_consteval_integration(),
+	"hxlist_constexpr consteval: integration test must pass");
 } // namespace
 #endif // HX_CPLUSPLUS >= 202302L
 
 // Show API is identical.
-hxattr_noinline static void hxtest_gdb_break_hxconstexpr_list(void) { }
-hxattr_noinline static void hxtest_gdb_break_hxconstexpr_list_empty(void) { }
-#define hxtest_gdb_break_hxlist hxtest_gdb_break_hxconstexpr_list
-#define hxtest_gdb_break_hxlist_empty hxtest_gdb_break_hxconstexpr_list_empty
-#define hxlist hxconstexpr_list
-#define hxlist_node hxconstexpr_list_node
-#define hxlist_test hxconstexpr_list_test
-#define hxlist_test_f hxconstexpr_list_test_f
-#define hxlist_node_test hxconstexpr_list_node_test
+hxattr_noinline static void hxtest_gdb_break_hxlist_constexpr(void) { }
+hxattr_noinline static void hxtest_gdb_break_hxlist_constexpr_empty(void) { }
+#define hxtest_gdb_break_hxlist hxtest_gdb_break_hxlist_constexpr
+#define hxtest_gdb_break_hxlist_empty hxtest_gdb_break_hxlist_constexpr_empty
+#define hxlist hxlist_constexpr
+#define hxlist_node hxlist_constexpr_node
+#define hxlist_test hxlist_constexpr_test
+#define hxlist_test_f hxlist_constexpr_test_f
+#define hxlist_node_test hxlist_constexpr_node_test
 #define hxtest_list_counted_node_t hxtest_constexpr_list_counted_node_t
 #define hxtest_list_node_t hxtest_constexpr_list_node_t
 #define hxtest_list_object_node_t hxtest_constexpr_list_object_node_t
