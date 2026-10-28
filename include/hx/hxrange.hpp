@@ -460,7 +460,10 @@ hxattr_nodiscard hxinline hxconstexpr hxattr_flatten
 iterator_t_ hxsearch(iterator_t_ begin_, iterator_t_ end_, const value_t_& value_,
 		const less_t_& less_) {
 	const hxrestrict_t<iterator_t_> it_ = hxlower_bound(hxmake_range(begin_, end_), value_, less_);
-	return (it_ != end_ && !less_(value_, *it_)) ? it_ : end_;
+	if(it_ != end_ && !less_(value_, *it_)) {
+		return it_;
+	}
+	return end_;
 }
 
 /// `hxsearch` - An overload of `hxsearch` over `range`.
@@ -471,7 +474,10 @@ auto hxsearch(range_t_&& range_, const value_t_& value_, const less_t_& less_)
 		-> decltype(range_.begin()) {
 	const auto end_ = range_.end();
 	const hxrestrict_t<decltype(end_)> it_ = hxlower_bound(hxforward<range_t_>(range_), value_, less_);
-	return (it_ != end_ && !less_(value_, *it_)) ? it_ : end_;
+	if(it_ != end_ && !less_(value_, *it_)) {
+		return it_;
+	}
+	return end_;
 }
 
 /// `hxsearch` (specialization) - An overload of `hxsearch` that
@@ -483,7 +489,10 @@ auto hxsearch(range_t_&& range_, const value_t_& value_) -> decltype(range_.begi
 	using less_t_ = hxkey_less_t<decltype(*range_.begin())>;
 	const auto end_ = range_.end();
 	const hxrestrict_t<decltype(end_)> it_ = hxlower_bound(hxforward<range_t_>(range_), value_, less_t_{});
-	return (it_ != end_ && !less_t_{}(value_, *it_)) ? it_ : end_;
+	if(it_ != end_ && !less_t_{}(value_, *it_)) {
+		return it_;
+	}
+	return end_;
 }
 
 /// `hxupper_bound` - Returns the first position in the sorted `range` whose

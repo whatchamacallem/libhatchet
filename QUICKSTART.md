@@ -12,7 +12,7 @@ the build dependencies. (This does not install the WASM build tools.)
 ```bash
 git clone https://github.com/whatchamacallem/libhatchet
 cd libhatchet
-./debian_packages.sh
+./install_deb.sh
 ```
 
 ## Run The Tests

@@ -67,7 +67,7 @@ private:
 	hxallocator(const hxallocator&) = delete;
 	void operator=(const hxallocator&) = delete;
 
-	alignas(T_) unsigned char m_data_[(pow2_ ? (static_cast<hxsize_t>(1) << fixed_capacity_) : fixed_capacity_) * hxsizeof<T_>()];
+	alignas(T_) unsigned char m_data_[((pow2_ ? hxsize_t{1} : fixed_capacity_) << (pow2_ ? fixed_capacity_ : 0)) * hxsizeof<T_>()];
 };
 
 /// `hxallocator<0>` - Capacity is set by first call to `reserve_storage` and

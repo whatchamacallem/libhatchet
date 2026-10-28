@@ -90,8 +90,6 @@ public:
 	bool operator!=(const derived_t& x) const { return m_pointer != x.m_pointer; }
 
 	derived_t operator++(int) = delete;
-	hxtest_iterator_api_base_t(int) = delete;
-	hxtest_iterator_api_base_t(hxnil_t) = delete;
 	derived_t& operator--(void) = delete;
 	derived_t operator--(int) = delete;
 	derived_t operator+(ptrdiff_t) const = delete;
@@ -107,6 +105,8 @@ public:
 	bool operator&&(const hxtest_object&) = delete;
 	bool operator||(const hxtest_object&) = delete;
 private:
+	hxtest_iterator_api_base_t(int) = delete;
+	hxtest_iterator_api_base_t(hxnil_t) = delete;
 	explicit hxtest_iterator_api_base_t(hxtest_object* pointer) : m_pointer(pointer) {
 		hxassertf(m_pointer != hxnull, "sys_err");
 	}

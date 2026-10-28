@@ -56,7 +56,7 @@ HX_EOF_
 	set +e
 
 	# Launch Google Chrome if it is installed.
-	if which google-chrome; then
+	if command -v google-chrome >/dev/null 2>&1; then
 		google-chrome http://0.0.0.0:9876/ >/dev/null 2>&1 &
 	fi
 

@@ -1,6 +1,6 @@
 # Release Notes
 
-## v1.53.0 2026-10-23
+## v1.53.0 2026-10-27
 
 ```text
 - Added `hxkey_three_way` and three-way comparison for non-integral keys.
@@ -11,6 +11,18 @@
 - Added `hxcopy_range`, `hxmove_range` and `hxforward_range` with `_if` forms.
 - Added `hxprofiler_write` for raw binary profiler samples.
 - Added Google Test style test filters accepting `*` and `:` separated lists.
+
+The tested Linux environments have changed. The following are now tested starting
+with fresh installs in a new container. `testmsvc.ps1` uses `wslc.exe` to drive the
+tests. `testwasm.exe` is only run when emcc is installed and `testmsvc.ps1` does
+not install it for bandwidth reasons.
+
+| Distribution     |    GCC | Clang | 32-bit | 64-bit |
+| ---------------- | -----: | ----: | -----: | -----: |
+| Ubuntu 26.04 LTS |     15 |    21 |      x |      x |
+| Debian 13        |     14 |    19 |      x |      x |
+| Rocky Linux 10   | 14, 15 |    21 |        |      x |
+
 ```
 
 ## v1.52.1 2026-09-06

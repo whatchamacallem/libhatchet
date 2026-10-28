@@ -18,7 +18,16 @@ HX_ERRORS_="-Wall -Wextra -pedantic-errors -Werror -Wfatal-errors -Wcast-qual \
 	-Wdisabled-optimization -Wshadow -Wundef -Wconversion -Wdate-time         \
 	-Winvalid-utf8 -Wmissing-declarations -Wno-c2y-extensions"
 
-HX_FLAGS_="-DHX_USE_FILE_IO=2 -ffast-math -ggdb3 -D_FORTIFY_SOURCE=3"
+# _FORTIFY_SOURCE is disabled at -O0 because glibc warns when it is used without
+# optimization.
+HX_FLAGS_="-DHX_USE_FILE_IO=2 -ffast-math -ggdb3"
+
+# -m32 is dropped where 32-bit libc is not installed, e.g. Rocky Linux 10.
+HX_M32_="-m32"
+if [ "$(gcc -m32 -print-file-name=libc.so)" = libc.so ]; then
+	HX_M32_=""
+	echo "32-bit libc not installed. Building 64-bit..."
+fi
 
 HX_SAN_UNDEF_="-fsanitize=undefined,address"
 HX_SAN_THREAD_="-fsanitize=thread"
@@ -49,20 +58,23 @@ run_clang_build() {
 
 	# compile C17
 	clang -I"$HX_DIR_/include" -DHX_HARDENING_MODE=3-$HX_OPT_ -O$HX_OPT_ $HX_FLAGS_ \
-		$HX_ERRORS_ $HX_SAN_ -fdiagnostics-absolute-paths -pthread -std=c17 "$@"    \
+		-D_FORTIFY_SOURCE=$((HX_OPT_ ? 3 : 0)) $HX_ERRORS_ $HX_SAN_                 \
+		-fdiagnostics-absolute-paths -pthread -std=c17 "$@"                         \
 		-c "$HX_DIR_"/test/*.c & HX_PIDS_="$!"
 
 	# generate C++23 pch. clang does this automatically when a c++ header file
 	# is the target. This is just a test.
 	clang++ -I"$HX_DIR_/include" -DHX_HARDENING_MODE=3-$HX_OPT_ -O$HX_OPT_ $HX_FLAGS_ \
-		$HX_ERRORS_ $HX_SAN_ -DHX_USE_THREADS=1 -pthread -std=c++23 -fno-exceptions   \
+		-D_FORTIFY_SOURCE=$((HX_OPT_ ? 3 : 0)) $HX_ERRORS_ $HX_SAN_                   \
+		-DHX_USE_THREADS=1 -pthread -std=c++23 -fno-exceptions                        \
 		-fdiagnostics-absolute-paths "$@" "$HX_DIR_"/include/hx/hxtest.hpp            \
 		-o hxtest.hpp.pch
 
 	# compile C++23
 	for HX_FILE_ in "$HX_DIR_"/src/*.cpp "$HX_DIR_"/test/*.cpp; do
 		clang++ -I"$HX_DIR_/include" -DHX_HARDENING_MODE=3-$HX_OPT_ -O$HX_OPT_ $HX_FLAGS_ \
-			$HX_ERRORS_ $HX_SAN_ -DHX_USE_THREADS=1 -pthread -std=c++23 -fno-exceptions   \
+			-D_FORTIFY_SOURCE=$((HX_OPT_ ? 3 : 0)) $HX_ERRORS_ $HX_SAN_                   \
+			-DHX_USE_THREADS=1 -pthread -std=c++23 -fno-exceptions                        \
 			-fdiagnostics-absolute-paths "$@" -include-pch hxtest.hpp.pch -c "$HX_FILE_"  \
 			-o "$(basename "$HX_FILE_" .cpp).o" & HX_PIDS_="$HX_PIDS_ $!"
 	done
@@ -93,16 +105,18 @@ for HX_I_ in 0 1 2 3; do
 echo "gcc c99/c++11 -O$HX_I_ $* ..."
 
 gcc -I"$HX_DIR_/include" -DHX_HARDENING_MODE=3-$HX_I_ -O$HX_I_ $HX_FLAGS_ $HX_ERRORS_ \
-	$HX_SAN_UNDEF_ -pthread -std=c99 -m32 "$@" -c "$HX_DIR_"/test/*.c & HX_PIDS_="$!"
+	-D_FORTIFY_SOURCE=$((HX_I_ ? 3 : 0)) $HX_SAN_UNDEF_ -pthread -std=c99 $HX_M32_    \
+	"$@" -c "$HX_DIR_"/test/*.c & HX_PIDS_="$!"
 
 for HX_FILE_ in "$HX_DIR_"/src/*.cpp "$HX_DIR_"/test/*.cpp; do
 	gcc -I"$HX_DIR_/include" -DHX_HARDENING_MODE=3-$HX_I_ -O$HX_I_ $HX_FLAGS_ $HX_ERRORS_ \
-		$HX_SAN_UNDEF_ -pthread -std=c++11 -fno-exceptions -fno-rtti -m32 "$@"            \
+		-D_FORTIFY_SOURCE=$((HX_I_ ? 3 : 0)) $HX_SAN_UNDEF_ -pthread -std=c++11           \
+		-fno-exceptions -fno-rtti $HX_M32_ "$@"                                           \
 		-c "$HX_FILE_" -o "$(basename "$HX_FILE_" .cpp).o" & HX_PIDS_="$HX_PIDS_ $!"
 done
 for HX_PID_ in $HX_PIDS_; do wait "$HX_PID_" || exit 1; done
 
-gcc $HX_SAN_UNDEF_ *.o -lpthread -lstdc++ -m32 -o hxtest
+gcc $HX_SAN_UNDEF_ *.o -lpthread -lstdc++ $HX_M32_ -o hxtest
 
 run_hxtest
 done

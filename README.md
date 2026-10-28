@@ -157,18 +157,26 @@ compiler command line, such as whether the library is wrapped in a namespace.
 ## Tested Environments
 
 Almost every reasonable GCC and Clang warning flag should be safe to enable, and
-Clang-Tidy is in use. Every release is tested against glibc and musl on Ubuntu
-26.04 LTS using g++-16 and clang-22. g++-10 and clang-11 are tested periodically
-with C++11. The latest MSVC 2022 should work with most warnings enabled,
-although the MSVC static analyzer is not being tested. Run `debian_packages.sh`
-to install the packages the test scripts need on a Debian based distribution
-such as Ubuntu.
+Clang-Tidy is in use. Every release is tested with `testmsvc.ps1` on Windows. It
+runs `hxtest` built with the latest installed Visual Studio in 32 and 64-bit
+debug and release configurations. The MSVC static analyzer is not being tested.
+It then runs `testall.sh` against glibc and musl in containers using the default
+compilers of each distribution:
 
-The `pico` directory contains a port to the Raspberry Pi Pico 2. There is almost
-nothing to do when porting because libc provides almost all of the device
-abstraction required. Some devices require you to call the C++ global
-constructors yourself before calling `main()`. Check the sample code that came
-with your board.
+| Distribution     |    GCC | Clang | 32-bit | 64-bit |
+| ---------------- | -----: | ----: | -----: | -----: |
+| Ubuntu 26.04 LTS |     15 |    21 |      x |      x |
+| Debian 13        |     14 |    19 |      x |      x |
+| Rocky Linux 10   | 14, 15 |    21 |        |      x |
+
+`testwasm.sh` is skipped in the containers to due to download size. Run
+`install_deb.sh` to install the packages the test scripts need on a Debian
+based distribution such as Ubuntu and `install_rpm.sh` for RPM based
+distributions.
+
+The `pico` contains a port of the test suite to the Raspberry Pi Pico 2 which
+can be used as an example. There is almost nothing to do when setting up. This
+is because libc provides almost all of the device abstraction required.
 
 The scripted builds exercise the following toolchains, language modes and
 `HX_HARDENING_MODE` combinations:
@@ -183,9 +191,6 @@ The scripted builds exercise the following toolchains, language modes and
 | `testwasm.sh` | `emcc` | defaults | 3 | WebAssembly build with the memory manager disabled and pthreads enabled. Emscripten defaults are Clang-based C/C++. |
 
 `testall.sh` runs all of the above and also enforces certain naming conventions.
-
-`testmsvc.bat` tests 32 and 64-bit debug and release configurations on Windows
-and automatically discovers the installed version of MSVC.
 
 `debugbuild.sh` and `teststrip.sh` detect when C++23 is missing and fall back to
 C++20 to test g++-10 and clang-11.

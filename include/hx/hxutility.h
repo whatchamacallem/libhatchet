@@ -304,26 +304,26 @@ hxattr_nodiscard constexpr bool hxisspace(char ch_) {
 	return ch_ == ' ' || (static_cast<unsigned char>(ch_) - 0x09u) < 0x05u;
 }
 
-/// `hxlog2i` - Returns `log2(n)` as an integer which is the power of 2 of the
-/// largest bit in `n`. WARNING: `hxlog2i(0)` is UB. The fallback implementation
-/// returns -127 for 0 and rounds up for `i` >= 2^32-128 returning an incorrect
-/// result.
+/// `hxlog2i` - Returns `log2(i)` as an integer which is the power of 2 of the
+/// largest bit in `i`. WARNING: `hxlog2i(0)` is UB.
 /// - `i` : A `uint32_t`.
-hxattr_nodiscard hxinline constexpr int hxlog2i(uint32_t i_) {
-#if defined _MSC_VER
-	unsigned long index_ = 0ul;
-	::_BitScanReverse(&index_, i_);
-	return static_cast<int>(index_);
-#elif defined __GNUC__ || defined __clang__
+hxattr_nodiscard hxinline hxconstexpr int hxlog2i(uint32_t i_) {
+#if defined __GNUC__ || defined __clang__
 	return 31 - __builtin_clz(i_);
 #else
-	// Compile time fallback.
-	uint32_t result_ = 0;
-	if (i_ & 0xFFFF0000) { i_ >>= 16; result_ += 16; }
-	if (i_ & 0xFF00)     { i_ >>= 8;  result_ += 8;  }
-	if (i_ & 0xF0)       { i_ >>= 4;  result_ += 4;  }
-	if (i_ & 0xC)        { i_ >>= 2;  result_ += 2;  }
-	if (i_ & 0x2)        {            result_ += 1;  }
+#if defined _MSC_VER && HX_CPLUSPLUS >= 202302L
+	if !consteval {
+		unsigned long index_ = 0ul;
+		::_BitScanReverse(&index_, i_);
+		return static_cast<int>(index_);
+	}
+#endif
+	int result_ = 0;
+	if (i_ & 0xffff0000u) { i_ >>= 16; result_ += 16; }
+	if (i_ & 0x0000ff00u) { i_ >>= 8;  result_ += 8;  }
+	if (i_ & 0x000000f0u) { i_ >>= 4;  result_ += 4;  }
+	if (i_ & 0x0000000cu) { i_ >>= 2;  result_ += 2;  }
+	if (i_ & 0x00000002u) {            result_ += 1;  }
 	return result_;
 #endif
 }

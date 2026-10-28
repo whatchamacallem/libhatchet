@@ -286,13 +286,13 @@ public:
 };
 
 #if HX_CPLUSPLUS >= 201402L
-/// `hxconsteval_delete` - A `constexpr`-compatible deleter that uses
-/// `::delete`. Required for `consteval` contexts where `hxdefault_delete`
+/// `hxconsteval_delete` - A `constexpr`-compatible deleter that uses global
+/// `delete`. Required for `consteval` contexts where `hxdefault_delete`
 /// cannot be used because `hxdelete` calls `hxfree` which is not `constexpr`.
 class hxconsteval_delete {
 public:
 	// GCOVR_EXCL_START. No coverage at compile time.
-	/// Deletes the object using `::delete`.
+	/// Deletes the object using global `delete`.
 	template <typename T_>
 	constexpr void operator()(T_* t_) const { ::delete t_; }
 

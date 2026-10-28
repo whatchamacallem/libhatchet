@@ -9,9 +9,9 @@
 $device = usbipd list | Where-Object { $_ -match '2e8a:' } | Select-Object -First 1
 
 if (-not $device) {
-    Write-Error "No Pico found - connect it and re-run"
-    usbipd list
-    exit 1
+	Write-Error "No Pico found - connect it and re-run"
+	usbipd list
+	exit 1
 }
 
 $hwid = ($device -replace '^.*?(2e8a:\w+).*$', '$1')

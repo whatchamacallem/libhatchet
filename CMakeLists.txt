@@ -80,18 +80,18 @@ else()
 
 	# Extract GoogleTest 1.15.2 into the cache directory.
 	#
-	# Uses a per-configuration sub-directory so that switching between Win32/x64
-	# or Debug/Release builds does not cause conflicts between incompatible
-	# cached GoogleTest binaries. CMAKE_GENERATOR_PLATFORM is set by the Visual
-	# Studio multi-config generator (-A x64 / -A Win32). CMAKE_BUILD_TYPE is set
-	# by single-config generators (Ninja, Make) via -DCMAKE_BUILD_TYPE=. When
-	# neither is set the cache lives directly under ./cache.
+	# Uses a per-configuration sub-directory so that switching between Win32/x64,
+	# Windows/Linux or Debug/Release builds does not cause conflicts between
+	# incompatible cached GoogleTest binaries. CMAKE_GENERATOR_PLATFORM is set by
+	# the Visual Studio multi-config generator (-A x64 / -A Win32). Otherwise the
+	# system name and pointer size are used. CMAKE_BUILD_TYPE is set by
+	# single-config generators (Ninja, Make) via -DCMAKE_BUILD_TYPE=.
 	if(CMAKE_GENERATOR_PLATFORM)
 		set(HX_CACHE_SUFFIX "${CMAKE_GENERATOR_PLATFORM}")
 	elseif(CMAKE_SIZEOF_VOID_P EQUAL 8)
-		set(HX_CACHE_SUFFIX "x64")
+		set(HX_CACHE_SUFFIX "${CMAKE_SYSTEM_NAME}-x64")
 	else()
-		set(HX_CACHE_SUFFIX "x86")
+		set(HX_CACHE_SUFFIX "${CMAKE_SYSTEM_NAME}-x86")
 	endif()
 	if(CMAKE_BUILD_TYPE)
 		set(HX_CACHE_SUFFIX "${HX_CACHE_SUFFIX}-${CMAKE_BUILD_TYPE}")

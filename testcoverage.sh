@@ -5,9 +5,7 @@
 
 trap 'trap "" INT; pkill -9 -P $$ 2>/dev/null; wait 2>/dev/null; exit 1' INT
 set -eu
-
 HX_DIR_=$PWD
-HX_GCOV_=gcov-$(gcc -dumpversion)
 
 # Uncalled functions are kept because dead code in a template library is missing
 # line coverage waiting to bite.
@@ -15,6 +13,10 @@ HX_COVERAGE_="--coverage -O0 -g -fprofile-update=atomic -fno-inline -fkeep-stati
 HX_COVERAGE_CXX_="$HX_COVERAGE_ -fno-elide-constructors -fkeep-inline-functions"
 
 HX_USAGE_="usage_error: $0 [--verbose] [--] [destination-directory]"
+
+# Use the version of gcov matching the version fo gcc, when available.
+HX_GCOV_=gcov-$(gcc -dumpversion)
+command -v "$HX_GCOV_" > /dev/null || HX_GCOV_=gcov
 
 HX_VERBOSE_=
 HX_DEST_DIR_=
@@ -213,7 +215,7 @@ if [ "$HX_STATUS_" -ne 0 ]; then
 fi
 
 # Launch Google Chrome if it is installed.
-if [ -n "$HX_VERBOSE_" ] && which google-chrome; then
+if [ -n "$HX_VERBOSE_" ] && command -v google-chrome >/dev/null 2>&1; then
 	set -o xtrace
 	google-chrome "${HX_DEST_DIR_}coverage_details.html" >/dev/null 2>&1;
 fi

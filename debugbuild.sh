@@ -7,8 +7,9 @@
 # permutations of build flags.
 #
 # This build uses 32-bit pointers because they are easier to read. The -m32
-# switch enables 32-bit compilation. See debian_packages.sh. Do not use a .pch
-# with ccache. It won't work as expected.
+# switch enables 32-bit compilation and is dropped where 32-bit libc is not
+# installed, e.g. Rocky Linux 10. See install_deb.sh. Do not use a .pch with
+# ccache. It won't work as expected.
 
 # -Wno-unused-variable is only for debugging.
 # -Wno-ambiguous-reversed-operator is for legacy clang++.
@@ -16,8 +17,6 @@ HX_ERRORS_="-Wall -Wextra -pedantic-errors -Werror -Wfatal-errors -Wcast-qual \
 	-Wdisabled-optimization -Wshadow -Wundef -Wconversion -Wdate-time         \
 	-Wmissing-declarations -Wno-ambiguous-reversed-operator                   \
 	-Wno-unused-variable -Wno-c2y-extensions -Wno-unknown-warning-option"
-
-HX_FLAGS_="-O0 -m32 -ggdb3 -fdiagnostics-absolute-paths -fdiagnostics-color=always"
 
 export POSIXLY_CORRECT=1
 
@@ -71,6 +70,13 @@ if [ -z "$(echo | clang++ -std=c++23 -dM -E -x c++ - 2>/dev/null | grep __cplusp
 	HX_CXX_="-std=c++20"
 	echo "C++23 not supported..."
 fi
+
+HX_M32_="-m32"
+if [ "$(clang -m32 -print-file-name=libc.so)" = libc.so ]; then
+	HX_M32_=""
+	echo "32-bit libc not installed. Building 64-bit..." >&2
+fi
+HX_FLAGS_="$HX_M32_ -O0 -ggdb3 -fdiagnostics-absolute-paths -fdiagnostics-color=always"
 
 build_hxtest() {
 	# Build artifacts are not retained. Only ccache the normal build.

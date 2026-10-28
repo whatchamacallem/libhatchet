@@ -6,6 +6,11 @@
 #include "../include/hx/hxconsole.hpp"
 #include "../include/hx/hxfile.hpp"
 
+#if defined _MSC_VER
+// Allow use of strncpy as strncpy_s is not portable.
+#pragma warning(disable: 4996)
+#endif
+
 HX_NS_BEGIN_
 
 #if HX_USE_PROFILER

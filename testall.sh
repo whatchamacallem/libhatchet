@@ -51,13 +51,13 @@ if grep -nEHIR --include='*.cpp' --include='*.h' --include='*.hpp' --include='*.
 fi
 
 # Require tabs size 4 not spaces.
-if grep -nE '^  ' */*.c */*.cpp */*.h */*.hpp */*.inl *.sh >&2; then
+if grep -nE '^  ' */*.c */*.cpp */*.h */*.hpp */*.inl *.ps1 */*.ps1 *.sh >&2; then
 	echo "error: Use tabs size 4 not spaces."
 	exit 1
 fi
 
 # Check for stray CRLF.
-if git ls-files -z | xargs -0 file | grep CRLF; then
+if git ls-files --eol | grep -E 'w/(crlf|mixed)'; then
 	printf 'error: CRLF line ending found. Fix with: sed -i %ss/\\r//%s <file>\n' "'" "'"
 	exit 1
 fi
@@ -68,7 +68,8 @@ HX_TEXT_FILES_=(! -name example_correct.txt \(
 	-name .clang-tidy -o -name .gdbinit -o -name .gitattributes
 	-o -name .gitignore -o -name '*.bat' -o -name '*.c' -o -name '*.cpp'
 	-o -name '*.h' -o -name '*.hpp' -o -name '*.inl' -o -name '*.json'
-	-o -name '*.md' -o -name '*.py' -o -name '*.sh' -o -name '*.txt' \))
+	-o -name '*.md' -o -name '*.ps1' -o -name '*.py' -o -name '*.sh'
+	-o -name '*.txt' \))
 
 # Check for trailing whitespace.
 if find . -type f "${HX_TEXT_FILES_[@]}" -exec grep -nP '[ \t]+$' {} + >&2; then
@@ -108,7 +109,11 @@ git fsck
 ./testexample.sh $HX_VERBOSE_
 ./testmatrix.sh
 ./teststrip.sh $HX_VERBOSE_
-./testwasm.sh $HX_VERBOSE_
+if command -v emcc > /dev/null 2>&1; then
+	./testwasm.sh $HX_VERBOSE_
+else
+	echo "testwasm.sh skipped. Requires emcc."
+fi
 
 ./debugbuild.sh $HX_VERBOSE_ --grind --run
 doxygen

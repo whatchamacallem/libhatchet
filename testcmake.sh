@@ -112,7 +112,7 @@ $45 = [0/3] hxvector<hxtest_object, 0> = {[24B dynamic]}
 $46 = [7/8] hxvector<hxtest_object, 8> = {[64B static], { value=10, ticket=100 }, { value=9, ticket=101 }, { value=6, ticket=107 }, { value=8, ticket=103 }, { value=7, ticket=104 }, { value=5, ticket=102 }, { value=4, ticket=106 }}
 EOF
 
-if ! diff -u expected_pretty_print.txt gdb_printer_output.txt; then
+if ! git --no-pager diff --no-index expected_pretty_print.txt gdb_printer_output.txt; then
 	cat gdb_printer_output.txt
 	echo "error: GDB pretty printer output does not match expected output."
 	exit 1

@@ -73,12 +73,13 @@ teststrip.sh
 testcmake.sh --no-tidy
 ```
 
-When asked to "build all" then use `testall.sh` as your entry point. Only run
-test scripts from the top level directory and only run the test suite in the
-resulting subdirectory symlink `build`. Run `clean.sh` if you think different
-test runs are interacting because that should be impossible.
+When asked to "build all" then use `testall.sh` as your entry point, or
+`testmsvc.ps1` on Windows. Only run test scripts from the top level directory
+and only run the test suite in the resulting subdirectory symlink `build`. Run
+`clean.sh` if you think different test runs are interacting because that should
+be impossible.
 
-Put plans and other temporary artifacts in the in the `plans` directory unless
+Put plans and other temporary artifacts in the in the `tmp` directory unless
 otherwise requested because it is listed in `.gitignore` but will not be nuked
 by `clean.sh`.
 
@@ -209,9 +210,9 @@ diagnosed and defended instead of waved off as expected test-value drift.
 
 Use `debugbuild.sh --run` to test changes by default and not cmake. 🪓🪓🪓
 output indicates success. When running tests execute `build/hxtest` with `build`
-as the current directory. Consider all `.sh` files in the project except
-`debian_packages.sh` safe to run at any time. On Windows, fall back to the VS
-Code CMake win32 debug task. Use `testcoverage.sh` after writing new tests to
+as the current directory. Consider all `.sh` files in the project and
+`testmsvc.ps1` safe to run at any time. On Windows, fall back to the VS Code
+CMake win32 debug task. Use `testcoverage.sh` after writing new tests to
 identify missing line coverage.
 
 Tests that compile with a C++11 compiler against C99 libraries are required.

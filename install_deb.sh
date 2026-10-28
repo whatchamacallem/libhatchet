@@ -3,12 +3,12 @@
 # SPDX-License-Identifier: MIT
 # This file is licensed under the terms of the LICENSE.md file.
 #
-# Building and running all the tests on Ubuntu 24.04 LTS requires these packages.
+# Building and running all the tests on a Debian derivative requires these
+# packages. Tested on Ubuntu 26.04 LTS and Debian 13.
 #
-# It should be safe to just run this script on Ubuntu. gdb-multiarch is now
-# required for GDB to set 32-bit breakpoints reliably. google-chrome will be
-# launched when a web page is generated, if available, but is not required or
-# installed here. emcc is required for testwasm.sh but is not installed here.
+# It should be safe to just run this script. google-chrome will be launched
+# when a web page is generated, if available, but is not required or installed
+# here. emcc is required for testwasm.sh but is not installed here.
 
 trap 'trap "" INT; pkill -9 -P $$ 2>/dev/null; wait 2>/dev/null; exit 1' INT
 set -euo pipefail
@@ -28,12 +28,29 @@ separator() {
 	((HX_COLOR_OFFSET_ += 3))
 }
 
+. /etc/os-release
+case " $ID ${ID_LIKE:-} " in
+	*" debian "*|*" ubuntu "*) ;;
+	*)
+		echo "error: $ID is not a Debian derivative. See install_rpm.sh." >&2
+		exit 1 ;;
+esac
+
+HX_SUDO_=""
+if [ "$(id -u)" -ne 0 ]; then
+	HX_SUDO_="sudo"
+fi
+export DEBIAN_FRONTEND=noninteractive
+
 separator ---------------------------------------------------------------------
-HX_CMD_=$(echo "sudo apt install                                     \
-	ccache        clang        clang-tidy   cmake    doxygen         \
-	g++           g++-multilib gcc-multilib gcovr    gdb             \
-	gdb-multiarch libc++-dev   llvm         llvm-dev musl            \
-	musl-dev      musl-tools   ninja-build  procps   universal-ctags \
+$HX_SUDO_ apt-get update
+
+separator ---------------------------------------------------------------------
+HX_CMD_=$(echo "$HX_SUDO_ apt-get install -y                           \
+	ccache        clang        clang-tidy   cmake    doxygen   g++     \
+	g++-multilib  gcc-multilib gcovr        gdb      git       llvm    \
+	meson         musl         musl-dev     musl-tools ninja-build     \
+	procps        python3                                              \
 " | tr -s '[:space:]' ' ')
 echo "$HX_CMD_" | fold -s
 
@@ -41,7 +58,7 @@ separator ---------------------------------------------------------------------
 $HX_CMD_
 
 separator ---------------------------------------------------------------------
-for HX_CMD_ in clang cmake ctags doxygen gcc gcovr musl-gcc ninja pgrep python3
+for HX_CMD_ in clang cmake doxygen gcc gcovr meson musl-gcc ninja pgrep python3
 do
 	echo "$HX_CMD_ --version"
 	$HX_CMD_ --version
