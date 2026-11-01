@@ -165,7 +165,7 @@ hxattr_weak hxattr_noexcept void hxset_assert_handler(bool (*handler)(const char
 }
 
 hxattr_weak hxattr_noexcept void hxlog_handler(hxlog_level_t level, const char* format, ...) {
-	va_list args;
+	va_list args; // NOLINT(cppcoreguidelines-init-variables)
 	va_start(args, format);
 	hxlog_handler_v(level, format, args);
 	va_end(args);

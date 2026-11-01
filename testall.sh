@@ -7,7 +7,7 @@
 # available to debug. Any shell command that fails should also stop the test
 # process.
 
-trap 'trap "" INT; pkill -9 -P $$ 2>/dev/null; wait 2>/dev/null; exit 1' INT
+trap 'trap "" INT PIPE TERM; pkill -P $$; wait; exit 1' INT PIPE TERM
 set -euo pipefail
 
 HX_VERBOSE_=""
@@ -16,6 +16,16 @@ if [ "${1:-}" = "--verbose" ]; then
 elif [ -n "${1:-}" ]; then
 	echo "usage_error: $0 [--verbose]"
 	exit 1
+fi
+
+# BSD grep does not support -P. Run install_brew.sh.
+if [ "$(uname -s)" = Darwin ]; then
+	PATH="/opt/homebrew/bin:/opt/homebrew/sbin${PATH+:$PATH}"
+	if ! command -v brew > /dev/null 2>&1; then
+		echo "error: Install brew and then run install_brew.sh."
+		exit 1
+	fi
+	export PATH="$(brew --prefix grep)/libexec/gnubin:$PATH"
 fi
 
 # Delete files matching .gitignore and reset ccache. Required for following
@@ -79,7 +89,7 @@ fi
 
 # Check text files end with exactly one newline.
 find . -type f "${HX_TEXT_FILES_[@]}" | while read -r HX_FILE_; do
-	if [[ $(tail -c 2 "$HX_FILE_" | tr -dc '\n' | wc -c) -ne 1 ]]; then
+	if [[ $(tail -c 2 "$HX_FILE_" | LC_ALL=C tr -dc '\n' | wc -c) -ne 1 ]]; then
 		echo "error: Text files must end with exactly one newline: $HX_FILE_"
 		exit 1
 	fi
@@ -108,7 +118,11 @@ git fsck
 ./testerrorhandling.sh
 ./testexample.sh $HX_VERBOSE_
 ./testmatrix.sh
-./teststrip.sh $HX_VERBOSE_
+if command -v musl-gcc > /dev/null 2>&1; then
+	./teststrip.sh $HX_VERBOSE_
+else
+	echo "teststrip.sh skipped. Requires musl-gcc."
+fi
 if command -v emcc > /dev/null 2>&1; then
 	./testwasm.sh $HX_VERBOSE_
 else

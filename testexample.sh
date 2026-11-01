@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 # This file is licensed under the terms of the LICENSE.md file.
 
-trap 'trap "" INT; pkill -9 -P $$ 2>/dev/null; wait 2>/dev/null; exit 1' INT
+trap 'trap "" INT PIPE TERM; pkill -P $$; wait; exit 1' INT PIPE TERM
 set -eu
 
 export POSIXLY_CORRECT=1
@@ -16,9 +16,26 @@ elif [ -n "${1:-}" ]; then
 	exit 1
 fi
 
-# -m32 is dropped where 32-bit libc is not installed, e.g. Rocky Linux 10.
+HX_CLANG_=clang
+HX_CLANGXX_=clang++
+HX_GCC_=gcc
+HX_GXX_=g++
+if [ "$(uname -s)" = Darwin ]; then
+	PATH="/opt/homebrew/bin:/opt/homebrew/sbin${PATH+:$PATH}"
+	if ! command -v brew > /dev/null 2>&1; then
+		echo "error: Install brew and then run install_brew.sh."
+		exit 1
+	fi
+	# Apple clang does not support named modules.
+	HX_CLANG_="$(brew --prefix llvm)/bin/clang"
+	HX_CLANGXX_="$HX_CLANG_++"
+	HX_GCC_=$(basename "$(brew --prefix gcc)"/bin/gcc-[0-9]*)
+	HX_GXX_="g++-${HX_GCC_#gcc-}"
+fi
+
+# -m32 is dropped where 32-bit libc is not installed.
 HX_M32_="-m32"
-if [ "$(clang -m32 -print-file-name=libc.so)" = libc.so ]; then
+if [ "$("$HX_CLANG_" -m32 -print-file-name=libc.so)" = libc.so ]; then
 	HX_M32_=""
 	echo "32-bit libc not installed. Building 64-bit..."
 fi
@@ -79,15 +96,15 @@ if [ "$HX_VERBOSE_" = "--verbose" ]; then
 	set -o xtrace
 fi
 
-export CC=clang
-export CXX=clang++
+export CC="$HX_CLANG_"
+export CXX="$HX_CLANGXX_"
 echo "$CXX meson+ninja with textual includes..."
 run_example
 echo "$CXX meson+ninja with named module..."
 run_example -Dbuild_module=true
 
-export CC=gcc
-export CXX=g++
+export CC="$HX_GCC_"
+export CXX="$HX_GXX_"
 echo "$CXX meson+ninja with textual includes..."
 run_example
 # GCC 14 modules do not build, e.g. Debian 13. Rocky Linux 10 has GCC 15 in

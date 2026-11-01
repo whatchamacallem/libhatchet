@@ -112,7 +112,11 @@ hxinline size_t hxthread_id(void) {
 	return static_cast<size_t>(::thrd_current());
 #endif
 #elif HX_USE_THREADS
+#if defined __APPLE__
+	return reinterpret_cast<size_t>(::pthread_self());
+#else
 	return static_cast<size_t>(::pthread_self());
+#endif
 #else
 	return 0; // Single threaded.
 #endif

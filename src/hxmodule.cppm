@@ -21,12 +21,12 @@ module;
 #include <stdlib.h>
 #include <string.h>
 
-#ifndef __wasm__
-#if __has_include(<x86intrin.h>)
+#if defined __x86_64__ || defined __i386__
 #include <x86intrin.h>
-#elif __has_include(<intrin.h>)
+#elif defined __aarch64__
+#include <arm_acle.h>
+#elif defined _MSC_VER
 #include <intrin.h>
-#endif
 #endif
 
 #if !defined HX_USE_THREADS || (HX_USE_THREADS)

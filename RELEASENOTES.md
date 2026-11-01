@@ -1,6 +1,15 @@
 # Release Notes
 
-## v1.53.0 2026-10-27
+## v1.53.2 2026-11-01
+
+```text
+- Added macOS 27 arm64 Homebrew with GCC 16, Apple Clang 21 and LLVM 23.
+- Added Linux Mint 22.3 with GCC 13 and Clang 18.
+- Lowered the Meson requirement to 1.3 and tested modules with Clang 18.
+- Test the toolchain installers while caching pre-built `wslc` containers.
+```
+
+## v1.53.1 2026-10-27
 
 ```text
 - Added `hxkey_three_way` and three-way comparison for non-integral keys.

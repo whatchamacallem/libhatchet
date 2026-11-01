@@ -9,7 +9,7 @@ if get_option('build_module')
 	_example_obj = custom_target('hxexample',
 		input : 'example.cpp',
 		output : 'example.cpp.o',
-		depends : _hxis_clang ? [libhatchet_module[1]] : [libhatchet_module],
+		depends : [libhatchet_module],
 		command : _hxcpp.cmd_array() + get_option('cpp_args') + hxwarning_args
 			+ hxmodule_include_args + hxmodule_search_args + _module_consumer_args
 			+ [

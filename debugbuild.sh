@@ -11,17 +11,18 @@
 # installed, e.g. Rocky Linux 10. See install_deb.sh. Do not use a .pch with
 # ccache. It won't work as expected.
 
+trap 'trap "" INT PIPE TERM; pkill -P $$; wait; exit 1' INT PIPE TERM
+set -eu
+
+export POSIXLY_CORRECT=1
+export CCACHE_DIR="$PWD/cache/ccache"
+
 # -Wno-unused-variable is only for debugging.
 # -Wno-ambiguous-reversed-operator is for legacy clang++.
 HX_ERRORS_="-Wall -Wextra -pedantic-errors -Werror -Wfatal-errors -Wcast-qual \
 	-Wdisabled-optimization -Wshadow -Wundef -Wconversion -Wdate-time         \
 	-Wmissing-declarations -Wno-ambiguous-reversed-operator                   \
 	-Wno-unused-variable -Wno-c2y-extensions -Wno-unknown-warning-option"
-
-export POSIXLY_CORRECT=1
-
-trap 'trap "" INT; pkill -9 -P $$ 2>/dev/null; wait 2>/dev/null; exit 1' INT
-set -eu
 
 HX_OPT_CLEAR_=0
 HX_OPT_DEFINES_=""
@@ -78,10 +79,26 @@ if [ "$(clang -m32 -print-file-name=libc.so)" = libc.so ]; then
 fi
 HX_FLAGS_="$HX_M32_ -O0 -ggdb3 -fdiagnostics-absolute-paths -fdiagnostics-color=always"
 
+# HX_USE_THREADS=11 is dropped where <threads.h> is not installed, e.g. macOS.
+HX_THREADS_LIST_="0 1 11"
+if ! echo "#include <threads.h>" | clang -E -x c - > /dev/null 2>&1; then
+	HX_THREADS_LIST_="0 1"
+fi
+
+# Try to situate ccache on a ram-disk.
+if [ "${HX_RAMDISK:-0}" = 1 ]; then
+	mkdir -p cache/ccache
+elif [ ! -d cache/ccache ]; then
+	rm -rf "$(readlink -f cache/ccache)" cache/ccache
+	mkdir -p cache
+	ln -s "$(mktemp -d)" cache/ccache
+fi
+
 build_hxtest() {
 	# Build artifacts are not retained. Only ccache the normal build.
 	HX_CCACHE_="${1:-}"
-	rm -rf "$(readlink -f build)" build; ln -s "$(mktemp -d)" build
+	rm -rf "$(readlink -f build)" build
+	if [ "${HX_RAMDISK:-0}" = 1 ]; then mkdir build; else ln -s "$(mktemp -d)" build; fi
 
 	HX_PIDS_=""
 	for HX_FILE_ in test/*.c; do
@@ -111,7 +128,7 @@ if [ "$HX_OPT_GRIND_" = "1" ]; then
 	for HX_LOGGING_   in 0 1 2;  do
 	for HX_MEMORY_    in 0 1;    do
 	for HX_PROFILER_  in 0 1;    do
-	for HX_THREADS_   in 0 1 11; do
+	for HX_THREADS_   in $HX_THREADS_LIST_; do
 
 		# Only test every 7th permutation. It is important to use a prime number.
 		HX_COUNT_=$((HX_COUNT_ + 1))

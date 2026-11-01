@@ -124,8 +124,7 @@ TEST(hxflat_map_test, mutable_value_proxy_operator_equal_detects_key_and_value_m
 	EXPECT_FALSE(*a.begin() == *d.begin());
 }
 
-#if HX_CPLUSPLUS >= 202302L
-TEST(hxflat_map_test, expected_lookup_and_emplace) {
+TEST(hxflat_map_test, emplace_and_has_value) {
 	hxflat_map<int, int, 3> m;
 	EXPECT_EQ(m.emplace(2, 20).value(), 20);
 	EXPECT_EQ(m.emplace(1, 10).value(), 10);
@@ -133,6 +132,13 @@ TEST(hxflat_map_test, expected_lookup_and_emplace) {
 	EXPECT_EQ(m.size(), 2);
 	EXPECT_TRUE(m.has_value(1));
 	EXPECT_FALSE(m.has_value(3));
+}
+
+#if HX_CPLUSPLUS >= 202302L
+TEST(hxflat_map_test, expected_lookup) {
+	hxflat_map<int, int, 3> m;
+	m.emplace(2, 20);
+	m.emplace(1, 10);
 	bool called = false;
 	EXPECT_EQ(m.and_then(2, [&called](int& value) {
 		called = true;

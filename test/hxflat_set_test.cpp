@@ -116,8 +116,7 @@ TEST(hxflat_set_test, operator_equal_int_key_type_detects_length_and_value_misma
 	EXPECT_FALSE(d == a);
 }
 
-#if HX_CPLUSPLUS >= 202302L
-TEST(hxflat_set_test, expected_lookup_and_emplace) {
+TEST(hxflat_set_test, emplace_and_has_value) {
 	hxflat_set<int, 3> s;
 	EXPECT_EQ(*s.emplace(2), 2);
 	EXPECT_EQ(*s.emplace(1), 1);
@@ -125,6 +124,13 @@ TEST(hxflat_set_test, expected_lookup_and_emplace) {
 	EXPECT_EQ(s.size(), 2);
 	EXPECT_TRUE(s.has_value(1));
 	EXPECT_FALSE(s.has_value(3));
+}
+
+#if HX_CPLUSPLUS >= 202302L
+TEST(hxflat_set_test, expected_lookup) {
+	hxflat_set<int, 3> s;
+	s.emplace(2);
+	s.emplace(1);
 	bool called = false;
 	EXPECT_EQ(s.and_then(2, [&called](const int& value) {
 		called = true;

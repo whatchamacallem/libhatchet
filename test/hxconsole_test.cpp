@@ -62,8 +62,10 @@ bool hxconsole_test_fn_f64(double v_)      { hxs_console_test_fn_f64  = v_; retu
 bool hxconsole_test_fn_bool(bool v_)       { hxs_console_test_fn_bool = v_; return true; }
 bool hxconsole_test_fn_str(const char* v_) { hxs_console_test_fn_str  = v_; return true; }
 
+long               hxs_console_test_fn_l   = 0;
 long long          hxs_console_test_fn_ll  = 0;
 unsigned long long hxs_console_test_fn_ull = 0;
+bool hxconsole_test_fn_l(long v_)                 { hxs_console_test_fn_l   = v_; return true; }
 bool hxconsole_test_fn_ll(long long v_)           { hxs_console_test_fn_ll  = v_; return true; }
 bool hxconsole_test_fn_ull(unsigned long long v_) { hxs_console_test_fn_ull = v_; return true; }
 
@@ -131,6 +133,7 @@ hxconsole_command(hxconsole_test_fn_f32);
 hxconsole_command(hxconsole_test_fn_f64);
 hxconsole_command(hxconsole_test_fn_bool);
 hxconsole_command(hxconsole_test_fn_str);
+hxconsole_command(hxconsole_test_fn_l);
 hxconsole_command(hxconsole_test_fn_ll);
 hxconsole_command(hxconsole_test_fn_ull);
 hxconsole_command(hxconsole_test_fn_mixed);
@@ -593,6 +596,12 @@ TEST(hxconsole_test, function_overflow_signed_min_unsigned_zero_boundary) {
 	hxs_console_test_fn_u8 = 99;
 	EXPECT_TRUE(hxconsole_exec_line("hxconsole_test_fn_u8 0"));
 	EXPECT_EQ(hxs_console_test_fn_u8, static_cast<uint8_t>(0));
+}
+
+TEST(hxconsole_test, long_parsing) {
+	hxs_console_test_fn_l = 0;
+	EXPECT_TRUE(hxconsole_exec_line("hxconsole_test_fn_l -123"));
+	EXPECT_EQ(hxs_console_test_fn_l, -123l);
 }
 
 TEST(hxconsole_test, long_long_parsing) {

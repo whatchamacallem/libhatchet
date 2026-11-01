@@ -27,12 +27,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifndef __wasm__
-#if __has_include(<x86intrin.h>)
+#if defined __x86_64__ || defined __i386__
 #include <x86intrin.h>
-#elif __has_include(<intrin.h>)
+#elif defined __aarch64__
+#include <arm_acle.h>
+#elif defined _MSC_VER
 #include <intrin.h>
-#endif
 #endif
 
 #if defined __STDC_VERSION__ && __STDC_VERSION__ < 202311l
@@ -41,10 +41,10 @@
 
 /// `int LIBHATCHET_VER` - One digit major, and two digit minor and patch
 /// versions.
-#define LIBHATCHET_VER 15301
+#define LIBHATCHET_VER 15302
 
 /// `LIBHATCHET_TAG` - Major, minor and patch version tag name.
-#define LIBHATCHET_TAG "v1.53.1"
+#define LIBHATCHET_TAG "v1.53.2"
 
 #if !defined HX_HARDENING_MODE
 /// `HX_HARDENING_MODE` - Library hardening level. See the README.md for levels.
@@ -318,7 +318,7 @@ template<typename T_> constexpr hxsize_t hxsizeof(T_&) { return static_cast<hxsi
 // asserts in C++23.
 hxattr_noexcept constexpr void hxlog_handler_(enum hxlog_level_t level_, const char* format_, ...) {
 	if !consteval {
-		va_list args_;
+		va_list args_; // NOLINT(cppcoreguidelines-init-variables)
 		va_start(args_, format_);
 		hxlog_handler_v(level_, format_, args_);
 		va_end(args_);

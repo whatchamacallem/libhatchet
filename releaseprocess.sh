@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 # This file is licensed under the terms of the LICENSE.md file.
 
-trap 'trap "" INT; pkill -9 -P $$ 2>/dev/null; wait 2>/dev/null; exit 1' INT
+trap 'trap "" INT PIPE TERM; pkill -P $$; wait; exit 1' INT PIPE TERM
 set -euo pipefail
 
 export LANG=C.UTF-8
@@ -30,6 +30,25 @@ if git tag --list | grep -qxF "$HX_TAG_"; then
 	echo "error: Tag $HX_TAG_ already exists. Update libhatchet.h."
 	exit 1
 fi
+
+if [ "$(uname -s)" = Darwin ]; then
+	echo "error: The memory sanitizer is required and unsupported on Darwin."
+	exit 1
+fi
+
+for HX_TOOL_ in emcc musl-gcc; do
+	if ! command -v "$HX_TOOL_" > /dev/null 2>&1; then
+		echo "error: $HX_TOOL_ is required and is not installed."
+		exit 1
+	fi
+done
+
+for HX_TOOL_ in gcc clang; do
+	if [ "$("$HX_TOOL_" -m32 -print-file-name=libc.so 2>/dev/null)" = libc.so ]; then
+		echo "error: 32-bit support is required and missing for $HX_TOOL_."
+		exit 1
+	fi
+done
 
 clear
 

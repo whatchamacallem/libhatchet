@@ -139,7 +139,7 @@ public:
 			unsigned lower_r, lower_g, lower_b;
 			this->color(real_origin, upper_origin, upper_r, upper_g, upper_b);
 			this->color(real_origin, lower_origin, lower_r, lower_g, lower_b);
-			dst += ::sprintf(dst, "\033[48;2;%u;%u;%u;38;2;%u;%u;%um\xe2\x96\x84",
+			dst += ::snprintf(dst, 64u, "\033[48;2;%u;%u;%u;38;2;%u;%u;%um\xe2\x96\x84",
 				upper_r, upper_g, upper_b, lower_r, lower_g, lower_b);
 		}
 		dst[0] = '\033'; dst[1] = '['; dst[2] = '0'; dst[3] = 'm';
@@ -205,7 +205,7 @@ int example_main(void) {
 
 	struct ::sigaction sa;
 	sa.sa_handler = example_notify_sigint;
-	::sigemptyset(&sa.sa_mask);
+	sigemptyset(&sa.sa_mask);
 	sa.sa_flags = 0; // No SA_RESTART: SIGINT interrupts blocking fgets
 	::sigaction(SIGINT, &sa, hxnull);
 

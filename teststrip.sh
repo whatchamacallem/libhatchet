@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 # This file is licensed under the terms of the LICENSE.md file.
 
-trap 'trap "" INT; pkill -9 -P $$ 2>/dev/null; wait 2>/dev/null; exit 1' INT
+trap 'trap "" INT PIPE TERM; pkill -P $$; wait; exit 1' INT PIPE TERM
 set -eu
 
 export POSIXLY_CORRECT=1
@@ -24,7 +24,9 @@ HX_FLAGS_="-Os -march=native -static -g0 -ffunction-sections -fdata-sections -ff
 	-fno-asynchronous-unwind-tables -fno-stack-protector -ffile-prefix-map=$HX_DIR_/="
 
 # Build artifacts are not retained.
-rm -rf "$(readlink -f build)" build; ln -s "$(mktemp -d)" build && cd build
+rm -rf "$(readlink -f build)" build
+if [ "${HX_RAMDISK:-0}" = 1 ]; then mkdir build; else ln -s "$(mktemp -d)" build; fi
+cd build
 
 if [ "${1:-}" = "--verbose" ]; then
 	set -o xtrace

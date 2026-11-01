@@ -178,15 +178,10 @@ TEST_F(hxdeque_test_f, emplace_back) {
 	EXPECT_EQ(d.back().value(), 34);
 	EXPECT_EQ(d.back().state(), hxtest_object_state::valid);
 	EXPECT_EQ(d.size(), 1);
-	struct hxtest_pair_t {
-		hxtest_pair_t(int a, int b) : x(a), y(b) { }
-		int x, y;
-	};
-	hxdeque<hxtest_pair_t, 2> pd;
-	pd.emplace_back(3, 7);
-	EXPECT_EQ(pd.back().x, 3);
-	EXPECT_EQ(pd.back().y, 7);
-	EXPECT_TRUE(check_stats(1, 0, 1, 0, 0, 0, 0, 0, 0, 0));
+	d.emplace_back(31, 32);
+	EXPECT_EQ(d.back().value(), 63);
+	EXPECT_EQ(d.size(), 2);
+	EXPECT_TRUE(check_stats(2, 0, 2, 0, 0, 0, 0, 0, 0, 0));
 }
 
 TEST_F(hxdeque_test_f, emplace_front) {

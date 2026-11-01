@@ -56,7 +56,7 @@ public:
 	hxtest_object(int32_t first, int32_t second);
 	hxtest_object(hxtest_object&& x) noexcept;
 	~hxtest_object(void);
-	explicit operator bool(void) const { return this->m_value != 0; }
+	explicit operator bool(void) const { return this->m_value != 0; } // GCOVR_EXCL_LINE
 	void operator=(const hxtest_object& x);
 	hxtest_object& operator=(hxtest_object&& x) noexcept;
 	bool operator==(int32_t x) const;

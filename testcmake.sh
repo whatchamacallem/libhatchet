@@ -5,7 +5,7 @@
 
 # Does not rerun cmake as is customary. Build artifacts ARE retained.
 
-trap 'trap "" INT; pkill -9 -P $$ 2>/dev/null; wait 2>/dev/null; exit 1' INT
+trap 'trap "" INT PIPE TERM; pkill -P $$; wait; exit 1' INT PIPE TERM
 set -eu
 
 export POSIXLY_CORRECT=1
@@ -44,8 +44,28 @@ else
 		|| { echo "error: ninja failed:"; cat build/testcmake.sh.log; exit 1; }
 fi
 
-echo "Run build/hxtest with GDB..."
 cd build
+
+# Smoke test Darwin cmake without running GDB due to permissions.
+if [ "$(uname -s)" = Darwin ]; then
+	PATH="/opt/homebrew/bin:/opt/homebrew/sbin${PATH+:$PATH}"
+	if ! command -v brew > /dev/null 2>&1; then
+		echo "error: Install brew and then run install_brew.sh."
+		exit 1
+	fi
+
+	echo "Run build/hxtest. GDB tests skipped on macOS..."
+	PATH="$PATH:$(brew --prefix llvm)/bin"
+	export SDKROOT="$(xcrun --show-sdk-path)"
+	if ! ./hxtest help runtests > testcmake.sh.txt 2>&1; then
+		echo "error: Test suite failed."
+		tail -5 testcmake.sh.txt
+		exit 1
+	fi
+	exit 0
+fi
+
+echo "Run build/hxtest with GDB..."
 
 # Run the GDB smoke tests at the same time.
 rm -f gdb_printer_output.txt
@@ -112,6 +132,18 @@ $45 = [0/3] hxvector<hxtest_object, 0> = {[24B dynamic]}
 $46 = [7/8] hxvector<hxtest_object, 8> = {[64B static], { value=10, ticket=100 }, { value=9, ticket=101 }, { value=6, ticket=107 }, { value=8, ticket=103 }, { value=7, ticket=104 }, { value=5, ticket=102 }, { value=4, ticket=106 }}
 EOF
 
+# hxexpected and hxref require C++23. GCC 13 reports -std=c++23 as 202100L. GDB
+# numbers the values printed.
+HX_CXX_=$(sed -n 's/^CMAKE_CXX_COMPILER:[A-Z]*=//p' CMakeCache.txt)
+HX_CPLUSPLUS_=$(echo | "$HX_CXX_" -std=c++23 -dM -E -x c++ - \
+	| sed -n 's/^#define __cplusplus \([0-9]*\)L$/\1/p')
+if [ "$HX_CPLUSPLUS_" -lt 202302 ]; then
+	echo "C++23 not supported. Skipping hxexpected and hxref..."
+	grep -vE '^\$[0-9]+ = \[[0-9]+\] const hx(expected|ref)<' expected_pretty_print.txt \
+		| awk '{ sub(/^\$[0-9]+/, "$" NR); print }' > expected_pretty_print_cxx20.txt
+	mv expected_pretty_print_cxx20.txt expected_pretty_print.txt
+fi
+
 if ! git --no-pager diff --no-index expected_pretty_print.txt gdb_printer_output.txt; then
 	cat gdb_printer_output.txt
 	echo "error: GDB pretty printer output does not match expected output."
@@ -127,7 +159,7 @@ else
 	# happen together.
 	echo "Run clang-tidy..."
 	run-clang-tidy -quiet -j 0 -p build src/*.cpp test/*.c test/*.cpp 2>&1   \
-		| grep -vE '^Running clang-tidy for|^[0-9]+ warnings generated\.$|^\[|^$' \
+		| grep -vE '^(Running clang-tidy for|clang-tidy[-0-9]* -p)|^[0-9]+ warnings generated\.$|^\[|^$' \
 		&& { echo "clang-tidy errors."; exit 1; }
 fi
 

@@ -6,7 +6,7 @@
 # Requires the emsdk. After installing the emsdk it is recommended to add it to
 # your .bashrc.
 
-trap 'trap "" INT; pkill -9 -P $$ 2>/dev/null; wait 2>/dev/null; exit 1' INT
+trap 'trap "" INT PIPE TERM; pkill -P $$; wait; exit 1' INT PIPE TERM
 set -eu
 
 export POSIXLY_CORRECT=1
@@ -18,7 +18,9 @@ if [ "${1:-}" = "--verbose" ]; then
 fi
 
 # Build artifacts are not retained.
-rm -rf "$(readlink -f build)" build; ln -s "$(mktemp -d)" build && cd build
+rm -rf "$(readlink -f build)" build
+if [ "${HX_RAMDISK:-0}" = 1 ]; then mkdir build; else ln -s "$(mktemp -d)" build; fi
+cd build
 
 emcc -I"$HX_DIR_/include" -O2 -pthread -fdiagnostics-absolute-paths -c \
 	"$HX_DIR_"/test/*.c & HX_PIDS_="$!"

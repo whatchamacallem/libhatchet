@@ -5,55 +5,57 @@
 #
 # Building and running the tests on an RPM based distribution requires these
 # packages. Tested on Rocky Linux 10. EPEL and CRB are enabled for ccache,
-# doxygen, gcovr, musl and ninja. meson is installed with pip.
+# doxygen, gcovr, meson, musl and ninja.
 #
 # It should be safe to just run this script. Rocky Linux 10 does not package
 # 32-bit glibc so the test scripts drop -m32 and build 64-bit there.
-# google-chrome will be launched when a web page is generated, if available, but
-# is not required or installed here. emcc is required for testwasm.sh but is not
-# installed here.
+# google-chrome will be launched when a web page is generated, if available,
+# but is not required or installed here. emcc is required for testwasm.sh but
+# is not installed here.
 
-trap 'trap "" INT; pkill -9 -P $$ 2>/dev/null; wait 2>/dev/null; exit 1' INT
+trap 'trap "" INT PIPE TERM; pkill -P $$; wait; exit 1' INT PIPE TERM
 set -euo pipefail
 
-. /etc/os-release
-case " $ID ${ID_LIKE:-} " in
-	*" rhel "*|*" fedora "*|*" centos "*) ;;
-	*)
-		echo "error: $ID is not an RPM based distribution. See install_deb.sh." >&2
-		exit 1 ;;
-esac
-
-HX_SUDO_=""
-if [ "$(id -u)" -ne 0 ]; then
-	HX_SUDO_="sudo"
-fi
-
-$HX_SUDO_ dnf install -y epel-release dnf-plugins-core
-$HX_SUDO_ dnf config-manager --set-enabled crb
-
-HX_CMD_=$(echo "$HX_SUDO_ dnf install -y                                    \
-	ccache    clang       clang-tools-extra cmake   compiler-rt doxygen     \
-	gcc       gcc-c++     gcovr             gdb     git         libasan     \
-	gcc-toolset-15-gcc-c++                                                  \
-	libubsan  llvm        musl-devel        musl-gcc musl-libc  ninja-build \
-	procps-ng python3     python3-pip                                       \
-" | tr -s '[:space:]' ' ')
-echo "$HX_CMD_" | fold -s
-
-$HX_CMD_
-
-# The packaged meson is older than meson.build requires.
-$HX_SUDO_ pip3 install --upgrade meson
-
-for HX_CMD_ in clang cmake doxygen gcc gcovr meson musl-gcc ninja pgrep python3
-do
-	echo "$HX_CMD_ --version"
-	$HX_CMD_ --version
-done
+HX_PACKAGES_="
+	ccache                  clang       clang-tools-extra   cmake
+	compiler-rt             doxygen     gcc                 gcc-c++
+	gcc-toolset-15-gcc-c++  gcovr       gdb                 git
+	libasan                 libubsan    llvm                meson
+	musl-devel              musl-gcc    musl-libc           musl-libc-static
+	ninja-build             procps-ng   python3
+"
 
 if command -v emcc >/dev/null 2>&1; then
 	emcc --version
 else
 	echo "error: emcc not found. It must be installed separately." >&2
 fi
+
+# Network access is only required when packages are missing.
+if rpm -q $HX_PACKAGES_ >/dev/null; then
+	echo "packages_already_installed"
+	exit 0
+fi
+
+HX_SUDO_=""
+if [ "$(id -u)" -ne 0 ]; then
+	HX_SUDO_="sudo"
+fi
+
+# Weak dependencies are not required and metadata is always refreshed.
+HX_DNF_OPTIONS_="-y --refresh --setopt=install_weak_deps=False"
+
+$HX_SUDO_ dnf install $HX_DNF_OPTIONS_ epel-release dnf-plugins-core
+$HX_SUDO_ dnf config-manager --set-enabled crb
+
+HX_CMD_=$(echo "$HX_SUDO_ dnf install $HX_DNF_OPTIONS_ $HX_PACKAGES_" \
+	| tr -s '[:space:]' ' ')
+echo "$HX_CMD_" | fold -s
+
+$HX_CMD_
+
+for HX_CMD_ in clang cmake doxygen gcc gcovr meson musl-gcc ninja pgrep python3
+do
+	echo "$HX_CMD_ --version"
+	$HX_CMD_ --version
+done

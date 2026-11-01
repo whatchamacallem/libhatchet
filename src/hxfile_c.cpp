@@ -46,7 +46,7 @@ hxfile::hxfile(uint8_t mode, intptr_t file) : hxfile() {
 }
 
 hxfile::hxfile(uint8_t mode, const char* filename, ...) : hxfile() {
-	va_list args;
+	va_list args; // NOLINT(cppcoreguidelines-init-variables)
 	va_start(args, filename);
 	openv_(mode, filename, args);
 	va_end(args);
@@ -76,7 +76,7 @@ hxfile::operator bool(void) const {
 bool hxfile::open(uint8_t mode, const char* filename, ...) {
 	close(); // openv_ assumes the file is closed.
 
-	va_list args;
+	va_list args; // NOLINT(cppcoreguidelines-init-variables)
 	va_start(args, filename);
 	const bool rv = openv_(mode, filename, args);
 	va_end(args);
@@ -162,7 +162,7 @@ size_t hxfile::read(void* bytes, size_t buffer_size, size_t byte_count) {
 		return 0u;
 	}
 
-	const size_t bytes_read = ::fread(bytes, 1, byte_count, reinterpret_cast<FILE*>(m_file_pimpl_)); // NOLINT(clang-analyzer-core.NonNullParamChecker)
+	const size_t bytes_read = ::fread(bytes, 1, byte_count, reinterpret_cast<FILE*>(m_file_pimpl_)); // NOLINT
 
 	hxassertf((byte_count == bytes_read) || ((m_open_mode_ & hxfile::open_mode_asserts) == 0u),
 		"fread want %zu got %zu %s", byte_count, bytes_read, ::strerror(errno));
@@ -213,7 +213,7 @@ bool hxfile::print(const char* format, ...) {
 		return true;
 	}
 
-	va_list args;
+	va_list args; // NOLINT(cppcoreguidelines-init-variables)
 	va_start(args, format);
 	const int len = ::vfprintf(reinterpret_cast<FILE*>(m_file_pimpl_), format, args);
 	va_end(args);

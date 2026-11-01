@@ -5,7 +5,7 @@
 project('libhatchet', ['c', 'cpp'],
 	version : '1.0',
 	license : 'MIT',
-	meson_version : '>=1.7',
+	meson_version : '>=1.3',
 	default_options : [
 		'c_std=c17',
 		'cpp_std=c++23',
@@ -34,7 +34,7 @@ hxinclude_directory = include_directories('include')
 
 if get_option('build_module')
 	# WARNING: The earliest versions this was tested with were GCC 15.2.0, Clang
-	# 20.1.8, Meson 1.7.0 and Ninja 1.12.1. Module support was still a work in
+	# 18.1.3, Meson 1.3.2 and Ninja 1.11.1. Module support was still a work in
 	# progress at that time.
 	#
 	# This required a custom_target to make it work. -std=c++2x must be passed

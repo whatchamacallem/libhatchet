@@ -174,6 +174,10 @@ compilers of each distribution:
 based distribution such as Ubuntu and `install_rpm.sh` for RPM based
 distributions.
 
+macOS 27 arm64 is tested using Homebrew GCC 16, Apple Clang 21 and Homebrew
+LLVM 23 for C++ modules. Builds are 64-bit only and `teststrip.sh`,
+`testwasm.sh` and the GDB tests are skipped.
+
 The `pico` contains a port of the test suite to the Raspberry Pi Pico 2 which
 can be used as an example. There is almost nothing to do when setting up. This
 is because libc provides almost all of the device abstraction required.

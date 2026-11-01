@@ -43,7 +43,7 @@ hxfile::hxfile(uint8_t mode, intptr_t file) {
 }
 
 hxfile::hxfile(uint8_t mode, const char* filename, ...) : hxfile() {
-	va_list args;
+	va_list args; // NOLINT(cppcoreguidelines-init-variables)
 	va_start(args, filename);
 	openv_(mode, filename, args);
 	va_end(args);
@@ -74,7 +74,7 @@ hxfile::operator bool(void) const {
 
 bool hxfile::open(uint8_t mode, const char* filename, ...) {
 	close();
-	va_list args;
+	va_list args; // NOLINT(cppcoreguidelines-init-variables)
 	va_start(args, filename);
 	const bool rv = openv_(mode, filename, args);
 	va_end(args);
@@ -236,7 +236,7 @@ bool hxfile::print(const char* format, ...) {
 	}
 
 	char line_buf[HX_MAX_LINE + 1u];
-	va_list args;
+	va_list args; // NOLINT(cppcoreguidelines-init-variables)
 	va_start(args, format);
 	const int len = ::vsnprintf(line_buf, HX_MAX_LINE + 1u, format, args);
 	va_end(args);

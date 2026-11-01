@@ -341,3 +341,10 @@ TEST(hxthread_test_mutex, single_thread_lock_unlock_count) {
 	EXPECT_EQ(shared, 1);
 }
 #endif // HX_USE_THREADS
+
+TEST(hxthread_test_thread_local, default_zero_then_set) {
+	hxthread_local<int> local;
+	EXPECT_EQ(static_cast<int>(local), 0);
+	local = 31;
+	EXPECT_EQ(static_cast<int>(local), 31);
+}

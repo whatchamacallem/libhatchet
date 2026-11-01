@@ -37,6 +37,8 @@ hxinline hxcycles_t hxtime_sample_cycles(void) {
 	cycles_ = static_cast<uint64_t>(t_);
 #elif defined __x86_64__ || defined __i386__ || defined _M_X64 || defined _M_IX86
 	cycles_ = __rdtsc();
+#elif defined __aarch64__
+	cycles_ = __arm_rsr64("cntvct_el0");
 #else
 static_assert(0, "Implement hxtime_sample_cycles");
 #endif

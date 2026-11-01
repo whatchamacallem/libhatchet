@@ -201,6 +201,14 @@ TEST_F(hxhash_table_test_f, map_node_usage) {
 	EXPECT_TRUE(check_stats(2, 2, 0, 0, 0, 0, 0, 0, 0, 0));
 }
 
+TEST(hxhash_table_test, has_value) {
+	hxhash_table<hxhash_table_map_node<int, int>, hxdefault_delete, 4, 0> table;
+	table.try_emplace(1, 1, 10);
+	table.try_emplace(2, 2, 20);
+	EXPECT_TRUE(table.has_value(1));
+	EXPECT_FALSE(table.has_value(3));
+}
+
 #if HX_CPLUSPLUS >= 202302L
 TEST(hxhash_table_test, expected_lookup) {
 	using node_t = hxhash_table_map_node<int, int>;
@@ -208,8 +216,6 @@ TEST(hxhash_table_test, expected_lookup) {
 	table_t table;
 	table.try_emplace(1, 1, 10);
 	table.try_emplace(2, 2, 20);
-	EXPECT_TRUE(table.has_value(1));
-	EXPECT_FALSE(table.has_value(3));
 	bool called = false;
 	EXPECT_EQ(table.and_then(2, [&called](node_t& node) {
 		called = true;

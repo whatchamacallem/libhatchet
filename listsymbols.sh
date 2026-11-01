@@ -5,7 +5,7 @@
 
 export POSIXLY_CORRECT=1
 
-trap 'trap "" INT; pkill -9 -P $$ 2>/dev/null; wait 2>/dev/null; exit 1' INT
+trap 'trap "" INT PIPE TERM; pkill -P $$; wait; exit 1' INT PIPE TERM
 set -eu
 
 if [ ! -f build/hxtest ]; then
