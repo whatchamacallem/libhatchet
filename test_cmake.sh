@@ -8,7 +8,11 @@
 trap 'trap "" INT PIPE TERM; pkill -P $$; wait; exit 1' INT PIPE TERM
 set -eu
 
+cd "$(dirname "$(readlink -f "$0")")"
+
 export POSIXLY_CORRECT=1
+
+HX_JOBS_="${HX_MAX_CORES:-$(getconf _NPROCESSORS_ONLN)}"
 
 HX_OPT_NO_TIDY_=0
 HX_OPT_VERBOSE_=0
@@ -30,18 +34,18 @@ if [ ! -f build/CMakeCache.txt ]; then
 	if [ "$HX_OPT_VERBOSE_" = "1" ]; then
 		cmake -S . -B build -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 	else
-		cmake -S . -B build -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON >build/testcmake.sh.log 2>&1 \
-			|| { echo "error: cmake failed:"; cat build/testcmake.sh.log; exit 1; }
+		cmake -S . -B build -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON >build/test_cmake.sh.log 2>&1 \
+			|| { echo "error: cmake failed:"; cat build/test_cmake.sh.log; exit 1; }
 	fi
 else
 	echo "Found build/CMakeCache.txt..."
 fi
 
 if [ "$HX_OPT_VERBOSE_" = "1" ]; then
-	ninja -C build
+	ninja -C build -j "$HX_JOBS_"
 else
-	ninja -C build >build/testcmake.sh.log 2>&1 \
-		|| { echo "error: ninja failed:"; cat build/testcmake.sh.log; exit 1; }
+	ninja -C build -j "$HX_JOBS_" >build/test_cmake.sh.log 2>&1 \
+		|| { echo "error: ninja failed:"; cat build/test_cmake.sh.log; exit 1; }
 fi
 
 cd build
@@ -57,9 +61,9 @@ if [ "$(uname -s)" = Darwin ]; then
 	echo "Run build/hxtest. GDB tests skipped on macOS..."
 	PATH="$PATH:$(brew --prefix llvm)/bin"
 	export SDKROOT="$(xcrun --show-sdk-path)"
-	if ! ./hxtest help runtests > testcmake.sh.txt 2>&1; then
+	if ! ./hxtest help runtests > test_cmake.sh.txt 2>&1; then
 		echo "error: Test suite failed."
-		tail -5 testcmake.sh.txt
+		tail -5 test_cmake.sh.txt
 		exit 1
 	fi
 	exit 0
@@ -69,12 +73,12 @@ echo "Run build/hxtest with GDB..."
 
 # Run the GDB smoke tests at the same time.
 rm -f gdb_printer_output.txt
-gdb -batch -x ../test/gdb_printer_test.gdb ./hxtest > testcmake.sh.txt 2>&1
+gdb -batch -x ../test/gdb_printer_test.gdb ./hxtest > test_cmake.sh.txt 2>&1
 
 # GDB exits 0 even after SIGTRAP so check for the summary line explicitly.
-if ! grep -qE '\[  PASSED  \]' testcmake.sh.txt; then
+if ! grep -qE '\[  PASSED  \]' test_cmake.sh.txt; then
 	echo "error: GDB exited prematurely or test suite failed."
-	tail -5 testcmake.sh.txt
+	tail -5 test_cmake.sh.txt
 	exit 1
 fi
 
@@ -158,7 +162,7 @@ else
 	# Depends on -DCMAKE_EXPORT_COMPILE_COMMANDS=ON above. These two have to
 	# happen together.
 	echo "Run clang-tidy..."
-	run-clang-tidy -quiet -j 0 -p build src/*.cpp test/*.c test/*.cpp 2>&1   \
+	run-clang-tidy -quiet -j "$HX_JOBS_" -p build src/*.cpp test/*.c test/*.cpp 2>&1 \
 		| grep -vE '^(Running clang-tidy for|clang-tidy[-0-9]* -p)|^[0-9]+ warnings generated\.$|^\[|^$' \
 		&& { echo "clang-tidy errors."; exit 1; }
 fi

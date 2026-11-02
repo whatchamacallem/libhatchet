@@ -24,6 +24,8 @@ HX_ERRORS_="-Wall -Wextra -pedantic-errors -Werror -Wfatal-errors -Wcast-qual \
 	-Wmissing-declarations -Wno-ambiguous-reversed-operator                   \
 	-Wno-unused-variable -Wno-c2y-extensions -Wno-unknown-warning-option"
 
+HX_JOBS_="${HX_MAX_CORES:-$(getconf _NPROCESSORS_ONLN)}"
+
 HX_OPT_CLEAR_=0
 HX_OPT_DEFINES_=""
 HX_OPT_GRIND_=0
@@ -100,20 +102,18 @@ build_hxtest() {
 	rm -rf "$(readlink -f build)" build
 	if [ "${HX_RAMDISK:-0}" = 1 ]; then mkdir build; else ln -s "$(mktemp -d)" build; fi
 
-	HX_PIDS_=""
 	for HX_FILE_ in test/*.c; do
-		$HX_CCACHE_ clang $HX_BUILD_ $HX_ERRORS_ $HX_FLAGS_ -Iinclude -std=c17 -c $HX_FILE_ \
-			-o build/$(basename "$HX_FILE_" .c).o & HX_PIDS_="$HX_PIDS_ $!"
-	done
+		printf '%s\0-o\0build/%s.o\0' "$HX_FILE_" "$(basename "$HX_FILE_" .c)"
+	done | xargs -0 -n 3 -P "$HX_JOBS_" $HX_CCACHE_ \
+		clang $HX_BUILD_ $HX_ERRORS_ $HX_FLAGS_ -Iinclude -std=c17 -c
 
 	for HX_FILE_ in src/*.cpp test/*.cpp; do
-		$HX_CCACHE_ clang++ $HX_BUILD_ $HX_ERRORS_ $HX_FLAGS_ -Iinclude $HX_CXX_ \
-			-fno-exceptions -fno-rtti -c $HX_FILE_                               \
-			-o build/$(basename "$HX_FILE_" .cpp).o & HX_PIDS_="$HX_PIDS_ $!"
-	done
-	for HX_PID_ in $HX_PIDS_; do wait "$HX_PID_" || exit 1; done
+		printf '%s\0-o\0build/%s.o\0' "$HX_FILE_" "$(basename "$HX_FILE_" .cpp)"
+	done | xargs -0 -n 3 -P "$HX_JOBS_" $HX_CCACHE_ \
+		clang++ $HX_BUILD_ $HX_ERRORS_ $HX_FLAGS_ -Iinclude $HX_CXX_ -fno-exceptions -fno-rtti -c
 
-	$HX_CCACHE_ clang++ $HX_FLAGS_ build/*.o -lpthread -lstdc++ -lm -o build/hxtest
+	# clang++ links its own C++ standard library.
+	$HX_CCACHE_ clang++ $HX_FLAGS_ build/*.o -lpthread -lm -o build/hxtest
 }
 
 if [ "$HX_OPT_GRIND_" = "1" ]; then

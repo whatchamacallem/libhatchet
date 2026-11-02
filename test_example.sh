@@ -6,6 +6,8 @@
 trap 'trap "" INT PIPE TERM; pkill -P $$; wait; exit 1' INT PIPE TERM
 set -eu
 
+cd "$(dirname "$(readlink -f "$0")")"
+
 export POSIXLY_CORRECT=1
 
 HX_VERBOSE_=""
@@ -15,6 +17,8 @@ elif [ -n "${1:-}" ]; then
 	echo "usage_error: $0 [--verbose]"
 	exit 1
 fi
+
+HX_JOBS_="${HX_MAX_CORES:-$(getconf _NPROCESSORS_ONLN)}"
 
 HX_CLANG_=clang
 HX_CLANGXX_=clang++
@@ -55,7 +59,7 @@ run_example() {
 		meson setup build --buildtype=debug -Dc_args="$HX_C_FLAGS_"       \
 			-Dcpp_args="$HX_CPP_FLAGS_" -Dcpp_link_args="$HX_LINK_FLAGS_" \
 			-Dbuild_example=true "$@"
-		ninja -v -C build
+		ninja -v -C build -j "$HX_JOBS_"
 	else
 		if ! meson setup build --buildtype=debug -Dc_args="$HX_C_FLAGS_"      \
 				-Dcpp_args="$HX_CPP_FLAGS_" -Dcpp_link_args="$HX_LINK_FLAGS_" \
@@ -64,7 +68,7 @@ run_example() {
 			echo "error: meson setup failed"
 			exit 1
 		fi
-		if ! ninja -C build >build/ninja_out.txt 2>&1; then
+		if ! ninja -C build -j "$HX_JOBS_" >build/ninja_out.txt 2>&1; then
 			cat build/ninja_out.txt
 			echo "error: ninja build failed"
 			exit 1

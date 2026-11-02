@@ -8,13 +8,13 @@
 #
 # It should be safe to just run this script. google-chrome will be launched
 # when a web page is generated, if available, but is not required or installed
-# here. emcc is required for testwasm.sh but is not installed here.
+# here. emcc is required for test_wasm.sh but is not installed here.
 
 HX_PACKAGES_="
-	ccache        clang        clang-tidy   cmake    doxygen   g++
-	g++-multilib  gcc-multilib gcovr        gdb      git       llvm
-	meson         musl         musl-dev     musl-tools ninja-build
-	procps        python3      libclang-rt-dev
+	ccache       clang        clang-tidy      cmake    doxygen    g++
+	g++-multilib gcc-multilib gcovr           gdb      git        llvm
+	make         meson        musl            musl-dev musl-tools ninja-build
+	procps       python3      libclang-rt-dev
 "
 
 trap 'trap "" INT PIPE TERM; pkill -P $$; wait; exit 1' INT PIPE TERM

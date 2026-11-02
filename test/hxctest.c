@@ -8,7 +8,7 @@
 
 bool hxctest_libhatchet_h(void) {
 	hxlog_verbose("Smoke testing from C: hxlog_verbose %d, ", 1);
-	hxlog("hxlog_always %d, ", 2);
+	hxlog("hxlog_always %d\n", 2);
 	hxlog_console("hxlog_console %d, ", 3);
 	hxlog_warning("hxlog_warning %d", 4);
 	hxwarn(1, "not true");

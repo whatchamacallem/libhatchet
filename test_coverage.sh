@@ -2,21 +2,27 @@
 # SPDX-FileCopyrightText: © 2017-2026 Adrian Johnston.
 # SPDX-License-Identifier: MIT
 # This file is licensed under the terms of the LICENSE.md file.
+#
+# The coverage tests include tests that confirm the test harness handles
+# failure correctly. That is done in the coverage pass so it has coverage
+# testing too.
 
 trap 'trap "" INT PIPE TERM; pkill -P $$; wait; exit 1' INT PIPE TERM
 set -eu
 
-HX_DIR_=$PWD
+cd "$(dirname "$(readlink -f "$0")")"
 
 # Uncalled functions are kept because dead code in a template library is missing
 # line coverage waiting to bite.
 HX_COVERAGE_="--coverage -O0 -g -fprofile-update=atomic -fno-inline -fkeep-static-functions"
 HX_COVERAGE_CXX_="$HX_COVERAGE_ -fno-elide-constructors -fkeep-inline-functions"
 
-HX_USAGE_="usage_error: $0 [--verbose] [--] [destination-directory]"
+HX_DIR_=$PWD
+HX_JOBS_="${HX_MAX_CORES:-$(getconf _NPROCESSORS_ONLN)}"
 
 HX_GCC_=gcc
 HX_GXX_=g++
+HX_USAGE_="usage_error: $0 [--verbose] [--] [destination-directory]"
 if [ "$(uname -s)" = Darwin ]; then
 	PATH="/opt/homebrew/bin:/opt/homebrew/sbin${PATH+:$PATH}"
 	if ! command -v brew > /dev/null 2>&1; then
@@ -75,16 +81,14 @@ cd build
 
 $HX_GCC_ -I"$HX_DIR_"/include $HX_COVERAGE_ -DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG \
 	-DHX_USE_INLINING_ATTR=0 -std=c99 -Wall -Werror -Wfatal-errors -pthread -c     \
-	"$HX_DIR_"/test/*.c & HX_PIDS_="$!"
+	"$HX_DIR_"/test/*.c
 
-for HX_FILE_ in "$HX_DIR_"/test/*.cpp "$HX_DIR_"/src/*.cpp; do
-	$HX_GXX_ -I"$HX_DIR_"/include $HX_COVERAGE_CXX_ -DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG   \
-		-DHX_TEST_ERROR_HANDLING=1 -DHX_USE_CONSOLE=2 -DHX_USE_PROFILER=1 -DHX_USE_STD_LIB=0  \
-		-DHX_USE_INLINING_ATTR=0 -std=c++23 -Wall -Werror -Wextra -Wfatal-errors             \
-		-fno-exceptions -Wno-c2y-extensions -Wno-unknown-warning-option -pthread -nostdinc++ \
-		-c "$HX_FILE_" -o "$(basename "$HX_FILE_" .cpp).o" & HX_PIDS_="$HX_PIDS_ $!"
-done
-for HX_PID_ in $HX_PIDS_; do wait "$HX_PID_" || exit 1; done
+printf '%s\0' "$HX_DIR_"/test/*.cpp "$HX_DIR_"/src/*.cpp |
+	xargs -0 -n 1 -P "$HX_JOBS_"                                                                \
+	$HX_GXX_ -I"$HX_DIR_"/include $HX_COVERAGE_CXX_ -DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG \
+		-DHX_TEST_ERROR_HANDLING=1 -DHX_USE_CONSOLE=2 -DHX_USE_PROFILER=1 -DHX_USE_STD_LIB=0    \
+		-DHX_USE_INLINING_ATTR=0 -std=c++23 -Wall -Werror -Wextra -Wfatal-errors                \
+		-fno-exceptions -Wno-c2y-extensions -Wno-unknown-warning-option -pthread -nostdinc++ -c
 
 # Sort the object files so that the test objects are listed first. This is
 # being done to ensure the counter data ends up in the right place.

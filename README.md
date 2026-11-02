@@ -157,11 +157,11 @@ compiler command line, such as whether the library is wrapped in a namespace.
 ## Tested Environments
 
 Almost every reasonable GCC and Clang warning flag should be safe to enable, and
-Clang-Tidy is in use. Every release is tested with `testmsvc.ps1` on Windows. It
-runs `hxtest` built with the latest installed Visual Studio in 32 and 64-bit
+Clang-Tidy is in use. Every release is tested with `test_msvc.ps1` on Windows.
+It runs `hxtest` built with the latest installed Visual Studio in 32 and 64-bit
 debug and release configurations. The MSVC static analyzer is not being tested.
-It then runs `testall.sh` against glibc and musl in containers using the default
-compilers of each distribution:
+It then runs `test_all.sh` against glibc and musl in containers using the
+default compilers of each distribution:
 
 | Distribution     |    GCC | Clang | 32-bit | 64-bit |
 | ---------------- | -----: | ----: | -----: | -----: |
@@ -169,14 +169,14 @@ compilers of each distribution:
 | Debian 13        |     14 |    19 |      x |      x |
 | Rocky Linux 10   | 14, 15 |    21 |        |      x |
 
-`testwasm.sh` is skipped in the containers to due to download size. Run
+`test_wasm.sh` is skipped in the containers due to download size. Run
 `install_deb.sh` to install the packages the test scripts need on a Debian
 based distribution such as Ubuntu and `install_rpm.sh` for RPM based
 distributions.
 
 macOS 27 arm64 is tested using Homebrew GCC 16, Apple Clang 21 and Homebrew
-LLVM 23 for C++ modules. Builds are 64-bit only and `teststrip.sh`,
-`testwasm.sh` and the GDB tests are skipped.
+LLVM 23 for C++ modules. Builds are 64-bit only and `test_strip.sh`,
+`test_wasm.sh` and the GDB tests are skipped.
 
 The `pico` contains a port of the test suite to the Raspberry Pi Pico 2 which
 can be used as an example. There is almost nothing to do when setting up. This
@@ -187,17 +187,18 @@ The scripted builds exercise the following toolchains, language modes and
 
 | Script | Toolchain | Modes | Hardening | Notes |
 | --- | --- | --- | --- | --- |
-| `debugbuild.sh` | `clang` | C17, C++23 | 3 | 32-bit debug build with ccache and no exceptions/RTTI. |
-| `testcmake.sh` | `cmake` | C17, C++23 | 3 | Uses the default compiler and the real Google Test and runs `hxtest` and Clang-Tidy. |
-| `testcoverage.sh` | `gcc` | C99, C++23 | 3 | Builds with `--coverage`, enables `HX_TEST_ERROR_HANDLING=1` and emits `coverage_details.html`. |
-| `testmatrix.sh` | `gcc`, `clang` | C99, C17, C++11, C++23 | 0-3 | Sweeps optimization levels and ASan/UBSan/TSan/MSan and sets `HX_USE_THREADS=1/11`. |
-| `teststrip.sh` | `musl-gcc` | C17, C++11-23 | 0 | Size-focused static build with allocator/library stripping. |
-| `testwasm.sh` | `emcc` | defaults | 3 | WebAssembly build with the memory manager disabled and pthreads enabled. Emscripten defaults are Clang-based C/C++. |
+| `debug_build.sh` | `clang` | C17, C++23 | 3 | 32-bit debug build with ccache and no exceptions/RTTI. |
+| `test_cmake.sh` | `cmake` | C17, C++23 | 3 | Uses the default compiler and the real Google Test and runs `hxtest` and Clang-Tidy. |
+| `test_coverage.sh` | `gcc` | C99, C++23 | 3 | Builds with `--coverage`, enables `HX_TEST_ERROR_HANDLING=1` and emits `coverage_details.html`. |
+| `test_matrix.sh` | `gcc`, `clang` | C99, C17, C++11, C++23 | 0-3 | Sweeps optimization levels and ASan/UBSan/TSan/MSan and sets `HX_USE_THREADS=1/11`. |
+| `test_strip.sh` | `musl-gcc` | C17, C++11-23 | 0 | Size-focused static build with allocator/library stripping. |
+| `test_wasm.sh` | `emcc` | defaults | 3 | WebAssembly build with the memory manager disabled and pthreads enabled. Emscripten defaults are Clang-based C/C++. |
 
-`testall.sh` runs all of the above and also enforces certain naming conventions.
+`test_all.sh` runs all of the above and also enforces certain naming
+conventions.
 
-`debugbuild.sh` and `teststrip.sh` detect when C++23 is missing and fall back to
-C++20 to test g++-10 and clang-11.
+`debug_build.sh` and `test_strip.sh` detect when C++23 is missing and fall back
+to C++20 to test g++-10 and clang-11.
 
 ## Project Structure
 

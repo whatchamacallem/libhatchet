@@ -6,7 +6,7 @@
 		{
 			"type": "cppbuild",
 			"label": "clang debug build",
-			"command": "./debugbuild.sh",
+			"command": "./debug_build.sh",
 			"args": [
 				"--clear"
 			],

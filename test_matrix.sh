@@ -8,6 +8,8 @@
 trap 'trap "" INT PIPE TERM; pkill -P $$; wait; exit 1' INT PIPE TERM
 set -eu
 
+cd "$(dirname "$(readlink -f "$0")")"
+
 export POSIXLY_CORRECT=1
 
 # Enables glibc heap integrity checking.
@@ -19,7 +21,16 @@ HX_ERRORS_="-Wall -Wextra -pedantic-errors -Werror -Wfatal-errors -Wcast-qual \
 	-Winvalid-utf8 -Wmissing-declarations -Wno-c2y-extensions                 \
 	-Wno-unknown-warning-option"
 
-HX_FLAGS_="-DHX_USE_FILE_IO=2 -ffast-math -ggdb3"
+# Show non-trivial use of HX_HARDENING_MODE_*.
+HX_FLAGS_="-DHX_USE_SLAB_ALLOCATOR=(HX_HARDENING_MODE!=HX_HARDENING_MODE_VERBOSE) \
+	-DHX_USE_FILE_IO=2 -ffast-math -ggdb"
+
+HX_SAN_UNDEF_="-fsanitize=undefined,address"
+HX_SAN_THREAD_="-fsanitize=thread"
+HX_SAN_MEMORY_="-fsanitize=memory -fsanitize-memory-track-origins"
+
+HX_DIR_=$PWD
+HX_JOBS_="${HX_MAX_CORES:-$(getconf _NPROCESSORS_ONLN)}"
 
 HX_GCC_=gcc
 HX_GXX_=g++
@@ -39,12 +50,6 @@ if [ "$($HX_GCC_ -m32 -print-file-name=libc.so 2>/dev/null)" = libc.so ]; then
 	HX_M32_=""
 	echo "32-bit libc not installed. Building 64-bit..."
 fi
-
-HX_SAN_UNDEF_="-fsanitize=undefined,address"
-HX_SAN_THREAD_="-fsanitize=thread"
-HX_SAN_MEMORY_="-fsanitize=memory -fsanitize-memory-track-origins"
-
-HX_DIR_=$PWD
 
 run_hxtest() {
 	if ./hxtest runtests > console_output.txt 2>&1; then
@@ -74,31 +79,28 @@ run_clang_build() {
 	if [ "$HX_OPT_" = 0 ]; then HX_FORTIFY_="-U_FORTIFY_SOURCE"; else HX_FORTIFY_=""; fi
 
 	# compile C17
-	clang -I"$HX_DIR_/include" -DHX_HARDENING_MODE=3-$HX_OPT_ -O$HX_OPT_ $HX_FLAGS_ \
-		$HX_FORTIFY_ $HX_ERRORS_ $HX_SAN_                                           \
-		-fdiagnostics-absolute-paths -pthread -std=c17 "$@"                         \
-		-c "$HX_DIR_"/test/*.c & HX_PIDS_="$!"
+	clang -I"$HX_DIR_/include" "-DHX_HARDENING_MODE=(3-$HX_OPT_)" -O$HX_OPT_ \
+		$HX_FLAGS_ $HX_FORTIFY_ $HX_ERRORS_ $HX_SAN_                         \
+		-fdiagnostics-absolute-paths -pthread -std=c17 "$@"                  \
+		-c "$HX_DIR_"/test/*.c
 
 	# generate C++23 pch. clang does this automatically when a c++ header file
 	# is the target. This is just a test.
-	clang++ -I"$HX_DIR_/include" -DHX_HARDENING_MODE=3-$HX_OPT_ -O$HX_OPT_ $HX_FLAGS_ \
-		$HX_FORTIFY_ $HX_ERRORS_ $HX_SAN_                                             \
-		-DHX_USE_THREADS=1 -pthread -std=c++23 -fno-exceptions                        \
-		-fdiagnostics-absolute-paths "$@" "$HX_DIR_"/include/hx/hxtest.hpp            \
-		-o hxtest.hpp.pch
+	clang++ -I"$HX_DIR_/include" "-DHX_HARDENING_MODE=(3-$HX_OPT_)" -O$HX_OPT_ \
+		$HX_FLAGS_ $HX_FORTIFY_ $HX_ERRORS_ $HX_SAN_ -DHX_USE_THREADS=1        \
+		-pthread -std=c++23 -fno-exceptions -fdiagnostics-absolute-paths "$@"  \
+		"$HX_DIR_"/include/hx/hxtest.hpp -o hxtest.hpp.pch
 
 	# compile C++23
-	for HX_FILE_ in "$HX_DIR_"/src/*.cpp "$HX_DIR_"/test/*.cpp; do
-		clang++ -I"$HX_DIR_/include" -DHX_HARDENING_MODE=3-$HX_OPT_ -O$HX_OPT_ $HX_FLAGS_ \
-			$HX_FORTIFY_ $HX_ERRORS_ $HX_SAN_                                             \
-			-DHX_USE_THREADS=1 -pthread -std=c++23 -fno-exceptions                        \
-			-fdiagnostics-absolute-paths "$@" -include-pch hxtest.hpp.pch -c "$HX_FILE_"  \
-			-o "$(basename "$HX_FILE_" .cpp).o" & HX_PIDS_="$HX_PIDS_ $!"
-	done
-	for HX_PID_ in $HX_PIDS_; do wait "$HX_PID_" || exit 1; done
+	printf '%s\0' "$HX_DIR_"/src/*.cpp "$HX_DIR_"/test/*.cpp |
+		xargs -0 -n 1 -P "$HX_JOBS_"                                         \
+		clang++ -I"$HX_DIR_/include" "-DHX_HARDENING_MODE=(3-$HX_OPT_)"      \
+			-O$HX_OPT_ $HX_FLAGS_ $HX_FORTIFY_ $HX_ERRORS_ $HX_SAN_          \
+			-DHX_USE_THREADS=1 -pthread -std=c++23 -fno-exceptions           \
+			-fdiagnostics-absolute-paths "$@" -include-pch hxtest.hpp.pch -c
 
-	# link
-	clang++ $HX_SAN_ *.o -lpthread -lstdc++ -o hxtest
+	# clang++ links its own C++ standard library.
+	clang++ $HX_SAN_ *.o -lpthread -o hxtest
 
 	run_hxtest
 }
@@ -125,17 +127,15 @@ echo "$HX_GCC_ c99/c++11 -O$HX_I_ $* ..."
 
 if [ "$HX_I_" = 0 ]; then HX_FORTIFY_="-U_FORTIFY_SOURCE"; else HX_FORTIFY_=""; fi
 
-$HX_GCC_ -I"$HX_DIR_/include" -DHX_HARDENING_MODE=3-$HX_I_ -O$HX_I_ $HX_FLAGS_ $HX_ERRORS_ \
-	$HX_FORTIFY_ $HX_SAN_UNDEF_ -pthread -std=c99 $HX_M32_                            \
-	"$@" -c "$HX_DIR_"/test/*.c & HX_PIDS_="$!"
+$HX_GCC_ -I"$HX_DIR_/include" "-DHX_HARDENING_MODE=(3-$HX_I_)" -O$HX_I_  \
+	$HX_FLAGS_ $HX_ERRORS_ $HX_FORTIFY_ $HX_SAN_UNDEF_ -pthread -std=c99 \
+	$HX_M32_ "$@" -c "$HX_DIR_"/test/*.c
 
-for HX_FILE_ in "$HX_DIR_"/src/*.cpp "$HX_DIR_"/test/*.cpp; do
-	$HX_GCC_ -I"$HX_DIR_/include" -DHX_HARDENING_MODE=3-$HX_I_ -O$HX_I_ $HX_FLAGS_ $HX_ERRORS_ \
-		$HX_FORTIFY_ $HX_SAN_UNDEF_ -pthread -std=c++11                                   \
-		-fno-exceptions -fno-rtti $HX_M32_ "$@"                                           \
-		-c "$HX_FILE_" -o "$(basename "$HX_FILE_" .cpp).o" & HX_PIDS_="$HX_PIDS_ $!"
-done
-for HX_PID_ in $HX_PIDS_; do wait "$HX_PID_" || exit 1; done
+printf '%s\0' "$HX_DIR_"/src/*.cpp "$HX_DIR_"/test/*.cpp |
+	xargs -0 -n 1 -P "$HX_JOBS_"                                            \
+	$HX_GCC_ -I"$HX_DIR_/include" "-DHX_HARDENING_MODE=(3-$HX_I_)" -O$HX_I_ \
+	$HX_FLAGS_ $HX_ERRORS_ $HX_FORTIFY_ $HX_SAN_UNDEF_ -pthread -std=c++11  \
+	-fno-exceptions -fno-rtti $HX_M32_ "$@" -c
 
 $HX_GCC_ $HX_SAN_UNDEF_ *.o -lpthread -lstdc++ $HX_M32_ -o hxtest
 

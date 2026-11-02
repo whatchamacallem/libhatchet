@@ -10,4 +10,4 @@ cd "$(dirname "$(readlink -f "$0")")"
 rm -rf "$(readlink -f build)" "$(readlink -f cache/ccache)"
 
 # Nukes the files in .gitignore.
-git clean -Xdf -e '!tmp/' -e '!tmp/**'
+[ -d .git ] && git clean -Xdf -e '!tmp/' -e '!tmp/**'

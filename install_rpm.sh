@@ -10,7 +10,7 @@
 # It should be safe to just run this script. Rocky Linux 10 does not package
 # 32-bit glibc so the test scripts drop -m32 and build 64-bit there.
 # google-chrome will be launched when a web page is generated, if available,
-# but is not required or installed here. emcc is required for testwasm.sh but
+# but is not required or installed here. emcc is required for test_wasm.sh but
 # is not installed here.
 
 trap 'trap "" INT PIPE TERM; pkill -P $$; wait; exit 1' INT PIPE TERM

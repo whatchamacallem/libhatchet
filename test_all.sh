@@ -10,6 +10,8 @@
 trap 'trap "" INT PIPE TERM; pkill -P $$; wait; exit 1' INT PIPE TERM
 set -euo pipefail
 
+cd "$(dirname "$(readlink -f "$0")")"
+
 HX_VERBOSE_=""
 if [ "${1:-}" = "--verbose" ]; then
 	HX_VERBOSE_="--verbose"
@@ -67,7 +69,7 @@ if grep -nE '^  ' */*.c */*.cpp */*.h */*.hpp */*.inl *.ps1 */*.ps1 *.sh >&2; th
 fi
 
 # Check for stray CRLF.
-if git ls-files --eol | grep -E 'w/(crlf|mixed)'; then
+if [ -d .git ] && git ls-files --eol | grep -E 'w/(crlf|mixed)'; then
 	printf 'error: CRLF line ending found. Fix with: sed -i %ss/\\r//%s <file>\n' "'" "'"
 	exit 1
 fi
@@ -109,30 +111,37 @@ if find . -type f "${HX_TEXT_FILES_[@]}" \
 	exit 1
 fi
 
+# Smoke test a single debug build with a usage error first.
+if HX_OUTPUT_=$(./debug_build.sh --run --gtest_filter=hxtest_no_such_suite.no_such_case 2>&1) \
+		|| ! grep -q usage_error <<< "$HX_OUTPUT_"; then
+	echo "error: debug_build.sh --gtest_filter with a bad filter should fail with usage_error."
+	exit 1
+fi
+
+[ -d .git ] && git fsck
+
 PS4='\e[38;5;208m[${SECONDS}s] ${BASH_SOURCE}:${LINENO}: \e[0m'
 set -o xtrace
 
-git fsck
-./testcmake.sh $HX_VERBOSE_
-./testcoverage.sh $HX_VERBOSE_
-./testerrorhandling.sh
-./testexample.sh $HX_VERBOSE_
-./testmatrix.sh
+./test_cmake.sh $HX_VERBOSE_
+./test_coverage.sh $HX_VERBOSE_
+./test_example.sh $HX_VERBOSE_
+./test_matrix.sh
 if command -v musl-gcc > /dev/null 2>&1; then
-	./teststrip.sh $HX_VERBOSE_
+	./test_strip.sh $HX_VERBOSE_
 else
-	echo "teststrip.sh skipped. Requires musl-gcc."
+	echo "test_strip.sh skipped. Requires musl-gcc."
 fi
 if command -v emcc > /dev/null 2>&1; then
-	./testwasm.sh $HX_VERBOSE_
+	./test_wasm.sh $HX_VERBOSE_
 else
-	echo "testwasm.sh skipped. Requires emcc."
+	echo "test_wasm.sh skipped. Requires emcc."
 fi
 
-./debugbuild.sh $HX_VERBOSE_ --grind --run
+./debug_build.sh $HX_VERBOSE_ --grind --run
 doxygen
 
 ./clean.sh
 
 { set +o xtrace; } 2> /dev/null
-echo "testall.sh: All test scripts passed."
+echo "test_all.sh: All test scripts passed."

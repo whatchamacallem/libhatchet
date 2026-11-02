@@ -9,9 +9,12 @@
 trap 'trap "" INT PIPE TERM; pkill -P $$; wait; exit 1' INT PIPE TERM
 set -eu
 
+cd "$(dirname "$(readlink -f "$0")")"
+
 export POSIXLY_CORRECT=1
 
 HX_DIR_=$PWD
+HX_JOBS_="${HX_MAX_CORES:-$(getconf _NPROCESSORS_ONLN)}"
 
 if [ "${1:-}" = "--verbose" ]; then
 	set -o xtrace
@@ -23,18 +26,16 @@ if [ "${HX_RAMDISK:-0}" = 1 ]; then mkdir build; else ln -s "$(mktemp -d)" build
 cd build
 
 emcc -I"$HX_DIR_/include" -O2 -pthread -fdiagnostics-absolute-paths -c \
-	"$HX_DIR_"/test/*.c & HX_PIDS_="$!"
+	"$HX_DIR_"/test/*.c
 
-# Dump the memory manager because a web browser doesn't need that. -pthread
-# requires SharedArrayBuffer which needs COOP/COEP headers from the server.
-for HX_FILE_ in "$HX_DIR_"/src/*.cpp "$HX_DIR_"/test/*.cpp; do
+# -pthread requires SharedArrayBuffer which needs COOP/COEP headers from the
+# server.
+printf '%s\0' "$HX_DIR_"/src/*.cpp "$HX_DIR_"/test/*.cpp |
+	xargs -0 -n 1 -P "$HX_JOBS_"                                             \
 	emcc -O2 -fno-exceptions -fno-rtti -fdiagnostics-absolute-paths          \
 		-Werror -Wfatal-errors -DHX_USE_FILE_IO=0 -DHX_USE_SLAB_ALLOCATOR=0  \
 		-DHX_USE_THREADS=1 -DHX_USE_CONSOLE=1 -Wno-c2y-extensions -pthread   \
-		-std=c++23 -flto=auto -I"$HX_DIR_/include" -c "$HX_FILE_"            \
-		-o "$(basename "$HX_FILE_" .cpp).o" & HX_PIDS_="$HX_PIDS_ $!"
-done
-for HX_PID_ in $HX_PIDS_; do wait "$HX_PID_" || exit 1; done
+		-std=c++23 -flto=auto -I"$HX_DIR_/include" -c
 
 emcc -O2 -pthread -sEXIT_RUNTIME=1 -sPTHREAD_POOL_SIZE=4 -sPROXY_TO_PTHREAD \
 	-flto=auto *.o -o index.html

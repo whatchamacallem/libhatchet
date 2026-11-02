@@ -21,7 +21,7 @@ Run this script to execute the full suite of test scripts. Three axe emoji
 indicate success.
 
 ```bash
-./testall.sh
+./test_all.sh
 ```
 
 ## Hello World

@@ -58,7 +58,7 @@ if [ "$HX_ANSWER_" != "y" ] && [ "$HX_ANSWER_" != "Y" ]; then
 	exit 1
 fi
 
-./testall.sh
+./test_all.sh
 
 if ! git diff --quiet || ! git diff --cached --quiet \
 		|| [ -n "$(git ls-files --others --exclude-standard)" ]; then

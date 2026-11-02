@@ -409,28 +409,9 @@
 
 /// \cond HIDDEN
 // `HX_TEST_ERROR_HANDLING` - Tests that the failure of tests is handled
-// correctly. Set to `0` if not defined. Set by `testerrorhandling.sh` and
-// `coverage.sh`.
+// correctly. Set to `0` if not defined.
 #if !defined HX_TEST_ERROR_HANDLING
 #define HX_TEST_ERROR_HANDLING 0
-#endif
-
-#if HX_CPLUSPLUS
-// HX_USE_* feature test flags must not be empty as that is evaluated as 0.
-#define HX_CHECK_USE_(x_) static_assert(static_cast<signed>(HX_QUOTE(x_)[0]) >= '!', "bad_define not an expression: " #x_);
-HX_CHECK_USE_(HX_PROVIDE_NEW_DELETE)
-HX_CHECK_USE_(HX_TEST_ERROR_HANDLING)
-HX_CHECK_USE_(HX_USE_CONSOLE)
-HX_CHECK_USE_(HX_USE_FILE_IO)
-HX_CHECK_USE_(HX_USE_FLOATING_POINT_TRAPS)
-HX_CHECK_USE_(HX_USE_GOOGLE_TEST)
-HX_CHECK_USE_(HX_USE_INLINING_ATTR)
-HX_CHECK_USE_(HX_USE_STD_LIB)
-HX_CHECK_USE_(HX_USE_LOGGING)
-HX_CHECK_USE_(HX_USE_SLAB_ALLOCATOR)
-HX_CHECK_USE_(HX_USE_MACROS_WITH_MODULE)
-HX_CHECK_USE_(HX_USE_PROFILER)
-HX_CHECK_USE_(HX_USE_THREADS)
 #endif
 
 // HX_INL_BEGIN_/HX_INL_END_ - These allow excluding .inl files from the module

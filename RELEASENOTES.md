@@ -1,5 +1,12 @@
 # Release Notes
 
+## v1.54.0 2026-11-01
+
+```text
+- Renamed all the top level scripts to use `snake_case`.
+- Optimized simultaneous container testing.
+```
+
 ## v1.53.2 2026-11-01
 
 ```text
@@ -22,9 +29,9 @@
 - Added Google Test style test filters accepting `*` and `:` separated lists.
 
 The tested Linux environments have changed. The following are now tested starting
-with fresh installs in a new container. `testmsvc.ps1` uses `wslc.exe` to drive the
-tests. `testwasm.exe` is only run when emcc is installed and `testmsvc.ps1` does
-not install it for bandwidth reasons.
+with fresh installs in a new container. `test_msvc.ps1` uses `wslc.exe` to drive
+the tests. `test_wasm.sh` is only run when emcc is installed and `test_msvc.ps1`
+does not install it for bandwidth reasons.
 
 | Distribution     |    GCC | Clang | 32-bit | 64-bit |
 | ---------------- | -----: | ----: | -----: | -----: |
@@ -63,9 +70,9 @@ not install it for bandwidth reasons.
 
 ```text
 - Optimized console code size. Removed the use of virtual and cut code duplication.
-- Optimized test script job control. `testall.sh` runs 2x faster.
+- Optimized test script job control. `test_all.sh` runs 2x faster.
 - Test scripts handle flags more consistently.
-- `listsymbols.sh` now uses straight python instead of a mix of commands.
+- `list_symbols.sh` now uses straight python instead of a mix of commands.
 - Drop `hxfile::scan` because it was bloated and dogy. Use the console or roll your own.
 - Refactored test suite to use a test object that tallies and confirms operator usage.
   - Identified and fixed Named Return Value Optimization (NRVO) failures.
@@ -100,7 +107,7 @@ not install it for bandwidth reasons.
 - Added `hxref` which mostly implements the P2988R12  draft proposal for `std::optional<T&>`.
 - Added missing functionality to `hxoptional`.
 - Added safe "monadic" functions from `hxoptional` to `hxptr`.
-- Extended `testcoverage.sh` to print an AI friendly and IDE clickable list of lines missing coverage when it fails.
+- Extended `test_coverage.sh` to print an AI friendly and IDE clickable list of lines missing coverage when it fails.
 ```
 
 ## v1.45.10 (v3.45.10) 2026-07-01
@@ -169,7 +176,7 @@ not install it for bandwidth reasons.
 - Made temporary stacks dynamically allocated.
 - Added reporting and testing of system allocator state.
 - `archive.sh` garbage collects and repacks the repository.
-- Made `testall.sh --headless` quiet enough for manual/AI review.
+- Made `test_all.sh --headless` quiet enough for manual/AI review.
 ```
 
 ## v1.42.3 2026-06-15
@@ -255,14 +262,14 @@ not install it for bandwidth reasons.
 ## v1.36.1 2026-05-20
 
 ```text
-- Adds and tests `releaseprocess.sh`
+- Adds and tests `release_process.sh`
 - Cleaned up and added color to the example program.
 ```
 
 ## v1.36.0 2026-05-20
 
 ```text
-- libhatchet now Builds as a C++20 module. See testexample.sh for meson usage. The build tools are barely ready for C++ modules though.
+- libhatchet now Builds as a C++20 module. See test_example.sh for meson usage. The build tools are barely ready for C++ modules though.
 - hxthread_local no longer allocates memory, reducing cache misses and simplifying leak tracking.
 - Made it explicit whether `new` and `delete` are implemented with `HX_PROVIDE_NEW_DELETE`.
 ```
@@ -270,7 +277,7 @@ not install it for bandwidth reasons.
 ## v1.34.0 2026-05-15
 
 ```text
-- Add `meson.build` which is tested with `testexample.sh`.
+- Add `meson.build` which is tested with `test_example.sh`.
 - Adds `includecost.sh` which provides LOC and timing comparisons with the standard libraries.
 ```
 
