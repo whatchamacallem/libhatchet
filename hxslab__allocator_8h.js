@@ -1,0 +1,28 @@
+var hxslab__allocator_8h =
+[
+    [ "hxslab_allocator_scope", "classhxslab__allocator__scope.html", "classhxslab__allocator__scope" ],
+    [ "hxdefault_delete", "classhxdefault__delete.html", "classhxdefault__delete" ],
+    [ "hxdo_not_delete", "classhxdo__not__delete.html", "classhxdo__not__delete" ],
+    [ "hxconsteval_delete", "classhxconsteval__delete.html", "classhxconsteval__delete" ],
+    [ "hxslab_allocator_stats", "classhxslab__allocator__stats.html", "classhxslab__allocator__stats" ],
+    [ "hxslab_allocator_t", "hxslab__allocator_8h.html#a8b260e390cde20f375ec369a8294400e", null ],
+    [ "hxattr_allocator", "hxslab__allocator_8h.html#aef21280baa7f6a02b1f28d31c9d4b98b", null ],
+    [ "hxdelete", "hxslab__allocator_8h.html#a6de5291cb1995e3122eda8f1288c05d1", null ],
+    [ "hxfree", "hxslab__allocator_8h.html#a44b034a94fa16428a21ddd0916d27d5e", null ],
+    [ "hxmalloc", "hxslab__allocator_8h.html#a4670f9937127d34059e8c1e0c1f932e1", null ],
+    [ "hxnew", "hxslab__allocator_8h.html#a7b6ba46fea06faf7acf9254b68ea85d8", null ],
+    [ "hxslab_allocator_allocate_stacks", "hxslab__allocator_8h.html#adc6763ad1c3f570b555eff7090bcb0bc", null ],
+    [ "hxslab_allocator_allocate_stacks", "hxslab__allocator_8h.html#a0be2c308ba4beea1a8c2d3362d742812", null ],
+    [ "hxslab_allocator_utilization", "hxslab__allocator_8h.html#a8510df11d01a6a8aa0300ac4445d326f", null ],
+    [ "hxstring_duplicate", "hxslab__allocator_8h.html#a315ddd8241d237bab644197a55e98fe5", null ],
+    [ "operator delete", "hxslab__allocator_8h.html#ae1e349704d27da28211b8ba6bdd85183", null ],
+    [ "operator delete[]", "hxslab__allocator_8h.html#aa6a455c56dd96eac71e0c16e43717192", null ],
+    [ "operator new", "hxslab__allocator_8h.html#a6e569af0a0493c18f909b3c7541147c1", null ],
+    [ "operator new", "hxslab__allocator_8h.html#ae326e0f614374957bbde2021aacd4f44", null ],
+    [ "operator new[]", "hxslab__allocator_8h.html#a150e6d950f750134eec1055d94df8454", null ],
+    [ "operator new[]", "hxslab__allocator_8h.html#ad712644e5584b096a788ab60f631ac93", null ],
+    [ "alignment_", "hxslab__allocator_8h.html#a1c7d5d8e54595944afd4643dd6f62773", null ],
+    [ "allocator_", "hxslab__allocator_8h.html#a009d222600943258dc826eb1cfea5433", null ],
+    [ "hxalignment", "hxslab__allocator_8h.html#ae5a99d9f54fea35ce19fabcca0801f5f", null ],
+    [ "hxalignment_t", "hxslab__allocator_8h.html#a10b77d0d8417a801041d31183e6fe478", null ]
+];

@@ -1,0 +1,37 @@
+var classhxfile =
+[
+    [ "open_mode", "classhxfile.html#ac8e9dc17701ef665e4cef0ac172c0b3a", [
+      [ "open_mode_none", "classhxfile.html#ac8e9dc17701ef665e4cef0ac172c0b3aafba3066f7cbc99967abbd37b76207351", null ],
+      [ "open_mode_in", "classhxfile.html#ac8e9dc17701ef665e4cef0ac172c0b3aa050e199fe8aec41bbdb63d3dd7bcaea8", null ],
+      [ "open_mode_out", "classhxfile.html#ac8e9dc17701ef665e4cef0ac172c0b3aa5a8d8610b254f747a21189cc54112a5d", null ],
+      [ "open_mode_asserts", "classhxfile.html#ac8e9dc17701ef665e4cef0ac172c0b3aad595aa2450530f4b7f3d89593045de68", null ]
+    ] ],
+    [ "hxfile", "classhxfile.html#ab6dce004050ffab44778fcf469eee995", null ],
+    [ "hxfile", "classhxfile.html#a67f7d25798af861a1f27831ef331d72b", null ],
+    [ "hxfile", "classhxfile.html#a561f7b62419e08aac919fd5e9184937d", null ],
+    [ "hxfile", "classhxfile.html#af25a98222c4fec17c9a6358391370c43", null ],
+    [ "hxfile", "classhxfile.html#a322aea62b5dcc988130498aec7d3ff3f", null ],
+    [ "~hxfile", "classhxfile.html#a53e17faa5bc8a8b6b967f0e951b02c51", null ],
+    [ "clear", "classhxfile.html#acf4e21666542f436882ca54444019e24", null ],
+    [ "close", "classhxfile.html#a579d28965dd0c824578f2da6eb645da2", null ],
+    [ "eof", "classhxfile.html#a91cae551e229d006edaead3653a2caae", null ],
+    [ "expect", "classhxfile.html#a0139985349298a654c027557caff0f3e", null ],
+    [ "fail", "classhxfile.html#a2b96cecf84140f0af511b38db3895a17", null ],
+    [ "flush", "classhxfile.html#a51376a3d104ccfe5e2b51c2fb40d93d4", null ],
+    [ "get_pos", "classhxfile.html#a8881d773684bfd99ca8996d867d117ff", null ],
+    [ "is_open", "classhxfile.html#a8c2651ab130935b7e8a90bb1b1b8847b", null ],
+    [ "mode", "classhxfile.html#acebf9562415044b671a94d47bb7ea394", null ],
+    [ "open", "classhxfile.html#aed1df0e8abe74a2600ab967c77db28bf", null ],
+    [ "operator bool", "classhxfile.html#a7ab22b679489a451b861982cb673cb09", null ],
+    [ "operator<<", "classhxfile.html#a788f1e0dac866fdebc7e4747dd71ea5f", null ],
+    [ "operator<<", "classhxfile.html#aa29b0af1878fc101dddf73dcb27e8276", null ],
+    [ "operator=", "classhxfile.html#a35912b7da1aa22ff606aecb0167f33f6", null ],
+    [ "operator>>", "classhxfile.html#a81e51a432648c12d4f620a9062b1078d", null ],
+    [ "print", "classhxfile.html#ac8e7fde40cacb1c1b75d7bd9d8ec12ea", null ],
+    [ "read", "classhxfile.html#a9c35c3245de0951e057dd758f1bdeec5", null ],
+    [ "read1", "classhxfile.html#a6026182175798181ebcb096daa0b4a12", null ],
+    [ "set_fail", "classhxfile.html#af75ee57194a8b3d01056efe34b3d853d", null ],
+    [ "set_pos", "classhxfile.html#a670ac49d4cda749d5f0a0dd38bdc844e", null ],
+    [ "write", "classhxfile.html#ae794326fd1bbc95bb1bf22c3b6668106", null ],
+    [ "write1", "classhxfile.html#ae687ca60df746524b80da8291892ba04", null ]
+];
