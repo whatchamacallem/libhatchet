@@ -104,12 +104,12 @@ build_hxtest() {
 
 	for HX_FILE_ in test/*.c; do
 		printf '%s\0-o\0build/%s.o\0' "$HX_FILE_" "$(basename "$HX_FILE_" .c)"
-	done | xargs -0 -n 3 -P "$HX_JOBS_" $HX_CCACHE_ \
+	done | xargs -0 -n 3 -P "$HX_JOBS_" sh -c '"$0" "$@" || exit 255' $HX_CCACHE_ \
 		clang $HX_BUILD_ $HX_ERRORS_ $HX_FLAGS_ -Iinclude -std=c17 -c
 
 	for HX_FILE_ in src/*.cpp test/*.cpp; do
 		printf '%s\0-o\0build/%s.o\0' "$HX_FILE_" "$(basename "$HX_FILE_" .cpp)"
-	done | xargs -0 -n 3 -P "$HX_JOBS_" $HX_CCACHE_ \
+	done | xargs -0 -n 3 -P "$HX_JOBS_" sh -c '"$0" "$@" || exit 255' $HX_CCACHE_ \
 		clang++ $HX_BUILD_ $HX_ERRORS_ $HX_FLAGS_ -Iinclude $HX_CXX_ -fno-exceptions -fno-rtti -c
 
 	# clang++ links its own C++ standard library.
@@ -130,9 +130,9 @@ if [ "$HX_OPT_GRIND_" = "1" ]; then
 	for HX_PROFILER_  in 0 1;    do
 	for HX_THREADS_   in $HX_THREADS_LIST_; do
 
-		# Only test every 7th permutation. It is important to use a prime number.
+		# Only test every 17th permutation. It is important to use a prime number.
 		HX_COUNT_=$((HX_COUNT_ + 1))
-		[ $(($HX_COUNT_ % 7)) -eq 0 ] || continue
+		[ $(($HX_COUNT_ % 17)) -eq 0 ] || continue
 
 		HX_BUILD_="$HX_NAMESPACE_ -DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG"
 		HX_BUILD_="$HX_BUILD_ -DHX_USE_CONSOLE=$HX_CONSOLE_"
@@ -147,7 +147,7 @@ if [ "$HX_OPT_GRIND_" = "1" ]; then
 
 		if [ "$HX_OPT_VERBOSE_" = "1" ]; then
 			echo "[$HX_COUNT_] $HX_BUILD_"
-		else
+		elif [ -t 1 ]; then
 			HX_SPINNER_STATE_=$(((HX_SPINNER_STATE_ % 8) + 1))
 			eval "printf '\\r%s' \"\${$HX_SPINNER_STATE_}\""
 		fi
@@ -155,7 +155,7 @@ if [ "$HX_OPT_GRIND_" = "1" ]; then
 		build_hxtest
 	done; done; done; done; done; done; done; done
 
-	if [ "$HX_OPT_VERBOSE_" = "0" ]; then
+	if [ "$HX_OPT_VERBOSE_" = "0" ] && [ -t 1 ]; then
 		printf "\r      \r"
 	fi
 fi

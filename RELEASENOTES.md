@@ -1,10 +1,11 @@
 # Release Notes
 
-## v1.54.0 2026-11-01
+## v1.54.1 2026-11-01
 
 ```text
 - Renamed all the top level scripts to use `snake_case`.
-- Optimized simultaneous container testing.
+- Redesigned `test_msvc.ps1` to saturate the CPU without running out of RAM.
+- Tests are run on 5 OS at the same time and largely run off of ram-disks.
 ```
 
 ## v1.53.2 2026-11-01

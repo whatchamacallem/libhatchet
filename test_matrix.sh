@@ -93,7 +93,7 @@ run_clang_build() {
 
 	# compile C++23
 	printf '%s\0' "$HX_DIR_"/src/*.cpp "$HX_DIR_"/test/*.cpp |
-		xargs -0 -n 1 -P "$HX_JOBS_"                                         \
+		xargs -0 -n 1 -P "$HX_JOBS_" sh -c '"$0" "$@" || exit 255'           \
 		clang++ -I"$HX_DIR_/include" "-DHX_HARDENING_MODE=(3-$HX_OPT_)"      \
 			-O$HX_OPT_ $HX_FLAGS_ $HX_FORTIFY_ $HX_ERRORS_ $HX_SAN_          \
 			-DHX_USE_THREADS=1 -pthread -std=c++23 -fno-exceptions           \
@@ -132,7 +132,7 @@ $HX_GCC_ -I"$HX_DIR_/include" "-DHX_HARDENING_MODE=(3-$HX_I_)" -O$HX_I_  \
 	$HX_M32_ "$@" -c "$HX_DIR_"/test/*.c
 
 printf '%s\0' "$HX_DIR_"/src/*.cpp "$HX_DIR_"/test/*.cpp |
-	xargs -0 -n 1 -P "$HX_JOBS_"                                            \
+	xargs -0 -n 1 -P "$HX_JOBS_" sh -c '"$0" "$@" || exit 255'              \
 	$HX_GCC_ -I"$HX_DIR_/include" "-DHX_HARDENING_MODE=(3-$HX_I_)" -O$HX_I_ \
 	$HX_FLAGS_ $HX_ERRORS_ $HX_FORTIFY_ $HX_SAN_UNDEF_ -pthread -std=c++11  \
 	-fno-exceptions -fno-rtti $HX_M32_ "$@" -c

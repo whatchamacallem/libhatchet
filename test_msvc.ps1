@@ -7,6 +7,13 @@
 # doesn't hit the network. --clear-wslc removes them first.
 #
 # usage: test_msvc.ps1 [--verbose] [--clear-wslc]
+#
+# The wslc session VM is limited to half of physical memory by default. 3/4 is
+# recommended. For example, add this to %LOCALAPPDATA%\wslc\settings.yaml
+# and then run "wslc system session terminate":
+#
+# session:
+#   memorySize: 24GB
 
 $ErrorActionPreference = 'Stop'
 
@@ -14,7 +21,10 @@ $ErrorActionPreference = 'Stop'
 $container_version = 1
 
 # The memory needed by each parallel compile.
-$memory_per_core_gb = 0.5
+$memory_per_job_gb = 0.5
+
+# Parallel compiles per core when there is enough memory.
+$jobs_per_core = 1.5
 
 $distributions = [ordered]@{
 	debian = @{ Image = 'debian:13';                 Install = 'install_deb.sh' }
@@ -39,7 +49,8 @@ function Get-MsvcTest([string]$platform, [string]$configuration, [bool]$verbose)
 		"set `"PATH=$(Split-Path $vswhere);%PATH%`""
 		"call `"$visual_studio\Common7\Tools\VsDevCmd.bat`" -no_logo"
 		"cmake -S . -B $build_dir\$name -A $platform"
-		"cmake --build $build_dir\$name --config $configuration --parallel 24"
+		# Single threaded because the containers take longer.
+		"cmake --build $build_dir\$name --config $configuration --parallel 1"
 		"cd $build_dir\$name"
 		$run
 	) -join ' && '
@@ -74,7 +85,7 @@ function Get-ContainerBuild([string]$distribution) {
 
 # Get-ContainerTest - Failed containers are kept, restarted and debugged by
 # running "test_all.sh --verbose" in them.
-function Get-ContainerTest([string]$distribution, [int]$cores) {
+function Get-ContainerTest([string]$distribution, [int]$jobs) {
 	$image = $distributions[$distribution]
 	$name = "libhatchet-test-$distribution"
 	$tag = "libhatchet-test/$($image.Image)"
@@ -105,7 +116,7 @@ function Get-ContainerTest([string]$distribution, [int]$cores) {
 		# /libhatchet is a tmpfs so HX_RAMDISK=1 builds in it instead of in /tmp.
 		# stdout and stderr are merged in the container because wslc overwrites
 		# one with the other in a shared log file.
-		"wslc exec -e HX_RAMDISK=1 -e HX_MAX_CORES=$cores $name sh -c `"./test_all.sh 2>&1`""
+		"wslc exec -e HX_RAMDISK=1 -e HX_MAX_CORES=$jobs $name sh -c `"./test_all.sh 2>&1`""
 	)
 	"wslc remove -f $name >nul 2>&1 & " + ($required -join ' && ')
 }
@@ -135,15 +146,15 @@ function Main([bool]$verbose, [bool]$clear_wslc) {
 	& "$env:SystemRoot\System32\tar.exe" -cf $build_dir\libhatchet.tar --format ustar `
 		--exclude .git --exclude $build_dir --exclude-from .gitignore .
 
-	# The cores in the wslc session that the available memory allows are split
-	# between the containers.
+	# The jobs for the cores in the wslc session that the available memory allows
+	# are split between the containers.
 	$session = @('' | wslc system session run sh -c 'nproc; grep MemAvailable /proc/meminfo')
 	$cores = [int]$session[0]
 	$available_gb = [int64]($session[1] -replace '\D') / 1MB
-	$container_cores = [Math]::Max(1, [Math]::Floor(
-		[Math]::Min($cores, $available_gb / $memory_per_core_gb) / $distributions.Count))
-	Write-Host ('=== plan: {0} cores and {1:N1} GB available, {2} cores per container ===' -f
-		$cores, $available_gb, $container_cores)
+	$container_jobs = [Math]::Max(1, [Math]::Floor([Math]::Min($cores * $jobs_per_core,
+		$available_gb / $memory_per_job_gb) / $distributions.Count))
+	Write-Host ('# test_msvc.ps1: {0} cores, {1:N1} GB available, using {2} jobs/container.' -f
+		$cores, $available_gb, $container_jobs)
 
 	# The tests are in the order they start. wslc fails with E_UNEXPECTED when
 	# builds run concurrently, so the images are built one at a time first.
@@ -151,7 +162,7 @@ function Main([bool]$verbose, [bool]$clear_wslc) {
 	$builds = @(foreach ($distribution in $distributions.Keys) { Get-ContainerBuild $distribution })
 	if ($builds) { $tests['images'] = $builds -join ' && ' }
 	foreach ($distribution in $distributions.Keys) {
-		$tests[$distribution] = Get-ContainerTest $distribution $container_cores
+		$tests[$distribution] = Get-ContainerTest $distribution $container_jobs
 	}
 	$tests['x64-debug']     = Get-MsvcTest x64 Debug $verbose
 	$tests['x64-release']   = Get-MsvcTest x64 Release $verbose
@@ -166,7 +177,7 @@ function Main([bool]$verbose, [bool]$clear_wslc) {
 		# a time. The containers are waited for last.
 		foreach ($test in @($tests.Keys) + @($distributions.Keys)) {
 			if (-not $processes.Contains($test)) {
-				Write-Host "=== $test ==="
+				Write-Host "## $test"
 				# A new process runs each test so that its output can be logged.
 				$command = "/c ($($tests[$test]))"
 				if (-not $verbose) { $command += " >$build_dir\$test.log 2>&1" }
@@ -208,7 +219,7 @@ function Main([bool]$verbose, [bool]$clear_wslc) {
 		Remove-Item -Recurse -Force $build_dir, cache
 	}
 
-	Write-Host '=== results ==='
+	Write-Host '## results'
 	$results | ForEach-Object { Write-Host $_ }
 	exit $failed
 }

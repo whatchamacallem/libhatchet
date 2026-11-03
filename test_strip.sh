@@ -46,7 +46,7 @@ for HX_VERSION_ in 11 14 17 20 $HX_CXX23_; do
 printf '%s ' "$HX_VERSION_"
 
 printf '%s\0' "$HX_DIR_"/src/*.cpp "$HX_DIR_"/test/*.cpp |
-	xargs -0 -n 1 -P "$HX_JOBS_"                                                         \
+	xargs -0 -n 1 -P "$HX_JOBS_" sh -c '"$0" "$@" || exit 255'                           \
 	musl-gcc $HX_BUILD_ $HX_ERRORS_ $HX_FLAGS_ -I"$HX_DIR_/include" -std=c++$HX_VERSION_ \
 		-nostdinc++ -fno-exceptions -fno-rtti -flto=auto -c
 

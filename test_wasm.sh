@@ -31,7 +31,7 @@ emcc -I"$HX_DIR_/include" -O2 -pthread -fdiagnostics-absolute-paths -c \
 # -pthread requires SharedArrayBuffer which needs COOP/COEP headers from the
 # server.
 printf '%s\0' "$HX_DIR_"/src/*.cpp "$HX_DIR_"/test/*.cpp |
-	xargs -0 -n 1 -P "$HX_JOBS_"                                             \
+	xargs -0 -n 1 -P "$HX_JOBS_" sh -c '"$0" "$@" || exit 255'               \
 	emcc -O2 -fno-exceptions -fno-rtti -fdiagnostics-absolute-paths          \
 		-Werror -Wfatal-errors -DHX_USE_FILE_IO=0 -DHX_USE_SLAB_ALLOCATOR=0  \
 		-DHX_USE_THREADS=1 -DHX_USE_CONSOLE=1 -Wno-c2y-extensions -pthread   \

@@ -57,7 +57,6 @@ else()
 			PRIVATE
 				$<$<CONFIG:Debug>:/MTd>
 				$<$<NOT:$<CONFIG:Debug>>:/MT>
-				/MP
 				/permissive-
 				/W4
 				/wd4530

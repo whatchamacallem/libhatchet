@@ -84,7 +84,7 @@ $HX_GCC_ -I"$HX_DIR_"/include $HX_COVERAGE_ -DHX_HARDENING_MODE=HX_HARDENING_MOD
 	"$HX_DIR_"/test/*.c
 
 printf '%s\0' "$HX_DIR_"/test/*.cpp "$HX_DIR_"/src/*.cpp |
-	xargs -0 -n 1 -P "$HX_JOBS_"                                                                \
+	xargs -0 -n 1 -P "$HX_JOBS_" sh -c '"$0" "$@" || exit 255'                                  \
 	$HX_GXX_ -I"$HX_DIR_"/include $HX_COVERAGE_CXX_ -DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG \
 		-DHX_TEST_ERROR_HANDLING=1 -DHX_USE_CONSOLE=2 -DHX_USE_PROFILER=1 -DHX_USE_STD_LIB=0    \
 		-DHX_USE_INLINING_ATTR=0 -std=c++23 -Wall -Werror -Wextra -Wfatal-errors                \
