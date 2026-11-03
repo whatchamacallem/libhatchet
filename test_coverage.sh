@@ -80,7 +80,7 @@ if [ "${HX_RAMDISK:-0}" = 1 ]; then mkdir build; else ln -s "$(mktemp -d)" build
 cd build
 
 $HX_GCC_ -I"$HX_DIR_"/include $HX_COVERAGE_ -DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG \
-	-DHX_USE_INLINING_ATTR=0 -std=c99 -Wall -Werror -Wfatal-errors -pthread -c     \
+	-DHX_USE_INLINING_ATTR=0 -std=c99 -Wall -Werror -Wfatal-errors -pthread -c          \
 	"$HX_DIR_"/test/*.c
 
 printf '%s\0' "$HX_DIR_"/test/*.cpp "$HX_DIR_"/src/*.cpp |

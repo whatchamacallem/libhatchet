@@ -31,15 +31,36 @@ hxwarning_args = [
 ]
 
 hxinclude_directory = include_directories('include')
+_hxcpp = meson.get_compiler('cpp')
 
-if get_option('build_module')
+# -m32 is auto enabled when available.
+_hxm32 = get_option('m32').require(
+	meson.get_compiler('c').links('int main(void) { return 0; }', args : '-m32', name : '-m32'),
+	error_message : '-m32 requires 32-bit libc.').allowed()
+hxm32_arg = _hxm32 ? ['-m32'] : []
+add_project_arguments(hxm32_arg, language : ['c', 'cpp'])
+add_project_link_arguments(hxm32_arg, language : ['c', 'cpp'])
+
+# The module is auto enabled when supported. Apple clang uses its own version
+# numbers and does not support named modules.
+_hxcpp_version = _hxcpp.version()
+_hxcpp_modules = (
+	(_hxcpp.get_id() == 'gcc' and _hxcpp_version.version_compare('>=15'))
+	or (_hxcpp.get_id() == 'clang' and _hxcpp_version.version_compare('>=18')
+		and _hxcpp.get_define('__apple_build_version__') == ''))
+
+hxbuild_module = get_option('build_module').require(_hxcpp_modules,
+	error_message : 'Named modules require GCC 15 or LLVM Clang 18.').allowed()
+
+if hxbuild_module
 	# WARNING: The earliest versions this was tested with were GCC 15.2.0, Clang
 	# 18.1.3, Meson 1.3.2 and Ninja 1.11.1. Module support was still a work in
 	# progress at that time.
 	#
 	# This required a custom_target to make it work. -std=c++2x must be passed
 	# explicitly since project default_options do not apply to custom_target
-	# commands. get_option('cpp_args') forwards project-level flags (e.g. -m32).
+	# commands. get_option('cpp_args') and hxm32_arg forward project-level flags
+	# for the same reason.
 	# GCC writes gcm.cache/hx.gcm in the build directory as a side effect and
 	# consumers find it via GCC's default module search path. Depfiles are
 	# omitted because GCC's -MMD output includes module rules that ninja 1.12+
@@ -52,7 +73,6 @@ if get_option('build_module')
 	# HX_USE_MACROS_WITH_MODULE=1. That is for accessing macros alongside the
 	# module.
 
-	_hxcpp = meson.get_compiler('cpp')
 	_hxis_clang = _hxcpp.get_id() == 'clang'
 
 	hxmodule_include_args = ['-I' + meson.project_source_root() / 'include']
@@ -67,7 +87,7 @@ if get_option('build_module')
 		input : 'src/hxmodule.cppm',
 		output : _hxmodule_outputs,
 		build_by_default : true,
-		command : _hxcpp.cmd_array() + get_option('cpp_args') + hxwarning_args
+		command : _hxcpp.cmd_array() + get_option('cpp_args') + hxm32_arg + hxwarning_args
 			+ hxmodule_include_args + _hxmodule_special_args + _hxmodule_pcm_args
 			+ [ '-c', '@INPUT@', '-o', '@OUTPUT0@', ],
 	)

@@ -14,7 +14,8 @@ HX_DIR_=$PWD
 HX_JOBS_="${HX_MAX_CORES:-$(getconf _NPROCESSORS_ONLN)}"
 
 HX_BUILD_="-DHX_HARDENING_MODE=HX_HARDENING_MODE_NONE -DHX_PROVIDE_NEW_DELETE=0 \
-	-DHX_USE_STD_LIB=0 -DHX_USE_LOGGING=1 -DHX_USE_THREADS=11 -DHX_SLAB_BUDGET_PERMANENT=0"
+	-DHX_USE_STD_LIB=0 -DHX_USE_LOGGING=1 -DHX_USE_THREADS=11                   \
+	-DHX_SLAB_BUDGET_PERMANENT=0"
 
 HX_ERRORS_="-Wfatal-errors -Wall -Wextra -pedantic-errors -Werror -Wcast-qual \
 	-Wdisabled-optimization -Wshadow -Wundef -Wconversion -Wdate-time         \
@@ -43,17 +44,17 @@ musl-gcc $HX_BUILD_ $HX_ERRORS_ $HX_FLAGS_ -I"$HX_DIR_/include" -std=c17 -c \
 
 # Test every supported version of the standard without libc++.
 for HX_VERSION_ in 11 14 17 20 $HX_CXX23_; do
-printf '%s ' "$HX_VERSION_"
+	printf '%s ' "$HX_VERSION_"
 
-printf '%s\0' "$HX_DIR_"/src/*.cpp "$HX_DIR_"/test/*.cpp |
-	xargs -0 -n 1 -P "$HX_JOBS_" sh -c '"$0" "$@" || exit 255'                           \
-	musl-gcc $HX_BUILD_ $HX_ERRORS_ $HX_FLAGS_ -I"$HX_DIR_/include" -std=c++$HX_VERSION_ \
-		-nostdinc++ -fno-exceptions -fno-rtti -flto=auto -c
+	printf '%s\0' "$HX_DIR_"/src/*.cpp "$HX_DIR_"/test/*.cpp |
+		xargs -0 -n 1 -P "$HX_JOBS_" sh -c '"$0" "$@" || exit 255'                           \
+		musl-gcc $HX_BUILD_ $HX_ERRORS_ $HX_FLAGS_ -I"$HX_DIR_/include" -std=c++$HX_VERSION_ \
+			-nostdinc++ -fno-exceptions -fno-rtti -flto=auto -c
 
-# -Wno-maybe-uninitialized is passed to the link time optimizer because it has
-# false positives. -Wl,--gc-sections and -flto=12 should reduce size.
-musl-gcc $HX_FLAGS_ -Wno-maybe-uninitialized -Wl,--gc-sections -nodefaultlibs -flto=auto \
-	*.o -lc -lpthread -lm -o hxtest
+	# -Wno-maybe-uninitialized is passed to the link time optimizer because it has
+	# false positives. -Wl,--gc-sections and -flto=12 should reduce size.
+	musl-gcc $HX_FLAGS_ -Wno-maybe-uninitialized -Wl,--gc-sections -nodefaultlibs -flto=auto \
+		*.o -lc -lpthread -lm -o hxtest
 
 done
 printf '\n'

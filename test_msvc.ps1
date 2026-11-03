@@ -17,9 +17,6 @@
 
 $ErrorActionPreference = 'Stop'
 
-# Changing this rebuilds the cached containers.
-$container_version = 1
-
 # The memory needed by each parallel compile.
 $memory_per_job_gb = 0.5
 
@@ -61,12 +58,9 @@ function Get-MsvcTest([string]$platform, [string]$configuration, [bool]$verbose)
 function Get-ContainerBuild([string]$distribution) {
 	$image = $distributions[$distribution]
 	$name = "libhatchet-test-$distribution"
-
-	# The image name includes the base image so that changing it forces a build.
 	$tag = "libhatchet-test/$($image.Image)"
-	$label = "libhatchet-test.version=$container_version"
 
-	$listed = wslc images --format json --filter "reference=$tag" --filter "label=$label" |
+	$listed = wslc images --format json --filter "reference=$tag" |
 		ConvertFrom-Json
 	if (-not $listed -or [DateTimeOffset]::Parse($listed.CreatedAt -replace ' \D+$') -lt
 			(Get-Item $image.Install).LastWriteTime) {
@@ -74,9 +68,9 @@ function Get-ContainerBuild([string]$distribution) {
 		New-Item -ItemType Directory $context | Out-Null
 		Copy-Item $image.Install $context
 		Set-Content "$context\Dockerfile" -NoNewline -Encoding ascii ("FROM $($image.Image)`n" +
-			"LABEL $label`n" +
 			"RUN --mount=type=bind,source=$($image.Install),target=/$($image.Install)" +
 			" bash /$($image.Install)`n")
+
 		# A kept container prevents its image from being removed.
 		"(wslc remove -f $name >nul 2>&1 & wslc rmi $tag >nul 2>&1" +
 			" & wslc build --no-cache --progress plain -t $tag $context)"
@@ -114,8 +108,7 @@ function Get-ContainerTest([string]$distribution, [int]$jobs) {
 		"wslc exec $name sh -c `"chmod +x *.sh`""
 
 		# /libhatchet is a tmpfs so HX_RAMDISK=1 builds in it instead of in /tmp.
-		# stdout and stderr are merged in the container because wslc overwrites
-		# one with the other in a shared log file.
+		# stdout and stderr are merged because wslc.
 		"wslc exec -e HX_RAMDISK=1 -e HX_MAX_CORES=$jobs $name sh -c `"./test_all.sh 2>&1`""
 	)
 	"wslc remove -f $name >nul 2>&1 & " + ($required -join ' && ')

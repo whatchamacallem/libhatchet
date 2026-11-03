@@ -11,8 +11,6 @@ set -eu
 cd "$(dirname "$(readlink -f "$0")")"
 
 export POSIXLY_CORRECT=1
-
-# Enables glibc heap integrity checking.
 export MALLOC_CHECK_=3
 
 # Fatal warning flags.
@@ -44,7 +42,6 @@ if [ "$(uname -s)" = Darwin ]; then
 	HX_GXX_="g++-${HX_GCC_#gcc-}"
 fi
 
-# -m32 is dropped where 32-bit libc is not installed, e.g. Rocky Linux 10.
 HX_M32_="-m32"
 if [ "$($HX_GCC_ -m32 -print-file-name=libc.so 2>/dev/null)" = libc.so ]; then
 	HX_M32_=""
@@ -69,6 +66,7 @@ if [ "${HX_RAMDISK:-0}" = 1 ]; then mkdir build; else ln -s "$(mktemp -d)" build
 cd build
 
 # -- Clang ---------------------------------------------------------------------
+# Run different sanitizers at all build levels with gcc.
 
 run_clang_build() {
 	HX_OPT_=$1; HX_SAN_=$2; shift 2
@@ -105,8 +103,7 @@ run_clang_build() {
 	run_hxtest
 }
 
-# Test undefined behavior/address use at all build levels with clang. Uses a
-# pch.
+# Undefined behavior and address sanitization at all build levels with clang.
 for HX_I_ in 0 1 2 3; do
 	run_clang_build "$HX_I_" "$HX_SAN_UNDEF_" "$@"
 done
@@ -121,26 +118,26 @@ if [ "$(uname -s)" != Darwin ]; then
 fi
 
 # -- GCC ----------------------------------------------------------------------
+# Undefined behavior and address sanitization at all build levels with gcc.
 
 for HX_I_ in 0 1 2 3; do
-echo "$HX_GCC_ c99/c++11 -O$HX_I_ $* ..."
+	echo "$HX_GCC_ c99/c++11 -O$HX_I_ $* ..."
 
-if [ "$HX_I_" = 0 ]; then HX_FORTIFY_="-U_FORTIFY_SOURCE"; else HX_FORTIFY_=""; fi
+	if [ "$HX_I_" = 0 ]; then HX_FORTIFY_="-U_FORTIFY_SOURCE"; else HX_FORTIFY_=""; fi
 
-$HX_GCC_ -I"$HX_DIR_/include" "-DHX_HARDENING_MODE=(3-$HX_I_)" -O$HX_I_  \
-	$HX_FLAGS_ $HX_ERRORS_ $HX_FORTIFY_ $HX_SAN_UNDEF_ -pthread -std=c99 \
-	$HX_M32_ "$@" -c "$HX_DIR_"/test/*.c
+	$HX_GCC_ -I"$HX_DIR_/include" "-DHX_HARDENING_MODE=(3-$HX_I_)" -O$HX_I_  \
+		$HX_FLAGS_ $HX_ERRORS_ $HX_FORTIFY_ $HX_SAN_UNDEF_ -pthread -std=c99 \
+		$HX_M32_ "$@" -c "$HX_DIR_"/test/*.c
 
-printf '%s\0' "$HX_DIR_"/src/*.cpp "$HX_DIR_"/test/*.cpp |
-	xargs -0 -n 1 -P "$HX_JOBS_" sh -c '"$0" "$@" || exit 255'              \
-	$HX_GCC_ -I"$HX_DIR_/include" "-DHX_HARDENING_MODE=(3-$HX_I_)" -O$HX_I_ \
-	$HX_FLAGS_ $HX_ERRORS_ $HX_FORTIFY_ $HX_SAN_UNDEF_ -pthread -std=c++11  \
-	-fno-exceptions -fno-rtti $HX_M32_ "$@" -c
+	printf '%s\0' "$HX_DIR_"/src/*.cpp "$HX_DIR_"/test/*.cpp |
+		xargs -0 -n 1 -P "$HX_JOBS_" sh -c '"$0" "$@" || exit 255'              \
+		$HX_GCC_ -I"$HX_DIR_/include" "-DHX_HARDENING_MODE=(3-$HX_I_)" -O$HX_I_ \
+			$HX_FLAGS_ $HX_ERRORS_ $HX_FORTIFY_ $HX_SAN_UNDEF_ -pthread         \
+			-std=c++11 -fno-exceptions -fno-rtti $HX_M32_ "$@" -c
 
-$HX_GCC_ $HX_SAN_UNDEF_ *.o -lpthread -lstdc++ $HX_M32_ -o hxtest
+	$HX_GCC_ $HX_SAN_UNDEF_ *.o -lpthread -lstdc++ $HX_M32_ -o hxtest
 
-run_hxtest
+	run_hxtest
 done
 
-# Make sure the script returns 0.
 echo "🪓🪓🪓 all tests passed."

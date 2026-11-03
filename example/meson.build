@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 # This file is licensed under the terms of the LICENSE.md file.
 
-if get_option('build_module')
+if hxbuild_module
 	# DHX_USE_MACROS_WITH_MODULE=1 allows accessing macros from certain headers.
 	_module_consumer_args = _hxis_clang ? [] : ['-fmodules-ts']
 
@@ -10,7 +10,7 @@ if get_option('build_module')
 		input : 'example.cpp',
 		output : 'example.cpp.o',
 		depends : [libhatchet_module],
-		command : _hxcpp.cmd_array() + get_option('cpp_args') + hxwarning_args
+		command : _hxcpp.cmd_array() + get_option('cpp_args') + hxm32_arg + hxwarning_args
 			+ hxmodule_include_args + hxmodule_search_args + _module_consumer_args
 			+ [
 				'-DHX_USE_MACROS_WITH_MODULE=1',

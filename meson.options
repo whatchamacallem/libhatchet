@@ -1,4 +1,6 @@
-option('build_module', type : 'boolean', value : false,
+option('build_module', type : 'feature', value : 'auto',
 	description : 'Build the hx module.')
 option('build_example', type : 'boolean', value : false,
 	description : 'Build the example program.')
+option('m32', type : 'feature', value : 'auto',
+	description : 'Build 32-bit with -m32.')

@@ -10,52 +10,34 @@ cd "$(dirname "$(readlink -f "$0")")"
 
 export POSIXLY_CORRECT=1
 
-HX_VERBOSE_=""
-if [ "${1:-}" = "--verbose" ]; then
-	HX_VERBOSE_="--verbose"
-elif [ -n "${1:-}" ]; then
-	echo "usage_error: $0 [--verbose]"
-	exit 1
-fi
-
 HX_JOBS_="${HX_MAX_CORES:-$(getconf _NPROCESSORS_ONLN)}"
 
-HX_CLANG_=clang
-HX_CLANGXX_=clang++
-HX_GCC_=gcc
-HX_GXX_=g++
+HX_CLANG_NATIVE_=meson/clang.ini
+HX_GCC_NATIVE_=meson/gcc.ini
 if [ "$(uname -s)" = Darwin ]; then
 	PATH="/opt/homebrew/bin:/opt/homebrew/sbin${PATH+:$PATH}"
 	if ! command -v brew > /dev/null 2>&1; then
 		echo "error: Install brew and then run install_brew.sh."
 		exit 1
 	fi
-	# Apple clang does not support named modules.
-	HX_CLANG_="$(brew --prefix llvm)/bin/clang"
-	HX_CLANGXX_="$HX_CLANG_++"
-	HX_GCC_=$(basename "$(brew --prefix gcc)"/bin/gcc-[0-9]*)
-	HX_GXX_="g++-${HX_GCC_#gcc-}"
-fi
-
-# -m32 is dropped where 32-bit libc is not installed.
-HX_M32_="-m32"
-if [ "$("$HX_CLANG_" -m32 -print-file-name=libc.so)" = libc.so ]; then
-	HX_M32_=""
-	echo "32-bit libc not installed. Building 64-bit..."
+	HX_CLANG_NATIVE_=meson/macos-clang.ini
+	HX_GCC_NATIVE_=meson/macos-gcc.ini
+elif [ -x /opt/rh/gcc-toolset-15/root/usr/bin/g++ ]; then
+	HX_GCC_NATIVE_=meson/gcc-toolset-15.ini
 fi
 
 # Builds a module that uses MUSL libc headers only.
-HX_C_FLAGS_="-DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG $HX_M32_ -ggdb3"
+HX_C_FLAGS_="-DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG -ggdb3"
 HX_CPP_FLAGS_="$HX_C_FLAGS_ -DHX_USE_STD_LIB=0 -DHX_USE_NAMESPACE=hx -DHX_USE_CONSOLE=2 \
 	-std=c++23 -nostdinc++ -fno-exceptions -fno-rtti"
-HX_LINK_FLAGS_="$HX_M32_ -nodefaultlibs -lc -lpthread -lm"
+HX_LINK_FLAGS_="-nodefaultlibs -lc -lpthread -lm"
 
 HX_CORRECT_="example/example_correct.txt"
 
 run_example() {
 	# Build artifacts are not retained.
 	rm -rf "$(readlink -f build)" build; mkdir build
-	if [ "$HX_VERBOSE_" = 1 ]; then
+	if [ "${1:-}" = "--verbose" ]; then
 		meson setup build --buildtype=debug -Dc_args="$HX_C_FLAGS_"       \
 			-Dcpp_args="$HX_CPP_FLAGS_" -Dcpp_link_args="$HX_LINK_FLAGS_" \
 			-Dbuild_example=true "$@"
@@ -96,36 +78,21 @@ run_example() {
 	fi
 }
 
-if [ "$HX_VERBOSE_" = "--verbose" ]; then
+if [ "${1:-}" = "--verbose" ]; then
 	set -o xtrace
 fi
 
-export CC="$HX_CLANG_"
-export CXX="$HX_CLANGXX_"
-echo "$CXX meson+ninja with textual includes..."
-run_example
-echo "$CXX meson+ninja with named module..."
-run_example -Dbuild_module=true
+echo "$HX_CLANG_NATIVE_ meson+ninja with textual includes..."
+run_example --native-file="$HX_CLANG_NATIVE_" -Dbuild_module=disabled
 
-export CC="$HX_GCC_"
-export CXX="$HX_GXX_"
-echo "$CXX meson+ninja with textual includes..."
-run_example
-# GCC 14 modules do not build, e.g. Debian 13. Rocky Linux 10 has GCC 15 in
-# gcc-toolset-15.
-HX_GCC_TOOLSET_=/opt/rh/gcc-toolset-15/root/usr/bin
-if [ -x "$HX_GCC_TOOLSET_/g++" ]; then
-	export CC="$HX_GCC_TOOLSET_/gcc"
-	export CXX="$HX_GCC_TOOLSET_/g++"
-fi
-if [ "$($CXX -dumpversion | cut -d. -f1)" -ge 15 ]; then
-	echo "$CXX meson+ninja with named module..."
-	run_example -Dbuild_module=true
-else
-	echo "$CXX meson+ninja with named module skipped. Requires GCC 15."
-fi
+echo "$HX_CLANG_NATIVE_ meson+ninja with named module..."
+run_example --native-file="$HX_CLANG_NATIVE_"
 
-echo "Output matches"
-echo "Run hxtest from the build directory to test interactively."
+echo "$HX_GCC_NATIVE_ meson+ninja with textual includes..."
+run_example --native-file="$HX_GCC_NATIVE_" -Dbuild_module=disabled
+
+# Textual includes are built with GCC 14, e.g. Debian 13.
+echo "$HX_GCC_NATIVE_ meson+ninja with named module..."
+run_example --native-file="$HX_GCC_NATIVE_"
 
 echo "🪓🪓🪓"
