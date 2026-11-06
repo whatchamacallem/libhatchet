@@ -7,12 +7,11 @@
 # Run with: ./libhatchet_flash_pico.sh [--port /dev/ttyACM0] [--board pico2]
 set -euo pipefail
 
-# These need to be configured to your install directories:
-
-PICO_ROOT="../../pico"
-export PICO_SDK_PATH="$PICO_ROOT/pico-sdk"
-export LIBHATCHET_PATH=".."
-BUILD_DIR="$LIBHATCHET_PATH/build"
+# The Pico SDK is at PICO_SDK_PATH or at ~/pico-sdk where "install_deb.sh
+# --sdks" installs it, with picotool next to it.
+export PICO_SDK_PATH="${PICO_SDK_PATH:-$HOME/pico-sdk}"
+PATH="$PATH:$(dirname "$PICO_SDK_PATH")/picotool"
+BUILD_DIR="../build"
 
 BOARD="${BOARD:-pico2}"
 BAUD="${BAUD:-115200}"

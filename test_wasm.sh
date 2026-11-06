@@ -3,8 +3,9 @@
 # SPDX-License-Identifier: MIT
 # This file is licensed under the terms of the LICENSE.md file.
 #
-# Requires the emsdk. After installing the emsdk it is recommended to add it to
-# your .bashrc.
+# Requires the emsdk, which provides emcc and node. Source emsdk_env.sh first
+# or run test_all.sh, which sources it from ~/emsdk where "install_deb.sh
+# --sdks" installs it.
 
 trap 'trap "" INT PIPE TERM; pkill -P $$; wait; exit 1' INT PIPE TERM
 set -eu
@@ -37,8 +38,22 @@ printf '%s\0' "$HX_DIR_"/src/*.cpp "$HX_DIR_"/test/*.cpp |
 		-DHX_USE_THREADS=1 -DHX_USE_CONSOLE=1 -Wno-c2y-extensions -pthread   \
 		-std=c++23 -flto=auto -I"$HX_DIR_/include" -c
 
+# index.html runs in a browser and index.js runs in Node.js.
 emcc -O2 -pthread -sEXIT_RUNTIME=1 -sPTHREAD_POOL_SIZE=4 -sPROXY_TO_PTHREAD \
 	-flto=auto *.o -o index.html
+
+# Node.js runs the pthreads as worker threads and exits with the status of
+# main.
+if [ "${1:-}" = "--verbose" ]; then
+	node index.js
+else
+	if node index.js > console_output.txt 2>&1; then
+		grep -E '^(not ok|Bail out!|# )' console_output.txt
+	else
+		cat console_output.txt
+		exit 1
+	fi
+fi
 
 if [ "${1:-}" = "--verbose" ]; then
 
@@ -68,5 +83,4 @@ HX_EOF_
 	wait "$HX_SERVER_PID_"
 fi
 
-# Say goodbye and make sure the script returns 0.
 echo 🪓🪓🪓

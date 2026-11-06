@@ -5,18 +5,54 @@
 #include "../include/hx/hxtest.hpp"
 #include "../include/hx/hxsort.hpp"
 #include "../include/hx/hxprofiler.hpp"
+#if HX_USE_FILE_IO
+#include "../include/hx/hxfile.hpp"
+#endif
 
 #include <math.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 HX_NS_BEGIN_
 
-#if !HX_USE_GOOGLE_TEST
+// HX_USE_TEST_FRAMEWORK=2 uses Google Test instead of this file.
+#if (HX_USE_TEST_FRAMEWORK) != 2
 
 namespace hxdetail_ {
 
 constexpr int hxmax_fail_messages_ = 5;
+
+#if (HX_USE_TEST_FRAMEWORK) == 0
+// hxtest_tap_ - Internal. Writes part of the Test Anything Protocol (TAP) report
+// to hxout. It is flushed so that the report is complete when a test crashes
+// and in order with hxerr when both are redirected to the same file.
+static void hxtest_tap_(const char* format, ...) hxattr_printf(1, 2);
+static void hxtest_tap_(const char* format, ...) {
+	va_list args; // NOLINT(cppcoreguidelines-init-variables)
+	va_start(args, format);
+	hxlog_handler_v(hxlog_level_log, format, args);
+	va_end(args);
+#if HX_USE_FILE_IO
+	hxout.flush();
+#else
+	::fflush(stdout);
+#endif
+}
+#endif
+
+// hxtest_report_ - Internal. Reports the result of a test. TAP numbers the
+// tests from 1.
+static void hxtest_report_(const hxtest_case_* test, int number, bool passed) {
+#if (HX_USE_TEST_FRAMEWORK) == 1
+	(void)number;
+	hxlog_console("%s %s.%s\n", passed ? "[       OK ]" : "[  FAILED  ]",
+		test->m_suite_, test->m_case_);
+#else
+	hxtest_tap_("%s %d - %s.%s\n", passed ? "ok" : "not ok", number,
+		test->m_suite_, test->m_case_);
+#endif
+}
 
 // hxtest_*_eq_ - ULP-based floating point equality (GoogleTest-compatible)
 // Compares IEEE-754 numbers by units in the last place (ULPs) with a fixed
@@ -122,8 +158,14 @@ void hxtest_::condition_check_(bool condition, const char* file, int line,
 				m_current_test_->m_case_);
 			hxlog_handler(hxlog_level_assert, "test_fail_at %s(%d): %s", file, line, message);
 			hxlog_handler(hxlog_level_assert, "test_assert_fail ❌");
+#if (HX_USE_TEST_FRAMEWORK) == 1
 			hxlog_console("[==========] aborted after %d passed, %d failed, %d assertions.\n",
 				m_pass_count_, m_fail_count_ + 1, m_total_assert_count_);
+#else
+			hxtest_report_(m_current_test_, m_pass_count_ + m_fail_count_ + 1, false);
+			hxtest_tap_("Bail out! %d passed, %d failed, %d assertions.\n",
+				m_pass_count_, m_fail_count_ + 1, m_total_assert_count_);
+#endif
 			hxbreakpoint();
 			hxexit(EXIT_FAILURE);
 		}
@@ -280,8 +322,13 @@ int hxtest_::run_all_tests_(void) {
 		// GCOVR_EXCL_STOP
 	}
 
+#if (HX_USE_TEST_FRAMEWORK) == 1
 	hxlog_console("[==========] Running tests: %s\n", // GCOVR_EXCL_LINE
 		(hxg_settings.test_filter ? hxg_settings.test_filter : "All"));
+#else
+	// The plan comes first because the number of tests is known.
+	hxtest_tap_("TAP version 13\n1..%d\n", static_cast<int>(m_test_cases_.size()));
+#endif
 
 	m_pass_count_ = m_fail_count_ = 0;
 	m_total_assert_count_ = 0;
@@ -302,7 +349,9 @@ int hxtest_::run_all_tests_(void) {
 		"test_leak temp stacks not empty");
 
 	for(hxtest_case_** it = m_test_cases_.begin(); it != m_test_cases_.end(); ++it) {
+#if (HX_USE_TEST_FRAMEWORK) == 1
 		hxlog_console("[ RUN      ] %s.%s\n", (*it)->m_suite_, (*it)->m_case_);
+#endif
 		m_current_test_ = *it;
 		m_test_state_ = test_state_::nothing_asserted_;
 		m_assert_count_ = 0;
@@ -334,34 +383,46 @@ int hxtest_::run_all_tests_(void) {
 		if(m_test_state_ == test_state_::nothing_asserted_) {
 			this->condition_check_(false, (*it)->m_file_, (*it)->m_line_, "nothing_tested", false);
 		}
-		if(m_test_state_ == test_state_::pass_) {
+		const bool passed = m_test_state_ == test_state_::pass_;
+		if(passed) {
 			++m_pass_count_;
-			hxlog_console("[       OK ] %s.%s\n", (*it)->m_suite_, (*it)->m_case_);
 		}
 		else {
 			++m_fail_count_;
-			hxlog_console("[  FAILED  ] %s.%s\n", (*it)->m_suite_, (*it)->m_case_);
 		}
+		hxtest_report_(*it, m_pass_count_ + m_fail_count_, passed);
 	}
 	m_current_test_ = hxnull;
 
 	hxslab_allocator_utilization(false, true);
 
+#if (HX_USE_TEST_FRAMEWORK) == 1
 	hxlog_console("[==========] skipped %d tests. failed %d assertions.\n",
 		(int)m_test_cases_.size() - m_pass_count_ - m_fail_count_, m_total_assert_count_);
+#endif
 
 	// GCOVR_EXCL_START
 	hxassert_always(m_pass_count_ + m_fail_count_, "nothing_tested");
 
 	if(m_pass_count_ != 0 && m_fail_count_ == 0) {
+#if (HX_USE_TEST_FRAMEWORK) == 1
 		// This is Google Test style. If only it were green.
 		hxlog_handler(hxlog_level_console, "[  PASSED  ] %d test%s.\n", m_pass_count_,
 			((m_pass_count_ != 1) ? "s" : ""));
+#else
+		hxtest_tap_("# passed %d test%s.\n", m_pass_count_, ((m_pass_count_ != 1) ? "s" : ""));
+#endif
 		// GCOVR_EXCL_STOP
 	}
 	else {
+#if (HX_USE_TEST_FRAMEWORK) == 1
 		hxlog_handler(hxlog_level_console, "%d FAILED TEST%s ❌\n", m_fail_count_,
 			m_fail_count_ == 1 ? "" : "S"); // GCOVR_EXCL_LINE
+#else
+		hxtest_tap_("# failed %d of %d tests and %d assertion%s ❌\n", m_fail_count_,
+			m_pass_count_ + m_fail_count_, m_total_assert_count_,
+			m_total_assert_count_ == 1 ? "" : "s"); // GCOVR_EXCL_LINE
+#endif
 		// Count nothing tested as one failure.
 		m_fail_count_ = hxmax(m_fail_count_, 1);
 	}
@@ -370,6 +431,6 @@ int hxtest_::run_all_tests_(void) {
 
 } // hxdetail_
 
-#endif
+#endif // HX_USE_TEST_FRAMEWORK != 2
 
 HX_NS_END_

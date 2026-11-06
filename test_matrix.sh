@@ -50,7 +50,8 @@ fi
 
 run_hxtest() {
 	if ./hxtest runtests > console_output.txt 2>&1; then
-		grep -e '\[  PASSED  \]' -e '\[  FAILED  \]' -e 'FAILED TESTS' \
+		# The summary of a TAP report or of Google Test style reporting.
+		grep -E '^(not ok|Bail out!|# )|\[  PASSED  \]|FAILED TESTS' \
 			console_output.txt || cat console_output.txt
 		rm -f hxtest *.o *.txt *.bin *.json
 	else
@@ -119,6 +120,7 @@ fi
 
 # -- GCC ----------------------------------------------------------------------
 # Undefined behavior and address sanitization at all build levels with gcc.
+# These also test Google Test style reporting with HX_USE_TEST_FRAMEWORK=1.
 
 for HX_I_ in 0 1 2 3; do
 	echo "$HX_GCC_ c99/c++11 -O$HX_I_ $* ..."
@@ -133,11 +135,12 @@ for HX_I_ in 0 1 2 3; do
 		xargs -0 -n 1 -P "$HX_JOBS_" sh -c '"$0" "$@" || exit 255'              \
 		$HX_GCC_ -I"$HX_DIR_/include" "-DHX_HARDENING_MODE=(3-$HX_I_)" -O$HX_I_ \
 			$HX_FLAGS_ $HX_ERRORS_ $HX_FORTIFY_ $HX_SAN_UNDEF_ -pthread         \
-			-std=c++11 -fno-exceptions -fno-rtti $HX_M32_ "$@" -c
+			-DHX_USE_TEST_FRAMEWORK=1 -std=c++11 -fno-exceptions -fno-rtti      \
+			$HX_M32_ "$@" -c
 
 	$HX_GCC_ $HX_SAN_UNDEF_ *.o -lpthread -lstdc++ $HX_M32_ -o hxtest
 
 	run_hxtest
 done
 
-echo "🪓🪓🪓 all tests passed."
+echo 🪓🪓🪓

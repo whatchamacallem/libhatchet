@@ -246,5 +246,4 @@ if [ -n "$HX_VERBOSE_" ] && command -v google-chrome >/dev/null 2>&1; then
 	google-chrome "${HX_DEST_DIR_}coverage_details.html" >/dev/null 2>&1;
 fi
 
-# Make sure the script returns 0.
-echo "🪓🪓🪓"
+echo 🪓🪓🪓

@@ -28,7 +28,7 @@ HX_PACKAGES_="
 if command -v emcc >/dev/null 2>&1; then
 	emcc --version
 else
-	echo "error: emcc not found. It must be installed separately." >&2
+	echo "warning: emcc not found. It must be installed separately." >&2
 fi
 
 # Network access is only required when packages are missing.
@@ -59,3 +59,5 @@ do
 	echo "$HX_CMD_ --version"
 	$HX_CMD_ --version
 done
+
+echo 🪓🪓🪓

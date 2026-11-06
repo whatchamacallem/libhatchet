@@ -169,9 +169,8 @@ default compilers of each distribution:
 | Debian 13        |     14 |    19 |      x |      x |
 | Rocky Linux 10   | 14, 15 |    21 |        |      x |
 
-`test_wasm.sh` is skipped in the containers due to download size. Run
-`install_deb.sh` to install the packages the test scripts need on a Debian
-based distribution such as Ubuntu and `install_rpm.sh` for RPM based
+Run `install_deb.sh --sdks` to install the packages the test scripts need on a
+Debian based distribution such as Ubuntu and `install_rpm.sh` for RPM based
 distributions.
 
 macOS 27 arm64 is tested using Homebrew GCC 16, Apple Clang 21 and Homebrew
@@ -188,11 +187,12 @@ The scripted builds exercise the following toolchains, language modes and
 | Script | Toolchain | Modes | Hardening | Notes |
 | --- | --- | --- | --- | --- |
 | `debug_build.sh` | `clang` | C17, C++23 | 3 | 32-bit debug build with ccache and no exceptions/RTTI. |
-| `test_cmake.sh` | `cmake` | C17, C++23 | 3 | Uses the default compiler and the real Google Test and runs `hxtest` and Clang-Tidy. |
+| `test_cmake.sh` | `cmake` | C17, C++23 | 3 | Sets `HX_USE_TEST_FRAMEWORK=2` for the real Google Test. Runs `hxtest` and Clang-Tidy. |
 | `test_coverage.sh` | `gcc` | C99, C++23 | 3 | Builds with `--coverage`, enables `HX_TEST_ERROR_HANDLING=1` and emits `coverage_details.html`. |
-| `test_matrix.sh` | `gcc`, `clang` | C99, C17, C++11, C++23 | 0-3 | Sweeps optimization levels and ASan/UBSan/TSan/MSan and sets `HX_USE_THREADS=1/11`. |
+| `test_matrix.sh` | `gcc`, `clang` | C99, C17, C++11, C++23 | 0-3 | Sweeps -O* with ASan/UBSan/TSan/MSan and sets `HX_USE_THREADS=1/11`. |
 | `test_strip.sh` | `musl-gcc` | C17, C++11-23 | 0 | Size-focused static build with allocator/library stripping. |
-| `test_wasm.sh` | `emcc` | defaults | 3 | WebAssembly build with the memory manager disabled and pthreads enabled. Emscripten defaults are Clang-based C/C++. |
+| `test_target.sh` | `clang`, `gcc` | C17, C++23 | 3 | Builds with Meson, with or without the `hx` module, and checks the TAP-producer. |
+| `test_wasm.sh` | `emcc` | defaults | 3 | WebAssembly build run with Node.js. The memory manager is disabled and pthreads are enabled. |
 
 `test_all.sh` runs all of the above and also enforces certain naming
 conventions.
@@ -309,10 +309,11 @@ Differences from the standard versions are listed.
   `hxset_difference`, `hxset_intersection`, `hxset_union`, `hxunique` and
   `hxupper_bound`. `hxmerge` and the set operations move-assign out of their
   inputs and accept an `hxvector` reference directly as the output iterator,
-  appending to it without `std::back_inserter`, e.g. `hxmerge<const int*,
-  hxvector<int>&>(...)`. `hxminmax` returns a result with `min` and `max`
-  iterator fields in a single pass. Unlike `std::binary_search`,
-  `hxbinary_search` returns an iterator to the first match instead of `bool`.
+  appending to it without `std::back_inserter`, e.g.
+  `hxmerge<const int*, hxvector<int>&>(...)`. `hxminmax` returns a result with
+  `min` and `max` iterator fields in a single pass. Unlike
+  `std::binary_search`, `hxbinary_search` returns an iterator to the first
+  match instead of `bool`.
 - `hxsort.hpp` provides the comparison sorts. `hxsort` is an introsort, and
   `hxinsertion_sort` and `hxheapsort` are also available.
 - All of `hxexpected`, `hxptr`, `hxref` and `hxvector` should be able to
@@ -352,8 +353,9 @@ Differences from the standard versions are listed.
 - `hxthread` wraps pthreads or C11 `<threads.h>` with `hxmutex`,
   `hxcondition_variable`, `hxunique_lock`, `hxthread` and `hxthread_local`.
 - `hxtest` is the GoogleTest-compatible subset that the test suite itself runs
-  on. Set `HX_USE_GOOGLE_TEST=1` to run the same tests against the real Google
-  Test.
+  on. `HX_USE_TEST_FRAMEWORK=0`, the default, reports with the Test Anything
+  Protocol (TAP). `1` reports in the style of Google Test and `2` runs the same
+  tests against the real Google Test.
 
 ## Not Provided
 

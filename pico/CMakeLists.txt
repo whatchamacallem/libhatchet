@@ -4,15 +4,28 @@
 
 cmake_minimum_required(VERSION 3.21)
 
-if(NOT DEFINED ENV{PICO_SDK_PATH})
-    message(FATAL_ERROR "PICO_SDK_PATH environment variable is not set")
+# The Pico SDK is at PICO_SDK_PATH, as a CMake or environment variable, or at
+# ~/pico-sdk where "install_deb.sh --sdks" installs it. The SDK keeps picotool
+# at PICOTOOL_FETCH_FROM_GIT_PATH, building it there when it is missing. That
+# defaults to the directory containing the SDK so that it is built once.
+if(NOT PICO_SDK_PATH)
+    if(DEFINED ENV{PICO_SDK_PATH})
+        set(PICO_SDK_PATH "$ENV{PICO_SDK_PATH}")
+    else()
+        set(PICO_SDK_PATH "$ENV{HOME}/pico-sdk")
+    endif()
 endif()
 
-if(NOT DEFINED ENV{LIBHATCHET_PATH})
-    message(FATAL_ERROR "LIBHATCHET_PATH environment variable is not set")
+if(NOT PICOTOOL_FETCH_FROM_GIT_PATH AND NOT DEFINED ENV{PICOTOOL_FETCH_FROM_GIT_PATH})
+    get_filename_component(PICOTOOL_FETCH_FROM_GIT_PATH "${PICO_SDK_PATH}/.." ABSOLUTE)
 endif()
 
-include($ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake)
+# libhatchet is the parent directory.
+set(LIBHATCHET_PATH ${CMAKE_CURRENT_LIST_DIR}/..)
+
+set(PICO_BOARD pico2 CACHE STRING "Board type")
+
+include(${PICO_SDK_PATH}/external/pico_sdk_import.cmake)
 
 project(libhatchet_test_pico C CXX ASM)
 
@@ -25,7 +38,7 @@ pico_sdk_init()
 
 # -- libhatchet -----------------------------------------------------------------
 
-add_subdirectory($ENV{LIBHATCHET_PATH} libhatchet)
+add_subdirectory(${LIBHATCHET_PATH} libhatchet)
 
 # The pico sdk doesn't support disabling the C++ headers.
 target_compile_definitions(hatchet PUBLIC
@@ -50,7 +63,7 @@ target_compile_options(hatchet PRIVATE
 
 # -- Test Executable ------------------------------------------------------------
 
-get_filename_component(LIBHATCHET_ABS "$ENV{LIBHATCHET_PATH}" ABSOLUTE)
+get_filename_component(LIBHATCHET_ABS "${LIBHATCHET_PATH}" ABSOLUTE)
 file(GLOB TEST_SOURCES "${LIBHATCHET_ABS}/test/*.c" "${LIBHATCHET_ABS}/test/*.cpp")
 list(REMOVE_ITEM TEST_SOURCES "${LIBHATCHET_ABS}/test/hxtest_main.cpp")
 

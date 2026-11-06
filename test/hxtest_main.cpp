@@ -24,7 +24,7 @@ bool assert_handler_false(const char*, size_t) {
 #endif // (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG
 } // namespace
 
-#if !(HX_USE_GOOGLE_TEST)
+#if (HX_USE_TEST_FRAMEWORK) != 2
 namespace {
 // Recognizes "--gtest_break_on_failure" and "--gtest_filter=..." in argv, sets
 // hxg_settings from them and then erases them from argv/argc.
@@ -56,7 +56,7 @@ void handle_gtest_args(int* argc, const char** argv, bool verbose) {
 	}
 }
 } // namespace
-#endif // !HX_USE_GOOGLE_TEST
+#endif // HX_USE_TEST_FRAMEWORK != 2
 
 // This is only here because trailing underscores are allowed in this file.
 #if HX_USE_CONSOLE
@@ -85,7 +85,7 @@ TEST(hxconsole_test, register_command_replaces_duplicate) {
 }
 #endif // HX_USE_CONSOLE
 
-#if !(HX_USE_GOOGLE_TEST)
+#if (HX_USE_TEST_FRAMEWORK) != 2
 TEST(hxtest_main, filter) {
 	EXPECT_TRUE(true);
 }
@@ -154,7 +154,7 @@ TEST(hxtest_main, strip_gtest_args) {
 	hxg_settings.test_break_on_failure = break_on_failure;
 	hxg_settings.test_filter = filter;
 }
-#endif // !HX_USE_GOOGLE_TEST
+#endif // HX_USE_TEST_FRAMEWORK != 2
 
 TEST(hxtest_main, set_assert_handler) {
 	hxlog_warning("EXPECTING_ASSERT_FAILURE");
@@ -268,13 +268,13 @@ int test_main(int argc, char**argv) {
 } // namespace {
 
 int main(int argc, char**argv) {
-#if (HX_USE_GOOGLE_TEST)
+#if (HX_USE_TEST_FRAMEWORK) == 2
 	testing::InitGoogleTest(&argc, argv);
 	if(GTEST_FLAG_GET(list_tests)) {
 		const int dont_care = RUN_ALL_TESTS(); (void)dont_care;
 		return EXIT_SUCCESS;
 	}
-#else // !HX_USE_GOOGLE_TEST
+#else // HX_USE_TEST_FRAMEWORK != 2
 	hxinit(); // Init hxsettings.
 	handle_gtest_args(&argc, const_cast<const char**>(argv), true);
 #endif

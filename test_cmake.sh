@@ -167,4 +167,4 @@ else
 		&& { echo "clang-tidy errors."; exit 1; }
 fi
 
-echo "🪓🪓🪓"
+echo 🪓🪓🪓

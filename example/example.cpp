@@ -3,14 +3,16 @@
 // This file is licensed under the MIT license found in the LICENSE.md file.
 //
 // An interactive Mandelbrot viewer demonstrating hxconsole, hxtask_queue,
-// hxprofiler, hxmutex and hxfile.
+// hxprofiler, hxmutex, hxfile and hxtest.
 //
 // The Mandelbrot set is a fractal defined in the complex plane, constituting
 // one of the most studied and visually recognised objects in mathematics. It is
 // formally defined as the set of all complex numbers C for which the sequence
 // Z(n+1) = Z(n)² + C, with Z(0) = 0, remains bounded as n tends to infinity.
 //
-// Use "cat example/example_correct.txt" if you just want to see the output.
+// Run with no arguments to explore. Otherwise each argument is a console
+// command and "hxexample runtests" reports the tests at the end of this file
+// with the Test Anything Protocol. See test_target.sh.
 
 #include <signal.h>
 #include <stdio.h>
@@ -27,7 +29,6 @@ import hx;
 // These provide macros when HX_USE_MACROS_WITH_MODULE=1.
 #include <hx/hxconsole.hpp>
 #include <hx/hxprofiler.hpp>
-// Unused. Included to make sure it compiles with HX_USE_MACROS_WITH_MODULE=1.
 #include <hx/hxtest.hpp>
 
 namespace {
@@ -38,6 +39,10 @@ const double s_example_angle_freq     = 6.28318530717958647692 / 16.0;
 const double s_example_two_pi_over_3  = 2.09439510239319552;
 const double s_example_four_pi_over_3 = 4.18879020478639098;
 const double s_example_amplitude      = 127.5;
+
+// The frame is 80 columns by 40 rows of two pixels each.
+constexpr hxsize_t s_example_columns = 80;
+constexpr hxsize_t s_example_rows = 40;
 
 // Mutexes are not available in a signal handler.
 void example_notify_sigint(int) {
@@ -78,7 +83,7 @@ hxconsole_command_named(example_in, in);
 hxconsole_command_named(example_out, out);
 
 // hxtask computing one row of the Mandelbrot image. Rows are dispatched in
-// parallel by example_render via hxtask_queue.
+// parallel by example_compute via hxtask_queue.
 class example_row_task : public hx::hxtask {
 public:
 	void set(hxsize_t row, double center_x, double center_y, double zoom, hxsize_t max_iter, char* row_buffer) {
@@ -125,16 +130,19 @@ public:
 	bool execute(hx::hxtask_queue*) override {
 		hxprofile_scope("row");
 
-		const double col_scale = m_zoom / 80.0;
+		// The pixels are centered on the view.
+		const double col_center = 0.5 * static_cast<double>(s_example_columns - 1);
+		const double row_center = 0.5 * static_cast<double>(2 * s_example_rows - 1);
+		const double col_scale = m_zoom / static_cast<double>(s_example_columns);
 		const double row_scale = col_scale * 0.25;
 		const double upper_origin = m_center_y
-			+ (static_cast<double>(m_row * 2) - 39.5) * row_scale;
+			+ (static_cast<double>(m_row * 2) - row_center) * row_scale;
 		const double lower_origin = m_center_y
-			+ (static_cast<double>(m_row * 2 + 1) - 39.5) * row_scale;
+			+ (static_cast<double>(m_row * 2 + 1) - row_center) * row_scale;
 		char* dst = m_row_buffer;
 
-		for(hxsize_t col = 0; col < 80; ++col) {
-			const double real_origin = m_center_x + (static_cast<double>(col) - 39.5) * col_scale;
+		for(hxsize_t col = 0; col < s_example_columns; ++col) {
+			const double real_origin = m_center_x + (static_cast<double>(col) - col_center) * col_scale;
 			unsigned upper_r, upper_g, upper_b;
 			unsigned lower_r, lower_g, lower_b;
 			this->color(real_origin, upper_origin, upper_r, upper_g, upper_b);
@@ -158,27 +166,34 @@ private:
 	char* m_row_buffer;
 };
 
-// Enqueues all 40 row tasks, waits for completion, then prints the frame.
-bool example_render(hx::hxtask_queue& queue, hx::hxarray<example_row_task, 40>& tasks,
-		hx::hxarray<hx::hxarray<char, 4096>, 40>& row_storage) {
+using example_frame_t = hx::hxarray<hx::hxarray<char, 4096>, s_example_rows>;
+using example_tasks_t = hx::hxarray<example_row_task, s_example_rows>;
+
+// Enqueues a task per row, waits for completion and profiles the frame.
+void example_compute(hx::hxtask_queue& queue, example_tasks_t& tasks, example_frame_t& frame) {
 	hxsize_t max_iter = static_cast<hxsize_t>(50.0 * ::sqrt(::sqrt(1.0 / s_example_zoom))) + 20;
 	if(max_iter < 64)   { max_iter = 64; }
 	if(max_iter > 4096) { max_iter = 4096; }
 
 	hxprofiler_start();
 
-	for(hxsize_t row = 0; row < 40; ++row) {
+	for(hxsize_t row = 0; row < s_example_rows; ++row) {
 		tasks[row].set(row, s_example_center_x, s_example_center_y, s_example_zoom,
-			max_iter, row_storage[row].data());
+			max_iter, frame[row].data());
 		queue.enqueue(&tasks[row]);
 	}
 	queue.wait_for_all();
 
 	hxprofiler_stop();
+}
+
+// Computes and prints a frame and writes the profile of computing it.
+bool example_render(hx::hxtask_queue& queue, example_tasks_t& tasks, example_frame_t& frame) {
+	example_compute(queue, tasks, frame);
 	hxprofiler_write_to_chrome_tracing("profile.json");
 
-	for(hxsize_t row = 0; row < 40; ++row) {
-		hx::hxout.print("%s", row_storage[row].data());
+	for(hxsize_t row = 0; row < s_example_rows; ++row) {
+		hx::hxout.print("%s", frame[row].data());
 	}
 
 	hx::hxout.print("center (%.6g, %.6g) zoom %.6g\n",
@@ -197,10 +212,11 @@ void example_usage(void) {
 		"\tdown f64\n"
 		"\tin f64\n"
 		"\tout f64\n"
+		"\truntests\n"
 		"\texit\n");
 }
 
-int example_main(void) {
+int example_main(int argc, char** argv) {
 	hxinit();
 
 	struct ::sigaction sa;
@@ -210,17 +226,25 @@ int example_main(void) {
 	::sigaction(SIGINT, &sa, hxnull);
 
 	int exit_code = EXIT_SUCCESS;
-	if(!hx::hxconsole_exec_filename("example.cfg")) {
+	if(argc > 1) {
+		// Each argument is a console command.
+		for(int i = 1; i < argc; ++i) {
+			if(!hx::hxconsole_exec_line(argv[i])) {
+				exit_code = EXIT_FAILURE;
+			}
+		}
+	}
+	else if(!hx::hxconsole_exec_filename("example.cfg")) {
 		hx::hxout << "error: example.cfg not found or failed to execute\n";
 		exit_code = EXIT_FAILURE;
-	} else {
-		hx::hxarray<hx::hxarray<char, 4096>, 40>* row_storage =
-			hx::hxnew<hx::hxarray<hx::hxarray<char, 4096>, 40>>();
+	}
+	else {
+		example_frame_t* frame = hx::hxnew<example_frame_t>();
 
-		hx::hxtask_queue queue(40, 8);
-		hx::hxarray<example_row_task, 40> tasks;
+		hx::hxtask_queue queue(static_cast<int32_t>(s_example_rows), 8);
+		example_tasks_t tasks;
 
-		example_render(queue, tasks, *row_storage);
+		example_render(queue, tasks, *frame);
 		example_usage();
 
 		char line[256];
@@ -231,21 +255,121 @@ int example_main(void) {
 			}
 			if(hx::hxconsole_exec_line(line)) {
 				if(s_example_exit) { break; }
-				example_render(queue, tasks, *row_storage);
+				example_render(queue, tasks, *frame);
 			}
 			else {
 				example_usage();
 			}
 		}
-		hx::hxdelete(row_storage);
+		hx::hxdelete(frame);
 	}
 
 	hxshutdown();
 	return exit_code;
 }
 
+// -- Tests ---------------------------------------------------------------------
+// "hxexample runtests" runs these with hxtest, which reports them with the Test
+// Anything Protocol by default. See HX_USE_TEST_FRAMEWORK.
+
+bool example_run_tests(void) {
+	// The tests run on a temporary stack, which also holds the frame they
+	// render. The stacks can only be allocated once.
+	static bool s_example_stacks_allocated = false;
+	if(!s_example_stacks_allocated) {
+		s_example_stacks_allocated = true;
+		const size_t stack_sizes[] = { 256u * HX_KIB };
+		hx::hxslab_allocator_allocate_stacks(stack_sizes);
+	}
+	return RUN_ALL_TESTS() == 0;
+}
+
+hxconsole_command_named(example_run_tests, runtests);
+
+TEST(example, color) {
+	example_row_task task;
+	task.set(0, 0.0, 0.0, 3.0, 64, hxnull);
+	unsigned r = 1u, g = 1u, b = 1u;
+
+	// 0 never escapes and is black.
+	task.color(0.0, 0.0, r, g, b);
+	EXPECT_EQ(r, 0u);
+	EXPECT_EQ(g, 0u);
+	EXPECT_EQ(b, 0u);
+
+	// 2 escapes on the first iteration and is colored.
+	task.color(2.0, 0.0, r, g, b);
+	EXPECT_LE(r, 255u);
+	EXPECT_LE(g, 255u);
+	EXPECT_LE(b, 255u);
+	EXPECT_NE(r + g + b, 0u);
+}
+
+TEST(example, commands) {
+	// The console binds the variables and commands that move the view.
+	EXPECT_TRUE(hx::hxconsole_exec_line("center_x 0"));
+	EXPECT_TRUE(hx::hxconsole_exec_line("center_y 0"));
+	EXPECT_TRUE(hx::hxconsole_exec_line("zoom 2"));
+	EXPECT_TRUE(hx::hxconsole_exec_line("right 0.5"));
+	EXPECT_TRUE(hx::hxconsole_exec_line("down 0.25"));
+	EXPECT_TRUE(hx::hxconsole_exec_line("in 4"));
+	EXPECT_DOUBLE_EQ(s_example_center_x, 1.0);
+	EXPECT_DOUBLE_EQ(s_example_center_y, 0.5);
+	EXPECT_DOUBLE_EQ(s_example_zoom, 0.5);
+}
+
+TEST(example, config) {
+	// example.cfg is a list of console commands setting the initial view.
+	ASSERT_TRUE(hx::hxconsole_exec_filename("example.cfg"));
+	EXPECT_DOUBLE_EQ(s_example_center_x, -0.7269);
+	EXPECT_DOUBLE_EQ(s_example_center_y, 0.1889);
+	EXPECT_DOUBLE_EQ(s_example_zoom, 0.006);
+}
+
+TEST(example, render) {
+	ASSERT_TRUE(hx::hxconsole_exec_filename("example.cfg"));
+
+	example_frame_t* frame = hx::hxnew<example_frame_t>();
+	{
+		hx::hxtask_queue queue(static_cast<int32_t>(s_example_rows), 8);
+		example_tasks_t tasks;
+		example_compute(queue, tasks, *frame);
+	}
+
+	// Every cell is a background color, a foreground color and a lower half
+	// block. The view has points in the set, which are black, and points
+	// outside it.
+	int black = 0;
+	int colored = 0;
+	for(hxsize_t row = 0; row < s_example_rows; ++row) {
+		const char* cursor = (*frame)[row].data();
+		for(hxsize_t col = 0; col < s_example_columns; ++col) {
+			unsigned rgb[6] = { };
+			int length = 0;
+			EXPECT_EQ(::sscanf(cursor, "\033[48;2;%u;%u;%u;38;2;%u;%u;%um\xe2\x96\x84%n",
+				rgb + 0, rgb + 1, rgb + 2, rgb + 3, rgb + 4, rgb + 5, &length), 6);
+			if(length == 0) {
+				break; // Reported above.
+			}
+			for(int i = 0; i < 6; ++i) {
+				EXPECT_LE(rgb[i], 255u);
+			}
+			black += (rgb[0] | rgb[1] | rgb[2]) == 0u;
+			black += (rgb[3] | rgb[4] | rgb[5]) == 0u;
+			colored += (rgb[0] | rgb[1] | rgb[2]) != 0u;
+			colored += (rgb[3] | rgb[4] | rgb[5]) != 0u;
+			cursor += length;
+		}
+		EXPECT_STREQ(cursor, "\033[0m\n");
+	}
+	EXPECT_GT(black, 0);
+	EXPECT_GT(colored, 0);
+
+	hx::hxdelete(frame);
+}
+
 } // namespace
 
-int main(void) {
-	return example_main();
+int main(int argc, char** argv) {
+	return example_main(argc, argv);
 }

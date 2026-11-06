@@ -27,7 +27,8 @@ $distributions = [ordered]@{
 	debian = @{ Image = 'debian:13';                 Install = 'install_deb.sh' }
 	mint   = @{ Image = 'linuxmintd/mint22.3-amd64'; Install = 'install_deb.sh' }
 	rocky  = @{ Image = 'rockylinux/rockylinux:10';  Install = 'install_rpm.sh' }
-	ubuntu = @{ Image = 'ubuntu:26.04';              Install = 'install_deb.sh' }
+	# The emsdk and Pico SDK downloads are only in the Ubuntu image.
+	ubuntu = @{ Image = 'ubuntu:26.04';              Install = 'install_deb.sh'; Options = '--sdks' }
 }
 
 $build_dir = 'build'
@@ -59,6 +60,7 @@ function Get-ContainerBuild([string]$distribution) {
 	$image = $distributions[$distribution]
 	$name = "libhatchet-test-$distribution"
 	$tag = "libhatchet-test/$($image.Image)"
+	$install = "$($image.Install) $($image.Options)".Trim()
 
 	$listed = wslc images --format json --filter "reference=$tag" |
 		ConvertFrom-Json
@@ -69,7 +71,7 @@ function Get-ContainerBuild([string]$distribution) {
 		Copy-Item $image.Install $context
 		Set-Content "$context\Dockerfile" -NoNewline -Encoding ascii ("FROM $($image.Image)`n" +
 			"RUN --mount=type=bind,source=$($image.Install),target=/$($image.Install)" +
-			" bash /$($image.Install)`n")
+			" bash /$install`n")
 
 		# A kept container prevents its image from being removed.
 		"(wslc remove -f $name >nul 2>&1 & wslc rmi $tag >nul 2>&1" +
@@ -83,6 +85,7 @@ function Get-ContainerTest([string]$distribution, [int]$jobs) {
 	$image = $distributions[$distribution]
 	$name = "libhatchet-test-$distribution"
 	$tag = "libhatchet-test/$($image.Image)"
+	$install = "$($image.Install) $($image.Options)".Trim()
 
 	$required = @(
 		# The init process exits on SIGTERM, stopping the container.
@@ -101,7 +104,7 @@ function Get-ContainerTest([string]$distribution, [int]$jobs) {
 		"wslc exec -i $name tar -xf - --no-same-permissions -C /libhatchet <$build_dir\libhatchet.tar"
 
 		# Confirms that the image has every package and nothing is installed.
-		"wslc exec $name sh -c `"bash $($image.Install) | tee /dev/stderr" +
+		"wslc exec $name sh -c `"bash $install | tee /dev/stderr" +
 			" | grep -q packages_already_installed`""
 
 		# Executable bits are not tested.
@@ -208,10 +211,6 @@ function Main([bool]$verbose, [bool]$clear_wslc) {
 		}
 	}
 
-	if ($failed -eq 0) {
-		Remove-Item -Recurse -Force $build_dir, cache
-	}
-
 	Write-Host '## results'
 	$results | ForEach-Object { Write-Host $_ }
 	exit $failed
@@ -224,3 +223,4 @@ if ($args.Count -ne [int]$verbose + [int]$clear_wslc) {
 	exit 1
 }
 Main $verbose $clear_wslc
+Write-Host '🪓🪓🪓'

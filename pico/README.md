@@ -4,8 +4,9 @@ Builds and runs the libhatchet test suite on a Raspberry Pi Pico 2, streaming
 results over USB serial. It should work on the Pi Pico 1 although a couple of
 the tests may need to be modified to use less memory.
 
-You may need to customize the environment variables at the top of
-`./libhatchet_flash_pico.sh` before this works for you.
+The Pico SDK is used from `PICO_SDK_PATH` or from `~/pico-sdk`, where
+`install_deb.sh --sdks` installs it along with picotool. Running
+`cmake -S . -B ../build` here then works without the flash script.
 
 1. Hold the **BOOTSEL** button on the Pico, then plug the Pico in and release the button.
 2. If using WSL in PowerShell as Admin run `.\attach_pico.ps1` and keep the window open.

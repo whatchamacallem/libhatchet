@@ -92,3 +92,5 @@ git update-ref -d "refs/remotes/origin/gh-pages" 2> /dev/null || true
 git prune --expire=now
 
 echo -e "\e[38;5;208mDone releasing $HX_TAG_ ($HX_DESCRIBE_).\e[0m"
+
+echo 🪓🪓🪓

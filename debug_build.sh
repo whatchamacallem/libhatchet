@@ -176,7 +176,7 @@ if [ "$HX_OPT_RUN_" = "1" ]; then
 		./hxtest $HX_GTEST_FLAG_ "check_stats 1" runtests
 	else
 		if ./hxtest $HX_GTEST_FLAG_ "check_stats 1" runtests > console_output.txt 2>&1; then
-			grep -E 'gtest_arg|\[  PASSED  \]|\[  FAILED  \]|FAILED TESTS' console_output.txt
+			grep -E '^WARNING gtest_arg|^(not ok|Bail out!|# )|\[  PASSED  \]|FAILED TESTS' console_output.txt
 		else
 			cat console_output.txt
 			exit 1
