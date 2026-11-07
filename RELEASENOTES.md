@@ -3,7 +3,7 @@
 ## v1.54.3 2026-11-03
 
 ```text
-- Added `--sdks` to `install_deb.sh` to install `emcc` and the Pico` SDK on Ubuntu.
+- Added `--sdks` to `install_deb.sh` to install `emcc` and the Pico SDK on Ubuntu.
 - Replaced the example with `target/test_target.cpp`, a small test program for
   embedded targets that reports with TAP. `test_target.sh` builds it for the
   desktop with Meson, which consumes the report, and with the Pico SDK using

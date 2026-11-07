@@ -129,6 +129,7 @@ if not meson.is_subproject()
 		hxtest_target = executable('hxtest_target',
 			sources : [libhatchet_module, _hxtarget_obj],
 			link_args : hxwarning_args + get_option('cpp_link_args'),
+			link_language : 'cpp',
 		)
 	else
 		hxtest_target = executable('hxtest_target',

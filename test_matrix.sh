@@ -51,7 +51,7 @@ fi
 run_hxtest() {
 	if ./hxtest runtests > console_output.txt 2>&1; then
 		# The summary of a TAP report or of Google Test style reporting.
-		grep -E '^(not ok|Bail out!|# )|\[  PASSED  \]|FAILED TESTS' \
+		grep -E '^(not ok|Bail out!|# (passed|failed) )|\[  PASSED  \]|FAILED TESTS' \
 			console_output.txt || cat console_output.txt
 		rm -f hxtest *.o *.txt *.bin *.json
 	else

@@ -131,7 +131,7 @@ if command -v musl-gcc > /dev/null 2>&1; then
 else
 	echo "test_strip.sh skipped. Requires musl-gcc."
 fi
-if [ -d "emsdk" ]; then
+if [ -d "$HOME/emsdk" ]; then
 	./test_wasm.sh $HX_VERBOSE_
 else
 	echo "test_wasm.sh skipped. Requires emsdk."

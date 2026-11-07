@@ -7,7 +7,6 @@
 // what a port depends on. Build it with src/*.cpp and libc. It reports with the
 // Test Anything Protocol (TAP). See target/README.md.
 
-#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -72,12 +71,14 @@ TEST(target, integers) {
 }
 
 // libc for embedded targets is often built without floating point formatting.
+// The C++ <math.h> includes a <new> that conflicts with the hx placement new when
+// an SDK requires the C++ headers, so this calls libm with the builtin.
 TEST(target, floating_point) {
 	volatile double two = 2.0;
-	EXPECT_NEAR(::sqrt(two), 1.41421356, 0.00000001);
+	EXPECT_NEAR(__builtin_sqrt(two), 1.41421356, 0.00000001);
 
 	char buffer[16];
-	EXPECT_EQ(::snprintf(buffer, sizeof buffer, "%.3f", ::sqrt(two)), 5);
+	EXPECT_EQ(::snprintf(buffer, sizeof buffer, "%.3f", __builtin_sqrt(two)), 5);
 	EXPECT_STREQ(buffer, "1.414");
 }
 

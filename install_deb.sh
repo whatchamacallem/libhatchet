@@ -9,7 +9,7 @@
 # usage: install_deb.sh [--sdks]
 #
 # It should be safe to just run this script. --sdks also installs the emsdk,
-# which test_wasm.sh requires, and the Pico SDK with picotool, which the pico
+# which test_wasm.sh requires, and the Pico SDK with picotool, which the target
 # directory requires. They go in ~/emsdk and ~/pico-sdk.
 
 trap 'trap "" INT PIPE TERM; pkill -P $$; wait; exit 1' INT PIPE TERM
@@ -30,11 +30,11 @@ HX_SDK_PACKAGES_="
 	libstdc++-arm-none-eabi-newlib libusb-1.0-0-dev  pkg-config
 	xz-utils"
 
-HX_EMSDK_="emsdk"
+HX_EMSDK_="$HOME/emsdk"
 
-HX_PICO_SDK_="pico-sdk"
+HX_PICO_SDK_="$HOME/pico-sdk"
 HX_PICO_SDK_VERSION_=2.3.1
-HX_PICOTOOL_DIR_="$HX_PICO_SDK_/picotool"
+HX_PICOTOOL_DIR_="$HOME/picotool"
 
 # -- Line Art ------------------------------------------------------------------
 HX_COLORS_=(208 214 220 226 190 154 118 82 83 84 85 86 87 45 39 33
@@ -115,15 +115,15 @@ fi
 if [ ! -x "$HX_PICOTOOL_DIR_/picotool" ]; then
 	line
 	[ -d "$HX_PICO_SDK_" ] || git -c advice.detachedHead=false clone \
-		--depth 1 --branch "$HX_PICO_SDK_VERSION_"                    \
-		--recurse-submodules --shallow-submodules                     \
+		--depth 1 --branch "$HX_PICO_SDK_VERSION_"                   \
+		--recurse-submodules --shallow-submodules                    \
 		https://github.com/raspberrypi/pico-sdk.git "$HX_PICO_SDK_"
 	HX_TMP_DIR_=$(mktemp -d)
 	git -c advice.detachedHead=false clone --depth 1                        \
 		--branch "$HX_PICO_SDK_VERSION_"                                    \
 		https://github.com/raspberrypi/picotool.git "$HX_TMP_DIR_/picotool"
 	cmake -S "$HX_TMP_DIR_/picotool" -B "$HX_TMP_DIR_/build" -G Ninja \
-		-DCMAKE_BUILD_TYPE=Release -DPICO_SDK_PATH="$HX_PICO_SDK_"   \
+		-DCMAKE_BUILD_TYPE=Release -DPICO_SDK_PATH="$HX_PICO_SDK_"    \
 		-DPICOTOOL_FLAT_INSTALL=1                                     \
 		-DCMAKE_INSTALL_PREFIX="$(dirname "$HX_PICOTOOL_DIR_")"
 	cmake --build "$HX_TMP_DIR_/build"

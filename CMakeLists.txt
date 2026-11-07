@@ -185,12 +185,6 @@ if(HX_PICO)
 
 	add_executable(hxtest_target target/test_target.cpp)
 
-	# Builds the same way as hatchet. The C++ <math.h> includes a conflicting <new>
-	# and the SDK compiles C++ of its own as part of this target.
-	set_source_files_properties(target/test_target.cpp PROPERTIES
-		COMPILE_OPTIONS "-fno-rtti;-nostdinc++"
-		INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/target"
-	)
 	target_compile_options(hxtest_target PRIVATE
 		-fno-exceptions
 		-Wall

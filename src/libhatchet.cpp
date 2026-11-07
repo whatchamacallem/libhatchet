@@ -186,7 +186,8 @@ hxattr_weak hxattr_noexcept void hxlog_handler_v(hxlog_level_t level, const char
 	len = hxclamp(len, 0, (HX_MAX_LINE)-2);
 
 	// The TAP-Protocol uses a `#` prefix for logging. It is enabled at all
-    // times for API stability.
+	// times for API stability. An empty message has none because it would be
+	// left in front of the next line.
 #if HX_USE_FILE_IO
 	hxfile& f = level == hxlog_level_log ? hxout : hxerr;
 	if(level == hxlog_level_warning) {
@@ -197,7 +198,7 @@ hxattr_weak hxattr_noexcept void hxlog_handler_v(hxlog_level_t level, const char
 		f << "# ASSERT_FAIL ";
 		line_buf[len++] = '\n';
 	}
-	else {
+	else if(len != 0) {
 		f << "# ";
 	}
 	f.write(line_buf, static_cast<size_t>(len));
@@ -211,7 +212,7 @@ hxattr_weak hxattr_noexcept void hxlog_handler_v(hxlog_level_t level, const char
 		::fputs("# ASSERT_FAIL ", stdout);
 		line_buf[len++] = '\n';
 	}
-	else {
+	else if(len != 0) {
 		::fputs("# ", stdout);
 	}
 	::fwrite(line_buf, 1u, static_cast<size_t>(len), stdout);

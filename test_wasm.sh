@@ -49,7 +49,7 @@ printf '%s\0' "$HX_DIR_"/src/*.cpp "$HX_DIR_"/test/*.cpp |
 		-DHX_USE_THREADS=1 -DHX_USE_CONSOLE=1 -Wno-c2y-extensions -pthread   \
 		-std=c++23 -flto=auto -I"$HX_DIR_/include" -c
 
-emcc -O2 -pthread -sEXIT_RUNTIME=1 -sPTHREAD_POOL_SIZE=4 -sPROXY_TO_PTHREAD \
+em++ -O2 -pthread -sEXIT_RUNTIME=1 -sPTHREAD_POOL_SIZE=4 -sPROXY_TO_PTHREAD \
 	-flto=auto *.o -o index.html
 
 if [ "${1:-}" = "--verbose" ]; then

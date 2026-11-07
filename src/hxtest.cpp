@@ -23,33 +23,33 @@ namespace hxdetail_ {
 
 constexpr int hxmax_fail_messages_ = 5;
 
-#if (HX_USE_TEST_FRAMEWORK) == 0
-// hxtest_tap_ - Internal. Writes part of the Test Anything Protocol (TAP) report
-// to hxout. It is flushed so that the report is complete when a test crashes
-// and in order with hxerr when both are redirected to the same file.
-static void hxtest_tap_(const char* format, ...) hxattr_printf(1, 2);
-static void hxtest_tap_(const char* format, ...) {
+// hxtest_log_ - Internal. Do not use hxlog_handler_v because that makes
+// everything a TAP comment. The constant flushing is in case of crashes.
+static void hxtest_log_(const char* format, ...) hxattr_printf(1, 2) {
+	char line_buf[HX_MAX_LINE];
 	va_list args; // NOLINT(cppcoreguidelines-init-variables)
 	va_start(args, format);
-	hxlog_handler_v(hxlog_level_log, format, args);
+	const int len = ::vsnprintf(line_buf, HX_MAX_LINE, format, args);
 	va_end(args);
+	const size_t count = static_cast<size_t>(hxclamp(len, 0, (HX_MAX_LINE)-1));
 #if HX_USE_FILE_IO
+	hxout.write(line_buf, count);
 	hxout.flush();
 #else
+	::fwrite(line_buf, 1u, count, stdout);
 	::fflush(stdout);
 #endif
 }
-#endif
 
 // hxtest_report_ - Internal. Reports the result of a test. TAP numbers the
 // tests from 1.
 static void hxtest_report_(const hxtest_case_* test, int number, bool passed) {
 #if (HX_USE_TEST_FRAMEWORK) == 1
 	(void)number;
-	hxlog_console("%s %s.%s\n", passed ? "[       OK ]" : "[  FAILED  ]",
+	hxtest_log_("%s %s.%s\n", passed ? "[       OK ]" : "[  FAILED  ]",
 		test->m_suite_, test->m_case_);
 #else
-	hxtest_tap_("%s %d - %s.%s\n", passed ? "ok" : "not ok", number,
+	hxtest_log_("%s %d - %s.%s\n", passed ? "ok" : "not ok", number,
 		test->m_suite_, test->m_case_);
 #endif
 }
@@ -159,11 +159,11 @@ void hxtest_::condition_check_(bool condition, const char* file, int line,
 			hxlog_handler(hxlog_level_assert, "test_fail_at %s(%d): %s", file, line, message);
 			hxlog_handler(hxlog_level_assert, "test_assert_fail ❌");
 #if (HX_USE_TEST_FRAMEWORK) == 1
-			hxlog_console("[==========] aborted after %d passed, %d failed, %d assertions.\n",
+			hxtest_log_("[==========] aborted after %d passed, %d failed, %d assertions.\n",
 				m_pass_count_, m_fail_count_ + 1, m_total_assert_count_);
 #else
 			hxtest_report_(m_current_test_, m_pass_count_ + m_fail_count_ + 1, false);
-			hxtest_tap_("Bail out! %d passed, %d failed, %d assertions.\n",
+			hxtest_log_("Bail out! %d passed, %d failed, %d assertions.\n",
 				m_pass_count_, m_fail_count_ + 1, m_total_assert_count_);
 #endif
 			hxbreakpoint();
@@ -173,7 +173,7 @@ void hxtest_::condition_check_(bool condition, const char* file, int line,
 
 		if(m_assert_count_ > hxmax_fail_messages_) {
 			if(m_assert_count_ == hxmax_fail_messages_ + 1) {
-				hxlog_console("remaining asserts will fail silently...\n");
+				hxtest_log_("# remaining asserts will fail silently...\n");
 			}
 			return;
 		}
@@ -323,11 +323,11 @@ int hxtest_::run_all_tests_(void) {
 	}
 
 #if (HX_USE_TEST_FRAMEWORK) == 1
-	hxlog_console("[==========] Running tests: %s\n", // GCOVR_EXCL_LINE
+	hxtest_log_("[==========] Running tests: %s\n", // GCOVR_EXCL_LINE
 		(hxg_settings.test_filter ? hxg_settings.test_filter : "All"));
 #else
 	// The plan comes first because the number of tests is known.
-	hxtest_tap_("TAP version 13\n1..%d\n", static_cast<int>(m_test_cases_.size()));
+	hxtest_log_("TAP version 13\n1..%d\n", static_cast<int>(m_test_cases_.size()));
 #endif
 
 	m_pass_count_ = m_fail_count_ = 0;
@@ -350,7 +350,7 @@ int hxtest_::run_all_tests_(void) {
 
 	for(hxtest_case_** it = m_test_cases_.begin(); it != m_test_cases_.end(); ++it) {
 #if (HX_USE_TEST_FRAMEWORK) == 1
-		hxlog_console("[ RUN      ] %s.%s\n", (*it)->m_suite_, (*it)->m_case_);
+		hxtest_log_("[ RUN      ] %s.%s\n", (*it)->m_suite_, (*it)->m_case_);
 #endif
 		m_current_test_ = *it;
 		m_test_state_ = test_state_::nothing_asserted_;
@@ -397,7 +397,7 @@ int hxtest_::run_all_tests_(void) {
 	hxslab_allocator_utilization(false, true);
 
 #if (HX_USE_TEST_FRAMEWORK) == 1
-	hxlog_console("[==========] skipped %d tests. failed %d assertions.\n",
+	hxtest_log_("[==========] skipped %d tests. failed %d assertions.\n",
 		(int)m_test_cases_.size() - m_pass_count_ - m_fail_count_, m_total_assert_count_);
 #endif
 
@@ -410,7 +410,7 @@ int hxtest_::run_all_tests_(void) {
 		hxlog_handler(hxlog_level_console, "[  PASSED  ] %d test%s.\n", m_pass_count_,
 			((m_pass_count_ != 1) ? "s" : ""));
 #else
-		hxtest_tap_("# passed %d test%s.\n", m_pass_count_, ((m_pass_count_ != 1) ? "s" : ""));
+		hxtest_log_("# passed %d test%s.\n", m_pass_count_, ((m_pass_count_ != 1) ? "s" : ""));
 #endif
 		// GCOVR_EXCL_STOP
 	}
@@ -419,7 +419,7 @@ int hxtest_::run_all_tests_(void) {
 		hxlog_handler(hxlog_level_console, "%d FAILED TEST%s ❌\n", m_fail_count_,
 			m_fail_count_ == 1 ? "" : "S"); // GCOVR_EXCL_LINE
 #else
-		hxtest_tap_("# failed %d of %d tests and %d assertion%s ❌\n", m_fail_count_,
+		hxtest_log_("# failed %d of %d tests and %d assertion%s ❌\n", m_fail_count_,
 			m_pass_count_ + m_fail_count_, m_total_assert_count_,
 			m_total_assert_count_ == 1 ? "" : "s"); // GCOVR_EXCL_LINE
 #endif

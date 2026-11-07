@@ -45,20 +45,32 @@ HX_CPP_FLAGS_="$HX_C_FLAGS_ -DHX_USE_STD_LIB=0 -DHX_USE_NAMESPACE=hx -DHX_USE_CO
 	-std=c++23 -nostdinc++ -fno-exceptions -fno-rtti"
 HX_LINK_FLAGS_="-nodefaultlibs -lc -lpthread -lm"
 
-# Build artifacts are not retained.
-clean_build() {
+run_target() {
+	# Build artifacts are not retained.
 	rm -rf "$(readlink -f build)" build; mkdir build
-}
-
-# Shows the output of a build step only when it fails or with --verbose.
-build_step() {
 	if [ -n "$HX_VERBOSE_" ]; then
-		"$@"
-	elif ! "$@" > build/build_step_out.txt 2>&1; then
-		cat build/build_step_out.txt
-		echo "error: $1 failed"
-		exit 1
+		meson setup build --buildtype=debug -Dc_args="$HX_C_FLAGS_"       \
+			-Dcpp_args="$HX_CPP_FLAGS_" -Dcpp_link_args="$HX_LINK_FLAGS_" "$@"
+		ninja -v -C build -j "$HX_JOBS_"
+	else
+		if ! meson setup build --buildtype=debug -Dc_args="$HX_C_FLAGS_"      \
+				-Dcpp_args="$HX_CPP_FLAGS_" -Dcpp_link_args="$HX_LINK_FLAGS_" \
+				"$@" > build/meson_setup_out.txt 2>&1; then
+			cat build/meson_setup_out.txt
+			echo "error: meson setup failed"
+			exit 1
+		fi
+		if ! ninja -C build -j "$HX_JOBS_" >build/ninja_out.txt 2>&1; then
+			cat build/ninja_out.txt
+			echo "error: ninja build failed"
+			exit 1
+		fi
 	fi
+
+	# The link lets the .vscode configuration debug it as build/hxtest.
+	ln -sf hxtest_target build/hxtest
+
+	meson test -C build --no-rebuild --print-errorlogs $HX_VERBOSE_
 }
 
 if [ -n "$HX_VERBOSE_" ]; then
@@ -67,41 +79,47 @@ fi
 
 # -- Meson ---------------------------------------------------------------------
 
-# build_module=auto uses textual includes when the compiler has no modules, e.g.
-# GCC 14 on Debian 13.
-for HX_NATIVE_ in "$HX_CLANG_NATIVE_" "$HX_GCC_NATIVE_"; do
-	for HX_MODULE_ in disabled auto; do
-		echo "$HX_NATIVE_ meson+ninja with build_module=$HX_MODULE_..."
-		clean_build
-		build_step meson setup build --buildtype=debug --native-file="$HX_NATIVE_" \
-			-Dbuild_module="$HX_MODULE_" -Dc_args="$HX_C_FLAGS_"                 \
-			-Dcpp_args="$HX_CPP_FLAGS_" -Dcpp_link_args="$HX_LINK_FLAGS_"
-		build_step meson compile -C build -j "$HX_JOBS_" $HX_VERBOSE_
+echo "$HX_CLANG_NATIVE_ meson+ninja with textual includes..."
+run_target --native-file="$HX_CLANG_NATIVE_" -Dbuild_module=disabled
 
-		# The link lets the .vscode configuration debug it as build/hxtest.
-		ln -sf hxtest_target build/hxtest
+echo "$HX_CLANG_NATIVE_ meson+ninja with named module..."
+run_target --native-file="$HX_CLANG_NATIVE_"
 
-		meson test -C build --no-rebuild --print-errorlogs $HX_VERBOSE_
-	done
-done
+echo "$HX_GCC_NATIVE_ meson+ninja with textual includes..."
+run_target --native-file="$HX_GCC_NATIVE_" -Dbuild_module=disabled
+
+# Textual includes are built with GCC 14, e.g. Debian 13.
+echo "$HX_GCC_NATIVE_ meson+ninja with named module..."
+run_target --native-file="$HX_GCC_NATIVE_"
 
 # -- Pico SDK ------------------------------------------------------------------
 
-# The SDK is a CMake project and CMakeLists.txt builds target/test_target.cpp
-# with it when PICO_BOARD is set. It is at PICO_SDK_PATH or at ~/pico-sdk where
-# "install_deb.sh --sdks" installs it. Running it takes a board. See
-# target/libhatchet_flash_pico.sh.
-PICO_SDK_PATH="${PICO_SDK_PATH:-$HOME/pico-sdk}"
+HX_PICO_SDK_="$HOME/pico-sdk"
 PICO_BOARD="${PICO_BOARD:-pico2}"
-if [ -f "$PICO_SDK_PATH/pico_sdk_init.cmake" ] && command -v arm-none-eabi-gcc > /dev/null 2>&1; then
+if [ -f "$HX_PICO_SDK_/pico_sdk_init.cmake" ] && command -v arm-none-eabi-gcc > /dev/null 2>&1; then
 	echo "$PICO_BOARD cmake+ninja with the Pico SDK..."
-	clean_build
-	build_step cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -Wno-dev \
-		-DPICO_BOARD="$PICO_BOARD" -DPICO_SDK_PATH="$PICO_SDK_PATH"
-	build_step cmake --build build -j "$HX_JOBS_" $HX_VERBOSE_
+	rm -rf "$(readlink -f build)" build; mkdir build
+	if [ -n "$HX_VERBOSE_" ]; then
+		cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -Wno-dev \
+			-DPICO_BOARD="$PICO_BOARD" -DPICO_SDK_PATH="$HX_PICO_SDK_"
+		ninja -v -C build -j "$HX_JOBS_"
+	else
+		if ! cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -Wno-dev \
+				-DPICO_BOARD="$PICO_BOARD" -DPICO_SDK_PATH="$HX_PICO_SDK_"   \
+				> build/cmake_out.txt 2>&1; then
+			cat build/cmake_out.txt
+			echo "error: cmake failed"
+			exit 1
+		fi
+		if ! ninja -C build -j "$HX_JOBS_" >build/ninja_out.txt 2>&1; then
+			cat build/ninja_out.txt
+			echo "error: ninja build failed"
+			exit 1
+		fi
+	fi
 	ls build/hxtest_target.uf2
 else
-	echo "Pico SDK skipped. Requires arm-none-eabi-gcc and PICO_SDK_PATH=$PICO_SDK_PATH."
+	echo "Pico SDK skipped. Requires arm-none-eabi-gcc and HX_PICO_SDK_=$HX_PICO_SDK_."
 fi
 
 echo 🪓🪓🪓

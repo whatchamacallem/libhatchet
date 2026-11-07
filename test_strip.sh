@@ -68,7 +68,7 @@ if [ "${1:-}" = "--verbose" ]; then
 	./hxtest-strip "check_stats 1" runtests
 else
 	if ./hxtest-strip "check_stats 1" runtests > console_output.txt 2>&1; then
-		grep -E '^(not ok|Bail out!|# )' console_output.txt
+		grep -E '^(not ok|Bail out!|# (passed|failed) )' console_output.txt
 	else
 		cat console_output.txt
 		exit 1
