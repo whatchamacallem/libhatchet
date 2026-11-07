@@ -2,7 +2,7 @@
 
 This guide describes running a libhatchet version of "Axe World" on Ubuntu.
 
-See the example directory for a program demonstrating more complex usage.
+See `target/test_target.cpp` for a small program using more of the library.
 
 ## Install Source and Tools
 

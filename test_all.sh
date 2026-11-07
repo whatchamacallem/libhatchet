@@ -30,12 +30,6 @@ if [ "$(uname -s)" = Darwin ]; then
 	export PATH="$(brew --prefix grep)/libexec/gnubin:$PATH"
 fi
 
-# emsdk_env.sh adds emcc and node to the PATH. "install_deb.sh --sdks" installs
-# the emsdk to ~/emsdk.
-if ! command -v emcc > /dev/null 2>&1 && [ -f "${EMSDK:-$HOME/emsdk}/emsdk_env.sh" ]; then
-	EMSDK_QUIET=1 . "${EMSDK:-$HOME/emsdk}/emsdk_env.sh"
-fi
-
 # Delete files matching .gitignore and reset ccache. Required for following
 # tests to avoid matches with intermediates.
 ./clean.sh
@@ -137,10 +131,10 @@ if command -v musl-gcc > /dev/null 2>&1; then
 else
 	echo "test_strip.sh skipped. Requires musl-gcc."
 fi
-if command -v emcc > /dev/null 2>&1; then
+if [ -d "emsdk" ]; then
 	./test_wasm.sh $HX_VERBOSE_
 else
-	echo "test_wasm.sh skipped. Requires emcc."
+	echo "test_wasm.sh skipped. Requires emsdk."
 fi
 
 ./debug_build.sh $HX_VERBOSE_ --grind --run

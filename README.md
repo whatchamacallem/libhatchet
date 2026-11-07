@@ -177,9 +177,11 @@ macOS 27 arm64 is tested using Homebrew GCC 16, Apple Clang 21 and Homebrew
 LLVM 23 for C++ modules. Builds are 64-bit only and `test_strip.sh`,
 `test_wasm.sh` and the GDB tests are skipped.
 
-The `pico` contains a port of the test suite to the Raspberry Pi Pico 2 which
-can be used as an example. There is almost nothing to do when setting up. This
-is because libc provides almost all of the device abstraction required.
+The `target` directory contains a small test program for embedded targets.
+`test_target.sh` builds it with the Pico SDK for the Raspberry Pi Pico 2 as well
+as for the desktop. There is almost nothing to do when porting to a new one.
+This is because libc provides almost all of the device abstraction required. See
+`target/README.md`.
 
 The scripted builds exercise the following toolchains, language modes and
 `HX_HARDENING_MODE` combinations:
@@ -191,7 +193,7 @@ The scripted builds exercise the following toolchains, language modes and
 | `test_coverage.sh` | `gcc` | C99, C++23 | 3 | Builds with `--coverage`, enables `HX_TEST_ERROR_HANDLING=1` and emits `coverage_details.html`. |
 | `test_matrix.sh` | `gcc`, `clang` | C99, C17, C++11, C++23 | 0-3 | Sweeps -O* with ASan/UBSan/TSan/MSan and sets `HX_USE_THREADS=1/11`. |
 | `test_strip.sh` | `musl-gcc` | C17, C++11-23 | 0 | Size-focused static build with allocator/library stripping. |
-| `test_target.sh` | `clang`, `gcc` | C17, C++23 | 3 | Builds with Meson, with or without the `hx` module, and checks the TAP-producer. |
+| `test_target.sh` | `clang`, `gcc`, `arm-none-eabi-gcc` | C17, C++23 | 3 | Builds `target/test_target.cpp` with Meson, with or without the `hx` module, and with the Pico SDK. `meson test` checks the TAP report. |
 | `test_wasm.sh` | `emcc` | defaults | 3 | WebAssembly build run with Node.js. The memory manager is disabled and pthreads are enabled. |
 
 `test_all.sh` runs all of the above and also enforces certain naming
@@ -208,12 +210,12 @@ The test scripts are at the top level for easy access. Meson and CMake scripts
 are also available.
 
 - 🗀 `.vscode` - The vscode configuration files.
-- 🗀 `example` - Simple program showing usage.
 - 🗀 `gdb` - GDB pretty printers, one per container, loaded by `.gdbinit`.
 - 🗀 `include` - Add this directory to your include path.
   - 🗀 `hx` - The public `<hx/hx*>` headers, one class per header.
     - 🗀 `detail` - Internal implementation headers.
 - 🗀 `src` - The runtime implementation. Add these files to your build.
+- 🗀 `target` - The test program for embedded targets and the Pico flash script.
 - 🗀 `test` - Optional GoogleTest-style test suites.
 
 ### Core layer
@@ -338,9 +340,9 @@ Differences from the standard versions are listed.
 ### Runtime Facilities
 
 - `hxconsole` is a debug and remote command console that also parses config
-  files such as `example.cfg`. Register bindings at file scope with
-  `hxconsole_command()` and `hxconsole_variable()`, or use the `_named` variants
-  to choose the name yourself.
+  files. Register bindings at file scope with `hxconsole_command()` and
+  `hxconsole_variable()`, or use the `_named` variants to choose the name
+  yourself.
 - `hxprofiler` is a cycle-sampling scope profiler that emits `chrome://tracing`
   captures. Mark a scope with `hxprofile_scope("label")` and control capture
   with `hxprofiler_start()`, `hxprofiler_stop()` and `hxprofiler_log()`. It

@@ -185,26 +185,34 @@ hxattr_weak hxattr_noexcept void hxlog_handler_v(hxlog_level_t level, const char
 	hxassert_hard(len >= 0 && len < ((HX_MAX_LINE)-1), "hxlog_handler_v %zd", static_cast<hxsize_t>(len));
 	len = hxclamp(len, 0, (HX_MAX_LINE)-2);
 
+	// The TAP-Protocol uses a `#` prefix for logging. It is enabled at all
+    // times for API stability.
 #if HX_USE_FILE_IO
 	hxfile& f = level == hxlog_level_log ? hxout : hxerr;
 	if(level == hxlog_level_warning) {
-		f << "WARNING ";
+		f << "# WARNING ";
 		line_buf[len++] = '\n';
 	}
 	else if(level == hxlog_level_assert) {
-		f << "ASSERT_FAIL ";
+		f << "# ASSERT_FAIL ";
 		line_buf[len++] = '\n';
+	}
+	else {
+		f << "# ";
 	}
 	f.write(line_buf, static_cast<size_t>(len));
 #else
 	// Fall back to stdout when there is no filesystem.
 	if(level == hxlog_level_warning) {
-		::fputs("WARNING ", stdout);
+		::fputs("# WARNING ", stdout);
 		line_buf[len++] = '\n';
 	}
 	else if(level == hxlog_level_assert) {
-		::fputs("ASSERT_FAIL ", stdout);
+		::fputs("# ASSERT_FAIL ", stdout);
 		line_buf[len++] = '\n';
+	}
+	else {
+		::fputs("# ", stdout);
 	}
 	::fwrite(line_buf, 1u, static_cast<size_t>(len), stdout);
 #endif

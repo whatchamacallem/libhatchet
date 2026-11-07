@@ -10,9 +10,7 @@
 #
 # It should be safe to just run this script. --sdks also installs the emsdk,
 # which test_wasm.sh requires, and the Pico SDK with picotool, which the pico
-# directory requires. They go in $EMSDK and $PICO_SDK_PATH, the variables the
-# SDKs themselves use, or in ~/emsdk and ~/pico-sdk when those are not set.
-# picotool is built next to the Pico SDK where the SDK looks for it.
+# directory requires. They go in ~/emsdk and ~/pico-sdk.
 
 trap 'trap "" INT PIPE TERM; pkill -P $$; wait; exit 1' INT PIPE TERM
 set -euo pipefail
@@ -32,6 +30,12 @@ HX_SDK_PACKAGES_="
 	libstdc++-arm-none-eabi-newlib libusb-1.0-0-dev  pkg-config
 	xz-utils"
 
+HX_EMSDK_="emsdk"
+
+HX_PICO_SDK_="pico-sdk"
+HX_PICO_SDK_VERSION_=2.3.1
+HX_PICOTOOL_DIR_="$HX_PICO_SDK_/picotool"
+
 # -- Line Art ------------------------------------------------------------------
 HX_COLORS_=(208 214 220 226 190 154 118 82 83 84 85 86 87 45 39 33
 			27 33 39 45 87 86 85 84 83 82 118 154 190 226 220 214)
@@ -50,12 +54,13 @@ line() {
 # -- Check Packages Already Installed ------------------------------------------
 
 HX_MISSING_=0
-grep -qv '^ii' < <(dpkg-query -W -f='${db:Status-Abbrev}\n' \
-	$HX_PACKAGES_ 2>&1) && HX_MISSING_=1
 if [ "${1:-}" = "--sdks" ]; then
-	[ -f "$EMSDK/.emscripten" ] || HX_MISSING_=1
+	HX_PACKAGES_="$HX_PACKAGES_ $HX_SDK_PACKAGES_"
+	[ -f "$HX_EMSDK_/.emscripten" ] || HX_MISSING_=1
 	[ -x "$HX_PICOTOOL_DIR_/picotool" ] || HX_MISSING_=1
 fi
+grep -qv '^ii' < <(dpkg-query -W -f='${db:Status-Abbrev}\n' \
+	$HX_PACKAGES_ 2>&1) && HX_MISSING_=1
 if [ "$HX_MISSING_" = "0" ]; then
 	echo "packages_already_installed"
 	exit 0
@@ -79,12 +84,11 @@ echo "$HX_CMD_" | fold -s
 line
 $HX_CMD_
 
-line
 for HX_CMD_ in clang cmake doxygen gcc gcovr meson musl-gcc ninja pgrep python3
 do
+	line
 	echo "$HX_CMD_ --version"
 	$HX_CMD_ --version
-	line
 done
 
 if [ ! "${1:-}" = "--sdks" ]; then
@@ -92,39 +96,34 @@ if [ ! "${1:-}" = "--sdks" ]; then
 	exit 0
 fi
 
+# The remaining sdks go in the ~ dir.
+cd $HOME
+
 # -- Emscripten ----------------------------------------------------------------
 
-EMSDK="${EMSDK:-$HOME/emsdk}"
-
-if [ ! -f "$EMSDK/.emscripten" ]; then
+if [ ! -f "$HX_EMSDK_/.emscripten" ]; then
 	line
-	git clone --depth 1 https://github.com/emscripten-core/emsdk.git "$EMSDK"
-	"$EMSDK/emsdk" install latest
-	"$EMSDK/emsdk" activate latest
-	EMSDK_QUIET=1 . "$EMSDK/emsdk_env.sh"
+	git clone --depth 1 https://github.com/emscripten-core/emsdk.git "$HX_EMSDK_"
+	"$HX_EMSDK_/emsdk" install latest
+	"$HX_EMSDK_/emsdk" activate latest
+	EMSDK_QUIET=1 . "$HX_EMSDK_/emsdk_env.sh"
 	emcc --version
 fi
 
 # -- Pico ----------------------------------------------------------------------
 
-# The latest Pico SDK. picotool is released with the same version.
-HX_PICO_SDK_VERSION_=2.3.1
-
-PICO_SDK_PATH="${PICO_SDK_PATH:-$HOME/pico-sdk}"
-HX_PICOTOOL_DIR_="$(dirname "$PICO_SDK_PATH")/picotool"
-
 if [ ! -x "$HX_PICOTOOL_DIR_/picotool" ]; then
 	line
-	[ -d "$PICO_SDK_PATH" ] || git -c advice.detachedHead=false clone \
+	[ -d "$HX_PICO_SDK_" ] || git -c advice.detachedHead=false clone \
 		--depth 1 --branch "$HX_PICO_SDK_VERSION_"                    \
 		--recurse-submodules --shallow-submodules                     \
-		https://github.com/raspberrypi/pico-sdk.git "$PICO_SDK_PATH"
+		https://github.com/raspberrypi/pico-sdk.git "$HX_PICO_SDK_"
 	HX_TMP_DIR_=$(mktemp -d)
 	git -c advice.detachedHead=false clone --depth 1                        \
 		--branch "$HX_PICO_SDK_VERSION_"                                    \
 		https://github.com/raspberrypi/picotool.git "$HX_TMP_DIR_/picotool"
 	cmake -S "$HX_TMP_DIR_/picotool" -B "$HX_TMP_DIR_/build" -G Ninja \
-		-DCMAKE_BUILD_TYPE=Release -DPICO_SDK_PATH="$PICO_SDK_PATH"   \
+		-DCMAKE_BUILD_TYPE=Release -DPICO_SDK_PATH="$HX_PICO_SDK_"   \
 		-DPICOTOOL_FLAT_INSTALL=1                                     \
 		-DCMAKE_INSTALL_PREFIX="$(dirname "$HX_PICOTOOL_DIR_")"
 	cmake --build "$HX_TMP_DIR_/build"
