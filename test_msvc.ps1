@@ -192,6 +192,8 @@ function Test-MSVC([bool]$verbose, [bool]$clear_wslc) {
 				if (-not $verbose) { $command += " >$build_dir\$test.log 2>&1" }
 				$info = New-Object System.Diagnostics.ProcessStartInfo cmd, $command
 				$info.UseShellExecute = $false
+				# Set-Location does not change the directory processes start in.
+				$info.WorkingDirectory = $PWD.ProviderPath
 				# The containers watch stdin for this script exiting.
 				$info.RedirectStandardInput = $distributions.Contains($test)
 				if ($verbose) { Write-Host "+ cmd $command" }
