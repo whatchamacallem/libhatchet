@@ -118,7 +118,18 @@ function Remove-TestContainers([bool]$verbose) {
 		}
 }
 
-function Main([bool]$verbose, [bool]$clear_wslc) {
+function Stop-TestJobs([bool]$verbose) {
+	Get-CimInstance Win32_Process | Where-Object {
+		$_.Name -in 'cmd.exe', 'hxtest.exe', 'MSBuild.exe', 'wslc.exe' -and
+			$_.CommandLine -match 'hxtest\.exe|libhatchet-(cache|test)-|/nodeReuse:true'
+	} | ForEach-Object {
+		if ($verbose) { Write-Host "+ taskkill /f /t /pid $($_.ProcessId) # $($_.Name)" }
+		cmd /c "taskkill /f /t /pid $($_.ProcessId) >nul 2>&1"
+	}
+}
+
+function Test-MSVC([bool]$verbose, [bool]$clear_wslc) {
+	Stop-TestJobs $verbose
 	Remove-TestContainers $verbose
 
 	if ($clear_wslc) {
@@ -208,11 +219,28 @@ function Main([bool]$verbose, [bool]$clear_wslc) {
 	exit $failed
 }
 
-$verbose = $args -contains '--verbose'
-$clear_wslc = $args -contains '--clear-wslc'
-if ($args.Count -ne [int]$verbose + [int]$clear_wslc) {
-	Write-Host 'error: usage: test_msvc.ps1 [--verbose] [--clear-wslc]'
-	exit 1
+function Main {
+	$verbose = $args -contains '--verbose'
+	$clear_wslc = $args -contains '--clear-wslc'
+	if ($args.Count -ne [int]$verbose + [int]$clear_wslc) {
+		Write-Host 'error: usage: test_msvc.ps1 [--verbose] [--clear-wslc]'
+		exit 1
+	}
+
+	$mutex = [System.Threading.Mutex]::new($false, 'libhatchet-test-msvc')
+	$owned = $false
+	try {
+		try { $owned = $mutex.WaitOne(0) } catch [System.Threading.AbandonedMutexException] { $owned = $true }
+		if (-not $owned) {
+			Write-Host 'error: test_msvc.ps1 is already running.'
+			exit 1
+		}
+		Test-MSVC $verbose $clear_wslc
+	} finally {
+		if ($owned) { $mutex.ReleaseMutex() }
+		$mutex.Dispose()
+	}
+	Write-Host '🪓🪓🪓'
 }
-Main $verbose $clear_wslc
-Write-Host '🪓🪓🪓'
+
+Main @args
