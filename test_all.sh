@@ -96,8 +96,9 @@ find . -type f "${HX_TEXT_FILES_[@]}" | while read -r HX_FILE_; do
 	fi
 done
 
-# Check for non-ASCII characters other than the allowed set.
-HX_NON_ASCII_ALLOW_='©…²₁₂≤≥🗀❌🪓'
+# Check for non-ASCII characters other than the allowed set. The escapes are
+# the UTF-8 BOM.
+HX_NON_ASCII_ALLOW_=$'©…²₁₂≤≥🗀❌🪓\xEF\xBB\xBF'
 if find . -type f \( "${HX_TEXT_FILES_[@]}" \) -exec grep -nP "[^[:ascii:]$HX_NON_ASCII_ALLOW_]" {} + >&2; then
 	echo "error: Non-ASCII characters other than '$HX_NON_ASCII_ALLOW_' found."
 	exit 1
