@@ -4,6 +4,10 @@
 
 #include "../include/hx/hxutility.h"
 
+#if HX_USE_FLOATING_POINT_TRAPS
+#include <fenv.h>
+#endif
+
 extern "C" {
 
 #if defined __GNUC__
@@ -50,6 +54,10 @@ void hxfloat_view(const float* address, size_t count) {
 		"%0*zx: %a %a %a %a"
 	};
 	const int width = static_cast<int>(sizeof(size_t) * 2u);
+#if HX_USE_FLOATING_POINT_TRAPS
+	fenv_t fenv;
+	::feholdexcept(&fenv);
+#endif
 	while(count != 0u) {
 		const size_t step = count < 4u ? count : 4u;
 		// Intentionally reads past the end of the array.
@@ -58,6 +66,10 @@ void hxfloat_view(const float* address, size_t count) {
 		address += step;
 		count -= step;
 	}
+#if HX_USE_FLOATING_POINT_TRAPS
+	::feclearexcept(FE_ALL_EXCEPT);
+	::fesetenv(&fenv);
+#endif
 }
 
 } // extern "C" {

@@ -63,7 +63,7 @@ function Get-ContainerBuild([string]$distribution, [bool]$verbose) {
 	if ($verbose) { Write-Host "+ wslc images --format json --filter reference=$tag" }
 	$listed = wslc images --format json --filter "reference=$tag" |
 		ConvertFrom-Json
-	if (-not $listed -or [DateTimeOffset]::Parse($listed.CreatedAt -replace ' \D+$') -lt
+	if (-not $listed -or [DateTimeOffset]::Parse($listed.CreatedAt -replace ' \S+$') -lt
 			(Get-Item $image.Install).LastWriteTime) {
 		$context = "$build_dir\$distribution"
 		New-Item -ItemType Directory $context | Out-Null
