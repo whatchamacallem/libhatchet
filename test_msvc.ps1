@@ -45,6 +45,8 @@ function Get-MsvcTest([string]$platform, [string]$configuration, [bool]$verbose)
 		# when NoDefaultCurrentDirectoryInExePath is set.
 		"set `"PATH=$(Split-Path $vswhere);%PATH%`""
 		"call `"$visual_studio\Common7\Tools\VsDevCmd.bat`" -no_logo"
+		# Idle MSBuild nodes can lock the build directory.
+		'set "MSBUILDDISABLENODEREUSE=1"'
 		"cmake -S . -B $build_dir\$name -A $platform"
 		# Single threaded because the containers take longer.
 		"cmake --build $build_dir\$name --config $configuration --parallel 1"
@@ -120,8 +122,8 @@ function Remove-TestContainers([bool]$verbose) {
 
 function Stop-TestJobs([bool]$verbose) {
 	Get-CimInstance Win32_Process | Where-Object {
-		$_.Name -in 'cmd.exe', 'hxtest.exe', 'MSBuild.exe', 'wslc.exe' -and
-			$_.CommandLine -match 'hxtest\.exe|libhatchet-(cache|test)-|/nodeReuse:true'
+		$_.Name -in 'cmd.exe', 'hxtest.exe', 'wslc.exe' -and
+			$_.CommandLine -match 'hxtest\.exe|libhatchet-(cache|test)-'
 	} | ForEach-Object {
 		if ($verbose) { Write-Host "+ taskkill /f /t /pid $($_.ProcessId) # $($_.Name)" }
 		cmd /c "taskkill /f /t /pid $($_.ProcessId) >nul 2>&1"
