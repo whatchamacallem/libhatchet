@@ -30,6 +30,13 @@ if [ "$(uname -s)" = Darwin ]; then
 	export PATH="$(brew --prefix grep)/libexec/gnubin:$PATH"
 fi
 
+for HX_CMD_ in gcc g++ clang clang++; do
+	if ! command -v "$HX_CMD_" > /dev/null 2>&1; then
+		echo "error: $HX_CMD_ not found. See install_*.sh."
+		exit 1
+	fi
+done
+
 # Delete files matching .gitignore and reset ccache. Required for following
 # tests to avoid matches with intermediates.
 ./clean.sh
@@ -114,6 +121,7 @@ fi
 # Smoke test a single debug build with a usage error first.
 if HX_OUTPUT_=$(./debug_build.sh --run --gtest_filter=hxtest_no_such_suite.no_such_case 2>&1) \
 		|| ! grep -q usage_error <<< "$HX_OUTPUT_"; then
+	echo "$HX_OUTPUT_" >&2
 	echo "error: debug_build.sh --gtest_filter with a bad filter should fail with usage_error."
 	exit 1
 fi
