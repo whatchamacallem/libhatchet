@@ -339,7 +339,7 @@ TEST(hxutility_test, hxisgraph) {
 }
 
 TEST(hxutility_test, hxhex_view) {
-	const uint8_t bytes[32] = { 0 };
+	const uint8_t bytes[32] = { };
 	hxhex_view(bytes, 0u, false);
 	hxhex_view(bytes, sizeof bytes, false);
 	hxhex_view(bytes, sizeof bytes, true);
@@ -347,9 +347,8 @@ TEST(hxutility_test, hxhex_view) {
 }
 
 TEST(hxutility_test, hxfloat_view) {
-	const float floats[8] = { 0.0f };
+	const float floats[8] = { };
 	hxfloat_view(floats, 0u);
-	hxfloat_view(floats, 4u);
-	hxfloat_view(floats, sizeof floats / sizeof floats[0]);
+	hxfloat_view(floats, 7u);
 	SUCCEED();
 }

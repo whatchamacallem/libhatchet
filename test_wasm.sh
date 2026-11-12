@@ -3,8 +3,8 @@
 # SPDX-License-Identifier: MIT
 # This file is licensed under the terms of the LICENSE.md file.
 #
-# Requires the emsdk. After installing the emsdk it is recommended to add it to
-# your .bashrc.
+# Requires the emsdk, which provides emcc and node. "install_deb.sh --sdks"
+# installs it to $HOME/emsdk.
 
 trap 'trap "" INT PIPE TERM; pkill -P $$; wait; exit 1' INT PIPE TERM
 set -eu
@@ -14,16 +14,28 @@ cd "$(dirname "$(readlink -f "$0")")"
 export POSIXLY_CORRECT=1
 
 HX_DIR_=$PWD
-HX_JOBS_="${HX_MAX_CORES:-$(getconf _NPROCESSORS_ONLN)}"
+HX_JOBS_="${HX_MAX_JOBS:-$(getconf _NPROCESSORS_ONLN)}"
 
-if [ "${1:-}" = "--verbose" ]; then
-	set -o xtrace
+HX_EMSDK_="$HOME/emsdk"
+if [ ! -d "$HX_EMSDK_" ]; then
+	echo "error: $HX_EMSDK_ not found. Run install_deb.sh --sdks."
+	exit 1
 fi
+
+# sh can only source emsdk_env.sh from its own directory.
+export EMSDK_QUIET=1
+cd "$HX_EMSDK_"
+. ./emsdk_env.sh
+cd "$HX_DIR_"
 
 # Build artifacts are not retained.
 rm -rf "$(readlink -f build)" build
 if [ "${HX_RAMDISK:-0}" = 1 ]; then mkdir build; else ln -s "$(mktemp -d)" build; fi
 cd build
+
+if [ "${1:-}" = "--verbose" ]; then
+	set -o xtrace
+fi
 
 emcc -I"$HX_DIR_/include" -O2 -pthread -fdiagnostics-absolute-paths -c \
 	"$HX_DIR_"/test/*.c
@@ -37,8 +49,19 @@ printf '%s\0' "$HX_DIR_"/src/*.cpp "$HX_DIR_"/test/*.cpp |
 		-DHX_USE_THREADS=1 -DHX_USE_CONSOLE=1 -Wno-c2y-extensions -pthread   \
 		-std=c++23 -flto=auto -I"$HX_DIR_/include" -c
 
-emcc -O2 -pthread -sEXIT_RUNTIME=1 -sPTHREAD_POOL_SIZE=4 -sPROXY_TO_PTHREAD \
+em++ -O2 -pthread -sEXIT_RUNTIME=1 -sPTHREAD_POOL_SIZE=4 -sPROXY_TO_PTHREAD \
 	-flto=auto *.o -o index.html
+
+if [ "${1:-}" = "--verbose" ]; then
+	"$EMSDK_NODE" index.js
+else
+	if ! "$EMSDK_NODE" index.js > console_output.txt 2>&1 \
+		|| ! grep -E '^# passed ' console_output.txt; then
+		cat console_output.txt
+		echo "error: Tests failed."
+		exit 1
+	fi
+fi
 
 if [ "${1:-}" = "--verbose" ]; then
 
@@ -68,5 +91,4 @@ HX_EOF_
 	wait "$HX_SERVER_PID_"
 fi
 
-# Say goodbye and make sure the script returns 0.
 echo 🪓🪓🪓

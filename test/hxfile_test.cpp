@@ -401,12 +401,12 @@ TEST(hxfile_test, stream_insertion_of_string_literal) {
 }
 
 TEST(hxfile_test, hxin_hxout_hxerr_smoke_test) {
-	hxout << "smoke test hxout" << ".";
+	hxout << "# smoke test hxout" << ".";
 	hxout.print("..");
 	hxout << hxendl;
 	EXPECT_TRUE(hxout.flush());
 	EXPECT_FALSE(hxout.fail());
-	hxerr << "smoke test hxerr" << ".";
+	hxerr << "# smoke test hxerr" << ".";
 	hxerr.print("..");
 	hxerr << hxendl;
 	EXPECT_TRUE(hxerr.flush());

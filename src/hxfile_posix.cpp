@@ -217,7 +217,11 @@ size_t hxfile::write(const void* bytes, size_t byte_count) {
 	hxassertf(total == byte_count || ((m_open_mode_ & hxfile::open_mode_asserts) == 0u),
 		"write want %zu got %zu %s", byte_count, total, ::strerror(errno));
 
-	m_fail_ = (total != byte_count);
+	// hxout and hxerr are shared by concurrent logging. Only a change is stored.
+	const bool fail = total != byte_count;
+	if(m_fail_ != fail) {
+		m_fail_ = fail;
+	}
 	return total;
 }
 

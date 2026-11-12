@@ -6,48 +6,57 @@
 
 extern "C" {
 
-#if defined __clang__
+#if defined __GNUC__
 __attribute__((no_sanitize("address")))
+#endif
+#if defined __clang__
 __attribute__((no_sanitize("memory")))
 #endif
 void hxhex_view(const void* address, size_t bytes, bool pretty) {
-	// Caller is responsible for passing a valid size; bytes near SIZE_MAX will overflow.
-	bytes = (bytes + 15u) & ~(size_t)15; // round up to 16 bytes.
+	const int width = static_cast<int>(sizeof(size_t) * 2u);
 	const volatile uint8_t* addr = reinterpret_cast<const volatile uint8_t*>(address);
-	for(size_t i = 0; i < bytes;) {
+	char text[17] = { '\0' };
+	while(bytes != 0u) {
+		const size_t step = bytes < 16u ? bytes : 16u;
+		// Intentionally reads past the end of the array.
 		if(pretty) {
-			hxlog_handler(hxlog_level_console, "%0*zx: ", static_cast<int>(sizeof(size_t) * 2u),
-				reinterpret_cast<size_t>(addr));
-		}
-		const volatile uint8_t* str = addr;
-		for(size_t maximum = 4u; i < bytes && maximum-- != 0u; i += 4) {
-			hxlog_handler(hxlog_level_console, "%02x%02x%02x%02x ", addr[0], addr[1], addr[2],
-				addr[3]);
-			addr += 4;
-		}
-		if(pretty) {
-			while(str < addr) {
-				hxlog_handler(hxlog_level_console, "%c",
-					(*str >= 0x20 && *str <= 0x7e) ? *str : '.');
-				++str;
+			for(size_t i = 0u; i < step; ++i) {
+				const uint8_t c = addr[i];
+				text[i] = (c >= 0x20 && c <= 0x7e) ? static_cast<char>(c) : '.';
 			}
+			text[step] = '\0';
 		}
-		hxlog_handler(hxlog_level_console, "\n");
+		hxlog_handler(hxlog_level_console,
+			"%0*zx: %02x%02x%02x%02x %02x%02x%02x%02x %02x%02x%02x%02x %02x%02x%02x%02x %s",
+			width, reinterpret_cast<size_t>(addr),
+			addr[0], addr[1],  addr[2],  addr[3],  addr[4],  addr[5],  addr[6],  addr[7],
+			addr[8], addr[9], addr[10], addr[11], addr[12], addr[13], addr[14], addr[15], text);
+		addr += step;
+		bytes -= step;
 	}
 }
 
-#if defined __clang__
+#if defined __GNUC__
 __attribute__((no_sanitize("address")))
+#endif
+#if defined __clang__
 __attribute__((no_sanitize("memory")))
 #endif
 void hxfloat_view(const float* address, size_t count) {
-	for(size_t i = 0; i < count;) {
-		hxlog_handler(hxlog_level_console, "%0*zx: ", static_cast<int>(sizeof(size_t) * 2u),
-			reinterpret_cast<size_t>(address));
-		for(size_t maximum = 4u; i < count && maximum-- != 0u; i++) {
-			hxlog_handler(hxlog_level_console, "%a ", *address++);
-		}
-		hxlog_handler(hxlog_level_console, "\n");
+	static const char* const formats[4] = {
+		"%0*zx: %a",
+		"%0*zx: %a %a",
+		"%0*zx: %a %a %a",
+		"%0*zx: %a %a %a %a"
+	};
+	const int width = static_cast<int>(sizeof(size_t) * 2u);
+	while(count != 0u) {
+		const size_t step = count < 4u ? count : 4u;
+		// Intentionally reads past the end of the array.
+		hxlog_handler(hxlog_level_console, formats[step - 1u], width,
+			reinterpret_cast<size_t>(address), address[0], address[1], address[2], address[3]);
+		address += step;
+		count -= step;
 	}
 }
 

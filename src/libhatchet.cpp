@@ -155,7 +155,7 @@ hxattr_weak hxattr_noexcept void hxassert_handler(void) {
 	if(hxg_assert_handler != hxnull && hxg_assert_handler(hxnull, 0)) {
 		return;
 	}
-	hxlog_handler(hxlog_level_assert, "ASSERT_FAIL\n");
+	hxlog_handler(hxlog_level_assert, "ASSERT_FAIL");
 	hxexit(EXIT_FAILURE);
 }
 #endif
@@ -176,37 +176,31 @@ hxattr_weak hxattr_noexcept void hxlog_handler_v(hxlog_level_t level, const char
 		return;
 	}
 
-	// vsnprintf leaves a trailing NUL that may be overwritten below.
-	char line_buf[HX_MAX_LINE];
-	int len = ::vsnprintf(line_buf, HX_MAX_LINE-1, format, args);
+	// The TAP-Protocol uses a `#` prefix for logging. It is enabled at all
+	// times for API stability. Indexed by hxlog_level_t.
+	static constexpr char prefix_assert[] = "# ASSERT_FAIL ";
+	static constexpr const char* prefixes[] = { "# ", "# ", "# WARNING ", prefix_assert };
+	constexpr size_t prefix_max = sizeof prefix_assert - 1u;
+	const size_t prefix_size = ::strlen(prefixes[level]);
 
-	// Do not try to print the format string because it may be corrupt.
-	// Assume "hxlog_handler_v" will not cause recursion when logged.
+	// vsnprintf leaves a trailing NUL that is overwritten by the newline below.
+	char line_buf[prefix_max + HX_MAX_LINE];
+	::memcpy(line_buf, prefixes[level], prefix_size);
+	char* const message = line_buf + prefix_size;
+	int len = ::vsnprintf(message, HX_MAX_LINE-1, format, args);
+
+	// Do not try to print the format string because it may be corrupt. Assume
+	// "hxlog_handler_v" will not cause recursion when logged.
 	hxassert_hard(len >= 0 && len < ((HX_MAX_LINE)-1), "hxlog_handler_v %zd", static_cast<hxsize_t>(len));
 	len = hxclamp(len, 0, (HX_MAX_LINE)-2);
+	message[len++] = '\n';
 
+	const size_t count = prefix_size + static_cast<size_t>(len);
 #if HX_USE_FILE_IO
-	hxfile& f = level == hxlog_level_log ? hxout : hxerr;
-	if(level == hxlog_level_warning) {
-		f << "WARNING ";
-		line_buf[len++] = '\n';
-	}
-	else if(level == hxlog_level_assert) {
-		f << "ASSERT_FAIL ";
-		line_buf[len++] = '\n';
-	}
-	f.write(line_buf, static_cast<size_t>(len));
+	(level == hxlog_level_log ? hxout : hxerr).write(line_buf, count);
 #else
 	// Fall back to stdout when there is no filesystem.
-	if(level == hxlog_level_warning) {
-		::fputs("WARNING ", stdout);
-		line_buf[len++] = '\n';
-	}
-	else if(level == hxlog_level_assert) {
-		::fputs("ASSERT_FAIL ", stdout);
-		line_buf[len++] = '\n';
-	}
-	::fwrite(line_buf, 1u, static_cast<size_t>(len), stdout);
+	::fwrite(line_buf, 1u, count, stdout);
 #endif
 }
 

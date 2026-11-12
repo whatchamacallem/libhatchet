@@ -11,7 +11,7 @@ cd "$(dirname "$(readlink -f "$0")")"
 export POSIXLY_CORRECT=1
 
 HX_DIR_=$PWD
-HX_JOBS_="${HX_MAX_CORES:-$(getconf _NPROCESSORS_ONLN)}"
+HX_JOBS_="${HX_MAX_JOBS:-$(getconf _NPROCESSORS_ONLN)}"
 
 HX_BUILD_="-DHX_HARDENING_MODE=HX_HARDENING_MODE_NONE -DHX_PROVIDE_NEW_DELETE=0 \
 	-DHX_USE_STD_LIB=0 -DHX_USE_LOGGING=1 -DHX_USE_THREADS=11                   \
@@ -68,7 +68,7 @@ if [ "${1:-}" = "--verbose" ]; then
 	./hxtest-strip "check_stats 1" runtests
 else
 	if ./hxtest-strip "check_stats 1" runtests > console_output.txt 2>&1; then
-		grep -E '\[  PASSED  \]|\[  FAILED  \]|FAILED TESTS' console_output.txt
+		grep -E '^(not ok|Bail out!|# (passed|failed) )' console_output.txt
 	else
 		cat console_output.txt
 		exit 1
@@ -81,4 +81,4 @@ cd ..
 echo
 size build/hxtest-strip
 
-echo "🪓🪓🪓"
+echo 🪓🪓🪓

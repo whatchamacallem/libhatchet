@@ -389,10 +389,14 @@
 #define HX_MAX_LINE (2 * HX_KIB)
 #endif
 
-#if !defined HX_USE_GOOGLE_TEST
-/// `HX_USE_GOOGLE_TEST` - Switch to using the real Google Test. Defaults to
-/// `0`.
-#define HX_USE_GOOGLE_TEST 0
+#if !defined HX_USE_TEST_FRAMEWORK
+/// `HX_USE_TEST_FRAMEWORK` - Selects the test framework and how it reports.
+/// `0` - `hxtest` reporting with the Test Anything Protocol (TAP). This is the
+/// default. `1` - `hxtest` reporting in the style of Google Test. `2` - The
+/// real Google Test, which does not compile with the libhatchet module.
+#define HX_USE_TEST_FRAMEWORK 0
+#elif (HX_USE_TEST_FRAMEWORK) < 0 || (HX_USE_TEST_FRAMEWORK) > 2
+#error HX_USE_TEST_FRAMEWORK must be 0, 1 or 2.
 #endif
 
 #if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG && defined __GLIBC__ && !defined __FAST_MATH__

@@ -3,29 +3,31 @@
 # SPDX-License-Identifier: MIT
 # This file is licensed under the terms of the LICENSE.md file.
 #
-# Build the libhatchet test suite for Pico 2, flash it, then stream serial output.
+# Builds test_target.cpp for the Pico with the top level CMakeLists.txt, flashes
+# it and then streams the report it sends over USB serial.
 # Run with: ./libhatchet_flash_pico.sh [--port /dev/ttyACM0] [--board pico2]
 set -euo pipefail
 
-# These need to be configured to your install directories:
+cd "$(dirname "$(readlink -f "$0")")/.."
 
-PICO_ROOT="../../pico"
-export PICO_SDK_PATH="$PICO_ROOT/pico-sdk"
-export LIBHATCHET_PATH=".."
-BUILD_DIR="$LIBHATCHET_PATH/build"
+# The Pico SDK is at ~/pico-sdk where "install_deb.sh --sdks" installs it, with
+# picotool next to it. A different PICO_SDK_PATH in the environment is not used.
+export PICO_SDK_PATH="$HOME/pico-sdk"
+PATH="$PATH:$(dirname "$PICO_SDK_PATH")/picotool"
+BUILD_DIR="build/pico"
 
-BOARD="${BOARD:-pico2}"
+BOARD="${PICO_BOARD:-pico2}"
 BAUD="${BAUD:-115200}"
 PORT="${PORT:-}"
 
 # -- Argument Parsing -----------------------------------------------------------
 while [[ $# -gt 0 ]]; do
-    case "$1" in
-        --port)  PORT="$2";  shift 2 ;;
-        --board) BOARD="$2"; shift 2 ;;
-        --baud)  BAUD="$2";  shift 2 ;;
-        *) echo "Unknown option: $1"; exit 1 ;;
-    esac
+	case "$1" in
+		--port)  PORT="$2";  shift 2 ;;
+		--board) BOARD="$2"; shift 2 ;;
+		--baud)  BAUD="$2";  shift 2 ;;
+		*) echo "Unknown option: $1"; exit 1 ;;
+	esac
 done
 
 # -- Helpers --------------------------------------------------------------------
@@ -43,40 +45,40 @@ require picotool
 
 # -- 1. Build -------------------------------------------------------------------
 info "Cleaning build directory ..."
-rm -rf "$BUILD_DIR"
+rm -rf "$(readlink -f build)" build
 
 info "Configuring CMake for board '$BOARD' ..."
 cmake -S . -B "$BUILD_DIR" \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DPICO_BOARD="$BOARD" \
-    -DPICO_SDK_PATH="$PICO_SDK_PATH" \
-    -G Ninja \
-    -Wno-dev \
-    2>&1
+	-DCMAKE_BUILD_TYPE=Release \
+	-DPICO_BOARD="$BOARD" \
+	-DPICO_SDK_PATH="$PICO_SDK_PATH" \
+	-G Ninja \
+	-Wno-dev \
+	2>&1
 
-info "Building libhatchet_test_pico ..."
-cmake --build "$BUILD_DIR" --target libhatchet_test_pico -j"$(nproc)"
+info "Building hxtest_target ..."
+cmake --build "$BUILD_DIR" --target hxtest_target -j"$(nproc)"
 
-UF2="$BUILD_DIR/libhatchet_test_pico.uf2"
+UF2="$BUILD_DIR/hxtest_target.uf2"
 [[ -f "$UF2" ]] || die "Build succeeded but $UF2 not found."
 ok "Build complete: $UF2"
 
 # -- 2. Flash -------------------------------------------------------------------
-info "Looking for Pico 2 in BOOTSEL mode ..."
+info "Looking for Pico in BOOTSEL mode ..."
 
 TIMEOUT=30
 ELAPSED=0
 while ! picotool info &>/dev/null; do
-    if [[ $ELAPSED -eq 0 ]]; then
-        warn "No Pico found in BOOTSEL mode."
-        echo " - Hold the BOOTSEL button on the Pico 2, plug in USB, then release."
-        echo " - Waiting up to ${TIMEOUT}s ..."
-    fi
-    sleep 1
-    (( ELAPSED++ ))
-    if [[ $ELAPSED -ge $TIMEOUT ]]; then
-        die "Timed out waiting for Pico in BOOTSEL mode."
-    fi
+	if [[ $ELAPSED -eq 0 ]]; then
+		warn "No Pico found in BOOTSEL mode."
+		echo " - Hold the BOOTSEL button on the Pico, plug in USB, then release."
+		echo " - Waiting up to ${TIMEOUT}s ..."
+	fi
+	sleep 1
+	ELAPSED=$((ELAPSED + 1))
+	if [[ $ELAPSED -ge $TIMEOUT ]]; then
+		die "Timed out waiting for Pico in BOOTSEL mode."
+	fi
 done
 
 ok "Pico detected. Flashing ..."
@@ -87,27 +89,29 @@ ok "Flash complete. Pico is rebooting."
 
 # -- 3. Find Serial Port --------------------------------------------------------
 if [[ -z "$PORT" ]]; then
-    info "Waiting for serial port to appear ..."
-    for i in $(seq 1 150); do
-        for candidate in /dev/ttyACM0 /dev/ttyACM1 /dev/ttyUSB0 /dev/ttyUSB1; do
-            if [[ -e "$candidate" ]]; then
-                PORT="$candidate"
-                break 2
-            fi
-        done
-        sleep 0.1
-    done
+	info "Waiting for serial port to appear ..."
+	for i in $(seq 1 150); do
+		for candidate in /dev/ttyACM0 /dev/ttyACM1 /dev/ttyUSB0 /dev/ttyUSB1; do
+			if [[ -e "$candidate" ]]; then
+				PORT="$candidate"
+				break 2
+			fi
+		done
+		sleep 0.1
+	done
 fi
 
 # Let the driver stabilize so there is something to cat.
 sleep 0.5
 
 if [[ -z "$PORT" ]] || [[ ! -e "$PORT" ]]; then
-    die "No serial port found. Try: ./libhatchet_flash_pico.sh --port /dev/ttyACM0"
+	die "No serial port found. Try: ./libhatchet_flash_pico.sh --port /dev/ttyACM0"
 fi
 
 ok "Serial port: $PORT at ${BAUD} baud."
 echo ""
 
+# -- 4. Stream the Report -------------------------------------------------------
+# The port goes away when the Pico reboots, which ends cat with an error.
 stty -F "$PORT" "$BAUD" raw -echo -hupcl
 cat "$PORT" || true

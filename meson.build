@@ -78,6 +78,9 @@ if hxbuild_module
 	hxmodule_include_args = ['-I' + meson.project_source_root() / 'include']
 	hxmodule_search_args = _hxis_clang ? ['-fprebuilt-module-path=' + meson.project_build_root()] : []
 
+	# Consumers of the module compile with these.
+	hxmodule_consumer_args = hxmodule_include_args + hxmodule_search_args + (_hxis_clang ? [] : ['-fmodules-ts'])
+
 	# internal
 	_hxmodule_special_args = _hxis_clang ? ['-Wno-include-angled-in-module-purview', '-fdiagnostics-absolute-paths'] : ['-fmodules-ts']
 	_hxmodule_pcm_args = _hxis_clang ? ['-fmodule-output=@OUTPUT1@'] : []
@@ -108,6 +111,35 @@ else
 	)
 endif
 
-if get_option('build_example')
-	subdir('example')
+# The target test program is built when libhatchet is the main project. It
+# reports with the Test Anything Protocol and "meson test" consumes the report.
+# A cross file with an exe_wrapper runs it too. Without one it is only built.
+if not meson.is_subproject()
+	if hxbuild_module
+		# -DHX_USE_MACROS_WITH_MODULE=1 allows accessing macros from certain headers.
+		_hxtarget_obj = custom_target('hxtest_target_obj',
+			input : 'target/test_target.cpp',
+			output : 'test_target.cpp.o',
+			depends : [libhatchet_module],
+			command : _hxcpp.cmd_array() + get_option('cpp_args') + hxm32_arg + hxwarning_args
+				+ hxmodule_consumer_args
+				+ [ '-DHX_USE_MACROS_WITH_MODULE=1', '-c', '@INPUT@', '-o', '@OUTPUT@', ],
+		)
+
+		hxtest_target = executable('hxtest_target',
+			sources : [libhatchet_module, _hxtarget_obj],
+			link_args : hxwarning_args + get_option('cpp_link_args'),
+			link_language : 'cpp',
+		)
+	else
+		hxtest_target = executable('hxtest_target',
+			sources : ['target/test_target.cpp'],
+			dependencies : libhatchet_dep,
+			cpp_args : hxwarning_args,
+		)
+	endif
+
+	if meson.can_run_host_binaries()
+		test('hxtest_target', hxtest_target, protocol : 'tap')
+	endif
 endif

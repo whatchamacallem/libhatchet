@@ -259,7 +259,7 @@ TEST_F(hxsort_test_f, sort_thousand_random_vectors_stays_within_work_budget) {
 			}
 		}
 	}
-	hxlog("sort_survey elements %zd less_than %d moves %d\n", elements,
+	hxlog("sort_survey elements %zd less_than %d moves %d", elements,
 		m_less_than, m_move_assign + m_move_construct);
 	EXPECT_EQ(elements, hxsize_t{493537});
 	EXPECT_TRUE(check_stats(2176957, 0, 493537, 0, 1683420, 0, 3742158, 0, 5266078, 0));

@@ -18,7 +18,7 @@ HX_COVERAGE_="--coverage -O0 -g -fprofile-update=atomic -fno-inline -fkeep-stati
 HX_COVERAGE_CXX_="$HX_COVERAGE_ -fno-elide-constructors -fkeep-inline-functions"
 
 HX_DIR_=$PWD
-HX_JOBS_="${HX_MAX_CORES:-$(getconf _NPROCESSORS_ONLN)}"
+HX_JOBS_="${HX_MAX_JOBS:-$(getconf _NPROCESSORS_ONLN)}"
 
 HX_GCC_=gcc
 HX_GXX_=g++
@@ -246,5 +246,4 @@ if [ -n "$HX_VERBOSE_" ] && command -v google-chrome >/dev/null 2>&1; then
 	google-chrome "${HX_DEST_DIR_}coverage_details.html" >/dev/null 2>&1;
 fi
 
-# Make sure the script returns 0.
-echo "🪓🪓🪓"
+echo 🪓🪓🪓

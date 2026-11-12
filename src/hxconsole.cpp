@@ -8,6 +8,8 @@
 #include "../include/hx/hxsort.hpp"
 #include "../include/hx/hxvector.hpp"
 
+#include <stdio.h>
+
 // The console tests intentionally generate floating point traps.
 #if defined HX_USE_FLOATING_POINT_TRAPS
 #include <fenv.h>
@@ -112,11 +114,16 @@ hxattr_cold bool hxconsole_command_::execute_(const char* str) const {
 }
 
 hxattr_cold void hxconsole_command_::usage_(const char* name) const {
-	hxlog_console("%s", (name != hxnull) ? name : "usage_error:"); (void)name;
-	for(const char* const* label = m_labels_; *label != hxnull; ++label) {
-		hxlog_console(" %s", *label);
+	(void)name;	(void)m_labels_;
+#if HX_USE_LOGGING
+	char line_buf[HX_MAX_LINE];
+	size_t len = static_cast<size_t>(::snprintf(line_buf, HX_MAX_LINE, "%s",
+		(name != hxnull) ? name : "usage_error:"));
+	for(const char* const* label = m_labels_; *label != hxnull && len < HX_MAX_LINE; ++label) {
+		len += static_cast<size_t>(::snprintf(line_buf + len, HX_MAX_LINE - len, " %s", *label));
 	}
-	hxlog_console("\n");
+	hxlog_console("%s", line_buf);
+#endif
 }
 
 } // hxdetail_

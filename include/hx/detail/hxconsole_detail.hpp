@@ -159,7 +159,7 @@ hxattr_cold bool hxconsole_variable_execute_(hxconsole_target_ target_, const ch
 	volatile var_t_* const var_ = static_cast<volatile var_t_*>(target_.var_);
 	if(hxconsole_is_end_of_line_(str_)) {
 		// 0 parameters is a query.
-		hxlog_handler(hxlog_level_console, "%.15g\n", static_cast<double>(*var_));
+		hxlog_handler(hxlog_level_console, "%.15g", static_cast<double>(*var_));
 		return true;
 	}
 	char* next_ = const_cast<char*>(str_);
@@ -168,7 +168,7 @@ hxattr_cold bool hxconsole_variable_execute_(hxconsole_target_ target_, const ch
 		*var_ = val_;
 		return true;
 	}
-	hxlog_handler(hxlog_level_console, "parse_error: %s\n", str_);
+	hxlog_handler(hxlog_level_console, "parse_error: %s", str_);
 	return false;
 }
 

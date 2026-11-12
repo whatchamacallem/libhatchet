@@ -58,18 +58,16 @@ void hxprofiler_internal_::log_(void) {
 #endif
 	m_is_started_ = false;
 
-	hxlog_handler(hxlog_level_console, "[ ");
+	hxlog_handler(hxlog_level_console, "[");
 	for(hxsize_t i = 0; i < m_records.size(); ++i) {
 		const hxprofiler_record_& rec = m_records[i];
 
-		if(i != 0) { hxlog_handler(hxlog_level_console, ",\n"); }
-
 		const hxcycles_t delta = rec.m_end_ - rec.m_begin_;
-		hxlog_handler(hxlog_level_console, "{ \"name\":\"%s\", \"ms\":%.15g, \"thread\":\"%x\" }",
+		hxlog_handler(hxlog_level_console, "{ \"name\":\"%s\", \"ms\":%.15g, \"thread\":\"%x\" }%s",
 		rec.m_label_, static_cast<double>(delta) * hxmilliseconds_per_cycle,
-		static_cast<unsigned int>(rec.m_thread_id_));
+		static_cast<unsigned int>(rec.m_thread_id_), (i + 1 != m_records.size()) ? "," : "");
 	}
-	hxlog_handler(hxlog_level_console, " ]\n");
+	hxlog_handler(hxlog_level_console, "]");
 }
 
 size_t hxprofiler_internal_::size_(void) const {
@@ -142,7 +140,7 @@ void hxprofiler_internal_::write_to_chrome_tracing_(const char* filename) {
 	}
 	f.print("\n]\n");
 
-	hxlog_handler(hxlog_level_console, "wrote %s.\n", filename);
+	hxlog_handler(hxlog_level_console, "wrote %s.", filename);
 }
 #endif // HX_USE_FILE_IO
 } // hxdetail_

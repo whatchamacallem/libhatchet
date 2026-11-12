@@ -40,6 +40,11 @@ hxthread::return_t hxthread_test_func_increment(hxthread_test_simple_parameters_
 	++(*parameters->shared);
 	return 0;
 }
+hxthread::return_t hxthread_test_func_log(int* id) {
+	hxlog_handler(hxlog_level_log, "hxthread_test_func_log %d", *id);
+	hxlog_handler(hxlog_level_console, "hxthread_test_func_log %d", *id);
+	return 0;
+}
 hxthread::return_t hxthread_test_func_notify_one(hxthread_test_parameters_t* parameters) {
 	hxunique_lock lock(*parameters->mutex);
 	while(!*parameters->ready) {
@@ -222,6 +227,17 @@ TEST(hxthread_test_thread, multiple_threadsincrement) {
 	thread1.join();
 	thread2.join();
 	EXPECT_EQ(shared, 2);
+}
+
+// This is for the thread sanitizer.
+TEST(hxthread_test_thread, concurrent_logging) {
+	int id1 = 1;
+	int id2 = 2;
+	hxthread thread1(&hxthread_test_func_log, &id1);
+	hxthread thread2(&hxthread_test_func_log, &id2);
+	thread1.join();
+	thread2.join();
+	SUCCEED();
 }
 
 TEST(hxthread_test_mutex, lock_unlock_multiple_threads) {

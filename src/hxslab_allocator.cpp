@@ -536,7 +536,7 @@ hxattr_cold static void hxslab_allocator_report_utilization_(allocator_t_& alloc
 	const size_t allocation_count = allocator.get_allocation_count();
 	const size_t bytes_allocated = allocator.get_bytes_allocated();
 	if(log || allocation_count != 0u) {
-		hxlog_verbose("allocator %s count %zu size %zu high_water %zu\n",
+		hxlog_verbose("allocator %s count %zu size %zu high_water %zu",
 			allocator.label(), allocation_count, bytes_allocated,
 			allocator.get_high_water());
 	}
@@ -558,7 +558,7 @@ hxslab_allocator_stats hxslab_allocator::utilization(bool stacks_only, bool log)
 		hxslab_allocator_report_utilization_(m_memory_allocator_stacks[i], stats, log);
 	}
 	if(log) {
-		hxlog_verbose("overflows %zu\n", m_allocator_overflows);
+		hxlog_verbose("overflows %zu", m_allocator_overflows);
 	}
 	return stats;
 }

@@ -12,7 +12,7 @@ cd "$(dirname "$(readlink -f "$0")")"
 
 export POSIXLY_CORRECT=1
 
-HX_JOBS_="${HX_MAX_CORES:-$(getconf _NPROCESSORS_ONLN)}"
+HX_JOBS_="${HX_MAX_JOBS:-$(getconf _NPROCESSORS_ONLN)}"
 
 HX_OPT_NO_TIDY_=0
 HX_OPT_VERBOSE_=0
@@ -73,7 +73,7 @@ echo "Run build/hxtest with GDB..."
 
 # Run the GDB smoke tests at the same time.
 rm -f gdb_printer_output.txt
-gdb -batch -x ../test/gdb_printer_test.gdb ./hxtest > test_cmake.sh.txt 2>&1
+gdb -batch -x ../test/gdb_printer_test.gdb ./hxtest > test_cmake.sh.txt 2>&1 || true
 
 # GDB exits 0 even after SIGTRAP so check for the summary line explicitly.
 if ! grep -qE '\[  PASSED  \]' test_cmake.sh.txt; then
@@ -167,4 +167,4 @@ else
 		&& { echo "clang-tidy errors."; exit 1; }
 fi
 
-echo "🪓🪓🪓"
+echo 🪓🪓🪓

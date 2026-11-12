@@ -74,9 +74,8 @@ if [ -d .git ] && git ls-files --eol | grep -E 'w/(crlf|mixed)'; then
 	exit 1
 fi
 
-# Use an array to avoid globbing. example_correct.txt holds captured ANSI
-# escapes and is exempted.
-HX_TEXT_FILES_=(! -name example_correct.txt \(
+# Use an array to avoid globbing.
+HX_TEXT_FILES_=(\(
 	-name .clang-tidy -o -name .gdbinit -o -name .gitattributes
 	-o -name .gitignore -o -name '*.bat' -o -name '*.c' -o -name '*.cpp'
 	-o -name '*.h' -o -name '*.hpp' -o -name '*.inl' -o -name '*.json'
@@ -125,17 +124,17 @@ set -o xtrace
 
 ./test_cmake.sh $HX_VERBOSE_
 ./test_coverage.sh $HX_VERBOSE_
-./test_example.sh $HX_VERBOSE_
+./test_target.sh $HX_VERBOSE_
 ./test_matrix.sh
 if command -v musl-gcc > /dev/null 2>&1; then
 	./test_strip.sh $HX_VERBOSE_
 else
 	echo "test_strip.sh skipped. Requires musl-gcc."
 fi
-if command -v emcc > /dev/null 2>&1; then
+if [ -d "$HOME/emsdk" ]; then
 	./test_wasm.sh $HX_VERBOSE_
 else
-	echo "test_wasm.sh skipped. Requires emcc."
+	echo "test_wasm.sh skipped. Requires emsdk."
 fi
 
 ./debug_build.sh $HX_VERBOSE_ --grind --run

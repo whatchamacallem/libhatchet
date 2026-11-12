@@ -187,8 +187,12 @@ size_t hxfile::write(const void* bytes, size_t byte_count) {
 	hxassertf((byte_count == bytes_written) || ((m_open_mode_ & hxfile::open_mode_asserts) == 0u),
 		"fwrite want %zu got %zu %s", byte_count, bytes_written, ::strerror(errno));
 
-	// Can restore goodness.
-	m_fail_ = byte_count != bytes_written;
+	// Can restore goodness. hxout and hxerr are shared by concurrent logging. Only
+	// a change is stored.
+	const bool fail = byte_count != bytes_written;
+	if(m_fail_ != fail) {
+		m_fail_ = fail;
+	}
 	return bytes_written;
 }
 

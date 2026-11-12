@@ -41,10 +41,10 @@
 
 /// `int LIBHATCHET_VER` - One digit major, and two digit minor and patch
 /// versions.
-#define LIBHATCHET_VER 15402
+#define LIBHATCHET_VER 15403
 
 /// `LIBHATCHET_TAG` - Major, minor and patch version tag name.
-#define LIBHATCHET_TAG "v1.54.2"
+#define LIBHATCHET_TAG "v1.54.3"
 
 #if !defined HX_HARDENING_MODE
 /// `HX_HARDENING_MODE` - Library hardening level. See the README.md for levels.
@@ -131,8 +131,8 @@
 #endif // HX_HARDENING_MODE != HX_HARDENING_MODE_DEBUG
 
 #if (HX_USE_LOGGING) > 1
-/// `hxlog_verbose(...)` - Enters formatted messages in the system log. Does not
-/// add a newline. Only evaluated if `HX_USE_LOGGING` is `2` or above.
+/// `hxlog_verbose(...)` - Enters formatted messages in the system log. Only
+/// evaluated if `HX_USE_LOGGING` is `2` or above.
 /// - `...` Printf-style formatted log message.
 #define hxlog_verbose(...) hxlog_handler(hxlog_level_log, __VA_ARGS__)
 #else
@@ -187,12 +187,10 @@ HX_C_BEGIN_
 /// Independently controls what messages are compiled in. See
 /// `hxg_settings.log_level`.
 enum hxlog_level_t {
-	/// `hxlog_level_log` - Written to `hxout`. Structured output. No automatic
-	/// newline.
+	/// `hxlog_level_log` - Written to `hxout` as a TAP comment.
 	hxlog_level_log,
-	/// `hxlog_level_console` - Written to `hxerr`. Unstructured informative
-	/// output including error messages regarding console commands and `hxtest`
-	/// results. No automatic newline. No news is good news.
+	/// `hxlog_level_console` - Written to `hxerr` as a TAP comment. No news
+	/// is good news.
 	hxlog_level_console,
 	/// `hxlog_level_warning` - Written to `hxerr`. Warnings about serious
 	/// problems.

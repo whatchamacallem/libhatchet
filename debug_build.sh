@@ -24,7 +24,7 @@ HX_ERRORS_="-Wall -Wextra -pedantic-errors -Werror -Wfatal-errors -Wcast-qual \
 	-Wmissing-declarations -Wno-ambiguous-reversed-operator                   \
 	-Wno-unused-variable -Wno-c2y-extensions -Wno-unknown-warning-option"
 
-HX_JOBS_="${HX_MAX_CORES:-$(getconf _NPROCESSORS_ONLN)}"
+HX_JOBS_="${HX_MAX_JOBS:-$(getconf _NPROCESSORS_ONLN)}"
 
 HX_OPT_CLEAR_=0
 HX_OPT_DEFINES_=""
@@ -176,7 +176,7 @@ if [ "$HX_OPT_RUN_" = "1" ]; then
 		./hxtest $HX_GTEST_FLAG_ "check_stats 1" runtests
 	else
 		if ./hxtest $HX_GTEST_FLAG_ "check_stats 1" runtests > console_output.txt 2>&1; then
-			grep -E 'gtest_arg|\[  PASSED  \]|\[  FAILED  \]|FAILED TESTS' console_output.txt
+			grep -E '^# WARNING gtest_arg|^(not ok|Bail out!|# (passed|failed) )|\[  PASSED  \]|FAILED TESTS' console_output.txt
 		else
 			cat console_output.txt
 			exit 1

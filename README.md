@@ -169,18 +169,19 @@ default compilers of each distribution:
 | Debian 13        |     14 |    19 |      x |      x |
 | Rocky Linux 10   | 14, 15 |    21 |        |      x |
 
-`test_wasm.sh` is skipped in the containers due to download size. Run
-`install_deb.sh` to install the packages the test scripts need on a Debian
-based distribution such as Ubuntu and `install_rpm.sh` for RPM based
+Run `install_deb.sh --sdks` to install the packages the test scripts need on a
+Debian based distribution such as Ubuntu and `install_rpm.sh` for RPM based
 distributions.
 
 macOS 27 arm64 is tested using Homebrew GCC 16, Apple Clang 21 and Homebrew
 LLVM 23 for C++ modules. Builds are 64-bit only and `test_strip.sh`,
 `test_wasm.sh` and the GDB tests are skipped.
 
-The `pico` contains a port of the test suite to the Raspberry Pi Pico 2 which
-can be used as an example. There is almost nothing to do when setting up. This
-is because libc provides almost all of the device abstraction required.
+The `target` directory contains a small test program for embedded targets.
+`test_target.sh` builds it with the Pico SDK for the Raspberry Pi Pico 2 as well
+as for the desktop. There is almost nothing to do when porting to a new one.
+This is because libc provides almost all of the device abstraction required. See
+`target/README.md`.
 
 The scripted builds exercise the following toolchains, language modes and
 `HX_HARDENING_MODE` combinations:
@@ -188,11 +189,12 @@ The scripted builds exercise the following toolchains, language modes and
 | Script | Toolchain | Modes | Hardening | Notes |
 | --- | --- | --- | --- | --- |
 | `debug_build.sh` | `clang` | C17, C++23 | 3 | 32-bit debug build with ccache and no exceptions/RTTI. |
-| `test_cmake.sh` | `cmake` | C17, C++23 | 3 | Uses the default compiler and the real Google Test and runs `hxtest` and Clang-Tidy. |
+| `test_cmake.sh` | `cmake` | C17, C++23 | 3 | Sets `HX_USE_TEST_FRAMEWORK=2` for the real Google Test. Runs `hxtest` and Clang-Tidy. |
 | `test_coverage.sh` | `gcc` | C99, C++23 | 3 | Builds with `--coverage`, enables `HX_TEST_ERROR_HANDLING=1` and emits `coverage_details.html`. |
-| `test_matrix.sh` | `gcc`, `clang` | C99, C17, C++11, C++23 | 0-3 | Sweeps optimization levels and ASan/UBSan/TSan/MSan and sets `HX_USE_THREADS=1/11`. |
+| `test_matrix.sh` | `gcc`, `clang` | C99, C17, C++11, C++23 | 0-3 | Sweeps -O* with ASan/UBSan/TSan/MSan and sets `HX_USE_THREADS=1/11`. |
 | `test_strip.sh` | `musl-gcc` | C17, C++11-23 | 0 | Size-focused static build with allocator/library stripping. |
-| `test_wasm.sh` | `emcc` | defaults | 3 | WebAssembly build with the memory manager disabled and pthreads enabled. Emscripten defaults are Clang-based C/C++. |
+| `test_target.sh` | `clang`, `gcc`, `arm-none-eabi-gcc` | C17, C++23 | 3 | Builds `target/test_target.cpp` with Meson, with or without the libhatchet module, and with the Pico SDK. `meson test` checks the TAP report. |
+| `test_wasm.sh` | `emcc` | defaults | 3 | WebAssembly build run with Node.js. The memory manager is disabled and pthreads are enabled. |
 
 `test_all.sh` runs all of the above and also enforces certain naming
 conventions.
@@ -208,12 +210,12 @@ The test scripts are at the top level for easy access. Meson and CMake scripts
 are also available.
 
 - 🗀 `.vscode` - The vscode configuration files.
-- 🗀 `example` - Simple program showing usage.
 - 🗀 `gdb` - GDB pretty printers, one per container, loaded by `.gdbinit`.
 - 🗀 `include` - Add this directory to your include path.
   - 🗀 `hx` - The public `<hx/hx*>` headers, one class per header.
     - 🗀 `detail` - Internal implementation headers.
 - 🗀 `src` - The runtime implementation. Add these files to your build.
+- 🗀 `target` - The test program for embedded targets and the Pico flash script.
 - 🗀 `test` - Optional GoogleTest-style test suites.
 
 ### Core layer
@@ -309,10 +311,11 @@ Differences from the standard versions are listed.
   `hxset_difference`, `hxset_intersection`, `hxset_union`, `hxunique` and
   `hxupper_bound`. `hxmerge` and the set operations move-assign out of their
   inputs and accept an `hxvector` reference directly as the output iterator,
-  appending to it without `std::back_inserter`, e.g. `hxmerge<const int*,
-  hxvector<int>&>(...)`. `hxminmax` returns a result with `min` and `max`
-  iterator fields in a single pass. Unlike `std::binary_search`,
-  `hxbinary_search` returns an iterator to the first match instead of `bool`.
+  appending to it without `std::back_inserter`, e.g.
+  `hxmerge<const int*, hxvector<int>&>(...)`. `hxminmax` returns a result with
+  `min` and `max` iterator fields in a single pass. Unlike
+  `std::binary_search`, `hxbinary_search` returns an iterator to the first
+  match instead of `bool`.
 - `hxsort.hpp` provides the comparison sorts. `hxsort` is an introsort, and
   `hxinsertion_sort` and `hxheapsort` are also available.
 - All of `hxexpected`, `hxptr`, `hxref` and `hxvector` should be able to
@@ -337,9 +340,9 @@ Differences from the standard versions are listed.
 ### Runtime Facilities
 
 - `hxconsole` is a debug and remote command console that also parses config
-  files such as `example.cfg`. Register bindings at file scope with
-  `hxconsole_command()` and `hxconsole_variable()`, or use the `_named` variants
-  to choose the name yourself.
+  files. Register bindings at file scope with `hxconsole_command()` and
+  `hxconsole_variable()`, or use the `_named` variants to choose the name
+  yourself.
 - `hxprofiler` is a cycle-sampling scope profiler that emits `chrome://tracing`
   captures. Mark a scope with `hxprofile_scope("label")` and control capture
   with `hxprofiler_start()`, `hxprofiler_stop()` and `hxprofiler_log()`. It
@@ -352,8 +355,9 @@ Differences from the standard versions are listed.
 - `hxthread` wraps pthreads or C11 `<threads.h>` with `hxmutex`,
   `hxcondition_variable`, `hxunique_lock`, `hxthread` and `hxthread_local`.
 - `hxtest` is the GoogleTest-compatible subset that the test suite itself runs
-  on. Set `HX_USE_GOOGLE_TEST=1` to run the same tests against the real Google
-  Test.
+  on. `HX_USE_TEST_FRAMEWORK=0`, the default, reports with the Test Anything
+  Protocol (TAP). `1` reports in the style of Google Test and `2` runs the same
+  tests against the real Google Test.
 
 ## Not Provided
 

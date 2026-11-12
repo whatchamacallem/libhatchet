@@ -60,11 +60,8 @@ fi
 
 ./test_all.sh
 
-if ! git diff --quiet || ! git diff --cached --quiet \
-		|| [ -n "$(git ls-files --others --exclude-standard)" ]; then
-	git add .
-	git commit -q -m "$HX_BRANCH_ $HX_TAG_"
-fi
+git add .
+git diff --cached --quiet || git commit -q -m "$HX_BRANCH_ $HX_TAG_"
 git checkout -q "$HX_TARGET_"
 git merge --squash "$HX_BRANCH_"
 git commit -q -m "$HX_TAG_"
@@ -89,6 +86,11 @@ git push -q --force origin "$HX_DOCS_COMMIT_:refs/heads/gh-pages"
 rm -f "$GIT_INDEX_FILE"
 unset GIT_INDEX_FILE
 git update-ref -d "refs/remotes/origin/gh-pages" 2> /dev/null || true
+
+# Keep gh-pages out of local fetches. Replaces instead of adding a duplicate.
+git config --replace-all remote.origin.fetch '^refs/heads/gh-pages' '^\^refs/heads/gh-pages$'
 git prune --expire=now
 
 echo -e "\e[38;5;208mDone releasing $HX_TAG_ ($HX_DESCRIBE_).\e[0m"
+
+echo 🪓🪓🪓
