@@ -657,7 +657,7 @@ TEST(hxconsole_test, usage_messages) {
 TEST(hxconsole_test, null_test) {
 	const uint8_t prev = hxg_settings.log_level;
 	hxg_settings.log_level = hxlog_level_warning;
-	hxlog_handler(hxlog_level_console, "test_hidden\n");
+	hxlog_handler(hxlog_level_console, "test_hidden");
 	hxg_settings.log_level = prev;
 	hxlog_verbose("");
 	SUCCEED();

@@ -3,8 +3,8 @@
 # SPDX-License-Identifier: MIT
 # This file is licensed under the terms of the LICENSE.md file.
 #
-# Requires the emsdk. After installing the emsdk it is recommended to add it to
-# your .bashrc.
+# Requires the emsdk, which provides emcc and node. "install_deb.sh --sdks"
+# installs it to $HOME/emsdk.
 
 trap 'trap "" INT PIPE TERM; pkill -P $$; wait; exit 1' INT PIPE TERM
 set -eu
@@ -14,34 +14,66 @@ cd "$(dirname "$(readlink -f "$0")")"
 export POSIXLY_CORRECT=1
 
 HX_DIR_=$PWD
-HX_JOBS_="${HX_MAX_CORES:-$(getconf _NPROCESSORS_ONLN)}"
+HX_JOBS_="${HX_MAX_JOBS:-$(getconf _NPROCESSORS_ONLN)}"
 
-if [ "${1:-}" = "--verbose" ]; then
-	set -o xtrace
-fi
+HX_EMSDK_="$HOME/emsdk"
 
-# Build artifacts are not retained.
-rm -rf "$(readlink -f build)" build
-if [ "${HX_RAMDISK:-0}" = 1 ]; then mkdir build; else ln -s "$(mktemp -d)" build; fi
-cd build
+# Set by parse_arguments. "--verbose" or empty.
+HX_VERBOSE_=""
 
-emcc -I"$HX_DIR_/include" -O2 -pthread -fdiagnostics-absolute-paths -c \
-	"$HX_DIR_"/test/*.c
+parse_arguments() {
+	if [ "${1:-}" = "--verbose" ]; then
+		HX_VERBOSE_="--verbose"
+	elif [ -n "${1:-}" ]; then
+		echo "usage_error: $0 [--verbose]"
+		exit 1
+	fi
+}
 
-# -pthread requires SharedArrayBuffer which needs COOP/COEP headers from the
-# server.
-printf '%s\0' "$HX_DIR_"/src/*.cpp "$HX_DIR_"/test/*.cpp |
-	xargs -0 -n 1 -P "$HX_JOBS_" sh -c '"$0" "$@" || exit 255'               \
-	emcc -O2 -fno-exceptions -fno-rtti -fdiagnostics-absolute-paths          \
-		-Werror -Wfatal-errors -DHX_USE_FILE_IO=0 -DHX_USE_SLAB_ALLOCATOR=0  \
-		-DHX_USE_THREADS=1 -DHX_USE_CONSOLE=1 -Wno-c2y-extensions -pthread   \
-		-std=c++23 -flto=auto -I"$HX_DIR_/include" -c
+# sh can only source emsdk_env.sh from its own directory.
+load_emscripten_environment() {
+	if [ ! -d "$HX_EMSDK_" ]; then
+		echo "error: $HX_EMSDK_ not found. Run install_deb.sh --sdks."
+		exit 1
+	fi
 
-emcc -O2 -pthread -sEXIT_RUNTIME=1 -sPTHREAD_POOL_SIZE=4 -sPROXY_TO_PTHREAD \
-	-flto=auto *.o -o index.html
+	export EMSDK_QUIET=1
+	cd "$HX_EMSDK_"
+	. ./emsdk_env.sh
+	cd "$HX_DIR_"
+}
 
-if [ "${1:-}" = "--verbose" ]; then
+build_test_suite() {
+	emcc -I"$HX_DIR_/include" -O2 -pthread -fdiagnostics-absolute-paths -c \
+		"$HX_DIR_"/test/*.c
 
+	# -pthread requires SharedArrayBuffer which needs COOP/COEP headers from the
+	# server.
+	printf '%s\0' "$HX_DIR_"/src/*.cpp "$HX_DIR_"/test/*.cpp |
+		xargs -0 -n 1 -P "$HX_JOBS_" sh -c '"$0" "$@" || exit 255'               \
+		emcc -O2 -fno-exceptions -fno-rtti -fdiagnostics-absolute-paths          \
+			-Werror -Wfatal-errors -DHX_USE_FILE_IO=0 -DHX_USE_SLAB_ALLOCATOR=0  \
+			-DHX_USE_THREADS=1 -DHX_USE_CONSOLE=1 -Wno-c2y-extensions -pthread   \
+			-std=c++23 -flto=auto -I"$HX_DIR_/include" -c
+
+	em++ -O2 -pthread -sEXIT_RUNTIME=1 -sPTHREAD_POOL_SIZE=4 -sPROXY_TO_PTHREAD \
+		-flto=auto *.o -o index.html
+}
+
+run_test_suite() {
+	if [ -n "$HX_VERBOSE_" ]; then
+		"$EMSDK_NODE" index.js
+	else
+		if ! "$EMSDK_NODE" index.js > console_output.txt 2>&1 \
+			|| ! grep -E '^# passed ' console_output.txt; then
+			cat console_output.txt
+			echo "error: Tests failed."
+			exit 1
+		fi
+	fi
+}
+
+serve_test_page() {
 	echo "Serving http://0.0.0.0:9876/"
 
 	# Start a web server with COOP/COEP headers required for SharedArrayBuffer
@@ -59,14 +91,29 @@ HX_EOF_
 	set +e
 
 	# Launch Google Chrome if it is installed.
-	if command -v google-chrome >/dev/null 2>&1; then
-		google-chrome http://0.0.0.0:9876/ >/dev/null 2>&1 &
-	fi
+	command -v google-chrome >/dev/null 2>&1 && google-chrome http://0.0.0.0:9876/ >/dev/null 2>&1 &
 
 	# Wait for the web server. Kill its process group when interrupted (Ctrl-C).
 	echo "Press ctrl-c to kill the web server."
 	wait "$HX_SERVER_PID_"
-fi
+}
 
-# Say goodbye and make sure the script returns 0.
-echo 🪓🪓🪓
+main() {
+	parse_arguments "$@"
+	load_emscripten_environment
+
+	# Build artifacts are not retained.
+	rm -rf "$(readlink -f build)" build
+	if [ "${HX_RAMDISK:-0}" = 1 ]; then mkdir build; else ln -s "$(mktemp -d)" build; fi
+
+	[ -n "$HX_VERBOSE_" ] && set -o xtrace
+	cd build
+	build_test_suite
+	run_test_suite
+
+	[ -n "$HX_VERBOSE_" ] && serve_test_page
+
+	echo 🪓🪓🪓
+}
+
+main "$@"

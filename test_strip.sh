@@ -11,7 +11,7 @@ cd "$(dirname "$(readlink -f "$0")")"
 export POSIXLY_CORRECT=1
 
 HX_DIR_=$PWD
-HX_JOBS_="${HX_MAX_CORES:-$(getconf _NPROCESSORS_ONLN)}"
+HX_JOBS_="${HX_MAX_JOBS:-$(getconf _NPROCESSORS_ONLN)}"
 
 HX_BUILD_="-DHX_HARDENING_MODE=HX_HARDENING_MODE_NONE -DHX_PROVIDE_NEW_DELETE=0 \
 	-DHX_USE_STD_LIB=0 -DHX_USE_LOGGING=1 -DHX_USE_THREADS=11                   \
@@ -24,61 +24,88 @@ HX_ERRORS_="-Wfatal-errors -Wall -Wextra -pedantic-errors -Werror -Wcast-qual \
 HX_FLAGS_="-Os -march=native -static -g0 -ffunction-sections -fdata-sections -ffast-math \
 	-fno-asynchronous-unwind-tables -fno-stack-protector -ffile-prefix-map=$HX_DIR_/="
 
-# Build artifacts are not retained.
-rm -rf "$(readlink -f build)" build
-if [ "${HX_RAMDISK:-0}" = 1 ]; then mkdir build; else ln -s "$(mktemp -d)" build; fi
-cd build
+# Set by parse_arguments. "--verbose" or empty.
+HX_VERBOSE_=""
 
-if [ "${1:-}" = "--verbose" ]; then
-	set -o xtrace
-fi
+# Set by select_language_standards. "23" or empty when C++23 is not supported.
+HX_CXX23_=""
 
-HX_CXX23_="23"
-if [ -z "$(echo | musl-gcc -std=c++23 -dM -E -x c++ - 2>/dev/null | grep __cplusplus)" ]; then
-	HX_CXX23_=""
-	echo "C++23 not supported..."
-fi
-
-musl-gcc $HX_BUILD_ $HX_ERRORS_ $HX_FLAGS_ -I"$HX_DIR_/include" -std=c17 -c \
-	"$HX_DIR_"/test/*.c
-
-# Test every supported version of the standard without libc++.
-for HX_VERSION_ in 11 14 17 20 $HX_CXX23_; do
-	printf '%s ' "$HX_VERSION_"
-
-	printf '%s\0' "$HX_DIR_"/src/*.cpp "$HX_DIR_"/test/*.cpp |
-		xargs -0 -n 1 -P "$HX_JOBS_" sh -c '"$0" "$@" || exit 255'                           \
-		musl-gcc $HX_BUILD_ $HX_ERRORS_ $HX_FLAGS_ -I"$HX_DIR_/include" -std=c++$HX_VERSION_ \
-			-nostdinc++ -fno-exceptions -fno-rtti -flto=auto -c
-
-	# -Wno-maybe-uninitialized is passed to the link time optimizer because it has
-	# false positives. -Wl,--gc-sections and -flto=12 should reduce size.
-	musl-gcc $HX_FLAGS_ -Wno-maybe-uninitialized -Wl,--gc-sections -nodefaultlibs -flto=auto \
-		*.o -lc -lpthread -lm -o hxtest
-
-done
-printf '\n'
-
-# Only process and display the c++23 version.
-strip -o hxtest-strip --strip-unneeded hxtest
-
-{ set +o xtrace; } 2> /dev/null
-
-if [ "${1:-}" = "--verbose" ]; then
-	./hxtest-strip "check_stats 1" runtests
-else
-	if ./hxtest-strip "check_stats 1" runtests > console_output.txt 2>&1; then
-		grep -E '\[  PASSED  \]|\[  FAILED  \]|FAILED TESTS' console_output.txt
-	else
-		cat console_output.txt
+parse_arguments() {
+	if [ "${1:-}" = "--verbose" ]; then
+		HX_VERBOSE_="--verbose"
+	elif [ -n "${1:-}" ]; then
+		echo "usage_error: $0 [--verbose]"
 		exit 1
 	fi
-fi
+}
 
-cd ..
-./list_symbols.sh "${1:-}"
+select_language_standards() {
+	HX_CXX23_="23"
+	if [ -z "$(echo | musl-gcc -std=c++23 -dM -E -x c++ - 2>/dev/null | grep __cplusplus)" ]; then
+		HX_CXX23_=""
+		echo "C++23 not supported..."
+	fi
+}
 
-echo
-size build/hxtest-strip
+# Test every supported version of the standard without libc++. Each version
+# replaces hxtest so the newest one is kept.
+build_test_suite() {
+	musl-gcc $HX_BUILD_ $HX_ERRORS_ $HX_FLAGS_ -I"$HX_DIR_/include" -std=c17 -c \
+		"$HX_DIR_"/test/*.c
 
-echo "🪓🪓🪓"
+	for HX_VERSION_ in 11 14 17 20 $HX_CXX23_; do
+		printf '%s ' "$HX_VERSION_"
+
+		printf '%s\0' "$HX_DIR_"/src/*.cpp "$HX_DIR_"/test/*.cpp |
+			xargs -0 -n 1 -P "$HX_JOBS_" sh -c '"$0" "$@" || exit 255'                           \
+			musl-gcc $HX_BUILD_ $HX_ERRORS_ $HX_FLAGS_ -I"$HX_DIR_/include" -std=c++$HX_VERSION_ \
+				-nostdinc++ -fno-exceptions -fno-rtti -flto=auto -c
+
+		# -Wno-maybe-uninitialized is passed to the link time optimizer because it has
+		# false positives. -Wl,--gc-sections and -flto=12 should reduce size.
+		musl-gcc $HX_FLAGS_ -Wno-maybe-uninitialized -Wl,--gc-sections -nodefaultlibs -flto=auto \
+			*.o -lc -lpthread -lm -o hxtest
+
+	done
+	printf '\n'
+}
+
+run_test_suite() {
+	if [ -n "$HX_VERBOSE_" ]; then
+		./hxtest-strip "check_stats 1" runtests
+	else
+		if ./hxtest-strip "check_stats 1" runtests > console_output.txt 2>&1; then
+			grep -E '^(not ok|Bail out!|# (passed|failed) )' console_output.txt
+		else
+			cat console_output.txt
+			exit 1
+		fi
+	fi
+}
+
+main() {
+	parse_arguments "$@"
+
+	# Build artifacts are not retained.
+	rm -rf "$(readlink -f build)" build
+	if [ "${HX_RAMDISK:-0}" = 1 ]; then mkdir build; else ln -s "$(mktemp -d)" build; fi
+
+	[ -n "$HX_VERBOSE_" ] && set -o xtrace
+	cd build
+	select_language_standards
+	build_test_suite
+
+	# Only process and display the c++23 version.
+	strip -o hxtest-strip --strip-unneeded hxtest
+	{ set +o xtrace; } 2> /dev/null
+
+	run_test_suite
+	cd ..
+	./list_symbols.sh "$HX_VERBOSE_"
+	echo
+	size build/hxtest-strip
+
+	echo 🪓🪓🪓
+}
+
+main "$@"

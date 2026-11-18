@@ -50,8 +50,8 @@ module;
 #include <initializer_list>
 #endif
 
-#if defined HX_USE_GOOGLE_TEST && (HX_USE_GOOGLE_TEST)
-#error HX_USE_GOOGLE_TEST is set and Google Test 1.15.2 does not compile as a module.
+#if defined HX_USE_TEST_FRAMEWORK && (HX_USE_TEST_FRAMEWORK) == 2
+#error HX_USE_TEST_FRAMEWORK=2 selects Google Test 1.15.2, which does not compile as a module.
 #endif
 
 // Modules are not allowed to override globals. HX_PROVIDE_NEW_DELETE=-1 is used

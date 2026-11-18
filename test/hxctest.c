@@ -7,9 +7,9 @@
 #include <stdio.h>
 
 bool hxctest_libhatchet_h(void) {
-	hxlog_verbose("Smoke testing from C: hxlog_verbose %d, ", 1);
-	hxlog("hxlog_always %d\n", 2);
-	hxlog_console("hxlog_console %d, ", 3);
+	hxlog_verbose("Smoke testing from C: hxlog_verbose %d", 1);
+	hxlog("hxlog_always %d", 2);
+	hxlog_console("hxlog_console %d", 3);
 	hxlog_warning("hxlog_warning %d", 4);
 	hxwarn(1, "not true");
 	hxassertf(1, "hxassertf val %d", 5);
@@ -42,7 +42,7 @@ bool hxctest_swap(void) {
 	hxswap_memcpy(a[0], a[1]);
 	struct { unsigned int x; short pad; } b[] = { { 30u, -1 }, { 70u, -2 } }; /* hxtest */
 	hxswap_memcpy(b[0], b[1]);
-	return a[0] == 7 && a[1] == 3 && b[0].x == 70u && b[1].x == 30u;
+	return (a[0] == 7 && a[1] == 3 && b[0].x == 70u && b[1].x == 30u) != 0;
 }
 
 bool hxctest_memory(void) {

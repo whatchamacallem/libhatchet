@@ -87,7 +87,7 @@ public:
 	};
 
 	/// Default-constructs as a closed file.
-	hxfile(void);
+	hxfile(void) noexcept;
 
 	/// Constructs and opens a file with a formatted filename. Uses a
 	/// non-standard argument order.
@@ -103,7 +103,7 @@ public:
 	/// `hxerr`, and `hxdev_null` instead.
 	/// - `mode` : Combination of `open_mode` flags describing the handle.
 	/// - `file` : Implementation-specific handle.
-	hxfile(uint8_t mode_, intptr_t file_);
+	hxfile(uint8_t mode_, intptr_t file_) noexcept;
 
 	/// Disallow usage where the filename comes first, like with `fopen`.
 	/// This is done because `hxfile::hxfile()` uses variadic arguments.

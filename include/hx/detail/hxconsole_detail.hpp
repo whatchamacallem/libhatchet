@@ -159,7 +159,7 @@ hxattr_cold bool hxconsole_variable_execute_(hxconsole_target_ target_, const ch
 	volatile var_t_* const var_ = static_cast<volatile var_t_*>(target_.var_);
 	if(hxconsole_is_end_of_line_(str_)) {
 		// 0 parameters is a query.
-		hxlog_handler(hxlog_level_console, "%.15g\n", static_cast<double>(*var_));
+		hxlog_handler(hxlog_level_console, "%.15g", static_cast<double>(*var_));
 		return true;
 	}
 	char* next_ = const_cast<char*>(str_);
@@ -168,7 +168,7 @@ hxattr_cold bool hxconsole_variable_execute_(hxconsole_target_ target_, const ch
 		*var_ = val_;
 		return true;
 	}
-	hxlog_handler(hxlog_level_console, "parse_error: %s\n", str_);
+	hxlog_handler(hxlog_level_console, "parse_error: %s", str_);
 	return false;
 }
 
@@ -176,7 +176,7 @@ hxattr_cold bool hxconsole_variable_execute_(hxconsole_target_ target_, const ch
 class hxconsole_command_ {
 public:
 	hxconsole_command_(bool (*fn_)(hxconsole_target_, const char*),
-			const char* const* labels_, hxconsole_target_ target_)
+			const char* const* labels_, hxconsole_target_ target_) noexcept
 		: m_execute_(fn_), m_labels_(labels_), m_target_(target_) { }
 
 	// Parses and executes a command line. Returns false on failure.
@@ -201,7 +201,7 @@ hxattr_cold const char* const* hxconsole_labels_(void) {
 // Single factory function. The compiler deduces args_t_... from the function
 // pointer.
 template<hxconsole_parseable_... args_t_>
-hxattr_cold hxconsole_command_ hxconsole_command_factory_(bool(*fn_)(args_t_...)) {
+hxattr_cold hxconsole_command_ hxconsole_command_factory_(bool(*fn_)(args_t_...)) noexcept {
 	const hxconsole_target_ target_ = { .fn_ = reinterpret_cast<hxconsole_fn_t_>(fn_) };
 	return hxconsole_command_(&hxconsole_execute_<args_t_...>, hxconsole_labels_<args_t_...>(),
 		target_);
@@ -210,7 +210,7 @@ hxattr_cold hxconsole_command_ hxconsole_command_factory_(bool(*fn_)(args_t_...)
 inline constexpr const char* hxg_console_variable_factory_labels_[] = { "<optional-value>", hxnull };
 
 template<hxconsole_parseable_ var_t_>
-hxattr_cold hxconsole_command_ hxconsole_variable_factory_(volatile var_t_* var_) {
+hxattr_cold hxconsole_command_ hxconsole_variable_factory_(volatile var_t_* var_) noexcept {
 	const hxconsole_target_ target_ = { .var_ = var_ };
 	return hxconsole_command_(&hxconsole_variable_execute_<var_t_>, hxg_console_variable_factory_labels_,
 		target_);
@@ -291,7 +291,7 @@ void hxconsole_register_(hxconsole_hash_table_node_* node);
 // There is no reason to deregister or destruct anything.
 class hxconsole_constructor_ {
 public:
-	hxattr_cold hxconsole_constructor_(const hxconsole_command_& command_, const char* id_)
+	hxattr_cold hxconsole_constructor_(const hxconsole_command_& command_, const char* id_) noexcept
 			: m_node_(hxconsole_hash_table_key_(id_), command_) {
 		hxconsole_register_(&m_node_);
 	}

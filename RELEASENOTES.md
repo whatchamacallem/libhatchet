@@ -1,11 +1,23 @@
 # Release Notes
 
-## v1.54.1 2026-11-01
+## v1.54.3 2026-11-03
 
 ```text
+- Added `--sdks` to `install_deb.sh` to install `emcc` and the Pico SDK on Ubuntu.
+- Replaced the example with `target/test_target.cpp`, a small test program for
+  embedded targets that reports with TAP. `test_target.sh` builds it for the
+  desktop with Meson, which consumes the report, and with the Pico SDK using
+  `-DPICO_BOARD` with `CMakeLists.txt`. The `pico` directory moved to `target`.
+- Removed the Meson option `build_example`. The test program is built when
+  libhatchet is the main project.
 - Renamed all the top level scripts to use `snake_case`.
 - Redesigned `test_msvc.ps1` to saturate the CPU without running out of RAM.
 - Tests are run on 5 OS at the same time and largely run off of ram-disks.
+- Renamed `HX_USE_GOOGLE_TEST` to `HX_USE_TEST_FRAMEWORK`. Replace
+  `HX_USE_GOOGLE_TEST=1` with `HX_USE_TEST_FRAMEWORK=2` to keep using Google
+  Test. `0` is the default and has `hxtest` report with the Test Anything
+  Protocol. `1` has `hxtest` report in the style of Google Test.
+- Log messages are now TAP protocol comments in all builds.
 ```
 
 ## v1.53.2 2026-11-01

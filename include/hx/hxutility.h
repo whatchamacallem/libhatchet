@@ -38,7 +38,7 @@ HX_NS_BEGIN_
 /// `hxsize` - Returns the size of a C array. Rejects pointer arguments at
 /// compile time.
 template<typename T_, hxsize_t N_> hxattr_nodiscard constexpr
-hxsize_t hxsize(T_ (&)[N_]) { return N_; }
+hxsize_t hxsize(T_ (&)[N_]) noexcept { return N_; }
 
 // -- C++ SFINAE ---------------------------------------------------------------
 // Substitution Failure Is Not An Error. enable_if checks.

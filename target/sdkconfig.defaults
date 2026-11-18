@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: © 2017-2026 Adrian Johnston.
+# SPDX-License-Identifier: MIT
+# This file is licensed under the terms of the LICENSE.md file.
+#
+# The ESP-IDF settings that test_target.cpp changes from the defaults. The top
+# level CMakeLists.txt uses them. See README.md.
+
+# app_main runs the tests on the main task. The default is 3584 bytes.
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=16384

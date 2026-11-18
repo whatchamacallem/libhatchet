@@ -6,9 +6,11 @@
 /// \file
 /// Google Test-compatible framework for writing unit tests. It does not spam
 /// your system memory allocator with string operations right after an assert
-/// fails. Actually, it never allocates. To disable this header and switch to
-/// testing with `<gtest/gtest.h>` directly, use `-DHX_USE_GOOGLE_TEST=1`. Only
-/// core features are provided. This framework uses only `operator<` and
+/// fails. Actually, it never allocates. Results are reported with the Test
+/// Anything Protocol (TAP) by default or in the style of Google Test with
+/// `-DHX_USE_TEST_FRAMEWORK=1`. To disable this header and switch to testing
+/// with `<gtest/gtest.h>` directly, use `-DHX_USE_TEST_FRAMEWORK=2`. Only core
+/// features are provided. This framework uses only `operator<` and
 /// `operator==` in its assertions. Compatibility with Google Test may require
 /// additional relational operators.
 ///
@@ -81,8 +83,8 @@
 
 #include "libhatchet.h"
 
-// HX_USE_GOOGLE_TEST - Enable this to use Google Test instead of hxtest.hpp.
-#if HX_USE_GOOGLE_TEST
+// HX_USE_TEST_FRAMEWORK=2 uses Google Test instead of hxtest.hpp.
+#if (HX_USE_TEST_FRAMEWORK) == 2
 #include <gtest/gtest.h>
 #else
 
@@ -144,8 +146,10 @@ public:
 		HX_TEST_NAME_(hxtest_f_, suite_fixture_, case_name_)::hxrun_, HX_QUOTE(suite_fixture_), HX_QUOTE(case_name_), __FILE__, __LINE__); \
 	void HX_TEST_NAME_(hxtest_f_, suite_fixture_, case_name_)::hxrun_test_f_(void)
 
-/// `int RUN_ALL_TESTS(void)` - Executes all registered test cases. See
-/// `hxg_settings.test_filter` for restricting which tests run.
+/// `int RUN_ALL_TESTS(void)` - Executes all registered test cases and returns
+/// the number that failed. Each runs in an `hxslab_allocator_stack_0` scope, so
+/// call `hxslab_allocator_allocate_stacks` first. See `hxg_settings.test_filter`
+/// for restricting which tests run.
 #define RUN_ALL_TESTS() HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().run_all_tests_()
 
 /// `void SUCCEED(void)` - Marks the current test as successful without any
@@ -269,4 +273,4 @@ public:
 #define ASSERT_STRNE(a_, b_) HX_NS_PREFIX_ hxdetail_::hxtest_::dispatcher_().condition_check_( \
 	HX_NS_PREFIX_ hxdetail_::hxtest_str_ne_((a_), (b_)), __FILE__, __LINE__, #a_ " != " #b_, true)
 
-#endif // !HX_USE_GOOGLE_TEST
+#endif // HX_USE_TEST_FRAMEWORK != 2

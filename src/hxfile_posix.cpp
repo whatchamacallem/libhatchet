@@ -31,12 +31,12 @@ hxfile hxerr(hxfile::open_mode_out, static_cast<intptr_t>(STDOUT_FILENO));
 #endif
 hxfile hxdev_null(hxfile::open_mode_out, static_cast<intptr_t>(-1));
 
-hxfile::hxfile(void) {
+hxfile::hxfile(void) noexcept {
 	::memset(static_cast<void*>(this), 0x00, sizeof *this);
 	m_file_pimpl_ = -1;
 }
 
-hxfile::hxfile(uint8_t mode, intptr_t file) {
+hxfile::hxfile(uint8_t mode, intptr_t file) noexcept {
 	::memset(static_cast<void*>(this), 0x00, sizeof *this);
 	m_open_mode_ = mode;
 	m_file_pimpl_ = file;
@@ -217,7 +217,11 @@ size_t hxfile::write(const void* bytes, size_t byte_count) {
 	hxassertf(total == byte_count || ((m_open_mode_ & hxfile::open_mode_asserts) == 0u),
 		"write want %zu got %zu %s", byte_count, total, ::strerror(errno));
 
-	m_fail_ = (total != byte_count);
+	// hxout and hxerr are shared by concurrent logging. Only a change is stored.
+	const bool fail = total != byte_count;
+	if(m_fail_ != fail) {
+		m_fail_ = fail;
+	}
 	return total;
 }
 

@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 // This file is licensed under the MIT license found in the LICENSE.md file.
 
-#if !defined LIBHATCHET_VER || (HX_USE_GOOGLE_TEST)
+#if !defined LIBHATCHET_VER || (HX_USE_TEST_FRAMEWORK) == 2
 #error Internal. Do not include this file directly.
 #endif
 
