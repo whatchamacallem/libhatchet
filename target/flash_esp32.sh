@@ -9,7 +9,7 @@
 # report does not finish. It also runs in a test_msvc_wslc.ps1 --clone-sdks
 # container, where it attaches the ESP32-C6 with usbip. test_target.sh uses
 # --connected and --no-build. See README.md and iot.md.
-# Run with: ./libhatchet_flash_esp32.sh [--port /dev/ttyACM0] [--target esp32c6]
+# Run with: ./flash_esp32.sh [--port /dev/ttyACM0] [--target esp32c6]
 #   [--no-build] [--connected]
 set -euo pipefail
 
@@ -70,7 +70,7 @@ export IDF_PATH="$HX_ESP_IDF_"
 # -- 1. Find Serial Port --------------------------------------------------------
 if [[ -z "$PORT" ]]; then
 	PORT=$(usb_serial_port "$VENDOR") ||
-		die "No ESP32 serial port found. Try: ./libhatchet_flash_esp32.sh --port /dev/ttyACM0"
+		die "No ESP32 serial port found. Try: ./flash_esp32.sh --port /dev/ttyACM0"
 fi
 [[ -e "$PORT" ]] || die "$PORT not found."
 ok "Serial port: $PORT"

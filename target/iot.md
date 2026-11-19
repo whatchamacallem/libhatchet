@@ -13,7 +13,10 @@
   as one running continuous integration. It stops with an error at the first
   board that can't be built, isn't connected, doesn't respond or fails.
 - Without `--require-all` a board that is connected still has to pass. One that
-  is connected but doesn't respond is an error.
+  is connected but doesn't respond is an error. One that isn't connected is
+  built and passes with a warning.
+- `test_target.sh --target <target>` builds and tests only that board.
+  `--target meson` runs only the desktop tests.
 - The report is TAP, the Test Anything Protocol, over the board's serial port.
   There is no custom protocol to maintain.
 
@@ -21,8 +24,8 @@
 
 | Target | Board | SDK | USB vendor ID | Flash script |
 | --- | --- | --- | --- | --- |
-| `pico2` | Raspberry Pi Pico 2 | Pico SDK | `2e8a` | `libhatchet_flash_pico.sh` |
-| `esp32c6` | ESP32-C6 | ESP-IDF | `303a` | `libhatchet_flash_esp32.sh` |
+| `pico2` | Raspberry Pi Pico 2 | Pico SDK | `2e8a` | `flash_pico.sh` |
+| `esp32c6` | ESP32-C6 | ESP-IDF | `303a` | `flash_esp32.sh` |
 
 ## How it fits together
 
@@ -31,9 +34,9 @@
 
 1. Checks that the SDK is installed with `has_sdk_<sdk>`.
 2. Checks that the board is connected with
-   `libhatchet_flash_<sdk>.sh --target <target> --connected`.
+   `flash_<sdk>.sh --target <target> --connected`.
 3. Builds it in `build/<target>` with `build_<sdk> <target>`.
-4. Tests it with `libhatchet_flash_<sdk>.sh --target <target> --no-build`.
+4. Tests it with `flash_<sdk>.sh --target <target> --no-build`.
 
 Each flash script handles one SDK and takes the same options:
 
@@ -70,8 +73,8 @@ Another ESP32 chip or another Pico board, for example.
    Espressif chip also uses `303a` and a second Pico also uses `2e8a`. The chip
    type can tell them apart: `esptool chip-id` for an ESP32, or the product ID
    of a Pico in BOOTSEL. Add only what the boards on hand need.
-5. Run `test_target.sh` with only the new board connected. Then run it with
-   every board connected and `--require-all`.
+5. Run `test_target.sh --target <target>` with the new board connected. Then
+   run `test_target.sh --require-all` with every board connected.
 6. Add the board to the table above and to `README.md`.
 
 ## Adding an SDK
@@ -83,9 +86,9 @@ Another ESP32 chip or another Pico board, for example.
 4. If the board needs anything around the tests, add a section to
    `test_target.cpp`. For example, the Pico waits for USB serial and then
    reboots into BOOTSEL. Settings such as `HX_USE_THREADS` go in the build.
-5. Copy a flash script to `libhatchet_flash_<sdk>.sh`, keep its options and
+5. Copy a flash script to `flash_<sdk>.sh`, keep its options and
    source `libhatchet_usb.sh`. Checking the report with `grep`, as
-   `libhatchet_flash_pico.sh` does, is enough unless the board has to be reset
+   `flash_pico.sh` does, is enough unless the board has to be reset
    once the port is open, as the ESP32-C6 does.
 6. Add `<sdk>:<target>` to `HX_BOARDS_`, then test and document it as above.
 

@@ -8,10 +8,11 @@
 # Anything Protocol (TAP) and "meson test" consumes the report. Then builds it
 # for each board in HX_BOARDS_ whose SDK is installed and tests it on the board
 # when the board is connected. Stops at the first board that fails. With
-# --require-all every board has to be built and connected. See
-# target/README.md and target/iot.md.
+# --require-all every board has to be built and connected. --target runs only
+# "meson" or one board, e.g. --target esp32c6. See target/README.md and
+# target/iot.md.
 #
-# usage: test_target.sh [--verbose] [--require-all]
+# usage: test_target.sh [--verbose] [--require-all] [--target meson|<board>]
 
 trap 'trap "" INT PIPE TERM; pkill -P $$; wait; exit 1' INT PIPE TERM
 set -eu
@@ -30,7 +31,7 @@ HX_LINK_FLAGS_="-nodefaultlibs -lc -lpthread -lm"
 
 # The boards there is hardware for, as <sdk>:<target>. has_sdk_<sdk> checks
 # that the SDK is installed, build_<sdk> builds the target in build/<target> and
-# target/libhatchet_flash_<sdk>.sh tests it on the board. See target/iot.md.
+# target/flash_<sdk>.sh tests it on the board. See target/iot.md.
 HX_BOARDS_="pico:pico2 esp32:esp32c6"
 
 HX_PICO_SDK_="$HOME/pico-sdk"
@@ -42,21 +43,41 @@ HX_VERBOSE_=""
 # Set by parse_arguments. 1 when --require-all was passed.
 HX_REQUIRE_ALL_=0
 
+# Set by parse_arguments. "meson", a <target> from HX_BOARDS_ or empty for all.
+HX_SELECTED_=""
+
 # Set by select_native_files. The Meson native files for clang and gcc.
 HX_CLANG_NATIVE_=""
 HX_GCC_NATIVE_=""
 
+usage_error() {
+	echo "usage_error: $0 [--verbose] [--require-all] [--target meson|<board>]"
+	echo "boards: $HX_BOARDS_"
+	exit 1
+}
+
 parse_arguments() {
-	for HX_ARGUMENT_ in "$@"; do
-		case "$HX_ARGUMENT_" in
+	while [ $# -gt 0 ]; do
+		case "$1" in
 			--verbose) HX_VERBOSE_="--verbose" ;;
 			--require-all) HX_REQUIRE_ALL_=1 ;;
-			*)
-				echo "usage_error: $0 [--verbose] [--require-all]"
-				exit 1
+			--target)
+				[ $# -ge 2 ] || usage_error
+				HX_SELECTED_="$2"
+				shift
 				;;
+			*) usage_error ;;
 		esac
+		shift
 	done
+
+	# The selection has to be meson or a board in HX_BOARDS_.
+	if [ -n "$HX_SELECTED_" ] && [ "$HX_SELECTED_" != meson ]; then
+		for HX_BOARD_ in $HX_BOARDS_; do
+			[ "${HX_BOARD_#*:}" = "$HX_SELECTED_" ] && return 0
+		done
+		usage_error
+	fi
 }
 
 # -- Meson ---------------------------------------------------------------------
@@ -108,6 +129,22 @@ build_and_test_with_meson() {
 	ln -sf hxtest_target build/hxtest
 
 	meson test -C build --no-rebuild --print-errorlogs $HX_VERBOSE_
+}
+
+# Builds and tests with clang and gcc, with and without the named module.
+test_meson() {
+	echo "$HX_CLANG_NATIVE_ meson+ninja with textual includes..."
+	build_and_test_with_meson --native-file="$HX_CLANG_NATIVE_" -Dbuild_module=disabled
+
+	echo "$HX_CLANG_NATIVE_ meson+ninja with named module..."
+	build_and_test_with_meson --native-file="$HX_CLANG_NATIVE_"
+
+	echo "$HX_GCC_NATIVE_ meson+ninja with textual includes..."
+	build_and_test_with_meson --native-file="$HX_GCC_NATIVE_" -Dbuild_module=disabled
+
+	# Textual includes are built with GCC 14, e.g. Debian 13.
+	echo "$HX_GCC_NATIVE_ meson+ninja with named module..."
+	build_and_test_with_meson --native-file="$HX_GCC_NATIVE_"
 }
 
 # -- Pico SDK ------------------------------------------------------------------
@@ -186,13 +223,14 @@ build_esp32() {
 
 # Builds an <sdk>:<target> from HX_BOARDS_ when the SDK is installed and tests
 # it when the board is connected. A connected board has to pass. With
-# --require-all the SDK has to be installed and the board connected. Exits at
-# the first failure. The flash script is run with bash because the executable
-# bits are not tested.
+# --require-all the SDK has to be installed and the board connected. A board
+# that is not connected is built and passes with a warning. Exits at the first
+# failure. The flash script is run with bash because the executable bits are not
+# tested.
 test_board() {
 	HX_SDK_="${1%%:*}"
 	HX_TARGET_="${1#*:}"
-	HX_FLASH_="target/libhatchet_flash_$HX_SDK_.sh"
+	HX_FLASH_="target/flash_$HX_SDK_.sh"
 
 	if ! "has_sdk_$HX_SDK_"; then
 		if [ "$HX_REQUIRE_ALL_" = 1 ]; then
@@ -211,10 +249,13 @@ test_board() {
 		exit 1
 	fi
 
+	# build exists when test_meson did not run. The board is built from scratch.
+	mkdir -p build
+	rm -rf "build/$HX_TARGET_"
 	"build_$HX_SDK_" "$HX_TARGET_"
 
 	if [ "$HX_CONNECTED_" = 0 ]; then
-		echo "$HX_TARGET_ not tested. None is connected."
+		echo "warning: $HX_TARGET_ built but not tested. None is connected."
 		return 0
 	fi
 
@@ -235,21 +276,14 @@ main() {
 
 	[ -n "$HX_VERBOSE_" ] && set -o xtrace
 
-	echo "$HX_CLANG_NATIVE_ meson+ninja with textual includes..."
-	build_and_test_with_meson --native-file="$HX_CLANG_NATIVE_" -Dbuild_module=disabled
-
-	echo "$HX_CLANG_NATIVE_ meson+ninja with named module..."
-	build_and_test_with_meson --native-file="$HX_CLANG_NATIVE_"
-
-	echo "$HX_GCC_NATIVE_ meson+ninja with textual includes..."
-	build_and_test_with_meson --native-file="$HX_GCC_NATIVE_" -Dbuild_module=disabled
-
-	# Textual includes are built with GCC 14, e.g. Debian 13.
-	echo "$HX_GCC_NATIVE_ meson+ninja with named module..."
-	build_and_test_with_meson --native-file="$HX_GCC_NATIVE_"
+	if [ -z "$HX_SELECTED_" ] || [ "$HX_SELECTED_" = meson ]; then
+		test_meson
+	fi
 
 	for HX_BOARD_ in $HX_BOARDS_; do
-		test_board "$HX_BOARD_"
+		if [ -z "$HX_SELECTED_" ] || [ "$HX_SELECTED_" = "${HX_BOARD_#*:}" ]; then
+			test_board "$HX_BOARD_"
+		fi
 	done
 
 	echo 🪓🪓🪓

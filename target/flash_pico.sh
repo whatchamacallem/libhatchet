@@ -9,7 +9,7 @@
 # It also runs in a test_msvc_wslc.ps1 --clone-sdks container, where it attaches
 # the Pico with usbip. test_target.sh uses --connected and --no-build. See
 # README.md and iot.md.
-# Run with: ./libhatchet_flash_pico.sh [--port /dev/ttyACM0] [--target pico2]
+# Run with: ./flash_pico.sh [--port /dev/ttyACM0] [--target pico2]
 #   [--no-build] [--connected]
 set -euo pipefail
 
@@ -136,7 +136,7 @@ fi
 sleep 0.5
 
 if [[ -z "$PORT" ]] || [[ ! -e "$PORT" ]]; then
-	die "No serial port found. In a container, share the running Pico from Windows. Or try: ./libhatchet_flash_pico.sh --port /dev/ttyACM0"
+	die "No serial port found. In a container, share the running Pico from Windows. Or try: ./flash_pico.sh --port /dev/ttyACM0"
 fi
 
 ok "Serial port: $PORT at ${BAUD} baud."

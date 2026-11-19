@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 # This file is licensed under the terms of the LICENSE.md file.
 #
-# The USB functions sourced by the libhatchet_flash_*.sh scripts. A board is
+# The USB functions sourced by the flash_*.sh scripts. A board is
 # found by its USB vendor ID. See iot.md.
 
 # Succeeds when a USB device with the vendor ID is connected and has a device
