@@ -91,7 +91,7 @@ endif()
 # -- ESP-IDF -------------------------------------------------------------------
 
 # idf.py selects this section by passing -DESP_PLATFORM=1. -DIDF_TARGET=<chip>
-# selects the chip, e.g. esp32 for the WT32-ETH01. target/CMakeLists.txt is the
+# selects the chip, esp32c6 for the ESP32-C6. target/CMakeLists.txt is the
 # ESP-IDF component that builds test_target.cpp.
 if(ESP_PLATFORM AND CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
 	set(EXTRA_COMPONENT_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/target")

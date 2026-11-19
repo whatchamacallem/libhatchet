@@ -191,7 +191,7 @@ install_esp_idf() {
 			--depth 1 --branch "$HX_ESP_IDF_VERSION_"                   \
 			--recurse-submodules --shallow-submodules                   \
 			https://github.com/espressif/esp-idf.git "$HX_ESP_IDF_"
-		"$HX_ESP_IDF_/install.sh" esp32,esp32c6
+		"$HX_ESP_IDF_/install.sh" esp32c6
 	fi
 }
 

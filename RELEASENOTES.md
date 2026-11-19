@@ -1,5 +1,11 @@
 # Release Notes
 
+## v1.55.0 2020-00-00
+
+- Added automated testing for Pico 2 and ESP32-C6.
+
+When building IoT projects, all that is required is adding libhatchet as a CMake library. libhatchet only depends on libc and makes libcxx optional.
+
 ## v1.54.3 2026-11-03
 
 ```text

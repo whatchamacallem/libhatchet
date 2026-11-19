@@ -45,9 +45,9 @@ static void target_finish(void) {
 // defined at the end of this file.
 #elif defined ESP_PLATFORM
 
-// Reports on the console. That is UART0 at 115200 baud, and also the USB serial
-// port of chips that have one, such as the ESP32-C6. The flashing script resets
-// the chip once it is reading, so nothing waits for a terminal.
+// Reports on the console, which is the ESP32-C6's USB serial port as well as
+// UART0. The flashing script resets the chip once it is reading, so nothing waits
+// for a terminal.
 static void target_start(void) { }
 
 static void target_finish(void) {

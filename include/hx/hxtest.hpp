@@ -14,6 +14,14 @@
 /// `operator==` in its assertions. Compatibility with Google Test may require
 /// additional relational operators.
 ///
+/// `hxtest` also has a TAP Producer mode. This is a quiet protocol for automated
+/// testing with a verifiable test plan.
+///
+/// grep can be used to classify the TAP outputs by matching { "# libhatchet",
+/// "# passed", "# failed" }, which are an end of run marker, a success marker
+/// and a failure marker respectively. This only works if these words are not
+/// used in those locations otherwise.
+///
 /// - `TEST(suite, name)` - Defines a test case without a fixture.
 /// - `TEST_F(fixture, name)` - Defines a test case using a fixture class.
 /// - Use `ASSERT_`* for fatal assertions and `EXPECT_`* for non-fatal.

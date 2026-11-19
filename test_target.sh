@@ -6,8 +6,12 @@
 # Builds target/test_target.cpp with Meson and Ninja using clang and gcc, with
 # and without the hx module, and runs its tests. It reports with the Test
 # Anything Protocol (TAP) and "meson test" consumes the report. Then builds it
-# with the Pico SDK and with ESP-IDF when they are installed. See
-# target/README.md.
+# for each board in HX_BOARDS_ whose SDK is installed and tests it on the board
+# when the board is connected. Stops at the first board that fails. With
+# --require-all every board has to be built and connected. See
+# target/README.md and target/iot.md.
+#
+# usage: test_target.sh [--verbose] [--require-all]
 
 trap 'trap "" INT PIPE TERM; pkill -P $$; wait; exit 1' INT PIPE TERM
 set -eu
@@ -24,27 +28,35 @@ HX_CPP_FLAGS_="$HX_C_FLAGS_ -DHX_USE_STD_LIB=0 -DHX_USE_NAMESPACE=hx -DHX_USE_CO
 	-std=c++23 -nostdinc++ -fno-exceptions -fno-rtti"
 HX_LINK_FLAGS_="-nodefaultlibs -lc -lpthread -lm"
 
-HX_PICO_SDK_="$HOME/pico-sdk"
-PICO_BOARD="${PICO_BOARD:-pico2}"
+# The boards there is hardware for, as <sdk>:<target>. has_sdk_<sdk> checks
+# that the SDK is installed, build_<sdk> builds the target in build/<target> and
+# target/libhatchet_flash_<sdk>.sh tests it on the board. See target/iot.md.
+HX_BOARDS_="pico:pico2 esp32:esp32c6"
 
-# esp32 is the WT32-ETH01's chip.
+HX_PICO_SDK_="$HOME/pico-sdk"
 HX_ESP_IDF_="$HOME/esp-idf"
-IDF_TARGET="${IDF_TARGET:-esp32}"
 
 # Set by parse_arguments. "--verbose" or empty.
 HX_VERBOSE_=""
+
+# Set by parse_arguments. 1 when --require-all was passed.
+HX_REQUIRE_ALL_=0
 
 # Set by select_native_files. The Meson native files for clang and gcc.
 HX_CLANG_NATIVE_=""
 HX_GCC_NATIVE_=""
 
 parse_arguments() {
-	if [ "${1:-}" = "--verbose" ]; then
-		HX_VERBOSE_="--verbose"
-	elif [ -n "${1:-}" ]; then
-		echo "usage_error: $0 [--verbose]"
-		exit 1
-	fi
+	for HX_ARGUMENT_ in "$@"; do
+		case "$HX_ARGUMENT_" in
+			--verbose) HX_VERBOSE_="--verbose" ;;
+			--require-all) HX_REQUIRE_ALL_=1 ;;
+			*)
+				echo "usage_error: $0 [--verbose] [--require-all]"
+				exit 1
+				;;
+		esac
+	done
 }
 
 # -- Meson ---------------------------------------------------------------------
@@ -100,63 +112,116 @@ build_and_test_with_meson() {
 
 # -- Pico SDK ------------------------------------------------------------------
 
-# Built in a subdirectory to leave build/hxtest and to keep its CMakeCache.txt
-# from being found by test_cmake.sh.
-build_with_pico_sdk() {
+# Succeeds when the Pico SDK is installed. Otherwise prints what it requires.
+has_sdk_pico() {
 	if [ -f "$HX_PICO_SDK_/pico_sdk_init.cmake" ] && command -v arm-none-eabi-gcc > /dev/null 2>&1; then
-		echo "$PICO_BOARD cmake+ninja with the Pico SDK..."
-		if [ -n "$HX_VERBOSE_" ]; then
-			cmake -S . -B build/pico -G Ninja -DCMAKE_BUILD_TYPE=Release -Wno-dev \
-				-DPICO_BOARD="$PICO_BOARD" -DPICO_SDK_PATH="$HX_PICO_SDK_"
-			ninja -v -C build/pico -j "$HX_JOBS_"
-		else
-			if ! cmake -S . -B build/pico -G Ninja -DCMAKE_BUILD_TYPE=Release -Wno-dev \
-					-DPICO_BOARD="$PICO_BOARD" -DPICO_SDK_PATH="$HX_PICO_SDK_"        \
-					> build/cmake_out.txt 2>&1; then
-				cat build/cmake_out.txt
-				echo "error: cmake failed"
-				exit 1
-			fi
-			if ! ninja -C build/pico -j "$HX_JOBS_" >build/ninja_out.txt 2>&1; then
-				cat build/ninja_out.txt
-				echo "error: ninja build failed"
-				exit 1
-			fi
-		fi
-		ls build/pico/hxtest_target.uf2
-	else
-		echo "Pico SDK skipped. Requires arm-none-eabi-gcc and HX_PICO_SDK_=$HX_PICO_SDK_."
+		return 0
 	fi
+	echo "The Pico SDK requires arm-none-eabi-gcc and $HX_PICO_SDK_."
+	return 1
+}
+
+# Builds board $1 in build/$1. The subdirectory leaves build/hxtest and keeps its
+# CMakeCache.txt from being found by test_cmake.sh.
+build_pico() {
+	echo "$1 cmake+ninja with the Pico SDK..."
+	if [ -n "$HX_VERBOSE_" ]; then
+		cmake -S . -B "build/$1" -G Ninja -DCMAKE_BUILD_TYPE=Release -Wno-dev \
+			-DPICO_BOARD="$1" -DPICO_SDK_PATH="$HX_PICO_SDK_"
+		ninja -v -C "build/$1" -j "$HX_JOBS_"
+	else
+		if ! cmake -S . -B "build/$1" -G Ninja -DCMAKE_BUILD_TYPE=Release -Wno-dev \
+				-DPICO_BOARD="$1" -DPICO_SDK_PATH="$HX_PICO_SDK_"                \
+				> build/cmake_out.txt 2>&1; then
+			cat build/cmake_out.txt
+			echo "error: cmake failed"
+			exit 1
+		fi
+		if ! ninja -C "build/$1" -j "$HX_JOBS_" >build/ninja_out.txt 2>&1; then
+			cat build/ninja_out.txt
+			echo "error: ninja build failed"
+			exit 1
+		fi
+	fi
+	ls "build/$1/hxtest_target.uf2"
 }
 
 # -- ESP-IDF -------------------------------------------------------------------
 
-# Built in a subdirectory for the same reasons as the Pico SDK. The ESP-IDF
+# Succeeds when ESP-IDF is installed. Otherwise prints what it requires.
+has_sdk_esp32() {
+	if [ -f "$HX_ESP_IDF_/export.sh" ]; then
+		return 0
+	fi
+	echo "ESP-IDF requires $HX_ESP_IDF_."
+	return 1
+}
+
+# Builds chip $1 in build/$1 for the same reasons as the Pico SDK. The ESP-IDF
 # environment is only entered in a subshell. A different IDF_PATH is not used.
 # export.sh requires IDF_PATH when sourced by sh and does not support set -u.
-build_with_esp_idf() {
-	if [ -f "$HX_ESP_IDF_/export.sh" ]; then
-		echo "$IDF_TARGET idf.py+ninja with ESP-IDF..."
-		(
-			export IDF_PATH="$HX_ESP_IDF_"
-			set +u
-			. "$HX_ESP_IDF_/export.sh" > build/idf_export_out.txt 2>&1 || {
-				cat build/idf_export_out.txt
-				echo "error: ESP-IDF export.sh failed"
-				exit 1
-			}
-			if [ -n "$HX_VERBOSE_" ]; then
-				idf.py -v -B "build/$IDF_TARGET" -DIDF_TARGET="$IDF_TARGET" build
-			elif ! idf.py -B "build/$IDF_TARGET" -DIDF_TARGET="$IDF_TARGET" build \
-					> build/idf_out.txt 2>&1; then
-				cat build/idf_out.txt
-				echo "error: idf.py build failed"
-				exit 1
-			fi
-		)
-		ls "build/$IDF_TARGET/hxtest_target.bin"
-	else
-		echo "ESP-IDF skipped. Requires HX_ESP_IDF_=$HX_ESP_IDF_."
+build_esp32() {
+	echo "$1 idf.py+ninja with ESP-IDF..."
+	(
+		export IDF_PATH="$HX_ESP_IDF_"
+		set +u
+		. "$HX_ESP_IDF_/export.sh" > build/idf_export_out.txt 2>&1 || {
+			cat build/idf_export_out.txt
+			echo "error: ESP-IDF export.sh failed"
+			exit 1
+		}
+		if [ -n "$HX_VERBOSE_" ]; then
+			idf.py -v -B "build/$1" -DIDF_TARGET="$1" build
+		elif ! idf.py -B "build/$1" -DIDF_TARGET="$1" build \
+				> build/idf_out.txt 2>&1; then
+			cat build/idf_out.txt
+			echo "error: idf.py build failed"
+			exit 1
+		fi
+	)
+	ls "build/$1/hxtest_target.bin"
+}
+
+# -- Boards --------------------------------------------------------------------
+
+# Builds an <sdk>:<target> from HX_BOARDS_ when the SDK is installed and tests
+# it when the board is connected. A connected board has to pass. With
+# --require-all the SDK has to be installed and the board connected. Exits at
+# the first failure. The flash script is run with bash because the executable
+# bits are not tested.
+test_board() {
+	HX_SDK_="${1%%:*}"
+	HX_TARGET_="${1#*:}"
+	HX_FLASH_="target/libhatchet_flash_$HX_SDK_.sh"
+
+	if ! "has_sdk_$HX_SDK_"; then
+		if [ "$HX_REQUIRE_ALL_" = 1 ]; then
+			echo "error: --require-all: $HX_TARGET_ can't be built."
+			exit 1
+		fi
+		echo "$HX_TARGET_ skipped."
+		return 0
+	fi
+
+	# --require-all stops before the build when the board is missing.
+	HX_CONNECTED_=1
+	bash "$HX_FLASH_" --target "$HX_TARGET_" --connected || HX_CONNECTED_=0
+	if [ "$HX_CONNECTED_" = 0 ] && [ "$HX_REQUIRE_ALL_" = 1 ]; then
+		echo "error: --require-all: No $HX_TARGET_ is connected."
+		exit 1
+	fi
+
+	"build_$HX_SDK_" "$HX_TARGET_"
+
+	if [ "$HX_CONNECTED_" = 0 ]; then
+		echo "$HX_TARGET_ not tested. None is connected."
+		return 0
+	fi
+
+	echo "$HX_TARGET_ testing on the board with $HX_FLASH_..."
+	if ! bash "$HX_FLASH_" --target "$HX_TARGET_" --no-build; then
+		echo "error: $HX_TARGET_ failed on the board."
+		exit 1
 	fi
 }
 
@@ -183,9 +248,9 @@ main() {
 	echo "$HX_GCC_NATIVE_ meson+ninja with named module..."
 	build_and_test_with_meson --native-file="$HX_GCC_NATIVE_"
 
-	build_with_pico_sdk
-
-	build_with_esp_idf
+	for HX_BOARD_ in $HX_BOARDS_; do
+		test_board "$HX_BOARD_"
+	done
 
 	echo 🪓🪓🪓
 }
