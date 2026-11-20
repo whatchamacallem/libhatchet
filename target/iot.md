@@ -50,7 +50,7 @@ Each flash script handles one SDK and takes the same options:
 - It exits with an error when flashing fails, a test fails or the report
   doesn't finish.
 
-`libhatchet_usb.sh` has the USB functions the flash scripts share: checking
+`util.usb.sh` has the USB functions the flash scripts share: checking
 that a vendor ID is connected, attaching it with usbip in a
 `test_msvc_wslc.ps1 --clone-sdks` container, and finding its serial port.
 
@@ -87,7 +87,7 @@ Another ESP32 chip or another Pico board, for example.
    `test_target.cpp`. For example, the Pico waits for USB serial and then
    reboots into BOOTSEL. Settings such as `HX_USE_THREADS` go in the build.
 5. Copy a flash script to `flash_<sdk>.sh`, keep its options and
-   source `libhatchet_usb.sh`. Checking the report with `grep`, as
+   source `util.usb.sh`. Checking the report with `grep`, as
    `flash_pico.sh` does, is enough unless the board has to be reset
    once the port is open, as the ESP32-C6 does.
 6. Add `<sdk>:<target>` to `HX_BOARDS_`, then test and document it as above.

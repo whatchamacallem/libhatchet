@@ -15,14 +15,13 @@ set -euo pipefail
 
 cd "$(dirname "$(readlink -f "$0")")/.."
 
-. target/libhatchet_usb.sh
+. target/util.usb.sh
 
 # ESP-IDF is at ~/esp-idf where "install_deb.sh --sdks" installs it. A different
 # IDF_PATH in the environment is not used.
 HX_ESP_IDF_="$HOME/esp-idf"
 
-# The ESP32-C6 is the chip there is hardware for. 303a is the vendor ID for
-# Espressif, which its USB serial port uses.
+# The ESP32-C6 is the chip there is hardware for.
 TARGET="esp32c6"
 VENDOR="303a"
 BAUD="${BAUD:-115200}"
@@ -31,7 +30,6 @@ TIMEOUT="${TIMEOUT:-60}"
 BUILD=1
 CONNECTED=0
 
-# -- Argument Parsing -----------------------------------------------------------
 while [[ $# -gt 0 ]]; do
 	case "$1" in
 		--port)      PORT="$2";    shift 2 ;;
@@ -46,7 +44,6 @@ done
 
 BUILD_DIR="build/$TARGET"
 
-# -- Helpers --------------------------------------------------------------------
 info()  { echo -e "\033[1;34m[INFO]\033[0m  $*"; }
 ok()    { echo -e "\033[1;32m[OK]\033[0m    $*"; }
 warn()  { echo -e "\033[1;33m[WARN]\033[0m  $*"; }
@@ -89,9 +86,7 @@ fi
 ok "Build: $BUILD_DIR/hxtest_target.bin"
 
 # -- 3. Flash -------------------------------------------------------------------
-# esptool resets the chip into its bootloader over USB. --chip makes it stop
-# when the chip is a different one. The chip is left in the bootloader and the
-# report is read from its reset.
+# The chip is left in the bootloader and the report is read from its reset.
 info "Flashing ..."
 (cd "$BUILD_DIR" && esptool --chip "$TARGET" --port "$PORT" --after no-reset write-flash "@flash_args")
 ok "Flash complete."
@@ -130,7 +125,6 @@ while time.monotonic() < deadline:
 	if started and line:
 		print(line, flush=True)
 	if 'Guru Meditation' in line or 'abort() was called' in line:
-		# The backtrace follows.
 		deadline = min(deadline, time.monotonic() + 1.0)
 		failures += 1
 	elif started and line.startswith('not ok'):

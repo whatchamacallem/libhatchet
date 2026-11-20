@@ -41,7 +41,6 @@ usb_attach() {
 	fi
 }
 
-# Prints the serial port of the device with the vendor ID.
 usb_serial_port() {
 	local tty
 	for tty in /sys/class/tty/ttyACM*; do

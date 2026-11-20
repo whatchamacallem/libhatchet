@@ -19,7 +19,6 @@ set -eu
 # -- ThreadSanitizer -----------------------------------------------------------
 
 # The setting belongs to the session VM, so only its first container lowers it.
-# /proc/sys is read-only in a container.
 lower_address_randomization() {
 	[ "$(cat /proc/sys/vm/mmap_rnd_bits)" -gt 28 ] || return 0
 
@@ -34,8 +33,7 @@ lower_address_randomization() {
 
 # -- USB/IP --------------------------------------------------------------------
 
-# usbip is installed by install_deb.sh --sdks. Its kernel module requires
-# SYS_MODULE, which is bit 16 of the effective capabilities.
+# usbip is installed by install_deb.sh --sdks.
 can_attach_devices() {
 	command -v usbip >/dev/null &&
 		[ $((0x$(awk '/^CapEff:/ {print $2}' /proc/self/status) >> 16 & 1)) = 1 ]
@@ -48,9 +46,8 @@ name_windows_address() {
 	fi
 }
 
-# Docker only allows a container a few devices, even as root, using BPF
-# programs attached to its cgroup. wslc has no option to allow more, so the
-# programs are detached with bpf(2).
+# wslc has no option to allow more devices, so Docker's cgroup device programs
+# are detached with bpf(2).
 remove_device_filter() {
 	python3 - <<'EOF'
 import ctypes, os, struct
@@ -61,8 +58,6 @@ SYS_BPF = {'x86_64': 321, 'aarch64': 280}[os.uname().machine]
 
 libc = ctypes.CDLL(None, use_errno=True)
 
-# Calls bpf(2) with the leading fields of a bpf_attr. Returns the result and the
-# fields as the kernel left them.
 def call_packet_filter(command, layout, *fields):
 	attr = ctypes.create_string_buffer(struct.pack(layout, *fields), 64)
 	result = libc.syscall(SYS_BPF, command, attr, len(attr))
@@ -70,8 +65,6 @@ def call_packet_filter(command, layout, *fields):
 		raise OSError(ctypes.get_errno(), os.strerror(ctypes.get_errno()))
 	return result, struct.unpack_from(layout, attr)
 
-# The query is target_fd, attach_type, query_flags, attach_flags, prog_ids and
-# prog_cnt, which returns the number of programs.
 cgroup = os.open('/sys/fs/cgroup', os.O_RDONLY | os.O_DIRECTORY)
 programs = (ctypes.c_uint32 * 64)()
 _, (*_, count) = call_packet_filter(BPF_PROG_QUERY, 'IIIIQI', cgroup,
@@ -83,8 +76,8 @@ for program in programs[:count]:
 EOF
 }
 
-# devtmpfs has the VM's device nodes and adds them as devices attach. It
-# replaces Docker's /dev and takes over its mounts and standard symlinks.
+# Replaces Docker's /dev with the VM's devtmpfs, taking over its mounts and
+# standard symlinks.
 mount_device_nodes() {
 	local HX_MOUNT_ HX_TARGET_
 	mkdir -p /run/dev
@@ -125,9 +118,7 @@ mount_kernel_modules() {
 	exit 1
 }
 
-# vhci-hcd is the host controller that usbip attaches devices to. The plugdev
-# group can attach and detach. usbip records the attached devices in
-# /var/run/vhci_hcd.
+# The plugdev group can attach and detach.
 load_host_controller() {
 	local HX_CONTROLLER_
 	modprobe vhci-hcd
@@ -141,8 +132,7 @@ load_host_controller() {
 }
 
 # udev applies install_deb.sh's rule, which gives the attached devices to
-# plugdev, and loads their drivers. The trigger is for devices that attached
-# before udev started.
+# plugdev.
 start_device_manager() {
 	local HX_CONTROLLER_
 	SYSTEMD_LOG_LEVEL=notice /usr/lib/systemd/systemd-udevd --daemon
@@ -155,8 +145,7 @@ start_device_manager() {
 
 # -- Main ----------------------------------------------------------------------
 
-# Replaces this script with the command, run as t with t's groups and a clean
-# environment. Nothing t runs can get SYS_ADMIN or SYS_MODULE back.
+# Nothing t runs can get SYS_ADMIN or SYS_MODULE back.
 run_without_privileges() {
 	exec setpriv --reuid=t --regid=t --init-groups --reset-env \
 		--inh-caps=-sys_admin,-sys_module --bounding-set=-sys_admin,-sys_module "$@"

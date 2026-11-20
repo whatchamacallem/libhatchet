@@ -15,14 +15,13 @@ set -euo pipefail
 
 cd "$(dirname "$(readlink -f "$0")")/.."
 
-. target/libhatchet_usb.sh
+. target/util.usb.sh
 
 # The Pico SDK is at ~/pico-sdk where "install_deb.sh --sdks" installs it, with
 # picotool next to it. A different PICO_SDK_PATH in the environment is not used.
 export PICO_SDK_PATH="$HOME/pico-sdk"
 PATH="$PATH:$(dirname "$PICO_SDK_PATH")/picotool"
 
-# 2e8a is the vendor ID for Raspberry Pi.
 TARGET="pico2"
 VENDOR="2e8a"
 BAUD="${BAUD:-115200}"
@@ -31,7 +30,6 @@ TIMEOUT="${TIMEOUT:-60}"
 BUILD=1
 CONNECTED=0
 
-# -- Argument Parsing -----------------------------------------------------------
 while [[ $# -gt 0 ]]; do
 	case "$1" in
 		--port)      PORT="$2";    shift 2 ;;
@@ -47,7 +45,6 @@ done
 BUILD_DIR="build/$TARGET"
 UF2="$BUILD_DIR/hxtest_target.uf2"
 
-# -- Helpers --------------------------------------------------------------------
 info()  { echo -e "\033[1;34m[INFO]\033[0m  $*"; }
 ok()    { echo -e "\033[1;32m[OK]\033[0m    $*"; }
 warn()  { echo -e "\033[1;33m[WARN]\033[0m  $*"; }
