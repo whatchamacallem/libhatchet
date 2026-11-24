@@ -24,7 +24,7 @@ HX_ERRORS_="-Wall -Wextra -pedantic-errors -Werror -Wfatal-errors -Wcast-qual \
 	-Wmissing-declarations -Wno-ambiguous-reversed-operator                   \
 	-Wno-unused-variable -Wno-c2y-extensions -Wno-unknown-warning-option"
 
-HX_JOBS_="${HX_MAX_CORES:-$(getconf _NPROCESSORS_ONLN)}"
+HX_JOBS_="${HX_MAX_JOBS:-$(getconf _NPROCESSORS_ONLN)}"
 
 HX_OPT_CLEAR_=0
 HX_OPT_DEFINES_=""
@@ -58,9 +58,7 @@ for HX_ARG_ in "$@"; do
 done
 
 HX_GTEST_FLAG_="$HX_OPT_GTEST_FILTER_"
-if [ "$HX_OPT_GTEST_BREAKPOINTS_" != "0" ]; then
-	HX_GTEST_FLAG_="$HX_GTEST_FLAG_ --gtest_break_on_failure"
-fi
+[ "$HX_OPT_GTEST_BREAKPOINTS_" != "0" ] && HX_GTEST_FLAG_="$HX_GTEST_FLAG_ --gtest_break_on_failure"
 
 # Clear the output window when building from the editor.
 if [ "$HX_OPT_CLEAR_" = "1" ]; then
@@ -155,9 +153,7 @@ if [ "$HX_OPT_GRIND_" = "1" ]; then
 		build_hxtest
 	done; done; done; done; done; done; done; done
 
-	if [ "$HX_OPT_VERBOSE_" = "0" ] && [ -t 1 ]; then
-		printf "\r      \r"
-	fi
+	[ "$HX_OPT_VERBOSE_" = "0" ] && [ -t 1 ] && printf "\r      \r"
 fi
 
 # Enable as much code as possible for the default build and run.
@@ -166,9 +162,7 @@ HX_BUILD_="-DHX_USE_NAMESPACE=hx -DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG \
 build_hxtest ccache
 
 # Show stats or save tokens.
-if [ "$HX_OPT_VERBOSE_" = "1" ] && [ -z "${CLAUDECODE:-}" ]; then
-	ccache --show-stats
-fi
+[ "$HX_OPT_VERBOSE_" = "1" ] && [ -z "${CLAUDECODE:-}" ] && ccache --show-stats
 
 if [ "$HX_OPT_RUN_" = "1" ]; then
 	cd build
@@ -176,7 +170,7 @@ if [ "$HX_OPT_RUN_" = "1" ]; then
 		./hxtest $HX_GTEST_FLAG_ "check_stats 1" runtests
 	else
 		if ./hxtest $HX_GTEST_FLAG_ "check_stats 1" runtests > console_output.txt 2>&1; then
-			grep -E 'gtest_arg|\[  PASSED  \]|\[  FAILED  \]|FAILED TESTS' console_output.txt
+			grep -E '^# WARNING gtest_arg|^(not ok|Bail out!|# (passed|failed) )|\[  PASSED  \]|FAILED TESTS' console_output.txt
 		else
 			cat console_output.txt
 			exit 1

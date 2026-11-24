@@ -1,0 +1,6 @@
+These are files that target/esp_sdk needs from tmp/esp_worm/:
+
+* wifi.sh declares the network esp_worm joins and nothing else:
+	ESP_WORM_WIFI_SSID="<ssid>"
+	ESP_WORM_WIFI_PASSWORD="<password>"
+* host.key, host.pub, device.key and device.pub are made when missing.

@@ -3,7 +3,10 @@
 # SPDX-License-Identifier: MIT
 # This file is licensed under the terms of the LICENSE.md file.
 
+trap 'trap "" INT PIPE TERM; pkill -P $$; wait; exit 1' INT PIPE TERM
 set -eu
+
+cd "$(dirname "$(readlink -f "$0")")"
 
 HX_SCRIPT_NAME_=$(basename "$0")
 HX_PROJECT_="$(basename "$PWD")"

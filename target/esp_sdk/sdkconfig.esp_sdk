@@ -1,0 +1,47 @@
+# SPDX-FileCopyrightText: © 2017-2026 Adrian Johnston.
+# SPDX-License-Identifier: MIT
+# This file is licensed under the terms of the LICENSE.md file.
+#
+# The ESP-IDF settings of esp_sdk on every board. Every client is built
+# against them.
+
+# A client runs on the main task.
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=16384
+
+# Recalibrating the BBPLL at startup stops the 48 MHz clock of the USB
+# Serial/JTAG controller while the log is being sent, which can stall the
+# port. The 2nd stage bootloader of this ESP-IDF calibrates it.
+CONFIG_ESP_SYSTEM_BBPLL_RECALIB=n
+
+CONFIG_COMPILER_OPTIMIZATION_SIZE=y
+
+# Clients execute from R, which is data RAM.
+CONFIG_ESP_SYSTEM_MEMPROT=n
+
+# The hxboot and gold slots.
+CONFIG_PARTITION_TABLE_CUSTOM=y
+
+# Builds in different directories make the same esp_sdk.bin, so an unchanged
+# esp_sdk is not flashed again and its clients still match it.
+CONFIG_APP_REPRODUCIBLE_BUILD=y
+
+# Keeps esp_netif's pointer out of the netif->state of the tunnel's interface,
+# which its netif callback would otherwise write to. No bridge is made.
+CONFIG_ESP_NETIF_BRIDGE_EN=y
+
+# Keeps the SDK's console on UART0, off the tty that carries TAP.
+CONFIG_ESP_CONSOLE_SECONDARY_NONE=y
+
+# Curve25519 and the card's writes run on lwIP's thread.
+CONFIG_LWIP_TCPIP_TASK_STACK_SIZE=8192
+
+# wireguard-lwip does not build with IPv6.
+CONFIG_LWIP_IPV6=n
+
+# With exFAT, fatfs uses FF_USE_LABEL in an expression. It is
+# CONFIG_FATFS_USE_LABEL, which is undefined while off.
+CONFIG_FATFS_USE_LABEL=y
+
+# esp_worm does not initialize NVS, so the PHY calibrates in full at each start.
+CONFIG_ESP_PHY_CALIBRATION_AND_DATA_STORAGE=n
+CONFIG_ESP_WIFI_NVS_ENABLED=n

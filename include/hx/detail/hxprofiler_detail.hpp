@@ -53,14 +53,14 @@ extern class hxprofiler_internal_ hxg_profiler_;
 // hxprofiler_internal_ - Manager object for internal use.
 class hxprofiler_internal_ {
 public:
-	hxprofiler_internal_();
-	void start_();
-	void stop_();
-	void log_();
+	hxprofiler_internal_() noexcept;
+	void start_() noexcept;
+	void stop_() noexcept;
+	void log_() noexcept;
 	size_t size_(void) const;
 #if HX_USE_FILE_IO
 	void write_(hxfile& file_);
-	void write_to_chrome_tracing_(const char* filename) hxattr_nonnull(2);
+	void write_to_chrome_tracing_(const char* filename) noexcept hxattr_nonnull(2);
 #endif
 
 private:

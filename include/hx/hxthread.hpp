@@ -40,7 +40,7 @@ class hxthread_local {
 
 public:
 	/// Construct to 0 or null.
-	hxinline hxattr_flatten explicit hxthread_local(void) {
+	hxinline hxattr_flatten explicit hxthread_local(void) noexcept {
 #if (HX_USE_THREADS) == 11
 		const int code_ = ::tss_create(&m_key_, 0);
 		hxassert_always(code_ == thrd_success, "tss_create %d", code_); (void)code_;
@@ -132,7 +132,7 @@ class hxmutex {
 public:
 	/// Constructs a mutex and initializes it. May not return if the mutex can't
 	/// be initialized correctly. Something is very wrong if this fails.
-	hxinline hxmutex(void) {
+	hxinline hxmutex(void) noexcept {
 #if (HX_USE_THREADS) == 11
 		const int code_ = ::mtx_init(&m_mutex_, mtx_plain);
 		hxassert_always(code_ == thrd_success, "mtx_init %d", code_); (void)code_;

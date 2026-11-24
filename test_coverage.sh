@@ -18,143 +18,160 @@ HX_COVERAGE_="--coverage -O0 -g -fprofile-update=atomic -fno-inline -fkeep-stati
 HX_COVERAGE_CXX_="$HX_COVERAGE_ -fno-elide-constructors -fkeep-inline-functions"
 
 HX_DIR_=$PWD
-HX_JOBS_="${HX_MAX_CORES:-$(getconf _NPROCESSORS_ONLN)}"
+HX_JOBS_="${HX_MAX_JOBS:-$(getconf _NPROCESSORS_ONLN)}"
 
-HX_GCC_=gcc
-HX_GXX_=g++
 HX_USAGE_="usage_error: $0 [--verbose] [--] [destination-directory]"
-if [ "$(uname -s)" = Darwin ]; then
+
+# Set by parse_arguments. "--verbose" or empty, and where the HTML report goes.
+HX_VERBOSE_=""
+HX_DEST_DIR_=""
+
+# Set by select_compiler_commands.
+HX_GCC_=""
+HX_GXX_=""
+
+# Set by main.
+HX_GCOV_=""
+
+# Set by build_test_suite. The object files from the test and src directories.
+HX_TEST_OBJS_=""
+HX_SRC_OBJS_=""
+
+# Set when a coverage measurement fails. Checked by check_coverage_results.
+HX_STATUS_=0
+
+parse_arguments() {
+	HX_OPT_END_=0
+	for HX_ARG_ in "$@"; do
+		if [ "$HX_OPT_END_" = "0" ]; then
+			case "$HX_ARG_" in
+			"") continue ;;
+			--) HX_OPT_END_=1; continue ;;
+			--verbose)
+				HX_VERBOSE_="--verbose"; continue ;;
+			-*)
+				echo "$HX_USAGE_" >&2
+				exit 1 ;;
+			esac
+		fi
+
+		if [ -n "$HX_DEST_DIR_" ]; then
+			# Two targets requested.
+			echo "$HX_USAGE_" >&2
+			exit 1
+		fi
+		case "$HX_ARG_" in
+			/*) HX_DEST_DIR_="$HX_ARG_" ;;
+			*) HX_DEST_DIR_="$HX_DIR_/$HX_ARG_" ;;
+		esac
+		case "$HX_DEST_DIR_" in
+			*/) ;;
+			*) HX_DEST_DIR_="$HX_DEST_DIR_/" ;;
+		esac
+	done
+
+	[ -n "$HX_DEST_DIR_" ] || HX_DEST_DIR_="$HX_DIR_/build/"
+}
+
+# Adds the Homebrew directories to PATH on macOS. Run install_brew.sh.
+add_homebrew_path() {
 	PATH="/opt/homebrew/bin:/opt/homebrew/sbin${PATH+:$PATH}"
 	if ! command -v brew > /dev/null 2>&1; then
 		echo "error: Install brew and then run install_brew.sh."
 		exit 1
 	fi
-	HX_GCC_=$(basename "$(brew --prefix gcc)"/bin/gcc-[0-9]*)
-	HX_GXX_="g++-${HX_GCC_#gcc-}"
-fi
+}
 
-# Use the version of gcov matching the version of gcc, when available.
-HX_GCOV_=gcov-$($HX_GCC_ -dumpversion)
-command -v "$HX_GCOV_" > /dev/null || HX_GCOV_=gcov
-
-HX_VERBOSE_=
-HX_DEST_DIR_=
-HX_OPT_END_=0
-for HX_ARG_ in "$@"; do
-	if [ "$HX_OPT_END_" = "0" ]; then
-		case "$HX_ARG_" in
-		"") continue ;;
-		--) HX_OPT_END_=1; continue ;;
-		--verbose)
-			HX_VERBOSE_=1; continue ;;
-		-*)
-			echo "$HX_USAGE_" >&2
-			exit 1 ;;
-		esac
+# Homebrew installs gcc with a version suffix on macOS.
+select_compiler_commands() {
+	HX_GCC_=gcc
+	HX_GXX_=g++
+	if [ "$(uname -s)" = Darwin ]; then
+		HX_GCC_=$(basename "$(brew --prefix gcc)"/bin/gcc-[0-9]*)
+		HX_GXX_="g++-${HX_GCC_#gcc-}"
 	fi
+}
 
-	if [ -n "$HX_DEST_DIR_" ]; then
-		# Two targets requested.
-		echo "$HX_USAGE_" >&2
-		exit 1
+build_test_suite() {
+	$HX_GCC_ -I"$HX_DIR_"/include $HX_COVERAGE_ -DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG \
+		-DHX_USE_INLINING_ATTR=0 -std=c99 -Wall -Werror -Wfatal-errors -pthread -c          \
+		"$HX_DIR_"/test/*.c
+
+	printf '%s\0' "$HX_DIR_"/test/*.cpp "$HX_DIR_"/src/*.cpp |
+		xargs -0 -n 1 -P "$HX_JOBS_" sh -c '"$0" "$@" || exit 255'                                  \
+		$HX_GXX_ -I"$HX_DIR_"/include $HX_COVERAGE_CXX_ -DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG \
+			-DHX_TEST_ERROR_HANDLING=1 -DHX_USE_CONSOLE=2 -DHX_USE_PROFILER=1 -DHX_USE_STD_LIB=0    \
+			-DHX_USE_INLINING_ATTR=0 -std=c++23 -Wall -Werror -Wextra -Wfatal-errors                \
+			-fno-exceptions -Wno-c2y-extensions -Wno-unknown-warning-option -pthread -nostdinc++ -c
+
+	# Sort the object files so that the test objects are listed first. This is
+	# being done to ensure the counter data ends up in the right place.
+	HX_TEST_OBJS_=
+	for HX_FILE_ in "$HX_DIR_"/test/*.c "$HX_DIR_"/test/*.cpp; do
+		HX_FILE_=${HX_FILE_##*/}
+		HX_TEST_OBJS_="$HX_TEST_OBJS_ ${HX_FILE_%.*}.o"
+	done
+	HX_SRC_OBJS_=
+	for HX_FILE_ in "$HX_DIR_"/src/*.cpp; do
+		HX_FILE_=${HX_FILE_##*/}
+		HX_SRC_OBJS_="$HX_SRC_OBJS_ ${HX_FILE_%.*}.o"
+	done
+
+	$HX_GXX_ --coverage $HX_TEST_OBJS_ $HX_SRC_OBJS_ -lpthread -o hxtest
+}
+
+run_test_suite() {
+	if [ -n "$HX_VERBOSE_" ]; then
+		echo runtests | ./hxtest help execstdin
+	else
+		if ! echo runtests | ./hxtest help execstdin > console_output.txt 2>&1; then
+			cat console_output.txt
+			echo "error: hxtest non-zero exit."
+			exit 1
+		fi
 	fi
-	case "$HX_ARG_" in
-		/*) HX_DEST_DIR_="$HX_ARG_" ;;
-		*) HX_DEST_DIR_="$HX_DIR_/$HX_ARG_" ;;
-	esac
-	case "$HX_DEST_DIR_" in
-		*/) ;;
-		*) HX_DEST_DIR_="$HX_DEST_DIR_/" ;;
-	esac
-done
-
-[ -n "$HX_DEST_DIR_" ] || HX_DEST_DIR_="$HX_DIR_/build/"
-
-if [ -n "$HX_VERBOSE_" ]; then
-	set -o xtrace
-fi
-
-# Build artifacts are not retained.
-rm -rf "$(readlink -f build)" build
-if [ "${HX_RAMDISK:-0}" = 1 ]; then mkdir build; else ln -s "$(mktemp -d)" build; fi
-cd build
-
-$HX_GCC_ -I"$HX_DIR_"/include $HX_COVERAGE_ -DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG \
-	-DHX_USE_INLINING_ATTR=0 -std=c99 -Wall -Werror -Wfatal-errors -pthread -c          \
-	"$HX_DIR_"/test/*.c
-
-printf '%s\0' "$HX_DIR_"/test/*.cpp "$HX_DIR_"/src/*.cpp |
-	xargs -0 -n 1 -P "$HX_JOBS_" sh -c '"$0" "$@" || exit 255'                                  \
-	$HX_GXX_ -I"$HX_DIR_"/include $HX_COVERAGE_CXX_ -DHX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG \
-		-DHX_TEST_ERROR_HANDLING=1 -DHX_USE_CONSOLE=2 -DHX_USE_PROFILER=1 -DHX_USE_STD_LIB=0    \
-		-DHX_USE_INLINING_ATTR=0 -std=c++23 -Wall -Werror -Wextra -Wfatal-errors                \
-		-fno-exceptions -Wno-c2y-extensions -Wno-unknown-warning-option -pthread -nostdinc++ -c
-
-# Sort the object files so that the test objects are listed first. This is
-# being done to ensure the counter data ends up in the right place.
-HX_TEST_OBJS_=
-for HX_FILE_ in "$HX_DIR_"/test/*.c "$HX_DIR_"/test/*.cpp; do
-	HX_FILE_=${HX_FILE_##*/}
-	HX_TEST_OBJS_="$HX_TEST_OBJS_ ${HX_FILE_%.*}.o"
-done
-HX_SRC_OBJS_=
-for HX_FILE_ in "$HX_DIR_"/src/*.cpp; do
-	HX_FILE_=${HX_FILE_##*/}
-	HX_SRC_OBJS_="$HX_SRC_OBJS_ ${HX_FILE_%.*}.o"
-done
-
-$HX_GXX_ --coverage $HX_TEST_OBJS_ $HX_SRC_OBJS_ -lpthread -o hxtest
-
-if [ -n "$HX_VERBOSE_" ]; then
-	echo runtests | ./hxtest help execstdin
-else
-	if ! echo runtests | ./hxtest help execstdin > console_output.txt 2>&1; then
-		cat console_output.txt
-		echo "error: hxtest non-zero exit."
-		exit 1
-	fi
-fi
-
-mkdir -p "$HX_DEST_DIR_"
-
-# gcovr 8.4 and later report template instances and constructor variants per
-# function unless lines are merged.
-HX_MERGE_LINES_=
-if gcovr --help | grep -q -- --merge-lines; then
-	HX_MERGE_LINES_=--merge-lines
-fi
+}
 
 # Line coverage is generated by all calls and required for all calls. This
 # maintains the tests and the test harness in a state where they are
 # demonstrably used successfully. Branch coverage doesn't make much sense
 # for the test suite itself.
-HX_STATUS_=0
-gcovr --gcov-executable $HX_GCOV_ --gcov-object-directory . --exclude-throw-branches  \
-	--exclude-unreachable-branches --exclude-noncode-lines --exclude-lines-by-pattern \
-	.*hxassert.* --exclude-branches-by-pattern .*hxassert.* --root $HX_DIR_           \
-	$HX_MERGE_LINES_ --html-details "${HX_DEST_DIR_}0coverage.html" --html-self-contained \
-	--json coverage.json --txt-metric branch --print-summary --fail-under-line 100 . || HX_STATUS_=$?
+measure_line_coverage() {
+	mkdir -p "$HX_DEST_DIR_"
 
-{ set +o xtrace; } 2> /dev/null
+	# gcovr 8.4 and later report template instances and constructor variants per
+	# function unless lines are merged.
+	HX_MERGE_LINES_=
+	gcovr --help | grep -q -- --merge-lines && HX_MERGE_LINES_=--merge-lines
+
+	gcovr --gcov-executable $HX_GCOV_ --gcov-object-directory . --exclude-throw-branches  \
+		--exclude-unreachable-branches --exclude-noncode-lines --exclude-lines-by-pattern \
+		.*hxassert.* --exclude-branches-by-pattern .*hxassert.* --root $HX_DIR_           \
+		$HX_MERGE_LINES_ --html-details "${HX_DEST_DIR_}0coverage.html" --html-self-contained \
+		--json coverage.json --txt-metric branch --print-summary --fail-under-line 100 . || HX_STATUS_=$?
+}
 
 # Branch coverage is generated only from callers in the test directory by whatever
 # callees they have in the include directory. Calls from the test harness do not
 # generate branch coverage. Branch coverage is only required in the include directory.
-mkdir branches_only
-for HX_OBJ_ in $HX_TEST_OBJS_; do
-	ln -s "../${HX_OBJ_%.o}.gcda" "branches_only/${HX_OBJ_%.o}.gcda"
-	ln -s "../${HX_OBJ_%.o}.gcno" "branches_only/${HX_OBJ_%.o}.gcno"
-done
+measure_branch_coverage() {
+	mkdir branches_only
+	for HX_OBJ_ in $HX_TEST_OBJS_; do
+		ln -s "../${HX_OBJ_%.o}.gcda" "branches_only/${HX_OBJ_%.o}.gcda"
+		ln -s "../${HX_OBJ_%.o}.gcno" "branches_only/${HX_OBJ_%.o}.gcno"
+	done
 
-gcovr --gcov-executable "$HX_GCOV_" --gcov-object-directory branches_only              \
-	--exclude-throw-branches --exclude-unreachable-branches --exclude-noncode-lines    \
-	--exclude-lines-by-pattern .*hxassert.* --exclude-branches-by-pattern .*hxassert.* \
-	--root "$HX_DIR_" --json coverage_test_branches.json . > /dev/null || HX_STATUS_=$?
+	gcovr --gcov-executable "$HX_GCOV_" --gcov-object-directory branches_only              \
+		--exclude-throw-branches --exclude-unreachable-branches --exclude-noncode-lines    \
+		--exclude-lines-by-pattern .*hxassert.* --exclude-branches-by-pattern .*hxassert.* \
+		--root "$HX_DIR_" --json coverage_test_branches.json . > /dev/null || HX_STATUS_=$?
+}
 
 # Line coverage. A script is required because the gcovr text output includes
 # remarks about suppressed lines.
-if [ "$HX_STATUS_" -ne 0 ]; then
-python3 - coverage.json <<'EOF'
+report_uncovered_lines() {
+	if [ "$HX_STATUS_" -ne 0 ]; then
+		python3 - coverage.json <<'HX_EOF_'
 import json, sys
 files = json.load(open(sys.argv[1]))["files"]
 for f in sorted(files, key=lambda x: x["file"]):
@@ -170,8 +187,9 @@ for f in sorted(files, key=lambda x: x["file"]):
 		spans.append(str(start) if start == prev else "%d-%d" % (start, prev))
 		start = prev = n
 	print("%s:%s" % (f["file"], ",".join(spans)))
-EOF
-fi
+HX_EOF_
+	fi
+}
 
 # Branch coverage. Post-processing is required to merge multiple instantiations.
 # gcov numbers the calls and the conditional branches on a line in one sequence
@@ -180,7 +198,8 @@ fi
 # conditional branch on the line counts a branch as covered when any
 # instantiation takes it. gcovr still decides which lines have branches and
 # which are excluded.
-python3 - coverage_test_branches.json branches_only "$HX_GCOV_" "$HX_DIR_" <<'HX_EOF_' || HX_STATUS_=$?
+report_uncovered_branches() {
+	python3 - coverage_test_branches.json branches_only "$HX_GCOV_" "$HX_DIR_" <<'HX_EOF_' || HX_STATUS_=$?
 import glob, json, os, subprocess, sys
 taken = {}
 for gcda in sorted(glob.glob(os.path.join(sys.argv[2], "*.gcda"))):
@@ -234,17 +253,52 @@ for f in sorted(files, key=lambda x: x["file"]):
 	print("%s:%s" % (f["file"], ",".join(spans)))
 sys.exit(1 if missing else 0)
 HX_EOF_
+}
 
-if [ "$HX_STATUS_" -ne 0 ]; then
-	echo "error: Missing coverage."
-	exit 1
-fi
+check_coverage_results() {
+	if [ "$HX_STATUS_" -ne 0 ]; then
+		echo "error: Missing coverage."
+		exit 1
+	fi
+}
 
 # Launch Google Chrome if it is installed.
-if [ -n "$HX_VERBOSE_" ] && command -v google-chrome >/dev/null 2>&1; then
-	set -o xtrace
-	google-chrome "${HX_DEST_DIR_}coverage_details.html" >/dev/null 2>&1;
-fi
+open_coverage_report() {
+	if command -v google-chrome >/dev/null 2>&1; then
+		set -o xtrace
+		google-chrome "${HX_DEST_DIR_}coverage_details.html" >/dev/null 2>&1;
+	fi
+}
 
-# Make sure the script returns 0.
-echo "🪓🪓🪓"
+main() {
+	parse_arguments "$@"
+
+	[ "$(uname -s)" = Darwin ] && add_homebrew_path
+	select_compiler_commands
+
+	# Use the version of gcov matching the version of gcc, when available.
+	HX_GCOV_=gcov-$($HX_GCC_ -dumpversion)
+	command -v "$HX_GCOV_" > /dev/null || HX_GCOV_=gcov
+
+	# Build artifacts are not retained.
+	rm -rf "$(readlink -f build)" build
+	if [ "${HX_RAMDISK:-0}" = 1 ]; then mkdir build; else ln -s "$(mktemp -d)" build; fi
+
+	[ -n "$HX_VERBOSE_" ] && set -o xtrace
+
+	cd build
+	build_test_suite
+	run_test_suite
+	measure_line_coverage
+	measure_branch_coverage
+	{ set +o xtrace; } 2> /dev/null
+	report_uncovered_lines
+	report_uncovered_branches
+	check_coverage_results
+
+	[ -n "$HX_VERBOSE_" ] && open_coverage_report
+
+	echo 🪓🪓🪓
+}
+
+main "$@"

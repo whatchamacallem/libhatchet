@@ -8,6 +8,8 @@
 # When built as a test suite Google Test is used instead of the <hx/hxtest.h>
 # reimplementation. This is significantly slower than the test scripts when
 # doing a clean build. Enabling exceptions is also tested.
+#
+# The embedded targets are CMake projects of their own in target.
 
 cmake_minimum_required(VERSION 3.21)
 project(libhatchet)
@@ -44,7 +46,7 @@ else()
 	)
 
 	target_include_directories(hxtest PRIVATE ${CMAKE_SOURCE_DIR}/include)
-	target_compile_definitions(hxtest PRIVATE HX_USE_GOOGLE_TEST=1)
+	target_compile_definitions(hxtest PRIVATE HX_USE_TEST_FRAMEWORK=3)
 
 	# Turn on everything so Clang-Tidy sees it.
 	target_compile_definitions(hxtest PRIVATE HX_HARDENING_MODE=HX_HARDENING_MODE_DEBUG)

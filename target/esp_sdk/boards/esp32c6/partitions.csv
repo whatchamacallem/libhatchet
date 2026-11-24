@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: © 2017-2026 Adrian Johnston.
+# SPDX-License-Identifier: MIT
+# This file is licensed under the terms of the LICENSE.md file.
+#
+# The 8 MB flash of the ESP32-C6-LCD-1.47. The type and subtypes of the slots
+# must match esp_sdk.hpp.
+nvs, data, nvs, 0x9000, 0x6000,
+phy_init, data, phy, 0xF000, 0x1000,
+factory, app, factory, 0x10000, 2M,
+hxboot, 0x40, 0x00, 0x210000, 64K,
+gold, 0x40, 0x01, 0x220000, 512K,

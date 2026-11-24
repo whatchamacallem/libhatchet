@@ -316,9 +316,11 @@
 #endif
 
 #if !defined HX_USE_FILE_IO
-/// `HX_USE_FILE_IO` - Select if `hxfile` exists and if it uses C file I/O or
-/// POSIX I/O. `stdout` is used for logging even when `hxfile` is disabled. `0`
-/// - Disables hxfile. `1` - C file I/O. `2` - POSIX file I/O.
+/// `HX_USE_FILE_IO` - Select if `hxfile` exists and what implements it.
+/// `stdout` is used for logging even when `hxfile` is disabled. `0` - Disables
+/// hxfile. `1` - C file I/O. `2` - POSIX file I/O. `3` - Read only files served
+/// by `hxboot_server.py` over the hxboot link, with `hxout` and `hxerr` on its
+/// tty. Build `target/hxboot/loader/hxfile_usb.cpp` with the library.
 #define HX_USE_FILE_IO 1
 #endif
 
@@ -389,10 +391,16 @@
 #define HX_MAX_LINE (2 * HX_KIB)
 #endif
 
-#if !defined HX_USE_GOOGLE_TEST
-/// `HX_USE_GOOGLE_TEST` - Switch to using the real Google Test. Defaults to
-/// `0`.
-#define HX_USE_GOOGLE_TEST 0
+#if !defined HX_USE_TEST_FRAMEWORK
+/// `HX_USE_TEST_FRAMEWORK` - Selects the test framework and how it reports.
+/// `0` - `hxtest` reporting with the Test Anything Protocol (TAP) version 14.
+/// Each test suite is a subtest. `1` - `hxtest` reporting with TAP as well,
+/// starting at the second testsuite to allow for bootstrap diagnostics. `2` -
+/// `hxtest` reporting in the style of Google Test. `3` - Uses the real Google
+/// Test code, which is not compatible with the libhatchet `hxtest` code.
+#define HX_USE_TEST_FRAMEWORK 0
+#elif (HX_USE_TEST_FRAMEWORK) < 0 || (HX_USE_TEST_FRAMEWORK) > 3
+#error HX_USE_TEST_FRAMEWORK must be [0..3].
 #endif
 
 #if (HX_HARDENING_MODE) == HX_HARDENING_MODE_DEBUG && defined __GLIBC__ && !defined __FAST_MATH__

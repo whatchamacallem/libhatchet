@@ -8,7 +8,8 @@
 
 HX_NS_USE
 
-#if !defined _MSC_VER && !defined __wasm__
+// MSVC has not been checked.
+#if !defined _MSC_VER
 static_assert(sizeof(size_t) != 4 || (
 		sizeof(hxhandle_table<hxtest_object, hxdefault_delete>) == 20u),
 	"hxhandle_table with dynamic capacity must pack its size, free head"
@@ -20,13 +21,19 @@ static_assert(sizeof(size_t) != 8 || (
 	" pointer, cached bits, allocator capacity and data pointer with no"
 	" padding beyond natural alignment");
 
-static_assert(sizeof(size_t) != 4 || (
-		sizeof(hxhandle_table<hxtest_object, hxdefault_delete, 2>) == 56u),
-	"hxhandle_table with fixed capacity must pack its size, free head"
-	" pointer and inline slot array with no padding beyond natural"
-	" alignment");
-static_assert(sizeof(size_t) != 8 || (
-		sizeof(hxhandle_table<hxtest_object, hxdefault_delete, 2>) == 80u),
+namespace {
+// A slot is a 64-bit key and a pointer. 32-bit targets that align uint64_t to
+// 8 bytes, such as wasm32 and Arm, pad the pointer in each slot.
+constexpr size_t hxtest_slot_align = alignof(uint64_t) > alignof(void*)
+	? alignof(uint64_t) : alignof(void*);
+constexpr size_t hxtest_slot_size = (sizeof(uint64_t) + sizeof(void*)
+	+ hxtest_slot_align - 1u) / hxtest_slot_align * hxtest_slot_align;
+// Four inline slots are followed by the size and the free head pointer.
+constexpr size_t hxtest_fixed_table_size = (4u * hxtest_slot_size + sizeof(uint32_t)
+	+ sizeof(void*) + hxtest_slot_align - 1u) / hxtest_slot_align * hxtest_slot_align;
+} // namespace
+
+static_assert(sizeof(hxhandle_table<hxtest_object, hxdefault_delete, 2>) == hxtest_fixed_table_size,
 	"hxhandle_table with fixed capacity must pack its size, free head"
 	" pointer and inline slot array with no padding beyond natural"
 	" alignment");

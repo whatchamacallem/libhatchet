@@ -15,6 +15,11 @@
 #
 # The following exceptions are enabled below.
 #
+# -bugprone-derived-method-shadowing-base-method: Flags derived class methods
+# with the same name and parameters as a non-virtual base class method. First
+# seen in v22.1.8. The container iterators derive from their const_iterator and
+# redeclare its operators to return mutable references.
+#
 # -bugprone-easily-swappable-parameters: Flags functions with consecutive
 # parameters of the same type. This requirement is insane.
 #
@@ -103,6 +108,7 @@ Checks: >
   readability-redundant-member-init,
   readability-simplify-boolean-expr,
   readability-use-anyofallof,
+  -bugprone-derived-method-shadowing-base-method,
   -bugprone-easily-swappable-parameters,
   -bugprone-forwarding-reference-overload,
   -bugprone-implicit-widening-of-multiplication-result,

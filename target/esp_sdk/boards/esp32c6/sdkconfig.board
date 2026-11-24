@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: © 2017-2026 Adrian Johnston.
+# SPDX-License-Identifier: MIT
+# This file is licensed under the terms of the LICENSE.md file.
+#
+# The ESP-IDF settings of the ESP32-C6-LCD-1.47.
+
+# The chip's embedded flash, as esptool reports it.
+CONFIG_ESPTOOLPY_FLASHSIZE_8MB=y
+
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="boards/esp32c6/partitions.csv"

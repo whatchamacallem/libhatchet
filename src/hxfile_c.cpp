@@ -35,12 +35,12 @@ hxfile hxerr(hxfile::open_mode_out, reinterpret_cast<intptr_t>(stdout));
 #endif
 hxfile hxdev_null(hxfile::open_mode_out, static_cast<intptr_t>(0));
 
-hxfile::hxfile(void) {
+hxfile::hxfile(void) noexcept {
 	::memset(static_cast<void*>(this), 0x00, sizeof *this);
 }
 
 // In this version the file is a FILE* reinterpreted as intptr_t.
-hxfile::hxfile(uint8_t mode, intptr_t file) : hxfile() {
+hxfile::hxfile(uint8_t mode, intptr_t file) noexcept : hxfile() {
 	m_file_pimpl_ = file; // does not own.
 	m_open_mode_ = mode;
 }
@@ -187,8 +187,12 @@ size_t hxfile::write(const void* bytes, size_t byte_count) {
 	hxassertf((byte_count == bytes_written) || ((m_open_mode_ & hxfile::open_mode_asserts) == 0u),
 		"fwrite want %zu got %zu %s", byte_count, bytes_written, ::strerror(errno));
 
-	// Can restore goodness.
-	m_fail_ = byte_count != bytes_written;
+	// Can restore goodness. hxout and hxerr are shared by concurrent logging. Only
+	// a change is stored.
+	const bool fail = byte_count != bytes_written;
+	if(m_fail_ != fail) {
+		m_fail_ = fail;
+	}
 	return bytes_written;
 }
 

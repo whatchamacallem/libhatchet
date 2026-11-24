@@ -49,7 +49,7 @@ class hxfile;
 /// reading. Ignores blank lines and comments that start with `#`. WARNING:
 /// `file` must not have asserts enabled as this call reads past the end.
 /// - `file` : A file containing commands.
-bool hxconsole_exec_file(hxfile& file_);
+bool hxconsole_exec_file(hxfile& file_) noexcept;
 
 /// `hxconsole_exec_filename` - Opens a configuration file by name and executes
 /// it.

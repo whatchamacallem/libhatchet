@@ -1,11 +1,30 @@
 # Release Notes
 
-## v1.54.1 2026-11-01
+## v1.55.0 2020-00-00
+
+- Added automated testing for Pico 2 and ESP32-C6.
+
+When building IoT projects, all that is required is adding libhatchet as a CMake library. libhatchet only depends on libc and makes libcxx optional.
+
+## v1.54.3 2026-11-03
 
 ```text
+- Added `--sdks` to `install_deb.sh` to install `emcc` and the Pico SDK on Ubuntu.
+- Replaced the example with `target/test_target/test_target.cpp`, a small test
+  program for embedded targets that reports with TAP. `test_target.sh` builds
+  it for the desktop with Meson, which consumes the report, and for the Pico 2
+  with the Pico SDK. The `pico` directory moved to `target/pico_sdk`.
+- Removed the Meson option `build_example`. The test program is built when
+  libhatchet is the main project.
 - Renamed all the top level scripts to use `snake_case`.
 - Redesigned `test_msvc.ps1` to saturate the CPU without running out of RAM.
 - Tests are run on 5 OS at the same time and largely run off of ram-disks.
+- Renamed `HX_USE_GOOGLE_TEST` to `HX_USE_TEST_FRAMEWORK`. Replace
+  `HX_USE_GOOGLE_TEST=1` with `HX_USE_TEST_FRAMEWORK=3` to keep using Google
+  Test. `0` is the default and has `hxtest` report with the Test Anything
+  Protocol. `1` has `hxtest` continue a TAP document from test suite 2 after a
+  boot process. `2` has `hxtest` report in the style of Google Test.
+- Log messages are now TAP protocol comments in all builds.
 ```
 
 ## v1.53.2 2026-11-01

@@ -12,82 +12,87 @@ cd "$(dirname "$(readlink -f "$0")")"
 
 export POSIXLY_CORRECT=1
 
-HX_JOBS_="${HX_MAX_CORES:-$(getconf _NPROCESSORS_ONLN)}"
+HX_JOBS_="${HX_MAX_JOBS:-$(getconf _NPROCESSORS_ONLN)}"
 
-HX_OPT_NO_TIDY_=0
-HX_OPT_VERBOSE_=0
-for HX_ARG_ in "$@"; do
-	case "$HX_ARG_" in
-		"")          ;;
-		--no-tidy)   HX_OPT_NO_TIDY_=1 ;;
-		--verbose)   HX_OPT_VERBOSE_=1 ;;
-		*)
-			echo "usage_error: $0 [--no-tidy] [--verbose]"
-			echo "  --no-tidy   Skip clang-tidy."
-			echo "  --verbose   Full output."
-			exit 1 ;;
-	esac
-done
+# Set by parse_arguments. "--no-tidy" or empty, and "--verbose" or empty.
+HX_NO_TIDY_=""
+HX_VERBOSE_=""
 
-if [ ! -f build/CMakeCache.txt ]; then
-	rm -rf "$(readlink -f build)" build; mkdir build
-	if [ "$HX_OPT_VERBOSE_" = "1" ]; then
-		cmake -S . -B build -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+parse_arguments() {
+	for HX_ARG_ in "$@"; do
+		case "$HX_ARG_" in
+			"")          ;;
+			--no-tidy)   HX_NO_TIDY_="--no-tidy" ;;
+			--verbose)   HX_VERBOSE_="--verbose" ;;
+			*)
+				echo "usage_error: $0 [--no-tidy] [--verbose]"
+				echo "  --no-tidy   Skip clang-tidy."
+				echo "  --verbose   Full output."
+				exit 1 ;;
+		esac
+	done
+}
+
+generate_build_files() {
+	if [ ! -f build/CMakeCache.txt ]; then
+		rm -rf "$(readlink -f build)" build; mkdir build
+		if [ -n "$HX_VERBOSE_" ]; then
+			cmake -S . -B build -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+		else
+			cmake -S . -B build -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON >build/test_cmake.sh.log 2>&1 \
+				|| { echo "error: cmake failed:"; cat build/test_cmake.sh.log; exit 1; }
+		fi
 	else
-		cmake -S . -B build -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON >build/test_cmake.sh.log 2>&1 \
-			|| { echo "error: cmake failed:"; cat build/test_cmake.sh.log; exit 1; }
+		echo "Found build/CMakeCache.txt..."
 	fi
-else
-	echo "Found build/CMakeCache.txt..."
-fi
+}
 
-if [ "$HX_OPT_VERBOSE_" = "1" ]; then
-	ninja -C build -j "$HX_JOBS_"
-else
-	ninja -C build -j "$HX_JOBS_" >build/test_cmake.sh.log 2>&1 \
-		|| { echo "error: ninja failed:"; cat build/test_cmake.sh.log; exit 1; }
-fi
+build_test_suite() {
+	if [ -n "$HX_VERBOSE_" ]; then
+		ninja -C build -j "$HX_JOBS_"
+	else
+		ninja -C build -j "$HX_JOBS_" >build/test_cmake.sh.log 2>&1 \
+			|| { echo "error: ninja failed:"; cat build/test_cmake.sh.log; exit 1; }
+	fi
+}
 
-cd build
+run_test_suite_on_brew() {
+	echo "Run build/hxtest. GDB tests skipped on macOS..."
 
-# Smoke test Darwin cmake without running GDB due to permissions.
-if [ "$(uname -s)" = Darwin ]; then
 	PATH="/opt/homebrew/bin:/opt/homebrew/sbin${PATH+:$PATH}"
 	if ! command -v brew > /dev/null 2>&1; then
 		echo "error: Install brew and then run install_brew.sh."
 		exit 1
 	fi
 
-	echo "Run build/hxtest. GDB tests skipped on macOS..."
 	PATH="$PATH:$(brew --prefix llvm)/bin"
 	export SDKROOT="$(xcrun --show-sdk-path)"
+
 	if ! ./hxtest help runtests > test_cmake.sh.txt 2>&1; then
 		echo "error: Test suite failed."
 		tail -5 test_cmake.sh.txt
 		exit 1
 	fi
 	exit 0
-fi
-
-echo "Run build/hxtest with GDB..."
+}
 
 # Run the GDB smoke tests at the same time.
-rm -f gdb_printer_output.txt
-gdb -batch -x ../test/gdb_printer_test.gdb ./hxtest > test_cmake.sh.txt 2>&1
+run_test_suite_with_gdb() {
+	echo "Run build/hxtest with GDB..."
 
-# GDB exits 0 even after SIGTRAP so check for the summary line explicitly.
-if ! grep -qE '\[  PASSED  \]' test_cmake.sh.txt; then
-	echo "error: GDB exited prematurely or test suite failed."
-	tail -5 test_cmake.sh.txt
-	exit 1
-fi
+	rm -f gdb_printer_output.txt
+	gdb -batch -x ../test/gdb_printer_test.gdb ./hxtest > test_cmake.sh.txt 2>&1 || true
 
-echo "Check GDB pretty printer output..."
-if [ "$HX_OPT_VERBOSE_" = "1" ]; then
-	cat gdb_printer_output.txt
-fi
+	# GDB exits 0 even after SIGTRAP so check for the summary line explicitly.
+	if ! grep -qE '\[  PASSED  \]' test_cmake.sh.txt; then
+		echo "error: GDB exited prematurely or test suite failed."
+		tail -5 test_cmake.sh.txt
+		exit 1
+	fi
+}
 
-cat > expected_pretty_print.txt <<'EOF'
+write_expected_output() {
+	cat > expected_pretty_print.txt <<'HX_EOF_'
 $1 = [4] hxarray<hxtest_object, 4> = {[32B static], { value=7, ticket=100 }, { value=14, ticket=101 }, { value=21, ticket=102 }, { value=28, ticket=103 }}
 $2 = [32B static]
 $3 = [3] hxarray<hxtest_object, 0> = {[24B dynamic], { value=71, ticket=100 }, { value=72, ticket=101 }, { value=73, ticket=102 }}
@@ -134,37 +139,65 @@ $43 = [5/5] hxvector<hxtest_object, 0> = {[40B dynamic], { value=91, ticket=100 
 $44 = [0/0] const hxvector<hxtest_object, 0>
 $45 = [0/3] hxvector<hxtest_object, 0> = {[24B dynamic]}
 $46 = [7/8] hxvector<hxtest_object, 8> = {[64B static], { value=10, ticket=100 }, { value=9, ticket=101 }, { value=6, ticket=107 }, { value=8, ticket=103 }, { value=7, ticket=104 }, { value=5, ticket=102 }, { value=4, ticket=106 }}
-EOF
+HX_EOF_
 
-# hxexpected and hxref require C++23. GCC 13 reports -std=c++23 as 202100L. GDB
-# numbers the values printed.
-HX_CXX_=$(sed -n 's/^CMAKE_CXX_COMPILER:[A-Z]*=//p' CMakeCache.txt)
-HX_CPLUSPLUS_=$(echo | "$HX_CXX_" -std=c++23 -dM -E -x c++ - \
-	| sed -n 's/^#define __cplusplus \([0-9]*\)L$/\1/p')
-if [ "$HX_CPLUSPLUS_" -lt 202302 ]; then
-	echo "C++23 not supported. Skipping hxexpected and hxref..."
-	grep -vE '^\$[0-9]+ = \[[0-9]+\] const hx(expected|ref)<' expected_pretty_print.txt \
-		| awk '{ sub(/^\$[0-9]+/, "$" NR); print }' > expected_pretty_print_cxx20.txt
-	mv expected_pretty_print_cxx20.txt expected_pretty_print.txt
-fi
+	# hxexpected and hxref require C++23. GCC 13 reports -std=c++23 as 202100L. GDB
+	# numbers the values printed.
+	HX_CXX_=$(sed -n 's/^CMAKE_CXX_COMPILER:[A-Z]*=//p' CMakeCache.txt)
+	HX_CPLUSPLUS_=$(echo | "$HX_CXX_" -std=c++23 -dM -E -x c++ - \
+		| sed -n 's/^#define __cplusplus \([0-9]*\)L$/\1/p')
+	if [ "$HX_CPLUSPLUS_" -lt 202302 ]; then
+		echo "C++23 not supported. Skipping hxexpected and hxref..."
+		grep -vE '^\$[0-9]+ = \[[0-9]+\] const hx(expected|ref)<' expected_pretty_print.txt \
+			| awk '{ sub(/^\$[0-9]+/, "$" NR); print }' > expected_pretty_print_cxx20.txt
+		mv expected_pretty_print_cxx20.txt expected_pretty_print.txt
+	fi
+}
 
-if ! git --no-pager diff --no-index expected_pretty_print.txt gdb_printer_output.txt; then
-	cat gdb_printer_output.txt
-	echo "error: GDB pretty printer output does not match expected output."
-	exit 1
-fi
+check_pretty_printer_output() {
+	echo "Check GDB pretty printer output..."
+	[ -n "$HX_VERBOSE_" ] && cat gdb_printer_output.txt
 
-cd ..
+	write_expected_output
 
-if [ "$HX_OPT_NO_TIDY_" = "1" ]; then
-	echo "Skipping clang-tidy..."
-else
-	# Depends on -DCMAKE_EXPORT_COMPILE_COMMANDS=ON above. These two have to
-	# happen together.
+	if ! git --no-pager diff --no-index expected_pretty_print.txt gdb_printer_output.txt; then
+		cat gdb_printer_output.txt
+		echo "error: GDB pretty printer output does not match expected output."
+		exit 1
+	fi
+}
+
+# Depends on -DCMAKE_EXPORT_COMPILE_COMMANDS=ON above. These two have to
+# happen together.
+run_clang_tidy() {
 	echo "Run clang-tidy..."
-	run-clang-tidy -quiet -j "$HX_JOBS_" -p build src/*.cpp test/*.c test/*.cpp 2>&1 \
-		| grep -vE '^(Running clang-tidy for|clang-tidy[-0-9]* -p)|^[0-9]+ warnings generated\.$|^\[|^$' \
-		&& { echo "clang-tidy errors."; exit 1; }
-fi
+	if run-clang-tidy -quiet -j "$HX_JOBS_" -p build src/*.cpp test/*.c test/*.cpp 2>&1 \
+			| grep -vE '^(Running clang-tidy (in [0-9]+ threads )?for|clang-tidy[-0-9]* -p)|^[0-9]+ warnings generated\.$|^\[|^$'; then
+		echo "clang-tidy errors."
+		exit 1
+	fi
+}
 
-echo "🪓🪓🪓"
+main() {
+	parse_arguments "$@"
+	generate_build_files
+	build_test_suite
+	cd build
+
+	# Smoke test Darwin cmake without running GDB due to permissions.
+	[ "$(uname -s)" = Darwin ] && run_test_suite_on_brew
+
+	run_test_suite_with_gdb
+	check_pretty_printer_output
+	cd ..
+
+	if [ -n "$HX_NO_TIDY_" ]; then
+		echo "Skipping clang-tidy..."
+	else
+		run_clang_tidy
+	fi
+
+	echo 🪓🪓🪓
+}
+
+main "$@"
