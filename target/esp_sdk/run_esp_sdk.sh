@@ -6,7 +6,8 @@
 # The test command of an esp_sdk program. Flashes what changed of flash_args
 # and of the slots. The server then resets the board, serves the image and
 # judges the TAP document that hxboot starts and the launched image ends. Exits
-# with 77 when no board is connected unless HX_REQUIRE_BOARD=1.
+# with 77 when no board is connected or ESP_SDK_UNUSABLE says why the board
+# can't be used, unless HX_REQUIRE_BOARD=1.
 #
 # run_esp_sdk.sh --python <python> --chip <chip> --vendor <USB vendor ID>
 #	--build <dir> --report <file> [--flash <offset> <file>]... [--serve <file>]
@@ -51,17 +52,23 @@ parse_arguments() {
 	done
 }
 
-check_connection() {
-	usb_attach "$VENDOR"
-	if usb_connected "$VENDOR"; then
-		return
-	fi
+skip_test() {
 	if [[ "${HX_REQUIRE_BOARD:-0}" == 1 ]]; then
-		echo "error: No $CHIP is connected." >&2
+		echo "error: $1" >&2
 		exit 1
 	fi
-	echo "warning: No $CHIP is connected. Not tested."
+	echo "warning: $1 Not tested."
 	exit 77
+}
+
+check_connection() {
+	if [[ -n "${ESP_SDK_UNUSABLE:-}" ]]; then
+		skip_test "$ESP_SDK_UNUSABLE"
+	fi
+	usb_attach "$VENDOR"
+	if ! usb_connected "$VENDOR"; then
+		skip_test "No $CHIP is connected."
+	fi
 }
 
 find_serial_port() {

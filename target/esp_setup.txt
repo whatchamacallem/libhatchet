@@ -1,4 +1,5 @@
-These are files that target/esp_sdk needs from tmp/esp_worm/:
+These are files that target/esp_sdk needs from tmp/esp_worm/. Without wifi.sh
+esp_worm is built without a network and the board is not used.
 
 * wifi.sh declares the network esp_worm joins and nothing else:
 	ESP_WORM_WIFI_SSID="<ssid>"

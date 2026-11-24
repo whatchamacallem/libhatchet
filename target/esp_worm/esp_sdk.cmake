@@ -11,8 +11,14 @@ cmake_path(SET ESP_WORM_SESSION_DIRECTORY NORMALIZE "${CMAKE_CURRENT_LIST_DIR}/.
 file(MAKE_DIRECTORY "${ESP_WORM_DIRECTORY}" "${ESP_WORM_SESSION_DIRECTORY}")
 
 set(ESP_WORM_WIFI_FILE "${ESP_WORM_SESSION_DIRECTORY}/wifi.sh")
+
+# Without the file esp_worm is built without a network and the board is not
+# used. Creating the file changes the directory and CMake configures again.
+if(NOT EXISTS "${ESP_WORM_WIFI_FILE}")
+	set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${ESP_WORM_SESSION_DIRECTORY}")
+endif()
 foreach(ESP_WORM_SETTING ESP_WORM_WIFI_PASSWORD ESP_WORM_WIFI_SSID)
-	if(NOT DEFINED ${ESP_WORM_SETTING})
+	if(NOT DEFINED ${ESP_WORM_SETTING} AND EXISTS "${ESP_WORM_WIFI_FILE}")
 		execute_process(COMMAND sh -c "set -u && . \"$1\" && printf %s \"$${ESP_WORM_SETTING}\""
 			sh "${ESP_WORM_WIFI_FILE}" OUTPUT_VARIABLE ${ESP_WORM_SETTING} ERROR_QUIET)
 		if(${ESP_WORM_SETTING} STREQUAL "")
@@ -94,3 +100,13 @@ set_source_files_properties("${wireguard_lwip_SOURCE_DIR}/src/crypto/refc/x25519
 esp_sdk_program(esp_worm CLIENTS esp_worm
 	COMMAND bash "${CMAKE_CURRENT_LIST_DIR}/test_esp_worm.sh" "${ESP_WORM_SESSION_DIRECTORY}"
 		"${ESP_WORM_DIRECTORY}" ${ESP_SDK_RUN_COMMAND} --serve esp_worm.hxb)
+
+# hxboot's test launches the gold program.
+if("${ESP_WORM_WIFI_SSID}" STREQUAL "" OR "${ESP_WORM_WIFI_PASSWORD}" STREQUAL "")
+	set(ESP_WORM_TESTS esp_worm)
+	if(TEST hxboot AND "${ESP_SDK_GOLD_PROGRAM}" STREQUAL "esp_worm")
+		list(APPEND ESP_WORM_TESTS hxboot)
+	endif()
+	set_tests_properties(${ESP_WORM_TESTS} PROPERTIES ENVIRONMENT
+		"ESP_SDK_UNUSABLE=${ESP_WORM_WIFI_FILE} is missing, so esp_worm has no Wi-Fi network.")
+endif()
