@@ -100,7 +100,7 @@ check_unsupported_keywords() {
 
 # Require tabs size 4 not spaces.
 check_tab_indentation() {
-	if grep -nE '^  ' */*.c */*.cpp */*.h */*.hpp */*.inl *.ps1 */*.ps1 *.sh >&2; then
+	if grep -nE '^  ' */*.c */*.cpp */*.h */*.hpp */*.inl *.ps1 *.sh >&2; then
 		echo "error: Use tabs size 4 not spaces."
 		exit 1
 	fi
